@@ -1,15 +1,14 @@
 "use client";
 
 import { useEffect } from "react";
-import { useSearchParams } from "next/navigation";
 
 export default function SearchPage() {
-  const params = useSearchParams();
-
-  const q = params.get("q") || "";
-  const mode = params.get("mode") || "google";
-
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    const q = params.get("q") || "";
+    const mode = params.get("mode") || "google";
+
     if (!q) return;
 
     if (mode === "google") {
@@ -36,7 +35,7 @@ export default function SearchPage() {
       window.location.href =
         `https://www.perplexity.ai/search?q=${q}`;
     }
-  }, [q, mode]);
+  }, []);
 
   return (
     <main className="home">
