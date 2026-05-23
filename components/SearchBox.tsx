@@ -26,11 +26,11 @@ export default function SearchBox() {
   };
 
   const modes = [
-    "jobs",
-    "housing",
-    "guides",
-    "google",
-    "ai",
+    { key: "jobs", label: "找工作" },
+    { key: "housing", label: "找房子" },
+    { key: "guides", label: "生活指南" },
+    { key: "google", label: "谷歌搜索" },
+    { key: "ai", label: "AI搜索" },
   ];
 
   return (
@@ -38,7 +38,7 @@ export default function SearchBox() {
       <div className="search-wrapper">
         <input
           className="search-input"
-          placeholder="Search jobs, housing, guides..."
+          placeholder="搜索工作、房屋、生活信息..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -48,13 +48,13 @@ export default function SearchBox() {
       <div className="mode-bar">
         {modes.map((item) => (
           <button
-            key={item}
+            key={item.key}
             className={`mode-btn ${
-              mode === item ? "active" : ""
+              mode === item.key ? "active" : ""
             }`}
-            onClick={() => setMode(item)}
+            onClick={() => setMode(item.key)}
           >
-            {item}
+            {item.label}
           </button>
         ))}
       </div>
