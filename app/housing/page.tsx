@@ -1,12 +1,13 @@
-import { PlaceholderPage } from "@/components/common/PlaceholderPage";
+import { ChannelPageShell } from "@/components/posts/ChannelPageShell";
+import { channelConfigs } from "@/components/posts/channelConfigs";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const metadata = buildPageMetadata({
-  title: "纽约房屋",
-  description: "纽约租房、求租、房屋转租和生活居住信息。",
+  title: "纽约租房房屋信息",
+  description: "纽约租房、求租、合租、房屋信息入口。",
   path: "/housing",
 });
 
 export default function HousingPage() {
-  return <PlaceholderPage title="纽约房屋" description="房屋频道占位，后续接入租房、求租、出售、求购和地图预留。" />;
+  return <ChannelPageShell config={channelConfigs.housing} />;
 }
