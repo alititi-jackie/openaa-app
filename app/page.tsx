@@ -27,23 +27,6 @@ const quickItems = [
   { href: "/services", label: "本地服务", icon: Store },
 ];
 
-const newsPlaceholders = [
-  {
-    title: "OpenAA 首页模块视觉对齐",
-    description: "新闻聚合将在后续阶段接入真实 news_posts；当前先保留首页排行卡结构。",
-    href: "/news",
-    meta: "01",
-    tag: "平台公告",
-  },
-  {
-    title: "纽约生活指南入口持续完善",
-    description: "后续会按本地新闻、新手指南、DMV 教程、生活指南等分类展示。",
-    href: "/news",
-    meta: "02",
-    tag: "生活指南",
-  },
-];
-
 export default async function HomePage() {
   const latestPosts = await getLatestPosts(4);
 
@@ -74,6 +57,7 @@ export default async function HomePage() {
             title: "最新招聘",
             navLabel: "招聘",
             description: "纽约华人招聘、求职、兼职和全职信息。",
+            emptyMessage: "暂无最新招聘，欢迎发布第一条信息。",
             route: "/jobs",
             posts: latestPosts.data.job,
             layout: "grid",
@@ -83,6 +67,7 @@ export default async function HomePage() {
             title: "最新房屋",
             navLabel: "房屋",
             description: "租房、求租、合租和房屋信息。",
+            emptyMessage: "暂无最新房屋信息。",
             route: "/housing",
             posts: latestPosts.data.housing,
             layout: "grid",
@@ -92,6 +77,7 @@ export default async function HomePage() {
             title: "最新二手",
             navLabel: "二手",
             description: "出售、求购和跳蚤市场信息。",
+            emptyMessage: "暂无最新二手信息。",
             route: "/marketplace",
             posts: latestPosts.data.marketplace,
             layout: "grid",
@@ -101,6 +87,7 @@ export default async function HomePage() {
             title: "本地服务",
             navLabel: "服务",
             description: "搬家、维修、装修、报税等服务。",
+            emptyMessage: "暂无最新本地服务。",
             route: "/services",
             posts: latestPosts.data.service,
             layout: "media",
@@ -110,8 +97,9 @@ export default async function HomePage() {
             title: "最新新闻",
             navLabel: "新闻",
             description: "本地新闻、新手指南、DMV 教程和平台公告。",
+            emptyMessage: "暂无最新新闻。",
             route: "/news",
-            posts: newsPlaceholders,
+            posts: [],
             layout: "news",
           },
         ]}

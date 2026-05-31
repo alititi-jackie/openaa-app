@@ -22,6 +22,13 @@ Future `home_sections.config.sections` should support:
 
 The visual structure is intentionally home-specific: a compact internal navigation bar and lightweight aggregation cards. It should not reuse the larger channel-list card layout directly.
 
+Visibility rules:
+
+- If the `latest_posts` module is disabled, hide the entire module and do not render an empty state.
+- If a section has `is_visible=false`, hide that tab and its content.
+- If a visible section has no content, render a compact one-line message instead of a large empty-state card.
+- Do not add mock posts to the production home page. Placeholder structures are acceptable only as UI scaffolding without fake content.
+
 ## Utility Tools
 
 The utility tools module is designed to be controlled later by a `home_sections` row whose `key` is `utility_tools`.
@@ -38,6 +45,12 @@ Future `home_sections.config.items` should support:
 - `open_mode`
 
 The current visual structure shows one group of two cards at a time. Mobile users can swipe horizontally; desktop users can use arrow controls to switch to the next group.
+
+Visibility rules:
+
+- If the `utility_tools` module is disabled, hide the entire module.
+- If an item has `is_visible=false`, hide that tool.
+- If the module is enabled but no tools are visible, hide the entire module rather than rendering an empty state.
 
 ## Later Phases
 

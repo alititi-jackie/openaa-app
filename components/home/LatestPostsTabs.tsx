@@ -31,7 +31,7 @@ export function LatestPostsTabs({ groups }: { groups: LatestPostGroup[] }) {
             <ChevronRight size={15} aria-hidden="true" />
           </Link>
         </div>
-        <LatestPostsGrid posts={activeGroup.posts} variant={activeGroup.layout} />
+        <LatestPostsGrid posts={activeGroup.posts} variant={activeGroup.layout} emptyMessage={activeGroup.emptyMessage} />
       </div>
     </div>
   );

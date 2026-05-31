@@ -14,10 +14,16 @@ export type UtilityCardItem = {
   isVisible?: boolean;
 };
 
-export function UtilityCards({ items }: { items: UtilityCardItem[] }) {
+export function UtilityCards({ items, isVisible = true }: { items: UtilityCardItem[]; isVisible?: boolean }) {
+  const visibleItems = items.filter((item) => item.isVisible !== false);
+
+  if (!isVisible || visibleItems.length === 0) {
+    return null;
+  }
+
   return (
     <HomeSectionShell title="实用工具">
-      <UtilityCarousel items={items} />
+      <UtilityCarousel items={visibleItems} />
     </HomeSectionShell>
   );
 }
