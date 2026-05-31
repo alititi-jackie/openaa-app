@@ -1,0 +1,55 @@
+export type FeatureFlagSeed = {
+  key: string;
+  name: string;
+  module: string;
+  isEnabled: boolean;
+  visibility: "public" | "admin_only" | "beta" | "hidden";
+};
+
+export const initialFeatureFlags: FeatureFlagSeed[] = [
+  { key: "home", name: "首页", module: "core", isEnabled: true, visibility: "public" },
+  { key: "auth_email", name: "邮箱登录", module: "auth", isEnabled: true, visibility: "public" },
+  { key: "auth_google", name: "Google 登录", module: "auth", isEnabled: true, visibility: "public" },
+  { key: "profiles", name: "用户资料", module: "users", isEnabled: true, visibility: "public" },
+  { key: "business_profiles_basic", name: "商家基础资料", module: "users", isEnabled: true, visibility: "public" },
+  { key: "jobs", name: "招聘", module: "posts", isEnabled: true, visibility: "public" },
+  { key: "housing", name: "房屋", module: "posts", isEnabled: true, visibility: "public" },
+  { key: "marketplace", name: "二手市场", module: "posts", isEnabled: true, visibility: "public" },
+  { key: "services", name: "本地服务", module: "posts", isEnabled: true, visibility: "public" },
+  { key: "news", name: "新闻", module: "content", isEnabled: true, visibility: "public" },
+  { key: "dmv", name: "DMV", module: "dmv", isEnabled: true, visibility: "public" },
+  { key: "navigation", name: "导航", module: "navigation", isEnabled: true, visibility: "public" },
+  { key: "search_basic", name: "基础搜索", module: "search", isEnabled: true, visibility: "public" },
+  { key: "favorites", name: "收藏", module: "users", isEnabled: true, visibility: "public" },
+  { key: "recent_views", name: "最近浏览", module: "users", isEnabled: true, visibility: "public" },
+  { key: "drafts", name: "草稿", module: "posts", isEnabled: true, visibility: "public" },
+  { key: "feedback", name: "反馈", module: "feedback", isEnabled: true, visibility: "public" },
+  { key: "reports", name: "举报", module: "moderation", isEnabled: true, visibility: "public" },
+  { key: "notifications_in_app", name: "站内通知", module: "notifications", isEnabled: true, visibility: "public" },
+  { key: "system_announcements", name: "系统公告", module: "notifications", isEnabled: true, visibility: "public" },
+  { key: "ads", name: "广告", module: "operations", isEnabled: true, visibility: "public" },
+  { key: "pwa", name: "PWA", module: "app", isEnabled: true, visibility: "public" },
+  { key: "seo", name: "SEO", module: "seo", isEnabled: true, visibility: "public" },
+  { key: "admin_roles", name: "后台角色", module: "admin", isEnabled: true, visibility: "admin_only" },
+  { key: "image_management", name: "图片管理", module: "media", isEnabled: true, visibility: "admin_only" },
+  { key: "auth_apple", name: "Apple 登录", module: "auth", isEnabled: false, visibility: "hidden" },
+  { key: "auth_wechat", name: "微信登录", module: "auth", isEnabled: false, visibility: "hidden" },
+  { key: "auth_phone", name: "手机号登录", module: "auth", isEnabled: false, visibility: "hidden" },
+  { key: "web_push", name: "浏览器推送", module: "notifications", isEnabled: false, visibility: "hidden" },
+  { key: "native_push", name: "原生推送", module: "notifications", isEnabled: false, visibility: "hidden" },
+  { key: "comments", name: "评论", module: "community", isEnabled: false, visibility: "hidden" },
+  { key: "ratings", name: "评分", module: "community", isEnabled: false, visibility: "hidden" },
+  { key: "business_verification", name: "商家认证", module: "business", isEnabled: false, visibility: "hidden" },
+  { key: "business_public_pages", name: "商家主页", module: "business", isEnabled: false, visibility: "hidden" },
+  { key: "appointments", name: "预约", module: "business", isEnabled: false, visibility: "hidden" },
+  { key: "coupons", name: "优惠券", module: "business", isEnabled: false, visibility: "hidden" },
+  { key: "memberships", name: "会员", module: "commerce", isEnabled: false, visibility: "hidden" },
+  { key: "points", name: "积分", module: "commerce", isEnabled: false, visibility: "hidden" },
+  { key: "payments", name: "支付", module: "commerce", isEnabled: false, visibility: "hidden" },
+  { key: "orders", name: "订单", module: "commerce", isEnabled: false, visibility: "hidden" },
+  { key: "chats", name: "聊天", module: "messaging", isEnabled: false, visibility: "hidden" },
+  { key: "rideshare", name: "拼车", module: "community", isEnabled: false, visibility: "hidden" },
+  { key: "multi_city_public", name: "多城市前台", module: "cities", isEnabled: false, visibility: "hidden" },
+  { key: "app_deep_links", name: "APP 深链", module: "app", isEnabled: false, visibility: "hidden" },
+  { key: "ad_packages", name: "广告套餐", module: "operations", isEnabled: false, visibility: "hidden" },
+];
