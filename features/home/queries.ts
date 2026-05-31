@@ -2,8 +2,11 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import type { PostListItem } from "@/components/posts/PostList";
 import { getPublicPosts } from "@/features/posts/queries";
 import type { PostType } from "@/features/posts/types";
+import { getLatestNews } from "@/features/news/queries";
+import { formatNewsDate } from "@/features/news/mappers";
 import { HOME_AD_PLACEMENT, HOME_SECTION_KEYS } from "./constants";
 import {
   fallbackHomeBanners,
@@ -273,7 +276,8 @@ async function getLatestPostGroups(sections: HomeLatestPostSectionConfig[]) {
 
   for (const section of sections) {
     if (section.postType === "news") {
-      groups.push({ ...section, posts: [] });
+      const result = await getLatestNews(section.limitCount);
+      groups.push({ ...section, posts: result.data.map(mapNewsToHomePost) });
       continue;
     }
 
@@ -282,6 +286,18 @@ async function getLatestPostGroups(sections: HomeLatestPostSectionConfig[]) {
   }
 
   return groups;
+}
+
+function mapNewsToHomePost(post: Awaited<ReturnType<typeof getLatestNews>>["data"][number]): PostListItem {
+  return {
+    id: post.id,
+    title: post.title,
+    description: post.excerpt,
+    href: post.href,
+    meta: formatNewsDate(post.publishedAt),
+    tag: post.categoryName,
+    imageUrl: post.coverImageUrl ?? undefined,
+  };
 }
 
 function getVisibleSection(sections: Record<string, HomeSectionRecord>, key: string) {
