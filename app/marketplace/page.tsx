@@ -1,5 +1,6 @@
 import { ChannelPageShell } from "@/components/posts/ChannelPageShell";
 import { channelConfigs } from "@/components/posts/channelConfigs";
+import { getPublicPosts } from "@/features/posts/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const metadata = buildPageMetadata({
@@ -8,6 +9,10 @@ export const metadata = buildPageMetadata({
   path: "/marketplace",
 });
 
-export default function MarketplacePage() {
-  return <ChannelPageShell config={channelConfigs.marketplace} />;
+export const dynamic = "force-dynamic";
+
+export default async function MarketplacePage() {
+  const posts = await getPublicPosts({ type: "marketplace" });
+
+  return <ChannelPageShell config={{ ...channelConfigs.marketplace, posts: posts.data, queryState: posts.state, errorMessage: posts.error }} />;
 }

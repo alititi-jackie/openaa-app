@@ -3,9 +3,9 @@ import { PostCard, type PostCardData } from "./PostCard";
 
 export type PostListItem = PostCardData;
 
-export function PostList({ posts, compact = false }: { posts: PostListItem[]; compact?: boolean }) {
+export function PostList({ posts, compact = false, emptyDescription }: { posts: PostListItem[]; compact?: boolean; emptyDescription?: string }) {
   if (posts.length === 0) {
-    return <EmptyState title="暂无发布" description="后续接入 Supabase 后，这里会显示真实列表。" />;
+    return <EmptyState title="暂无发布" description={emptyDescription ?? "暂时没有符合条件的公开内容。"} />;
   }
 
   return (
