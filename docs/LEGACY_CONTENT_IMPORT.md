@@ -76,6 +76,14 @@ npm run import:legacy -- --module=navigation --env=local --dry-run
 npm run import:legacy -- --module=all --env=staging --dry-run
 ```
 
+The package scripts use the current Node runtime's TypeScript strip mode:
+
+```bash
+node --experimental-strip-types scripts/import-legacy-content.ts
+```
+
+Use Node 22 or newer for these scripts. If a future deployment or CI environment must run older Node, add an explicit lightweight runner such as `tsx` in a separate PR instead of changing Seed-A behavior.
+
 Supported modules:
 
 - `navigation`
