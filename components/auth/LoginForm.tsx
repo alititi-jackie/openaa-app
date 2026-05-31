@@ -8,10 +8,18 @@ import { featureFlags } from "@/lib/config/featureFlags";
 import { appUrl } from "@/lib/seo/siteConfig";
 import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
 
+function safeReturnTo(value: string | null) {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return "/profile";
+  }
+
+  return value;
+}
+
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const returnTo = searchParams.get("returnTo") || "/profile";
+  const returnTo = safeReturnTo(searchParams.get("returnTo"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");

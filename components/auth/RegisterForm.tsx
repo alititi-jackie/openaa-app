@@ -58,20 +58,23 @@ export function RegisterForm() {
           nickname,
           email_verified: Boolean(data.user.email_confirmed_at),
         });
-        await supabase.from("user_consents").upsert([
-          {
-            user_id: data.user.id,
-            consent_type: "terms",
-            consent_version: consentVersion,
-            metadata: { source: "register" },
-          },
-          {
-            user_id: data.user.id,
-            consent_type: "privacy",
-            consent_version: consentVersion,
-            metadata: { source: "register" },
-          },
-        ]);
+        await supabase.from("user_consents").upsert(
+          [
+            {
+              user_id: data.user.id,
+              consent_type: "terms",
+              consent_version: consentVersion,
+              metadata: { source: "register" },
+            },
+            {
+              user_id: data.user.id,
+              consent_type: "privacy",
+              consent_version: consentVersion,
+              metadata: { source: "register" },
+            },
+          ],
+          { onConflict: "user_id,consent_type,consent_version", ignoreDuplicates: true },
+        );
       }
 
       setMessage("注册请求已提交。请根据 Supabase 项目设置检查邮箱确认，或直接前往资料页。");
