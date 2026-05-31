@@ -1,0 +1,9 @@
+[
+  {
+    "slug": "local-news",
+    "name": "本地新闻",
+    "description": "纽约本地新闻和社区资讯。",
+    "sort_order": 10,
+    "is_active": true
+  }
+]

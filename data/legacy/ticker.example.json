@@ -1,0 +1,12 @@
+[
+  {
+    "title": "OpenAA 最新动态示例",
+    "href": "/news",
+    "module": "home",
+    "is_enabled": true,
+    "sort_order": 10,
+    "starts_at": null,
+    "ends_at": null,
+    "legacy_id": "openaa-ny-ticker-example"
+  }
+]

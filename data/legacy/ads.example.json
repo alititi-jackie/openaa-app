@@ -1,0 +1,14 @@
+[
+  {
+    "placement": "navigation_top",
+    "title": "导航页广告示例",
+    "href": "https://ny.openaa.com/navigation",
+    "image_url": "https://img.openaa.com/example/navigation-banner.webp",
+    "open_mode": "new",
+    "sort_order": 10,
+    "is_active": true,
+    "starts_at": null,
+    "ends_at": null,
+    "legacy_id": "openaa-ny-ad-navigation-example"
+  }
+]
