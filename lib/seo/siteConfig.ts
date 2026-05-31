@@ -56,6 +56,7 @@ export const noindexRoutePrefixes = [
   "/login",
   "/register",
   "/forgot-password",
+  "/auth",
   "/profile",
   "/search",
   "/publish",

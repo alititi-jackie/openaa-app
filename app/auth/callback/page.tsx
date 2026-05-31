@@ -1,5 +1,10 @@
-import { PlaceholderPage } from "@/components/common/PlaceholderPage";
+import { redirect } from "next/navigation";
+import { PageShell } from "@/components/layout/PageShell";
 import { buildPageMetadata } from "@/lib/seo/metadata";
+import { ensureProfileForUser } from "@/lib/supabase/profile";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = buildPageMetadata({
   title: "登录回调",
@@ -8,6 +13,56 @@ export const metadata = buildPageMetadata({
   noIndex: true,
 });
 
-export default function AuthCallbackPage() {
-  return <PlaceholderPage title="登录回调" description="OAuth callback 路由占位，后续接入 Supabase Auth 会话交换逻辑。" />;
+type AuthCallbackPageProps = {
+  searchParams: Promise<{
+    code?: string;
+    returnTo?: string;
+    error_description?: string;
+  }>;
+};
+
+function safeReturnTo(value: string | undefined) {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return "/profile";
+  }
+
+  return value;
+}
+
+export default async function AuthCallbackPage({ searchParams }: AuthCallbackPageProps) {
+  const params = await searchParams;
+  const supabase = await createSupabaseServerClient();
+
+  if (!supabase) {
+    return (
+      <PageShell
+        title="登录回调"
+        description="Supabase 环境变量尚未配置。配置新 Supabase 后，此页面会处理 OAuth 和邮箱登录回调。"
+        eyebrow="Auth"
+      />
+    );
+  }
+
+  if (params.error_description) {
+    return <PageShell title="登录失败" description={params.error_description} eyebrow="Auth" />;
+  }
+
+  if (params.code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(params.code);
+
+    if (error) {
+      return <PageShell title="登录失败" description="登录链接已失效或无法完成会话交换，请重新登录。" eyebrow="Auth" />;
+    }
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  await ensureProfileForUser(user);
+  redirect(safeReturnTo(params.returnTo));
 }
