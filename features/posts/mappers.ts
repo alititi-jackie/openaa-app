@@ -114,8 +114,9 @@ export function mapPostRecordToDetail(record: PostRecord, authors: Record<string
   const card = mapPostRecordToCard(record, authors);
   const images = (record.post_images ?? []).flatMap((image) => {
     const url = imageUrl(image);
-    return url ? [{ url, caption: image.caption }] : [];
+    return url ? [{ url, caption: image.caption, imageAssetId: image.image_asset_id ?? null }] : [];
   });
+  const contact = firstOrNull(record.post_contacts);
 
   return {
     ...card,
@@ -124,5 +125,6 @@ export function mapPostRecordToDetail(record: PostRecord, authors: Record<string
     publishedAt: record.published_at,
     createdAt: record.created_at,
     images,
+    contact,
   };
 }

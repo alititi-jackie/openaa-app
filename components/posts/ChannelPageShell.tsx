@@ -25,7 +25,7 @@ export function ChannelPageShell({ config }: { config: ChannelPageConfig }) {
   return (
     <div className="space-y-4">
       <ChannelHero title={config.title} description={config.description} icon={config.icon} />
-      <PublishCta returnTo={config.path} label="发布信息占位" />
+      <PublishCta returnTo={config.path} label="发布信息" />
       <ChannelTabs tabs={config.tabs} />
       <ChannelFilterBar placeholder={config.searchPlaceholder} />
       {config.queryState === "error" ? (
