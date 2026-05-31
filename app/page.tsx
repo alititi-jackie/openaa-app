@@ -5,6 +5,7 @@ import { LatestTicker } from "@/components/home/LatestTicker";
 import { QuickGrid } from "@/components/home/QuickGrid";
 import { SeoContentCard } from "@/components/home/SeoContentCard";
 import { UtilityCards } from "@/components/home/UtilityCards";
+import { getLatestPosts } from "@/features/posts/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const metadata = buildPageMetadata({
@@ -12,6 +13,8 @@ export const metadata = buildPageMetadata({
   description: "OpenAA 纽约华人生活信息入口，包含招聘、房屋、二手市场、本地服务、新闻、DMV 和常用导航。",
   path: "/",
 });
+
+export const dynamic = "force-dynamic";
 
 const quickItems = [
   { href: "/jobs", label: "招聘", icon: BriefcaseBusiness },
@@ -24,7 +27,9 @@ const quickItems = [
   { href: "/services", label: "本地服务", icon: Store },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const latestPosts = await getLatestPosts(2);
+
   return (
     <div className="space-y-4">
       <HomeBanner
@@ -49,22 +54,22 @@ export default function HomePage() {
           {
             title: "最新招聘",
             description: "后续显示纽约华人招聘、求职、兼职和全职信息。",
-            posts: [{ title: "招聘信息占位", description: "真实列表将在后续 Phase 接入。", href: "/jobs", meta: "占位", tag: "招聘" }],
+            posts: latestPosts.data.job,
           },
           {
             title: "最新房屋",
             description: "后续显示租房、求租、合租和房屋信息。",
-            posts: [{ title: "房屋信息占位", description: "真实列表将在后续 Phase 接入。", href: "/housing", meta: "占位", tag: "房屋" }],
+            posts: latestPosts.data.housing,
           },
           {
             title: "最新二手",
             description: "后续显示出售、求购和跳蚤市场信息。",
-            posts: [{ title: "二手市场占位", description: "真实列表将在后续 Phase 接入。", href: "/marketplace", meta: "占位", tag: "二手" }],
+            posts: latestPosts.data.marketplace,
           },
           {
             title: "本地服务",
             description: "后续显示搬家、维修、装修、报税等服务。",
-            posts: [{ title: "本地服务占位", description: "真实列表将在后续 Phase 接入。", href: "/services", meta: "占位", tag: "服务" }],
+            posts: latestPosts.data.service,
           },
           {
             title: "最新新闻",

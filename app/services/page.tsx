@@ -1,5 +1,6 @@
 import { ChannelPageShell } from "@/components/posts/ChannelPageShell";
 import { channelConfigs } from "@/components/posts/channelConfigs";
+import { getPublicPosts } from "@/features/posts/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const metadata = buildPageMetadata({
@@ -8,6 +9,10 @@ export const metadata = buildPageMetadata({
   path: "/services",
 });
 
-export default function ServicesPage() {
-  return <ChannelPageShell config={channelConfigs.services} />;
+export const dynamic = "force-dynamic";
+
+export default async function ServicesPage() {
+  const posts = await getPublicPosts({ type: "service" });
+
+  return <ChannelPageShell config={{ ...channelConfigs.services, posts: posts.data, queryState: posts.state, errorMessage: posts.error }} />;
 }

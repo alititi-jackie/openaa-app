@@ -1,0 +1,128 @@
+import { POST_TYPE_LABELS, POST_TYPE_TO_ROUTE } from "./constants";
+import type {
+  AuthorSummary,
+  HousingDetailRecord,
+  JobDetailRecord,
+  MarketplaceDetailRecord,
+  PostCardView,
+  PostDetailView,
+  PostImageRecord,
+  PostRecord,
+  PostStatsRecord,
+  ServiceDetailRecord,
+} from "./types";
+
+function firstOrNull<T>(value: T[] | T | null | undefined): T | null {
+  if (!value) {
+    return null;
+  }
+
+  return Array.isArray(value) ? (value[0] ?? null) : value;
+}
+
+function numberText(value: number | string | null | undefined) {
+  if (value === null || value === undefined || value === "") {
+    return "";
+  }
+
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric.toLocaleString("en-US") : String(value);
+}
+
+function imageUrl(image: PostImageRecord | null) {
+  return image?.image_assets?.public_url || image?.image_assets?.external_url || undefined;
+}
+
+function stats(record: PostRecord): PostStatsRecord {
+  return firstOrNull(record.post_stats) ?? { favorite_count: 0, view_count: 0 };
+}
+
+function cityName(record: PostRecord) {
+  return record.cities?.name || undefined;
+}
+
+function publishedMeta(record: PostRecord) {
+  const value = record.published_at || record.created_at;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "最新" : date.toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
+}
+
+function detailFields(record: PostRecord): Array<{ label: string; value: string }> {
+  if (record.post_type === "job") {
+    const detail = firstOrNull(record.post_details_jobs) as JobDetailRecord | null;
+    const salary = [numberText(detail?.wage_min), numberText(detail?.wage_max)].filter(Boolean).join("-");
+    return [
+      { label: "类型", value: detail?.employment_type || detail?.job_category || "" },
+      { label: "薪资", value: salary ? `${salary}${detail?.wage_unit ? ` / ${detail.wage_unit}` : ""}` : "" },
+      { label: "区域", value: detail?.work_area || "" },
+    ].filter((field) => field.value);
+  }
+
+  if (record.post_type === "housing") {
+    const detail = firstOrNull(record.post_details_housing) as HousingDetailRecord | null;
+    return [
+      { label: "房型", value: detail?.housing_type || detail?.listing_type || "" },
+      { label: "价格", value: detail?.rent_amount ? `$${numberText(detail.rent_amount)}` : "" },
+      { label: "区域", value: detail?.address_area || "" },
+    ].filter((field) => field.value);
+  }
+
+  if (record.post_type === "marketplace") {
+    const detail = firstOrNull(record.post_details_marketplace) as MarketplaceDetailRecord | null;
+    return [
+      { label: "价格", value: detail?.price_amount ? `$${numberText(detail.price_amount)}` : record.price_amount ? `$${numberText(record.price_amount)}` : "" },
+      { label: "成色", value: detail?.condition || "" },
+      { label: "交易区域", value: detail?.trade_area || "" },
+      { label: "状态", value: detail?.sold_at ? "已售" : "" },
+    ].filter((field) => field.value);
+  }
+
+  const detail = firstOrNull(record.post_details_services) as ServiceDetailRecord | null;
+  return [
+    { label: "服务", value: detail?.service_category || "" },
+    { label: "区域", value: detail?.service_area || "" },
+    { label: "价格", value: detail?.price_range || "" },
+  ].filter((field) => field.value);
+}
+
+export function mapPostRecordToCard(record: PostRecord, authors: Record<string, AuthorSummary> = {}): PostCardView {
+  const postStats = stats(record);
+  const cover = imageUrl(
+    [...(record.post_images ?? [])].sort((a, b) => Number(Boolean(b.is_cover)) - Number(Boolean(a.is_cover)) || (a.sort_order ?? 0) - (b.sort_order ?? 0))[0] ?? null,
+  );
+  const author = record.author_id ? authors[record.author_id] : null;
+
+  return {
+    id: record.id,
+    type: record.post_type,
+    status: record.status,
+    href: `${POST_TYPE_TO_ROUTE[record.post_type]}/${record.id}`,
+    title: record.title,
+    description: record.summary || record.body || "暂无摘要。",
+    meta: publishedMeta(record),
+    tag: record.category || POST_TYPE_LABELS[record.post_type],
+    location: cityName(record),
+    authorName: author?.nickname || undefined,
+    imageUrl: cover,
+    favoriteCount: postStats.favorite_count ?? 0,
+    viewCount: postStats.view_count ?? 0,
+    fields: detailFields(record),
+  };
+}
+
+export function mapPostRecordToDetail(record: PostRecord, authors: Record<string, AuthorSummary> = {}): PostDetailView {
+  const card = mapPostRecordToCard(record, authors);
+  const images = (record.post_images ?? []).flatMap((image) => {
+    const url = imageUrl(image);
+    return url ? [{ url, caption: image.caption }] : [];
+  });
+
+  return {
+    ...card,
+    body: record.body || record.summary || "暂无正文。",
+    status: record.status,
+    publishedAt: record.published_at,
+    createdAt: record.created_at,
+    images,
+  };
+}
