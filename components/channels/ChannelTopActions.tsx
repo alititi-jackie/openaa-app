@@ -25,7 +25,7 @@ export function ChannelTopActions({ path, title, text, className }: ChannelTopAc
       if (shared) return;
     }
 
-    await navigator.clipboard?.writeText(url);
+    await navigator.clipboard?.writeText(url).catch(() => undefined);
   }
 
   return (

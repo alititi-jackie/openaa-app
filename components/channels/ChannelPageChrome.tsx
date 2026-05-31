@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { getChannelBanner, getChannelTickerItems } from "@/features/channels/queries";
 import type { ChannelKey } from "@/features/channels/types";
+import { ChannelSectionShell } from "./ChannelSectionShell";
 import { ChannelTicker } from "./ChannelTicker";
 import { ChannelTopActions } from "./ChannelTopActions";
 import { ChannelTopBanner } from "./ChannelTopBanner";
@@ -24,7 +25,7 @@ export async function ChannelPageChrome({ channelKey, path, title, description, 
       <ChannelTopBanner banner={banner} />
       <ChannelTicker items={tickerItems} />
       <ChannelTopActions path={path} title={title} text={description} />
-      {children}
+      <ChannelSectionShell>{children}</ChannelSectionShell>
     </div>
   );
 }
