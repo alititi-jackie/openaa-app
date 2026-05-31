@@ -1,10 +1,10 @@
 # Home Modules
 
-This document records the home-page module structure after the visual-parity pass with ny.openaa.com and the Phase 9 configuration read layer.
+This document records the home-page module structure after the visual-parity pass with ny.openaa.com, the Phase 9 configuration read layer, and the Phase 10 admin management foundation.
 
 ## Current PR Scope
 
-Phase 9 only adds public configuration reads, mapping, and fallback behavior. It does not add admin CRUD, import old data, connect to the old Supabase project, add tables, write migrations, or change the confirmed app-shell responsive width.
+Phase 10 adds the first admin management screens for the home configuration layer. It does not import old data, connect to the old Supabase project, add unrelated admin CRUD, or change the confirmed app-shell responsive width.
 
 ## Read Strategy
 
@@ -30,7 +30,7 @@ Fallback rules:
 
 ## Latest Posts
 
-The home latest-posts module is designed to be controlled later by a `home_sections` row whose `key` is `latest_posts`.
+The home latest-posts module is controlled by a `home_sections` row whose `key` is `latest_posts`.
 
 `home_sections.config.sections` supports:
 
@@ -42,19 +42,17 @@ The home latest-posts module is designed to be controlled later by a `home_secti
 - `limit_count`
 - `layout`
 
-The visual structure is intentionally home-specific: a compact internal navigation bar and lightweight aggregation cards. It should not reuse the larger channel-list card layout directly.
-
 Visibility rules:
 
 - If the `latest_posts` module is disabled, hide the entire module and do not render an empty state.
 - If a section has `is_visible=false`, hide that tab and its content.
 - If a visible section has no content, render a compact one-line message instead of a large empty-state card.
-- Do not add mock posts to the production home page. Placeholder structures are acceptable only as UI scaffolding without fake content.
+- Do not add mock posts to the production home page.
 - News is reserved for future `news_posts` reads; until then it may render an empty lightweight message without fake news.
 
 ## Utility Tools
 
-The utility tools module is designed to be controlled later by a `home_sections` row whose `key` is `utility_tools`.
+The utility tools module is controlled by a `home_sections` row whose `key` is `utility_tools`.
 
 `home_sections.config.items` supports:
 
@@ -113,10 +111,44 @@ Supported config fields:
 
 If no readable config exists, the fallback SEO copy is used. If the module is disabled, the SEO card is hidden. SEO copy should remain natural and should not become keyword stuffing.
 
+## Admin Management
+
+Phase 10 adds:
+
+- `/admin/home`: manages `home_sections`, `latest_ticker`, and `home_banners`.
+- `/admin/top-links`: manages `top_quick_links`.
+
+Permissions:
+
+- `manage_home_sections`: update home modules and home banners.
+- `manage_top_links`: create, edit, sort, and disable top quick links.
+- `manage_latest_ticker`: create and edit latest ticker rows.
+- `manage_ads`: reserved for broader ad management. Phase 10 does not build a full ads CRUD screen.
+
+All write operations run through server actions, check Supabase Auth plus `admin_roles` permission helpers, and insert `admin_audit_logs` records. Frontend button visibility is only a UI hint and is not treated as a security boundary.
+
+Default configuration:
+
+- Admins with `manage_home_sections` can create default `home_sections` matching the current fallback modules.
+- If the same admin also has `manage_top_links`, the default top quick links are created.
+- If the same admin also has `manage_latest_ticker`, the default ticker row is created when no ticker exists.
+
+Banner image policy:
+
+- Phase 10 supports external image URLs for home banners.
+- External images must use `https://img.openaa.com/`.
+- The backend stores external images in `image_assets` with `source_type = external`.
+- Upload-based banner management is reserved for a later media-admin phase.
+
+Schema patch:
+
+- Migration `015_home_config_admin_fields.sql` adds `open_mode` to `top_quick_links`, `home_banners`, and `ads`, and adds `city_id` to `top_quick_links`.
+- The patch does not add tables and does not loosen existing RLS policies.
+
 ## Later Phases
 
 Recommended follow-up order:
 
-1. Admin configuration management using the new `admin_roles` and permission model.
+1. Broader ad management, if needed, using `manage_ads`.
 2. Carefully scoped seed/import work for old display configuration, without copying old application code or connecting the app runtime to the old Supabase project.
 3. Optional dynamic sitemap enhancements for configured public content once real data exists.

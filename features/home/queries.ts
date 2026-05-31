@@ -70,11 +70,17 @@ export async function getTopQuickLinks(client?: HomeSupabaseClient | null, city 
   }
 
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from("top_quick_links")
-      .select("id,title,href,icon,sort_order,is_active")
+      .select("id,title,href,open_mode,icon,sort_order,is_active,city_id")
       .eq("is_active", true)
       .order("sort_order", { ascending: true });
+
+    if (city.id) {
+      query = query.or(`city_id.is.null,city_id.eq.${city.id}`);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       warnHomeConfig("top_quick_links", error.message);
@@ -210,7 +216,7 @@ async function readHomeBanners(supabase: HomeSupabaseClient, city: HomeCity) {
     const now = new Date().toISOString();
     let query = supabase
       .from("home_banners")
-      .select("id,title,subtitle,href,is_active,sort_order,starts_at,ends_at,city_id,image_assets(public_url,external_url)")
+      .select("id,title,subtitle,href,open_mode,is_active,sort_order,starts_at,ends_at,city_id,image_assets(public_url,external_url)")
       .eq("is_active", true)
       .or(`starts_at.is.null,starts_at.lte.${now}`)
       .or(`ends_at.is.null,ends_at.gte.${now}`)
@@ -241,7 +247,7 @@ async function readHomeAds(supabase: HomeSupabaseClient) {
     const now = new Date().toISOString();
     const { data, error } = await supabase
       .from("ads")
-      .select("id,title,href,placement,metadata,is_active,sort_order,starts_at,ends_at,image_assets(public_url,external_url)")
+      .select("id,title,href,open_mode,placement,metadata,is_active,sort_order,starts_at,ends_at,image_assets(public_url,external_url)")
       .eq("placement", HOME_AD_PLACEMENT)
       .eq("is_active", true)
       .or(`starts_at.is.null,starts_at.lte.${now}`)
