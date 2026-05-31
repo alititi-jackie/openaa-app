@@ -116,13 +116,17 @@ export async function upsertNavigationCategory(_state: NavigationActionState, fo
   const validation = validateNavigationCategoryForm(formData);
   if (!validation.ok) return fail(validation.message);
   const { id, name, slug, description, icon, sortOrder, isActive } = validation.value;
+  const previous = id
+    ? await context.supabase.from("navigation_categories").select("is_active,sort_order").eq("id", id).maybeSingle()
+    : { data: null };
   const payload = { name, slug, description, icon, sort_order: sortOrder, is_active: isActive, updated_at: new Date().toISOString() };
   const result = id
     ? await context.supabase.from("navigation_categories").update(payload).eq("id", id).select("id").single()
     : await context.supabase.from("navigation_categories").insert(payload).select("id").single();
 
   if (result.error || !result.data) return fail("导航分类保存失败，请检查 slug 是否重复。");
-  if (!(await auditLog(context, id ? "update_navigation_category" : "create_navigation_category", "navigation_categories", result.data.id, payload))) {
+  const action = id ? navigationCategoryAuditAction(previous.data?.is_active, isActive, previous.data?.sort_order, sortOrder) : "create_navigation_category";
+  if (!(await auditLog(context, action, "navigation_categories", result.data.id, payload))) {
     return fail("分类已保存，但审计日志写入失败。");
   }
 
@@ -183,8 +187,8 @@ export async function toggleNavigationLinkFlag(_state: NavigationActionState, fo
   if (field !== "is_active" && field !== "is_featured") return fail("不支持的导航字段。");
 
   const payload = { [field]: value, updated_at: new Date().toISOString() };
-  const { error } = await context.supabase.from("navigation_links").update(payload).eq("id", id);
-  if (error) return fail("导航链接状态更新失败。");
+  const { error, data } = await context.supabase.from("navigation_links").update(payload).eq("id", id).select("id").single();
+  if (error || !data) return fail("导航链接状态更新失败。");
 
   const action = field === "is_active" ? (value ? "enable_navigation_link" : "disable_navigation_link") : value ? "feature_navigation_link" : "unfeature_navigation_link";
   if (!(await auditLog(context, action, "navigation_links", id, payload))) return fail("状态已更新，但审计日志写入失败。");
@@ -225,13 +229,15 @@ export async function deleteUserNavigationLink(_state: NavigationActionState, fo
 
   const id = readText(formData, "id");
   if (!id) return fail("缺少导航链接 ID。");
-  const { error } = await context.supabase
+  const { error, data } = await context.supabase
     .from("user_navigation_links")
     .update({ is_active: false, updated_at: new Date().toISOString() })
     .eq("id", id)
-    .eq("user_id", context.userId);
+    .eq("user_id", context.userId)
+    .select("id")
+    .single();
 
-  if (error) return fail("我的导航删除失败。");
+  if (error || !data) return fail("我的导航删除失败，请确认这条链接属于当前账号。");
   revalidatePath("/navigation/my");
   return ok("我的导航已删除。");
 }
@@ -239,6 +245,13 @@ export async function deleteUserNavigationLink(_state: NavigationActionState, fo
 function readText(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value.trim() : "";
+}
+
+function navigationCategoryAuditAction(previousActive: boolean | undefined, nextActive: boolean, previousSortOrder: number | undefined, nextSortOrder: number) {
+  if (previousActive === false && nextActive) return "enable_navigation_category";
+  if (previousActive === true && !nextActive) return "disable_navigation_category";
+  if (typeof previousSortOrder === "number" && previousSortOrder !== nextSortOrder) return "sort_navigation_category";
+  return "update_navigation_category";
 }
 
 function revalidateNavigation() {

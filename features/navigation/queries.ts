@@ -36,7 +36,7 @@ const navigationLinkSelect = `
   image_assets(public_url,external_url)
 `;
 
-const navigationLinkCategoryInnerSelect = navigationLinkSelect.replace(
+const navigationLinkPublicSelect = navigationLinkSelect.replace(
   "navigation_categories(id,slug,name,description,icon,sort_order,is_active)",
   "navigation_categories!inner(id,slug,name,description,icon,sort_order,is_active)",
 );
@@ -85,8 +85,9 @@ export async function getPublicNavigationLinks(params: { categorySlug?: string; 
     const q = sanitizeSearchTerm(params.q);
     let query = supabase
       .from("navigation_links")
-      .select(params.categorySlug ? navigationLinkCategoryInnerSelect : navigationLinkSelect)
+      .select(navigationLinkPublicSelect)
       .eq("is_active", true)
+      .eq("navigation_categories.is_active", true)
       .order("is_featured", { ascending: false })
       .order("sort_order", { ascending: true })
       .order("title", { ascending: true })
