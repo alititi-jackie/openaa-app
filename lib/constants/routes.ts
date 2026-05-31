@@ -6,7 +6,6 @@ import {
   Home,
   Map,
   Newspaper,
-  Search,
   ShoppingBag,
   Store,
   UserRound,
@@ -25,9 +24,9 @@ export const publicChannelRoutes = [
 
 export const bottomNavItems = [
   { href: "/", label: "首页", icon: Home },
-  { href: "/search", label: "搜索", icon: Search },
-  { href: "/marketplace", label: "二手", icon: ShoppingBag },
-  { href: "/dmv", label: "DMV", icon: CarFront },
+  { href: "/jobs", label: "招聘", icon: BriefcaseBusiness },
+  { href: "/housing", label: "房屋", icon: Building2 },
+  { href: "/news", label: "新闻", icon: Newspaper },
   { href: "/profile", label: "我的", icon: UserRound },
 ];
 
