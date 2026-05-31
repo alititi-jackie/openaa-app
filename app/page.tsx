@@ -1,4 +1,4 @@
-import { BookOpenCheck, BriefcaseBusiness, Building2, CarFront, FileQuestion, Map, Newspaper, Route, ShoppingBag, Store } from "lucide-react";
+import { BookOpenCheck, BriefcaseBusiness, Building2, CarFront, Map, Newspaper, ShoppingBag, Store } from "lucide-react";
 import { HomeBanner } from "@/components/home/HomeBanner";
 import { LatestPostsSection } from "@/components/home/LatestPostsSection";
 import { LatestTicker } from "@/components/home/LatestTicker";
@@ -27,8 +27,25 @@ const quickItems = [
   { href: "/services", label: "本地服务", icon: Store },
 ];
 
+const newsPlaceholders = [
+  {
+    title: "OpenAA 首页模块视觉对齐",
+    description: "新闻聚合将在后续阶段接入真实 news_posts；当前先保留首页排行卡结构。",
+    href: "/news",
+    meta: "01",
+    tag: "平台公告",
+  },
+  {
+    title: "纽约生活指南入口持续完善",
+    description: "后续会按本地新闻、新手指南、DMV 教程、生活指南等分类展示。",
+    href: "/news",
+    meta: "02",
+    tag: "生活指南",
+  },
+];
+
 export default async function HomePage() {
-  const latestPosts = await getLatestPosts(2);
+  const latestPosts = await getLatestPosts(4);
 
   return (
     <div className="space-y-4">
@@ -40,41 +57,62 @@ export default async function HomePage() {
           imageUrl: "/og-default.png",
         }}
       />
-      <LatestTicker items={[{ label: "Phase 4：OpenAA 首页和公共频道基础壳已就绪，真实数据将在后续阶段接入。", href: "/news" }]} />
+      <LatestTicker items={[{ label: "OpenAA 首页模块显示方式正在对齐 ny.openaa.com，真实配置将在后续阶段接入。", href: "/news" }]} />
       <QuickGrid items={quickItems} />
       <UtilityCards
         items={[
-          { title: "DMV 笔试练习", description: "中文题库、练习模式、模拟考试入口占位。", href: "/dmv", icon: CarFront },
-          { title: "罚单查询", description: "纽约交通罚单查询入口占位，后续可扩展更多生活工具。", href: "/dmv/tickets", icon: FileQuestion },
-          { title: "常用导航", description: "政府服务、交通、生活网站入口。", href: "/navigation", icon: Route },
+          { title: "DMV 笔试练习", description: "中文题库、练习模式、模拟考试入口。", href: "/dmv", icon: "dmv", theme: "blue", cta: "练习" },
+          { title: "罚单查询", description: "停车、闯红灯、超速拍照查询入口。", href: "/dmv/tickets", icon: "ticket", theme: "orange", cta: "查询" },
+          { title: "常用导航", description: "政府服务、交通、生活网站入口。", href: "/navigation", icon: "navigation", theme: "cyan", cta: "打开" },
+          { title: "新手指南", description: "纽约生活、证件、交通和常用信息。", href: "/news", icon: "guide", theme: "amber", cta: "查看" },
         ]}
       />
       <LatestPostsSection
         groups={[
           {
+            key: "jobs",
             title: "最新招聘",
-            description: "后续显示纽约华人招聘、求职、兼职和全职信息。",
+            navLabel: "招聘",
+            description: "纽约华人招聘、求职、兼职和全职信息。",
+            route: "/jobs",
             posts: latestPosts.data.job,
+            layout: "grid",
           },
           {
+            key: "housing",
             title: "最新房屋",
-            description: "后续显示租房、求租、合租和房屋信息。",
+            navLabel: "房屋",
+            description: "租房、求租、合租和房屋信息。",
+            route: "/housing",
             posts: latestPosts.data.housing,
+            layout: "grid",
           },
           {
+            key: "marketplace",
             title: "最新二手",
-            description: "后续显示出售、求购和跳蚤市场信息。",
+            navLabel: "二手",
+            description: "出售、求购和跳蚤市场信息。",
+            route: "/marketplace",
             posts: latestPosts.data.marketplace,
+            layout: "grid",
           },
           {
+            key: "services",
             title: "本地服务",
-            description: "后续显示搬家、维修、装修、报税等服务。",
+            navLabel: "服务",
+            description: "搬家、维修、装修、报税等服务。",
+            route: "/services",
             posts: latestPosts.data.service,
+            layout: "media",
           },
           {
+            key: "news",
             title: "最新新闻",
-            description: "后续显示本地新闻、新手指南和平台公告。",
-            posts: [{ title: "新闻资讯占位", description: "真实列表将在后续 Phase 接入。", href: "/news", meta: "占位", tag: "新闻" }],
+            navLabel: "新闻",
+            description: "本地新闻、新手指南、DMV 教程和平台公告。",
+            route: "/news",
+            posts: newsPlaceholders,
+            layout: "news",
           },
         ]}
       />
