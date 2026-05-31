@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
+import { ChannelPageChrome } from "@/components/channels/ChannelPageChrome";
+import type { ChannelKey } from "@/features/channels/types";
 import { ChannelFilterBar } from "./ChannelFilterBar";
 import { ChannelHero } from "./ChannelHero";
 import { ChannelSeoCard } from "./ChannelSeoCard";
@@ -8,6 +10,7 @@ import { PostList, type PostListItem } from "./PostList";
 import { PublishCta } from "./PublishCta";
 
 export type ChannelPageConfig = {
+  channelKey: ChannelKey;
   title: string;
   description: string;
   path: string;
@@ -23,7 +26,7 @@ export type ChannelPageConfig = {
 
 export function ChannelPageShell({ config }: { config: ChannelPageConfig }) {
   return (
-    <div className="space-y-4">
+    <ChannelPageChrome channelKey={config.channelKey} path={config.path} title={config.title} description={config.description}>
       <ChannelHero title={config.title} description={config.description} icon={config.icon} />
       <div className="-mt-1 flex justify-end">
         <PublishCta returnTo={config.path} label="发布信息" />
@@ -41,6 +44,6 @@ export function ChannelPageShell({ config }: { config: ChannelPageConfig }) {
       ) : null}
       <PostList posts={config.posts} />
       <ChannelSeoCard title={config.seoTitle}>{config.seoContent}</ChannelSeoCard>
-    </div>
+    </ChannelPageChrome>
   );
 }

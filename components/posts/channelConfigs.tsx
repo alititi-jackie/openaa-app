@@ -3,6 +3,7 @@ import type { ChannelPageConfig } from "./ChannelPageShell";
 
 export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "services", ChannelPageConfig> = {
   jobs: {
+    channelKey: "jobs",
     title: "纽约华人招聘",
     description: "招聘、求职、兼职、全职等信息入口。第一版先展示频道结构，不接真实招聘数据。",
     path: "/jobs",
@@ -17,6 +18,7 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
     seoContent: "OpenAA 招聘频道面向纽约华人社区，后续会承载本地招聘、兼职、全职、求职和工作经验相关内容。",
   },
   housing: {
+    channelKey: "housing",
     title: "纽约租房与房屋信息",
     description: "租房、求租、合租、转租和房屋信息入口。当前使用静态壳，后续再接 Supabase。",
     path: "/housing",
@@ -31,6 +33,7 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
     seoContent: "OpenAA 房屋频道为纽约华人用户整理租房、求租、合租和转租等居住信息，第一版先建立移动端浏览结构。",
   },
   marketplace: {
+    channelKey: "marketplace",
     title: "二手市场",
     description: "出售、求购、闲置转让和跳蚤市场入口。新项目统一使用 /marketplace。",
     path: "/marketplace",
@@ -45,6 +48,7 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
     seoContent: "OpenAA 二手市场频道用于承载出售、求购、搬家处理和本地自取等信息，后续会接入真实发布与审核流程。",
   },
   services: {
+    channelKey: "services",
     title: "纽约本地服务",
     description: "维修、搬家、装修、报税、清洁等本地服务入口。当前只提供公开页面壳。",
     path: "/services",
