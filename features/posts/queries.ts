@@ -35,15 +35,16 @@ const postSelectFields = `
   post_stats(view_count, favorite_count),
   post_images(
     id,
+    image_asset_id,
     sort_order,
     is_cover,
     caption,
     image_assets(public_url, external_url)
   ),
-  post_details_jobs(employment_type, wage_min, wage_max, wage_unit, job_category, work_area),
-  post_details_housing(listing_type, housing_type, rent_amount, lease_term, address_area),
-  post_details_marketplace(listing_type, item_category, condition, price_amount, negotiable, trade_area, sold_at),
-  post_details_services(service_category, service_area, price_range, service_status)
+  post_details_jobs(employment_type, wage_min, wage_max, wage_unit, job_category, work_area, experience_requirement, language_requirement, includes_meals, includes_housing, requires_work_authorization, employer_type),
+  post_details_housing(listing_type, housing_type, rent_amount, deposit_amount, available_date, lease_term, pets_allowed, utilities_included, transit_nearby, address_area),
+  post_details_marketplace(listing_type, item_category, condition, price_amount, negotiable, trade_area, delivery_options, sold_at),
+  post_details_services(service_category, service_area, business_hours, price_range, service_status)
 `;
 
 const publicPostSelect = `
@@ -228,6 +229,48 @@ export async function getMyPosts(type?: PostType): Promise<PostsQueryResult<Post
   }
 
   return getUserPosts(user.id, type);
+}
+
+export async function getEditablePostById(id: string, type: PostType): Promise<PostsQueryResult<PostDetailView | null>> {
+  const supabase = await createSupabaseServerClient();
+
+  if (!supabase) {
+    return emptyResult(null);
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { state: "ready", data: null };
+  }
+
+  const { data, error } = await supabase
+    .from("posts")
+    .select(
+      `
+        ${ownPostSelect},
+        post_contacts(contact_name, phone, email, wechat, preferred_contact_method)
+      `,
+    )
+    .eq("id", id)
+    .eq("post_type", type)
+    .eq("author_id", user.id)
+    .maybeSingle();
+
+  if (error) {
+    return { state: "error", data: null, error: error.message };
+  }
+
+  if (!data) {
+    return { state: "ready", data: null };
+  }
+
+  const record = data as unknown as PostRecord;
+  const authors = await fetchAuthors([user.id]);
+
+  return { state: "ready", data: mapPostRecordToDetail(record, authors) };
 }
 
 export async function getPostContact(id: string): Promise<PostsQueryResult<ContactReveal | null>> {
