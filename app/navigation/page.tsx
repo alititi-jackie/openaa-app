@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Map, Search, Star } from "lucide-react";
+import { ChannelPageChrome } from "@/components/channels/ChannelPageChrome";
 import { ChannelHero } from "@/components/posts/ChannelHero";
 import { ChannelSeoCard } from "@/components/posts/ChannelSeoCard";
 import { NavigationCard } from "@/components/navigation/NavigationCard";
@@ -27,7 +28,12 @@ export default async function NavigationPage({ searchParams }: NavigationPagePro
   const data = await getNavigationPageData({ categorySlug: activeCategory, q });
 
   return (
-    <div className="space-y-4">
+    <ChannelPageChrome
+      channelKey="navigation"
+      path="/navigation"
+      title="纽约华人常用导航"
+      description="OpenAA 纽约华人常用网站、政府办事、DMV、交通出行和生活服务导航。"
+    >
       <ChannelHero title="纽约华人常用导航" description="常用网站、本地服务入口、政府办事、DMV、交通出行和生活资源从后台配置读取。" icon={Map} />
 
       <NavigationCategoryTabs categories={data.categories} activeSlug={activeCategory} q={q} />
@@ -75,6 +81,6 @@ export default async function NavigationPage({ searchParams }: NavigationPagePro
       <ChannelSeoCard title="纽约华人生活导航">
         OpenAA 导航页整理纽约华人常用网站、政府办事、交通出行、DMV / 驾照、生活服务和华人社区入口。公开页面只读取后台启用的导航分类和链接，不显示占位假数据。
       </ChannelSeoCard>
-    </div>
+    </ChannelPageChrome>
   );
 }

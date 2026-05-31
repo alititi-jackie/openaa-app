@@ -1,4 +1,5 @@
 import { Newspaper } from "lucide-react";
+import { ChannelPageChrome } from "@/components/channels/ChannelPageChrome";
 import { ChannelHero } from "@/components/posts/ChannelHero";
 import { ChannelSeoCard } from "@/components/posts/ChannelSeoCard";
 import { NewsCategoryTabs } from "@/components/news/NewsCategoryTabs";
@@ -29,7 +30,7 @@ export default async function NewsPage({
   ]);
 
   return (
-    <div className="space-y-4">
+    <ChannelPageChrome channelKey="news" path="/news" title="纽约华人新闻" description={NEWS_DEFAULT_DESCRIPTION}>
       <ChannelHero title="纽约华人新闻" description={NEWS_DEFAULT_DESCRIPTION} icon={Newspaper} />
       <NewsCategoryTabs categories={categoriesResult.data} activeSlug={activeCategory} />
       {postsResult.state === "error" ? (
@@ -45,6 +46,6 @@ export default async function NewsPage({
       <ChannelSeoCard title="纽约华人新闻与生活指南">
         OpenAA 新闻频道整理纽约本地新闻、新手指南、DMV 教程、生活指南和平台公告。新闻详情页只展示已发布内容，并保留分类、发布时间、封面图和 SEO 信息，方便用户在移动端快速阅读。
       </ChannelSeoCard>
-    </div>
+    </ChannelPageChrome>
   );
 }

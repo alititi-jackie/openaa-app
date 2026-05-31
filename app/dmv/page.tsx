@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BookOpen, CarFront, CircleHelp, ClipboardList, FileQuestion, RotateCcw } from "lucide-react";
+import { ChannelPageChrome } from "@/components/channels/ChannelPageChrome";
 import { ChannelHero } from "@/components/posts/ChannelHero";
 import { ChannelSeoCard } from "@/components/posts/ChannelSeoCard";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -19,7 +20,12 @@ const dmvEntries = [
 
 export default function DmvPage() {
   return (
-    <div className="space-y-4">
+    <ChannelPageChrome
+      channelKey="dmv"
+      path="/dmv"
+      title="纽约 DMV 中文学习平台"
+      description="纽约 DMV 中文题库、练习模式、模拟考试、错题练习和罚单查询入口。"
+    >
       <ChannelHero title="纽约 DMV 中文学习平台" description="中文题库、练习模式、模拟考试、错题练习入口先建立壳，不接真实题库或答题逻辑。" icon={CarFront} />
       <section className="grid grid-cols-2 gap-3">
         {dmvEntries.map((entry) => {
@@ -54,6 +60,6 @@ export default function DmvPage() {
       <ChannelSeoCard title="纽约 DMV 中文练习">
         OpenAA DMV 页面会在后续阶段承载题库浏览、练习模式、模拟考试和错题练习。Phase 4 只建立入口和说明，不实现答题逻辑。
       </ChannelSeoCard>
-    </div>
+    </ChannelPageChrome>
   );
 }
