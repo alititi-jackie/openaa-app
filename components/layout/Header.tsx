@@ -42,8 +42,12 @@ export function Header() {
           <ChevronIcon size={15} className="text-blue-600" aria-hidden="true" />
         </button>
 
-        <Link href="/" className="absolute left-1/2 flex -translate-x-1/2 items-center" aria-label="OpenAA 首页">
-          <Image src="/openaa-logo.png" alt="OpenAA" width={92} height={32} className="h-8 w-auto" priority />
+        <Link href="/" className="absolute left-1/2 flex -translate-x-1/2 items-center gap-1.5" aria-label="OpenAA 首页">
+          <Image src="/openaa-logo.png" alt="OpenAA" width={32} height={32} className="h-8 w-8 rounded-xl object-contain" priority />
+          <span className="text-[20px] font-black leading-none tracking-normal">
+            <span className="text-blue-600">Open</span>
+            <span className="text-slate-900">AA</span>
+          </span>
         </Link>
 
         <div className="z-10 flex shrink-0 items-center gap-2">
