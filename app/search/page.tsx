@@ -1,47 +1,13 @@
-"use client";
+import { PlaceholderPage } from "@/components/common/PlaceholderPage";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 
-import { useEffect } from "react";
+export const metadata = buildPageMetadata({
+  title: "搜索",
+  description: "搜索 OpenAA 招聘、房屋、二手、本地服务、新闻和 DMV 内容。",
+  path: "/search",
+  noIndex: true,
+});
 
 export default function SearchPage() {
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-
-    const q = params.get("q") || "";
-    const mode = params.get("mode") || "google";
-
-    if (!q) return;
-
-    if (mode === "google") {
-      window.location.href =
-        `https://www.google.com/search?q=${q}`;
-    }
-
-    if (mode === "jobs") {
-      window.location.href =
-        `https://www.indeed.com/jobs?q=${q}`;
-    }
-
-    if (mode === "housing") {
-      window.location.href =
-        `https://www.zillow.com/homes/${q}`;
-    }
-
-    if (mode === "guides") {
-      window.location.href =
-        `/guides?q=${q}`;
-    }
-
-    if (mode === "ai") {
-      window.location.href =
-        `https://www.perplexity.ai/search?q=${q}`;
-    }
-  }, []);
-
-  return (
-    <main className="home">
-      <div className="center-box">
-        Redirecting...
-      </div>
-    </main>
-  );
+  return <PlaceholderPage title="搜索" description="全局搜索入口占位，后续接入搜索历史、热门搜索和分类筛选。" />;
 }
