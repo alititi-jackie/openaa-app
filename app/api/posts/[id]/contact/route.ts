@@ -10,7 +10,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   }
 
   if (result.state === "error") {
-    return NextResponse.json({ message: "联系方式读取失败，请稍后再试。" }, { status: 500 });
+    return NextResponse.json({ message: "联系方式暂不可查看，请稍后再试。" }, { status: 500 });
   }
 
   if (!result.data) {

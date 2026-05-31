@@ -263,6 +263,10 @@ export async function getPostContact(id: string): Promise<PostsQueryResult<Conta
     .maybeSingle();
 
   if (error) {
+    if (error.code === "42501") {
+      return { state: "ready", data: null, error: "联系方式暂不可公开查看。" };
+    }
+
     return { state: "error", data: null, error: error.message };
   }
 
