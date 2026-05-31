@@ -3,13 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronDown, ChevronUp, MapPin, Search, Share2 } from "lucide-react";
-import { useMemo, useState } from "react";
-import { getFallbackTopQuickLinks } from "@/features/navigation/topQuickLinks";
+import { useState } from "react";
+import { getFallbackTopQuickLinks, type TopQuickLink } from "@/features/navigation/topQuickLinks";
 import { CityQuickLinks } from "./CityQuickLinks";
 
-export function Header() {
+export function Header({ quickLinks = getFallbackTopQuickLinks("ny") }: { quickLinks?: TopQuickLink[] }) {
   const [quickLinksOpen, setQuickLinksOpen] = useState(false);
-  const quickLinks = useMemo(() => getFallbackTopQuickLinks("ny"), []);
   const ChevronIcon = quickLinksOpen ? ChevronUp : ChevronDown;
 
   async function shareApp() {
