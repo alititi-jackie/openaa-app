@@ -8,6 +8,7 @@ export type QueryState = "ready" | "missing_config" | "error";
 
 export type PostImageRecord = {
   id: string;
+  image_asset_id?: string | null;
   sort_order: number | null;
   is_cover: boolean | null;
   caption: string | null;
@@ -29,13 +30,24 @@ export type JobDetailRecord = {
   wage_unit: string | null;
   work_area: string | null;
   job_category: string | null;
+  experience_requirement?: string | null;
+  language_requirement?: string | null;
+  includes_meals?: boolean | null;
+  includes_housing?: boolean | null;
+  requires_work_authorization?: boolean | null;
+  employer_type?: string | null;
 };
 
 export type HousingDetailRecord = {
   listing_type: string | null;
   housing_type: string | null;
   rent_amount: number | string | null;
+  deposit_amount?: number | string | null;
+  available_date?: string | null;
   lease_term: string | null;
+  pets_allowed?: boolean | null;
+  utilities_included?: boolean | null;
+  transit_nearby?: string | null;
   address_area: string | null;
 };
 
@@ -46,14 +58,24 @@ export type MarketplaceDetailRecord = {
   price_amount: number | string | null;
   negotiable: boolean | null;
   trade_area: string | null;
+  delivery_options?: string[] | null;
   sold_at: string | null;
 };
 
 export type ServiceDetailRecord = {
   service_category: string | null;
   service_area: string | null;
+  business_hours?: { text?: string } | Record<string, unknown> | null;
   price_range: string | null;
   service_status: string | null;
+};
+
+export type PostContactRecord = {
+  contact_name: string | null;
+  phone: string | null;
+  wechat: string | null;
+  email: string | null;
+  preferred_contact_method: string | null;
 };
 
 export type PostRecord = {
@@ -81,6 +103,7 @@ export type PostRecord = {
   post_details_housing?: HousingDetailRecord[] | HousingDetailRecord | null;
   post_details_marketplace?: MarketplaceDetailRecord[] | MarketplaceDetailRecord | null;
   post_details_services?: ServiceDetailRecord[] | ServiceDetailRecord | null;
+  post_contacts?: PostContactRecord[] | PostContactRecord | null;
 };
 
 export type AuthorSummary = {
@@ -111,7 +134,8 @@ export type PostDetailView = PostCardView & {
   status: PostStatus;
   publishedAt: string | null;
   createdAt: string;
-  images: Array<{ url: string; caption?: string | null }>;
+  images: Array<{ url: string; caption?: string | null; imageAssetId?: string | null }>;
+  contact?: PostContactRecord | null;
 };
 
 export type PostsQueryResult<T> = {
@@ -125,10 +149,4 @@ export type PublicPostsParams = {
   limit?: number;
 };
 
-export type ContactReveal = {
-  contact_name: string | null;
-  phone: string | null;
-  wechat: string | null;
-  email: string | null;
-  preferred_contact_method: string | null;
-};
+export type ContactReveal = PostContactRecord;

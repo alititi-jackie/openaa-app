@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { EmptyState } from "@/components/common/EmptyState";
-import { POST_STATUS_LABELS, POST_TYPE_LABELS } from "@/features/posts/constants";
+import { POST_STATUS_LABELS, POST_TYPE_LABELS, POST_TYPE_TO_ROUTE } from "@/features/posts/constants";
 import type { PostCardView } from "@/features/posts/types";
 
 export function UserPostsList({ posts, note }: { posts: PostCardView[]; note?: string }) {
@@ -27,13 +27,16 @@ export function UserPostsList({ posts, note }: { posts: PostCardView[]; note?: s
             <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
               {post.status ? POST_STATUS_LABELS[post.status] : "状态"}
             </span>
-            {post.status === "published" ? (
-              <Link href={post.href} className="text-sm font-black text-blue-700">
-                查看公开页
+            <div className="flex items-center gap-3">
+              <Link href={`${POST_TYPE_TO_ROUTE[post.type]}/edit/${post.id}`} className="text-sm font-black text-blue-700">
+                编辑
               </Link>
-            ) : (
-              <span className="text-sm font-black text-slate-500">编辑/发布管理后续开放</span>
-            )}
+              {post.status === "published" ? (
+                <Link href={post.href} className="text-sm font-black text-blue-700">
+                  查看公开页
+                </Link>
+              ) : null}
+            </div>
           </div>
         </div>
       ))}
