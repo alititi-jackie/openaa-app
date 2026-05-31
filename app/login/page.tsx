@@ -1,5 +1,10 @@
-import { PlaceholderPage } from "@/components/common/PlaceholderPage";
+import { Suspense } from "react";
+import { redirect } from "next/navigation";
+import { LoginForm } from "@/components/auth/LoginForm";
 import { buildPageMetadata } from "@/lib/seo/metadata";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = buildPageMetadata({
   title: "登录",
@@ -8,6 +13,35 @@ export const metadata = buildPageMetadata({
   noIndex: true,
 });
 
-export default function LoginPage() {
-  return <PlaceholderPage title="登录" description="Supabase Auth 登录入口占位，后续接入邮箱和 Google 登录。" />;
+type LoginPageProps = {
+  searchParams: Promise<{ returnTo?: string }>;
+};
+
+function safeReturnTo(value: string | undefined) {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return "/profile";
+  }
+
+  return value;
+}
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const params = await searchParams;
+  const supabase = await createSupabaseServerClient();
+
+  if (supabase) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      redirect(safeReturnTo(params.returnTo));
+    }
+  }
+
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  );
 }

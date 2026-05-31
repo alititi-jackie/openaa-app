@@ -1,5 +1,9 @@
-import { PlaceholderPage } from "@/components/common/PlaceholderPage";
+import { redirect } from "next/navigation";
+import { RegisterForm } from "@/components/auth/RegisterForm";
 import { buildPageMetadata } from "@/lib/seo/metadata";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = buildPageMetadata({
   title: "注册",
@@ -8,6 +12,18 @@ export const metadata = buildPageMetadata({
   noIndex: true,
 });
 
-export default function RegisterPage() {
-  return <PlaceholderPage title="注册" description="注册入口占位，后续接入邮箱注册、邮箱验证和用户协议同意记录。" />;
+export default async function RegisterPage() {
+  const supabase = await createSupabaseServerClient();
+
+  if (supabase) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      redirect("/profile");
+    }
+  }
+
+  return <RegisterForm />;
 }

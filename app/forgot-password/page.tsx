@@ -1,4 +1,4 @@
-import { PlaceholderPage } from "@/components/common/PlaceholderPage";
+import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const metadata = buildPageMetadata({
@@ -9,5 +9,5 @@ export const metadata = buildPageMetadata({
 });
 
 export default function ForgotPasswordPage() {
-  return <PlaceholderPage title="忘记密码" description="密码重置入口占位，后续接入 Supabase Auth reset password 流程。" />;
+  return <ForgotPasswordForm />;
 }
