@@ -34,6 +34,24 @@ Single-user permission overrides live in `admin_user_permissions`. `deny` wins o
 8. Every admin API/server action must check permissions on the server.
 9. Frontend button hiding is not a security boundary.
 
+## Phase 10 Home Configuration
+
+Phase 10 adds the first home-configuration admin UI:
+
+- `/admin/home`
+- `/admin/top-links`
+
+Permission points:
+
+- `manage_home_sections`: update `home_sections` and `home_banners`.
+- `manage_top_links`: create, edit, sort, and disable `top_quick_links`.
+- `manage_latest_ticker`: create and edit `latest_ticker`.
+- `manage_ads`: reserved for a broader ads screen; Phase 10 does not implement full ads CRUD.
+
+Every server action checks the relevant permission before writing and inserts an `admin_audit_logs` row. The UI may hide sections for admins without permissions, but permission checks in server actions are the security boundary.
+
+The implementation preserves old-site homepage configuration capabilities in the new schema and does not use `ADMIN_TOKEN`, old Supabase, or old data imports.
+
 ## Phase 2 Static Review Notes
 
 - `admin_roles` insert/update policies prevent non-`super_admin` admins from creating or modifying `super_admin` rows.
