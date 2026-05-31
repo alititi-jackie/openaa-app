@@ -1,4 +1,5 @@
 import { MessageSquareText, Send } from "lucide-react";
+import { ChannelHero } from "@/components/posts/ChannelHero";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const metadata = buildPageMetadata({
@@ -11,13 +12,7 @@ export const metadata = buildPageMetadata({
 export default function FeedbackPage() {
   return (
     <div className="space-y-4">
-      <section className="rounded-xl border border-blue-100 bg-blue-50 p-4 shadow-sm">
-        <div className="grid h-12 w-12 place-items-center rounded-xl bg-white text-blue-700">
-          <MessageSquareText size={24} aria-hidden="true" />
-        </div>
-        <h1 className="mt-4 text-2xl font-black leading-tight text-slate-950">反馈</h1>
-        <p className="mt-2 text-sm leading-6 text-slate-600">提交问题、建议或内容反馈。本阶段只做表单壳，不提交到 Supabase。</p>
-      </section>
+      <ChannelHero title="反馈" description="提交问题、建议或内容反馈。本阶段只做表单壳，不提交到 Supabase。" icon={MessageSquareText} />
       <form className="space-y-4 rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
         <label className="block">
           <span className="text-sm font-bold text-slate-800">反馈类型</span>

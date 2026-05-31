@@ -1,4 +1,5 @@
 import { Newspaper, Star } from "lucide-react";
+import { ChannelHero } from "@/components/posts/ChannelHero";
 import { ChannelSeoCard } from "@/components/posts/ChannelSeoCard";
 import { ChannelTabs } from "@/components/posts/ChannelTabs";
 import { PostList } from "@/components/posts/PostList";
@@ -13,13 +14,7 @@ export const metadata = buildPageMetadata({
 export default function NewsPage() {
   return (
     <div className="space-y-4">
-      <section className="rounded-xl border border-blue-100 bg-blue-50 p-4 shadow-sm">
-        <div className="grid h-12 w-12 place-items-center rounded-xl bg-white text-blue-700">
-          <Newspaper size={24} aria-hidden="true" />
-        </div>
-        <h1 className="mt-4 text-2xl font-black leading-tight text-slate-950">纽约华人新闻</h1>
-        <p className="mt-2 text-sm leading-6 text-slate-600">本地新闻、新手指南、DMV 教程、生活指南和平台公告的频道壳。</p>
-      </section>
+      <ChannelHero title="纽约华人新闻" description="本地新闻、新手指南、DMV 教程、生活指南和平台公告的频道壳。" icon={Newspaper} />
       <ChannelTabs tabs={["全部", "本地新闻", "新手指南", "DMV 教程", "生活指南", "平台公告"]} />
       <section className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
         <div className="flex items-center gap-2 text-blue-700">

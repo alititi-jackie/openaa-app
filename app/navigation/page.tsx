@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ExternalLink, Map, Star } from "lucide-react";
+import { ChannelHero } from "@/components/posts/ChannelHero";
 import { ChannelSeoCard } from "@/components/posts/ChannelSeoCard";
 import { ChannelTabs } from "@/components/posts/ChannelTabs";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -19,13 +20,7 @@ const navigationCards = [
 export default function NavigationPage() {
   return (
     <div className="space-y-4">
-      <section className="rounded-xl border border-blue-100 bg-blue-50 p-4 shadow-sm">
-        <div className="grid h-12 w-12 place-items-center rounded-xl bg-white text-blue-700">
-          <Map size={24} aria-hidden="true" />
-        </div>
-        <h1 className="mt-4 text-2xl font-black leading-tight text-slate-950">纽约华人常用导航</h1>
-        <p className="mt-2 text-sm leading-6 text-slate-600">常用网站、本地服务入口、政府服务和生活资源的导航壳。</p>
-      </section>
+      <ChannelHero title="纽约华人常用导航" description="常用网站、本地服务入口、政府服务和生活资源的导航壳。" icon={Map} />
       <ChannelTabs tabs={["全部", "政府服务", "交通出行", "生活常用", "学习资源", "社区"]} />
       <Link href="/login?returnTo=/navigation" className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white">
         <Star size={18} aria-hidden="true" />

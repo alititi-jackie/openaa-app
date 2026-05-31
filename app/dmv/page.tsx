@@ -1,7 +1,8 @@
+import Link from "next/link";
 import { BookOpen, CarFront, CircleHelp, ClipboardList, FileQuestion, RotateCcw } from "lucide-react";
+import { ChannelHero } from "@/components/posts/ChannelHero";
 import { ChannelSeoCard } from "@/components/posts/ChannelSeoCard";
 import { buildPageMetadata } from "@/lib/seo/metadata";
-import Link from "next/link";
 
 export const metadata = buildPageMetadata({
   title: "纽约 DMV 中文学习平台",
@@ -19,13 +20,7 @@ const dmvEntries = [
 export default function DmvPage() {
   return (
     <div className="space-y-4">
-      <section className="rounded-xl border border-blue-100 bg-blue-50 p-4 shadow-sm">
-        <div className="grid h-12 w-12 place-items-center rounded-xl bg-white text-blue-700">
-          <CarFront size={24} aria-hidden="true" />
-        </div>
-        <h1 className="mt-4 text-2xl font-black leading-tight text-slate-950">纽约 DMV 中文学习平台</h1>
-        <p className="mt-2 text-sm leading-6 text-slate-600">中文题库、练习模式、模拟考试、错题练习入口先建立壳，不接真实题库或答题逻辑。</p>
-      </section>
+      <ChannelHero title="纽约 DMV 中文学习平台" description="中文题库、练习模式、模拟考试、错题练习入口先建立壳，不接真实题库或答题逻辑。" icon={CarFront} />
       <section className="grid grid-cols-2 gap-3">
         {dmvEntries.map((entry) => {
           const Icon = entry.icon;
