@@ -34,6 +34,12 @@ Single-user permission overrides live in `admin_user_permissions`. `deny` wins o
 8. Every admin API/server action must check permissions on the server.
 9. Frontend button hiding is not a security boundary.
 
+## Phase 2 Static Review Notes
+
+- `admin_roles` insert/update policies prevent non-`super_admin` admins from creating or modifying `super_admin` rows.
+- `admin_roles_prevent_last_super_admin_change` prevents disabling or demoting the final active `super_admin`.
+- `post_contacts` keeps contact reads behind `view_post_contacts`; moderation permissions can insert/update/delete contact records but do not implicitly grant select access.
+
 ## Bootstrap
 
 The first `super_admin` is inserted only after the user signs up normally. See `docs/ADMIN_BOOTSTRAP.md`.

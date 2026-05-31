@@ -151,6 +151,57 @@ as $$
   end;
 $$;
 
+create or replace function public.has_other_active_super_admin(p_user_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.admin_roles ar
+    where ar.user_id <> p_user_id
+      and ar.role = 'super_admin'
+      and ar.is_active = true
+  );
+$$;
+
+create or replace function public.prevent_last_super_admin_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if tg_op = 'UPDATE'
+    and old.role = 'super_admin'
+    and old.is_active = true
+    and (new.role <> 'super_admin' or new.is_active = false)
+    and not public.has_other_active_super_admin(old.user_id)
+  then
+    raise exception 'cannot disable or demote the last active super_admin';
+  end if;
+
+  return new;
+end;
+$$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_trigger
+    where tgname = 'admin_roles_prevent_last_super_admin_change'
+      and tgrelid = 'public.admin_roles'::regclass
+  ) then
+    execute 'create trigger admin_roles_prevent_last_super_admin_change
+      before update on public.admin_roles
+      for each row
+      execute function public.prevent_last_super_admin_change()';
+  end if;
+end $$;
+
 alter table public.admin_roles enable row level security;
 alter table public.admin_permissions enable row level security;
 alter table public.admin_role_permissions enable row level security;
@@ -171,23 +222,41 @@ create policy "Authorized admins can insert admin roles"
   on public.admin_roles
   for insert
   to authenticated
-  with check (public.has_admin_permission('add_admins') or public.has_admin_permission('manage_admins'));
+  with check (
+    public.is_super_admin()
+    or (
+      role <> 'super_admin'
+      and (public.has_admin_permission('add_admins') or public.has_admin_permission('manage_admins'))
+    )
+  );
 
 create policy "Authorized admins can update admin roles"
   on public.admin_roles
   for update
   to authenticated
   using (
-    public.has_admin_permission('edit_admin_roles')
-    or public.has_admin_permission('disable_admins')
-    or public.has_admin_permission('restore_admins')
-    or public.has_admin_permission('manage_admins')
+    public.is_super_admin()
+    or (
+      role <> 'super_admin'
+      and (
+        public.has_admin_permission('edit_admin_roles')
+        or public.has_admin_permission('disable_admins')
+        or public.has_admin_permission('restore_admins')
+        or public.has_admin_permission('manage_admins')
+      )
+    )
   )
   with check (
-    public.has_admin_permission('edit_admin_roles')
-    or public.has_admin_permission('disable_admins')
-    or public.has_admin_permission('restore_admins')
-    or public.has_admin_permission('manage_admins')
+    public.is_super_admin()
+    or (
+      role <> 'super_admin'
+      and (
+        public.has_admin_permission('edit_admin_roles')
+        or public.has_admin_permission('disable_admins')
+        or public.has_admin_permission('restore_admins')
+        or public.has_admin_permission('manage_admins')
+      )
+    )
   );
 
 create policy "Admins can read permission definitions"

@@ -408,12 +408,24 @@ create policy "Admins can read post contacts"
   to authenticated
   using (public.has_admin_permission('view_post_contacts'));
 
-create policy "Admins can manage post contacts"
+create policy "Admins can insert post contacts"
   on public.post_contacts
-  for all
+  for insert
+  to authenticated
+  with check (public.has_admin_permission('moderate_posts'));
+
+create policy "Admins can update post contacts"
+  on public.post_contacts
+  for update
   to authenticated
   using (public.has_admin_permission('moderate_posts'))
   with check (public.has_admin_permission('moderate_posts'));
+
+create policy "Admins can delete post contacts"
+  on public.post_contacts
+  for delete
+  to authenticated
+  using (public.has_admin_permission('moderate_posts'));
 
 create policy "Public can read post stats for public posts"
   on public.post_stats

@@ -50,6 +50,8 @@ Post contact data is not public. It is readable by the post author and admins wi
 
 Admin tables are not readable by ordinary users. Admin reads and writes depend on permission checks, and service role remains server-only.
 
+`admin_roles` has additional protection: non-`super_admin` admins cannot create or modify `super_admin` rows, and a trigger blocks disabling or demoting the final active `super_admin`.
+
 ## Anonymous Inserts
 
 Anonymous insert is allowed only for controlled public intake:
