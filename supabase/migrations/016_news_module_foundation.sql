@@ -5,10 +5,14 @@ create index if not exists news_posts_pinned_idx
   on public.news_posts (status, is_pinned, published_at desc);
 
 drop policy if exists "Admins and editors can manage news" on public.news_posts;
+drop policy if exists "Admins can read all news" on public.news_posts;
+drop policy if exists "Admins can insert news" on public.news_posts;
+drop policy if exists "Admins can update news" on public.news_posts;
+drop policy if exists "Admins can delete news" on public.news_posts;
 
-create policy "Admins and editors can manage news"
+create policy "Admins can read all news"
   on public.news_posts
-  for all
+  for select
   to authenticated
   using (
     public.has_admin_permission('view_news')
@@ -16,12 +20,41 @@ create policy "Admins and editors can manage news"
     or public.has_admin_permission('edit_news')
     or public.has_admin_permission('publish_news')
     or public.has_admin_permission('delete_news')
-  )
+  );
+
+create policy "Admins can insert news"
+  on public.news_posts
+  for insert
+  to authenticated
   with check (
     public.has_admin_permission('create_news')
-    or public.has_admin_permission('edit_news')
+    and (
+      status <> 'published'
+      or public.has_admin_permission('publish_news')
+    )
+  );
+
+create policy "Admins can update news"
+  on public.news_posts
+  for update
+  to authenticated
+  using (
+    public.has_admin_permission('edit_news')
     or public.has_admin_permission('publish_news')
     or public.has_admin_permission('delete_news')
+  )
+  with check (
+    public.has_admin_permission('edit_news')
+    or public.has_admin_permission('publish_news')
+    or public.has_admin_permission('delete_news')
+  );
+
+create policy "Admins can delete news"
+  on public.news_posts
+  for delete
+  to authenticated
+  using (
+    public.has_admin_permission('delete_news')
   );
 
 insert into public.news_categories (slug, name, description, sort_order, is_active)

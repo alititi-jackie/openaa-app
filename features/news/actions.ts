@@ -124,10 +124,9 @@ export async function upsertNewsPost(_state: NewsActionState, formData: FormData
   const canPublish = validation.value.status === "published" ? await hasPermission(context.supabase, "publish_news") : true;
   if (!canPublish) return fail("当前账号没有发布新闻权限。");
 
-  const existingAssetId = readText(formData, "cover_image_asset_id") || null;
   const coverImageAssetId = validation.value.coverImageUrl
     ? await upsertExternalImageAsset(context, validation.value.coverImageUrl, id || null)
-    : existingAssetId;
+    : null;
   if (coverImageAssetId === false) return fail("封面图片保存失败，请确认地址为 https://img.openaa.com/。");
 
   const payload = {
@@ -144,13 +143,12 @@ export async function upsertNewsPost(_state: NewsActionState, formData: FormData
     published_at: validation.value.publishedAt,
     seo_title: validation.value.seoTitle,
     seo_description: validation.value.seoDescription,
-    author_id: context.userId,
     updated_at: new Date().toISOString(),
   };
 
   const result = id
     ? await context.supabase.from("news_posts").update(payload).eq("id", id).select("id,slug").single()
-    : await context.supabase.from("news_posts").insert(payload).select("id,slug").single();
+    : await context.supabase.from("news_posts").insert({ ...payload, author_id: context.userId }).select("id,slug").single();
 
   if (result.error || !result.data) return fail("新闻保存失败，请检查 slug 是否重复。");
 
