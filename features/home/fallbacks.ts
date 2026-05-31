@@ -30,8 +30,8 @@ export const fallbackQuickGridItems: QuickGridItem[] = [
   { href: "/housing", label: "房屋", icon: Building2 },
   { href: "/marketplace", label: "二手", icon: ShoppingBag },
   { href: "/dmv", label: "DMV", icon: CarFront },
-  { href: "/navigation", label: "导航", icon: Map },
   { href: "/news", label: "新闻", icon: Newspaper },
+  { href: "/navigation", label: "导航", icon: Map },
   { href: "/news", label: "新手指南", icon: BookOpenCheck },
   { href: "/services", label: "本地服务", icon: Store },
 ];
