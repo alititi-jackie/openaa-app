@@ -16,6 +16,8 @@ The first DMV question bank source is the audited file from `openaa-ny`:
 
 The legacy JSON is migration input only. The new app must read DMV questions from Supabase `dmv_questions`, with import batches recorded in `dmv_question_imports`.
 
+Phase 2 creates the tables only. It does not import real DMV data.
+
 ## Mapping
 
 - `state = NY`
@@ -33,3 +35,11 @@ The legacy JSON is migration input only. The new app must read DMV questions fro
 - `sort_order = question.id`
 
 Public copy must say: OpenAA 纽约 DMV 中文练习题库，仅供学习参考，实际考试内容以 New York DMV 官方资料为准。
+
+## Import Batch Fields
+
+`dmv_question_imports` records `source_file`, `source_version`, `source_name`, `checksum_sha256`, `total_count`, `imported_count`, `failed_count`, `status`, `started_at`, `finished_at`, `imported_by`, `notes`, and `metadata`.
+
+## Image Strategy
+
+The first import may keep `image_asset_id = null`. Original image URLs from `img.openaa.com` should be preserved in import metadata until the images are moved to the new `dmv-assets` bucket and represented in `image_assets`.
