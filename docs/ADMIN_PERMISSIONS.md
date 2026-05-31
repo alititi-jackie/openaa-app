@@ -10,6 +10,18 @@ The admin system is multi-admin and role-based with permission point overrides.
 - `admin_user_permissions`
 - `admin_audit_logs`
 
+Phase 2 creates all of these tables and seeds baseline permission keys plus default role mappings.
+
+## Role Defaults
+
+- `super_admin`: implicitly has all permissions through `public.is_super_admin()`.
+- `admin`: broad operational access, but not full administrator management by default.
+- `editor`: content, news, navigation, home, and DMV viewing permissions.
+- `moderator`: users, posts, reports, and feedback handling permissions.
+- `support`: simplified feedback/report support role, reserved for later UI enablement.
+
+Single-user permission overrides live in `admin_user_permissions`. `deny` wins over `allow`.
+
 ## Rules
 
 1. User must be logged in.
@@ -21,3 +33,13 @@ The admin system is multi-admin and role-based with permission point overrides.
 7. The last active `super_admin` cannot be disabled or removed.
 8. Every admin API/server action must check permissions on the server.
 9. Frontend button hiding is not a security boundary.
+
+## Phase 2 Static Review Notes
+
+- `admin_roles` insert/update policies prevent non-`super_admin` admins from creating or modifying `super_admin` rows.
+- `admin_roles_prevent_last_super_admin_change` prevents disabling or demoting the final active `super_admin`.
+- `post_contacts` keeps contact reads behind `view_post_contacts`; moderation permissions can insert/update/delete contact records but do not implicitly grant select access.
+
+## Bootstrap
+
+The first `super_admin` is inserted only after the user signs up normally. See `docs/ADMIN_BOOTSTRAP.md`.
