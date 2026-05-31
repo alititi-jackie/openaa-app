@@ -20,8 +20,8 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-2xl py-1 text-[12.5px] font-medium leading-none transition-colors",
-                active ? "bg-blue-50 text-blue-600" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                "flex min-h-14 flex-col items-center justify-center gap-0.5 py-1 text-[12.5px] font-medium leading-none transition-colors",
+                active ? "text-blue-600" : "text-slate-600 hover:text-slate-900",
               )}
             >
               <Icon size={22} strokeWidth={active ? 2.1 : 1.8} aria-hidden="true" />
