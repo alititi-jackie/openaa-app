@@ -86,6 +86,35 @@ Seed-B1 source rules:
 - News, ads, and home sections are intentionally left for Seed-B2.
 - User-post demo content remains out of scope until Seed-C.
 
+## Seed-B2 Official JSON
+
+Seed-B2 adds the second reviewed `legacy_official_import` JSON batch:
+
+- `data/legacy/news-categories.json`
+- `data/legacy/news-posts.json`
+- `data/legacy/ads.json`
+- `data/legacy/home-sections.json`
+
+These files are JSON-only operating-content candidates. They do not import a database, connect to old Supabase, add migrations, or change UI.
+
+Seed-B2 source rules:
+
+- News categories and posts come from old-site public sitemap and public news pages.
+- Only published public news is included; draft, hidden, and deleted news are excluded.
+- Old Supabase Storage images are not used as official images. News covers with old Storage URLs use `cover_image_url: null` and `metadata.notes: ["cover_needs_replacement"]`; ads with old Storage images are skipped.
+- Old `/secondhand` references are mapped to `/marketplace`, including ads placement `secondhand -> marketplace_top` and home latest section `latest_secondhand -> marketplace`.
+- Ads are imported only from active public API output. Legacy `external_same` / `external_new` modes are mapped to `same` / `new` while keeping `metadata.legacy_open_mode`.
+- Policy, fee, DMV, and time-sensitive news uses `metadata.notes: ["needs_freshness_review"]`.
+- SEO/domain text uses review notes where appropriate, such as `needs_domain_review`.
+- User-post content remains out of scope until Seed-C.
+
+Seed-B2 image review totals:
+
+- News covers from `img.openaa.com`: 18.
+- News covers needing replacement: 1.
+- Imported ad images from `img.openaa.com`: 18 unique URLs across 29 ads.
+- Skipped old Storage ad images: 2.
+
 ## Dry Run
 
 Dry-run is the default and does not write a database.
