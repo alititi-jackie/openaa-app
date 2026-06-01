@@ -2,7 +2,7 @@ import { FileText } from "lucide-react";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import { AdminPostsFilter, AdminPostsList, AdminPostsPermissionBadges } from "@/components/posts/AdminPostsManagement";
+import { AdminPostsFilter, AdminPostsList, AdminPostsPagination, AdminPostsPermissionBadges } from "@/components/posts/AdminPostsManagement";
 import { getAdminPostsData } from "@/features/posts/adminQueries";
 import type { PostStatus, PostType } from "@/features/posts/types";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -17,7 +17,7 @@ export const metadata = buildPageMetadata({
 });
 
 type AdminPostsPageProps = {
-  searchParams?: Promise<{ type?: string; status?: string; q?: string }>;
+  searchParams?: Promise<{ type?: string; status?: string; q?: string; page?: string }>;
 };
 
 export default function AdminPostsPage({ searchParams }: AdminPostsPageProps) {
@@ -29,6 +29,7 @@ export default function AdminPostsPage({ searchParams }: AdminPostsPageProps) {
           type: normalizeType(params?.type),
           status: normalizeStatus(params?.status),
           q: params?.q,
+          page: normalizePage(params?.page),
         });
         const canRead = data.permissions.viewPosts || data.permissions.moderatePosts;
 
@@ -59,9 +60,10 @@ export default function AdminPostsPage({ searchParams }: AdminPostsPageProps) {
             <AdminCard title="帖子列表" description="支持发布/恢复、下架、拒绝和软删除；不做物理删除。">
               <div className="mb-4 flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">
                 <FileText size={15} aria-hidden="true" />
-                当前最多显示最近更新的 50 条记录。
+                默认按最近更新排序，每页显示 {data.pageSize} 条。
               </div>
               <AdminPostsList posts={data.posts} permissions={data.permissions} />
+              <AdminPostsPagination page={data.page} pageCount={data.pageCount} totalCount={data.totalCount} type={params?.type} status={params?.status} q={params?.q} />
             </AdminCard>
           </div>
         );
@@ -71,6 +73,8 @@ export default function AdminPostsPage({ searchParams }: AdminPostsPageProps) {
 }
 
 function normalizeType(value?: string): PostType | "all" | undefined {
+  if (value === "jobs") return "job";
+  if (value === "services") return "service";
   if (value === "job" || value === "housing" || value === "marketplace" || value === "service") return value;
   if (value === "all") return "all";
   return undefined;
@@ -80,4 +84,10 @@ function normalizeStatus(value?: string): PostStatus | "all" | undefined {
   if (value === "draft" || value === "pending_review" || value === "published" || value === "hidden" || value === "rejected" || value === "expired" || value === "deleted") return value;
   if (value === "all") return "all";
   return undefined;
+}
+
+function normalizePage(value?: string) {
+  if (!value) return 1;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.max(1, Math.floor(parsed)) : 1;
 }

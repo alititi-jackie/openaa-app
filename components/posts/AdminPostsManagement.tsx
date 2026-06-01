@@ -4,14 +4,14 @@ import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { setAdminPostStatus } from "@/features/posts/adminActions";
 import type { AdminPostListItem, AdminPostsPermissions as AdminPostsPermissionSet } from "@/features/posts/adminQueries";
 import { POST_STATUS_LABELS } from "@/features/posts/constants";
-import type { PostStatus, PostType } from "@/features/posts/types";
+import type { PostStatus } from "@/features/posts/types";
 
-const postTypeOptions: Array<{ value: PostType | "all"; label: string }> = [
+const postTypeOptions: Array<{ value: "all" | "jobs" | "housing" | "marketplace" | "services"; label: string }> = [
   { value: "all", label: "全部频道" },
-  { value: "job", label: "招聘" },
+  { value: "jobs", label: "招聘" },
   { value: "housing", label: "房屋" },
   { value: "marketplace", label: "二手" },
-  { value: "service", label: "服务" },
+  { value: "services", label: "服务" },
 ];
 
 const postStatusOptions: Array<{ value: PostStatus | "all"; label: string }> = [
@@ -117,6 +117,7 @@ export function AdminPostsList({ posts, permissions }: { posts: AdminPostListIte
               ) : null}
               <StatusAction post={post} status="published" label="发布/恢复" enabled={permissions.moderatePosts} />
               <StatusAction post={post} status="hidden" label="下架" enabled={permissions.moderatePosts} />
+              <StatusAction post={post} status="pending_review" label="待审核" enabled={permissions.moderatePosts} />
               <StatusAction post={post} status="rejected" label="拒绝" enabled={permissions.moderatePosts} />
               <StatusAction post={post} status="deleted" label="软删除" enabled={permissions.moderatePosts} />
             </div>
@@ -125,6 +126,55 @@ export function AdminPostsList({ posts, permissions }: { posts: AdminPostListIte
       ))}
     </div>
   );
+}
+
+export function AdminPostsPagination({
+  page,
+  pageCount,
+  totalCount,
+  type,
+  status,
+  q,
+}: {
+  page: number;
+  pageCount: number;
+  totalCount: number;
+  type?: string;
+  status?: string;
+  q?: string;
+}) {
+  const previous = buildPageHref({ page: Math.max(1, page - 1), type, status, q });
+  const next = buildPageHref({ page: Math.min(pageCount, page + 1), type, status, q });
+
+  return (
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-600">
+      <span>
+        共 {totalCount} 条 · 第 {page} / {pageCount} 页
+      </span>
+      <div className="flex flex-wrap gap-2">
+        {page > 1 ? (
+          <Link href={previous} className="rounded-full bg-white px-3 py-1.5 text-xs font-black text-blue-700">
+            上一页
+          </Link>
+        ) : null}
+        {page < pageCount ? (
+          <Link href={next} className="rounded-full bg-white px-3 py-1.5 text-xs font-black text-blue-700">
+            下一页
+          </Link>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function buildPageHref({ page, type, status, q }: { page: number; type?: string; status?: string; q?: string }) {
+  const params = new URLSearchParams();
+  if (type && type !== "all") params.set("type", type);
+  if (status && status !== "all") params.set("status", status);
+  if (q) params.set("q", q);
+  if (page > 1) params.set("page", String(page));
+  const query = params.toString();
+  return query ? `/admin/posts?${query}` : "/admin/posts";
 }
 
 function StatusAction({ post, status, label, enabled }: { post: AdminPostListItem; status: PostStatus; label: string; enabled: boolean }) {

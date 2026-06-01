@@ -35,6 +35,10 @@ type AdminPostsResult = {
   state: QueryState;
   permissions: AdminPostsPermissions;
   posts: AdminPostListItem[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  pageCount: number;
   error?: string;
 };
 
@@ -57,9 +61,10 @@ export type AdminPostsParams = {
   type?: PostType | "all";
   status?: PostStatus | "all";
   q?: string;
+  page?: number;
 };
 
-const ADMIN_POSTS_LIMIT = 50;
+const ADMIN_POSTS_PAGE_SIZE = 20;
 
 export async function getAdminPostsPermissions(): Promise<AdminPostsPermissions> {
   const [viewPosts, moderatePosts, approvePosts, rejectPosts, hidePosts, restorePosts, deletePosts] = await Promise.all([
@@ -78,21 +83,24 @@ export async function getAdminPostsPermissions(): Promise<AdminPostsPermissions>
 export async function getAdminPostsData(params: AdminPostsParams = {}): Promise<AdminPostsResult> {
   const supabase = await createSupabaseServerClient();
   const permissions = await getAdminPostsPermissions();
+  const page = normalizePage(params.page);
+  const from = (page - 1) * ADMIN_POSTS_PAGE_SIZE;
+  const to = from + ADMIN_POSTS_PAGE_SIZE - 1;
 
   if (!supabase) {
-    return { state: "missing_config", permissions, posts: [] };
+    return emptyResult("missing_config", permissions, page);
   }
 
   const canRead = permissions.viewPosts || permissions.moderatePosts;
   if (!canRead) {
-    return { state: "ready", permissions, posts: [] };
+    return emptyResult("ready", permissions, page);
   }
 
   let query = supabase
     .from("posts")
-    .select("id,post_type,author_id,title,summary,body,category,status,visibility,published_at,created_at,updated_at")
+    .select("id,post_type,author_id,title,summary,body,category,status,visibility,published_at,created_at,updated_at", { count: "exact" })
     .order("updated_at", { ascending: false })
-    .limit(ADMIN_POSTS_LIMIT);
+    .range(from, to);
 
   if (params.type && params.type !== "all") {
     query = query.eq("post_type", params.type);
@@ -103,19 +111,42 @@ export async function getAdminPostsData(params: AdminPostsParams = {}): Promise<
   }
 
   if (params.q) {
-    query = query.or(`title.ilike.%${params.q}%,summary.ilike.%${params.q}%`);
+    const keyword = sanitizeSearchTerm(params.q);
+    if (keyword) {
+      query = query.or(`title.ilike.%${keyword}%,summary.ilike.%${keyword}%`);
+    }
   }
 
-  const { data, error } = await query;
+  const { data, error, count } = await query;
   if (error) {
-    return { state: "error", permissions, posts: [], error: "后台帖子读取失败，请稍后再试。" };
+    return { ...emptyResult("error", permissions, page), error: "后台帖子读取失败，请稍后再试。" };
   }
+
+  const totalCount = count ?? 0;
+  const pageCount = Math.max(1, Math.ceil(totalCount / ADMIN_POSTS_PAGE_SIZE));
 
   return {
     state: "ready",
     permissions,
+    page,
+    pageSize: ADMIN_POSTS_PAGE_SIZE,
+    totalCount,
+    pageCount,
     posts: ((data ?? []) as AdminPostRecord[]).map(mapAdminPost),
   };
+}
+
+function emptyResult(state: QueryState, permissions: AdminPostsPermissions, page: number): AdminPostsResult {
+  return { state, permissions, posts: [], page, pageSize: ADMIN_POSTS_PAGE_SIZE, totalCount: 0, pageCount: 1 };
+}
+
+function normalizePage(value?: number) {
+  if (!value || !Number.isFinite(value)) return 1;
+  return Math.max(1, Math.floor(value));
+}
+
+function sanitizeSearchTerm(value: string) {
+  return value.trim().replace(/[%_,]/g, "").slice(0, 80);
 }
 
 function mapAdminPost(record: AdminPostRecord): AdminPostListItem {

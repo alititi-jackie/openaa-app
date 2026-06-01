@@ -123,8 +123,18 @@ export async function setAdminPostStatus(_state: AdminPostActionState, formData:
   const { error } = await context.supabase.from("posts").update(payload).eq("id", id);
   if (error) return fail("帖子状态更新失败，请稍后再试。");
 
-  const afterData = { status, post_type: before.post_type, title: before.title, author_id: before.author_id };
-  const audited = await writeAuditLog(context, `set_post_${status}`, id, before, afterData);
+  const auditPayload = {
+    old_status: before.status,
+    new_status: status,
+    post_type: before.post_type,
+    title: before.title,
+    author_id: before.author_id,
+    metadata: {
+      source: "admin_posts_management",
+      status_changed_at: now,
+    },
+  };
+  const audited = await writeAuditLog(context, auditActionForStatus(status), id, before, auditPayload);
   if (!audited) return fail("帖子状态已更新，但审计日志写入失败。");
 
   revalidatePost(before.post_type, id);
@@ -138,6 +148,15 @@ function readText(formData: FormData, key: string) {
 
 function isPostStatus(value: string): value is PostStatus {
   return value === "draft" || value === "pending_review" || value === "published" || value === "hidden" || value === "rejected" || value === "expired" || value === "deleted";
+}
+
+function auditActionForStatus(status: PostStatus) {
+  if (status === "hidden") return "hide_post";
+  if (status === "published") return "publish_post";
+  if (status === "deleted") return "delete_post";
+  if (status === "rejected") return "reject_post";
+  if (status === "pending_review") return "mark_post_pending_review";
+  return `set_post_${status}`;
 }
 
 function revalidatePost(type: PostType, id: string) {
