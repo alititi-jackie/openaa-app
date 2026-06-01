@@ -35,3 +35,15 @@ Preferred real file names:
 - `home-sections.json`
 
 The import script falls back to the `.example.json` files for dry-run validation.
+
+## Seed-B1
+
+Seed-B1 adds reviewed official operating-content JSON for:
+
+- `navigation.json`
+- `top-links.json`
+- `ticker.json`
+
+These files use `legacy_official_import` and are candidates for initial production content. They are JSON data only; no database import is performed by committing them.
+
+Seed-B1 keeps old-site `/secondhand` references mapped to the new `/marketplace` route. Ticker data represents configuration only and does not include user-post aggregation output.

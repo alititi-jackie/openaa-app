@@ -67,6 +67,25 @@ Preferred real file names:
 
 Seed-A includes `.example.json` files only. The import script uses real files when present and falls back to examples for dry-run validation.
 
+## Seed-B1 Official JSON
+
+Seed-B1 adds the first reviewed `legacy_official_import` JSON files:
+
+- `data/legacy/navigation.json`
+- `data/legacy/top-links.json`
+- `data/legacy/ticker.json`
+
+These files are official operating-content candidates for initial production content. They do not import anything by themselves, do not connect to the old Supabase project, do not add migrations, and do not change UI.
+
+Seed-B1 source rules:
+
+- Navigation and top links are prepared from old-site public API output and read-only review.
+- Old `/secondhand` routes are mapped to `/marketplace`; the new app must not restore `/secondhand`.
+- Ticker JSON stores the configuration layer only. It does not seed user-post aggregation results from the old ticker API.
+- Images remain external references. Do not download or re-upload `img.openaa.com` assets.
+- News, ads, and home sections are intentionally left for Seed-B2.
+- User-post demo content remains out of scope until Seed-C.
+
 ## Dry Run
 
 Dry-run is the default and does not write a database.
