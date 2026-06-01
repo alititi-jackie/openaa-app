@@ -142,21 +142,90 @@ Supported modules:
 - `home`
 - `all`
 
-## Apply
+## Seed-B3 Local/Staging Apply
 
-Seed-A does not implement database writes. Future Seed-B can add local/staging apply support behind explicit flags:
+Seed-B3 adds apply support for reviewed `legacy_official_import` operating content only:
+
+- `navigation`
+- `top-links`
+- `ticker`
+- `news`
+- `ads`
+- `home`
+- `all`
+
+Apply remains opt-in. Commands without `--apply` are dry-runs and do not write a database.
 
 ```bash
-npm run import:legacy -- --module=navigation --env=staging --apply
+npm run import:legacy -- --module=all --env=local --dry-run
+npm run import:legacy -- --module=all --env=local --apply
 ```
 
-Production must always include a second confirmation:
+On Windows/npm setups where a bare `--apply` is swallowed by npm instead of forwarded as an argument, use an explicit environment variable for the apply run:
+
+```powershell
+$env:LEGACY_IMPORT_APPLY="true"
+npm run import:legacy -- --module=all --env=local
+Remove-Item Env:\LEGACY_IMPORT_APPLY
+```
+
+Local apply reads local Supabase connection details from dedicated import environment variables when present:
 
 ```bash
-npm run import:legacy -- --module=all --env=production --apply --confirm-production
+LEGACY_IMPORT_SUPABASE_URL=http://127.0.0.1:54321
+LEGACY_IMPORT_SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
-Without `--confirm-production`, production runs are rejected.
+The local URL must be `localhost`, `127.0.0.1`, or `::1`. If those variables are absent, local apply reads the running Supabase CLI status output. The script does not read generic `SUPABASE_URL`, generic service-role variables, or `.env.production` for local apply. No key is committed to the repository.
+
+Staging apply requires explicit environment variables:
+
+```bash
+LEGACY_IMPORT_SUPABASE_URL=https://...
+LEGACY_IMPORT_SUPABASE_SERVICE_ROLE_KEY=...
+npm run import:legacy -- --module=all --env=staging --apply
+```
+
+Production apply is intentionally disabled in Seed-B3. Do not use `.env.production`, cloud project URLs, or old Supabase credentials for this script.
+
+Apply writes only official operating content:
+
+- `navigation_categories` and `navigation_links`
+- `top_quick_links`
+- `latest_ticker`
+- `news_categories` and `news_posts`
+- `ads`
+- `home_sections`
+- `image_assets` records for `https://img.openaa.com/...` external images
+
+It does not import user-post content such as jobs, housing, marketplace, services, contacts, or user images. Those remain reserved for Seed-C demo/staging work.
+
+Image handling:
+
+- External images use `source_type = external`.
+- `external_url` and `public_url` keep the `img.openaa.com` URL.
+- `external_host = img.openaa.com`.
+- `is_public = true`.
+- Images are not downloaded or uploaded.
+- Old Supabase Storage URLs are skipped or kept only as review notes in JSON.
+
+Idempotency strategy:
+
+- Navigation categories: `slug`
+- Navigation links: `metadata.legacy_id`, then `category_id + url`
+- Top quick links: `key`, then `href + title`
+- Latest ticker: `module + title + href`
+- News categories: `slug`
+- News posts: `slug`
+- Ads: `metadata.legacy_id`, then `placement + image_asset_id + title`
+- Home sections: `key`
+- Image assets: `external_url`
+
+Repeat runs should update existing official rows rather than creating duplicates. This script does not implement automatic cleanup for `legacy_official_import`; official operating content should be reviewed and edited intentionally rather than bulk-deleted.
+
+## Production Apply
+
+Production apply is not available in Seed-B3. Any `--env=production --apply` command must be rejected, even if additional confirmation flags are present. A future production import should be handled in a separate reviewed phase with explicit owner approval.
 
 ## Cleanup Demo Posts
 
@@ -178,6 +247,6 @@ It must not clean `legacy_official_import` navigation, news, ads, ticker, top li
 
 - Do not place legacy or demo content in migrations.
 - Do not place legacy or demo content in `supabase/seed.sql`.
-- Do not run production imports without human approval.
+- Do not run production imports in Seed-B3.
 - Do not let demo user posts enter production sitemap unless explicitly approved.
 - Do not alter RLS as part of content import.
