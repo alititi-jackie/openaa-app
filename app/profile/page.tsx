@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Bell, Bookmark, FileText, Pencil, Send } from "lucide-react";
+import { Bell, Bookmark, FileText, KeyRound, Pencil, Send } from "lucide-react";
 import { PageShell } from "@/components/layout/PageShell";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { ensureProfileForUser } from "@/lib/supabase/profile";
@@ -82,6 +82,7 @@ export default async function ProfilePage() {
 
       <section className="grid gap-3">
         <Entry icon={<Send size={18} />} title="我的发布" description="后续 Phase 接入发布内容列表。" />
+        <Entry icon={<KeyRound size={18} />} title="账号安全" description="修改或设置邮箱登录密码。" href="/profile/security" />
         <Entry icon={<Bookmark size={18} />} title="我的收藏" description="后续 Phase 接入收藏内容。" />
         <Entry icon={<Bell size={18} />} title="通知" description="后续 Phase 接入站内通知。" />
         <Entry icon={<FileText size={18} />} title="草稿" description="后续 Phase 接入草稿入口。" />
@@ -99,14 +100,29 @@ function InfoRow({ label, value }: { label: string; value: string | null }) {
   );
 }
 
-function Entry({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4">
+function Entry({ icon, title, description, href }: { icon: React.ReactNode; title: string; description: string; href?: string }) {
+  const className = "flex items-center gap-3 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4";
+  const content = (
+    <>
       <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-slate-700">{icon}</div>
       <div>
         <h3 className="font-black text-slate-950">{title}</h3>
         <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
       </div>
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link href={href} className={className}>
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <div className={className}>
+      {content}
     </div>
   );
 }

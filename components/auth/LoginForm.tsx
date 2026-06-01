@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Mail } from "lucide-react";
 import { AuthCard, AuthLink } from "@/components/auth/AuthCard";
+import { ensureCurrentUserProfile } from "@/features/auth/actions";
 import { featureFlags } from "@/lib/config/featureFlags";
 import { appUrl } from "@/lib/seo/siteConfig";
 import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
@@ -38,6 +39,13 @@ export function LoginForm() {
 
       if (error) {
         setMessage("登录失败，请检查邮箱和密码。");
+        return;
+      }
+
+      const profileResult = await ensureCurrentUserProfile();
+
+      if (!profileResult.ok) {
+        setMessage("登录已成功，但资料初始化失败，请稍后再试。");
         return;
       }
 

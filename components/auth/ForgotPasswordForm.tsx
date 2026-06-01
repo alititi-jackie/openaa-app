@@ -20,7 +20,7 @@ export function ForgotPasswordForm() {
     try {
       const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: appUrl("/auth/callback?returnTo=/profile/edit"),
+        redirectTo: appUrl("/auth/callback?returnTo=/profile/security"),
       });
 
       setMessage(error ? "重置邮件发送失败，请稍后重试。" : "如果该邮箱已注册，你会收到密码重置邮件。");
