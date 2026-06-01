@@ -5,6 +5,7 @@ export const metadata = buildPageMetadata({
   title: "DMV 题库",
   description: "纽约 DMV 中文题库占位。",
   path: "/dmv/questions",
+  noIndex: true,
 });
 
 export default function DmvQuestionsPage() {

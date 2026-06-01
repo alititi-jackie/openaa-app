@@ -12,7 +12,7 @@
   "sections": [
     {
       "legacy_id": "ticker-news",
-      "title": "??",
+      "title": "OpenAA 纽约站已上线，欢迎发布招聘、房屋、二手和本地服务信息",
       "href": "/news",
       "module": "news",
       "is_enabled": true,
@@ -27,7 +27,7 @@
     },
     {
       "legacy_id": "ticker-jobs",
-      "title": "??",
+      "title": "发布信息请填写真实联系方式，平台会持续优化内容审核",
       "href": "/jobs",
       "module": "jobs",
       "is_enabled": true,
@@ -42,7 +42,7 @@
     },
     {
       "legacy_id": "ticker-housing",
-      "title": "??",
+      "title": "收藏常用内容，登录后可继续管理你的发布信息",
       "href": "/housing",
       "module": "housing",
       "is_enabled": true,
@@ -57,7 +57,7 @@
     },
     {
       "legacy_id": "ticker-marketplace",
-      "title": "??",
+      "title": "如发现虚假或过期信息，可在详情页举报",
       "href": "/marketplace",
       "module": "marketplace",
       "is_enabled": true,
@@ -75,7 +75,7 @@
     },
     {
       "legacy_id": "ticker-services",
-      "title": "????",
+      "title": "DMV 笔试练习、纽约生活导航、新闻资讯正在陆续完善",
       "href": "/services",
       "module": "services",
       "is_enabled": true,

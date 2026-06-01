@@ -2,7 +2,7 @@ import type { HomeBannerItem } from "@/components/home/HomeBanner";
 import type { QuickGridItem } from "@/components/home/QuickGrid";
 import type { UtilityCardItem, UtilityIconKey, UtilityTheme } from "@/components/home/UtilityCards";
 import type { TopQuickLink } from "@/features/navigation/topQuickLinks";
-import { fallbackLatestPostSections, fallbackQuickGridItems, fallbackSeoContent, fallbackUtilityTools } from "./fallbacks";
+import { fallbackLatestPostSections, fallbackQuickGridItems, fallbackSeoContent, fallbackTickerItems, fallbackUtilityTools } from "./fallbacks";
 import type { HomeLatestPostSectionConfig, HomeSectionRecord, HomeSeoContent, HomeTickerItem } from "./types";
 
 export function asRecord(value: unknown): Record<string, unknown> {
@@ -56,7 +56,9 @@ export function mapTopQuickLink(row: Record<string, unknown>): TopQuickLink | nu
 }
 
 export function mapTickerItem(row: Record<string, unknown>): HomeTickerItem | null {
-  const label = asString(row.title);
+  const rawLabel = asString(row.title);
+  const href = normalizeRoute(asString(row.href, "/news"));
+  const label = isPlaceholderTickerLabel(rawLabel) ? fallbackTickerLabelForRoute(href) : rawLabel;
 
   if (!label) {
     return null;
@@ -64,8 +66,21 @@ export function mapTickerItem(row: Record<string, unknown>): HomeTickerItem | nu
 
   return {
     label,
-    href: normalizeRoute(asString(row.href, "/news")),
+    href,
   };
+}
+
+function isPlaceholderTickerLabel(value: string) {
+  const normalized = value.trim();
+  return normalized === "??" || normalized === "????" || /^\?+$/.test(normalized);
+}
+
+function fallbackTickerLabelForRoute(href: string) {
+  if (href.startsWith("/jobs")) return "发布信息请填写真实联系方式，平台会持续优化内容审核";
+  if (href.startsWith("/housing")) return "收藏常用内容，登录后可继续管理你的发布信息";
+  if (href.startsWith("/marketplace")) return "如发现虚假或过期信息，可在详情页举报";
+  if (href.startsWith("/services")) return "DMV 笔试练习、纽约生活导航、新闻资讯正在陆续完善";
+  return fallbackTickerItems[0]?.label;
 }
 
 export function mapBanner(row: Record<string, unknown>): HomeBannerItem | null {

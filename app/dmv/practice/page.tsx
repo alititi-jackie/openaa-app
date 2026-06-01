@@ -5,6 +5,7 @@ export const metadata = buildPageMetadata({
   title: "DMV 练习模式",
   description: "纽约 DMV 中文练习模式占位。",
   path: "/dmv/practice",
+  noIndex: true,
 });
 
 export default function DmvPracticePage() {
