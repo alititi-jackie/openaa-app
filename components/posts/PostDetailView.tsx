@@ -1,15 +1,18 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Flag, Heart, Share2 } from "lucide-react";
 import { EmptyState } from "@/components/common/EmptyState";
 import { POST_TYPE_LABELS } from "@/features/posts/constants";
+import { getPostEngagementState } from "@/features/posts/engagementQueries";
 import type { PostDetailView as PostDetailViewData } from "@/features/posts/types";
 import { ContactRevealCard } from "./ContactRevealCard";
+import { PostEngagementPanel } from "./PostEngagementPanel";
 
-export function PostDetailView({ post }: { post: PostDetailViewData | null }) {
+export async function PostDetailView({ post }: { post: PostDetailViewData | null }) {
   if (!post) {
     return <EmptyState title="内容不存在" description="这条信息不存在，或当前不是公开已发布状态。" />;
   }
+
+  const engagement = await getPostEngagementState(post.id);
 
   return (
     <article className="space-y-4">
@@ -48,20 +51,15 @@ export function PostDetailView({ post }: { post: PostDetailViewData | null }) {
         ) : null}
       </section>
 
-      <section className="grid grid-cols-3 gap-2">
-        <button type="button" className="inline-flex min-h-11 items-center justify-center gap-1 rounded-xl bg-white text-sm font-bold text-slate-700 shadow-sm">
-          <Share2 size={16} aria-hidden="true" />
-          分享
-        </button>
-        <button type="button" className="inline-flex min-h-11 items-center justify-center gap-1 rounded-xl bg-white text-sm font-bold text-slate-700 shadow-sm">
-          <Heart size={16} aria-hidden="true" />
-          收藏
-        </button>
-        <button type="button" className="inline-flex min-h-11 items-center justify-center gap-1 rounded-xl bg-white text-sm font-bold text-slate-700 shadow-sm">
-          <Flag size={16} aria-hidden="true" />
-          举报
-        </button>
-      </section>
+      <PostEngagementPanel
+        postId={post.id}
+        href={post.href}
+        title={post.title}
+        initialFavoriteCount={post.favoriteCount}
+        initialViewCount={post.viewCount}
+        initialIsFavorited={engagement.isFavorited}
+        initialHasReported={engagement.hasReported}
+      />
 
       <ContactRevealCard postId={post.id} />
 
