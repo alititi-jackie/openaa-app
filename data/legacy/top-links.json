@@ -9,7 +9,7 @@
       "legacy_id": "c31e6546-1a03-43a4-8dd5-4f81702729df",
       "title": "导航",
       "href": "/navigation",
-      "icon": "",
+      "icon": "navigation",
       "open_mode": "same",
       "sort_order": 1,
       "is_active": true,
@@ -22,20 +22,23 @@
       "legacy_id": "bde9619a-3a64-43d4-9512-2e312df03655",
       "title": "OpenAA网页版",
       "href": "https://openaa.com/web",
-      "icon": "",
+      "icon": "globe",
       "open_mode": "same",
       "sort_order": 2,
       "is_active": true,
       "metadata": {
         "source": "legacy_official_import",
-        "origin": "openaa-ny"
+        "origin": "openaa-ny",
+        "notes": [
+          "needs_human_review"
+        ]
       }
     },
     {
       "legacy_id": "eff4dbcd-49ac-48c9-89a6-0ca70e2e982e",
       "title": "GPT",
       "href": "https://chatgpt.com/",
-      "icon": "??",
+      "icon": "bot",
       "open_mode": "new",
       "sort_order": 3,
       "is_active": true,
@@ -48,7 +51,7 @@
       "legacy_id": "316665f2-dc66-4c75-b5ab-c298e776fba5",
       "title": "招聘",
       "href": "/jobs",
-      "icon": "",
+      "icon": "briefcase",
       "open_mode": "same",
       "sort_order": 20,
       "is_active": true,
@@ -61,7 +64,7 @@
       "legacy_id": "9e7b340c-fa22-4baf-9ffa-22a6db0d0520",
       "title": "房屋",
       "href": "/housing",
-      "icon": "",
+      "icon": "home",
       "open_mode": "same",
       "sort_order": 21,
       "is_active": true,
@@ -74,7 +77,7 @@
       "legacy_id": "3096a011-d593-47a9-a695-f425344fe44a",
       "title": "二手",
       "href": "/marketplace",
-      "icon": "",
+      "icon": "shopping-bag",
       "open_mode": "same",
       "sort_order": 22,
       "is_active": true,
@@ -90,7 +93,7 @@
       "legacy_id": "27841ad8-6917-4fa8-9bbb-701b5d805e63",
       "title": "本地服务",
       "href": "/services",
-      "icon": "",
+      "icon": "wrench",
       "open_mode": "same",
       "sort_order": 23,
       "is_active": true,
@@ -103,7 +106,7 @@
       "legacy_id": "6d56716b-bd31-4749-8ae2-2d2bc4abf134",
       "title": "新闻",
       "href": "/news",
-      "icon": "",
+      "icon": "newspaper",
       "open_mode": "same",
       "sort_order": 24,
       "is_active": true,
@@ -116,7 +119,7 @@
       "legacy_id": "9cdbec15-3de8-4b7b-b104-3b73a89d139f",
       "title": "DMV",
       "href": "/dmv",
-      "icon": "??",
+      "icon": "car",
       "open_mode": "same",
       "sort_order": 25,
       "is_active": true,
@@ -132,20 +135,23 @@
       "legacy_id": "417946c7-3ad8-432b-89f7-908a616d0593",
       "title": "关于 OpenAA",
       "href": "https://openaa.com/about/",
-      "icon": "",
+      "icon": "info",
       "open_mode": "new",
       "sort_order": 27,
       "is_active": true,
       "metadata": {
         "source": "legacy_official_import",
-        "origin": "openaa-ny"
+        "origin": "openaa-ny",
+        "notes": [
+          "needs_human_review"
+        ]
       }
     },
     {
       "legacy_id": "425b387d-cac2-4955-9529-aae875be0945",
       "title": "站内搜索",
       "href": "/search",
-      "icon": "",
+      "icon": "search",
       "open_mode": "same",
       "sort_order": 30,
       "is_active": true,
