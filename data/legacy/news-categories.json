@@ -1,0 +1,69 @@
+{
+  "metadata": {
+    "source": "legacy_official_import",
+    "origin": "openaa-ny",
+    "approved_for": "initial_production_content"
+  },
+  "categories": [
+    {
+      "legacy_id": "local-news",
+      "slug": "local-news",
+      "name": "本地新闻",
+      "sort_order": 10,
+      "description": "纽约华人本地新闻和社区资讯。",
+      "is_active": true,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "newcomer-guide",
+      "slug": "newcomer-guide",
+      "name": "新手指南",
+      "sort_order": 20,
+      "description": "面向新移民、留学生和美国华人新用户的生活入门指南。",
+      "is_active": true,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "dmv-guide",
+      "slug": "dmv-guide",
+      "name": "DMV 教程",
+      "sort_order": 30,
+      "description": "纽约 DMV、驾照、罚单和出行相关教程。",
+      "is_active": true,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "life-guide",
+      "slug": "life-guide",
+      "name": "生活指南",
+      "sort_order": 40,
+      "description": "美国华人日常生活、租房、银行、手机和办事指南。",
+      "is_active": true,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "announcement",
+      "slug": "announcement",
+      "name": "平台公告",
+      "sort_order": 50,
+      "description": "OpenAA 平台公告、规则提醒和功能说明。",
+      "is_active": true,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    }
+  ]
+}

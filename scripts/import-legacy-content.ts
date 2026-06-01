@@ -19,6 +19,7 @@ type Plan = {
   update: number;
   skip: number;
   warnings: string[];
+  reviewStats?: Record<string, number>;
 };
 
 type JsonRecord = Record<string, unknown>;
@@ -126,6 +127,7 @@ function planNavigation(): Plan {
     update: categories.length - invalidCategories + links.length - invalidLinks,
     skip: invalidCategories + invalidLinks,
     warnings,
+    reviewStats: collectReviewStats(data, [...categories, ...links]),
   };
 }
 
@@ -145,6 +147,7 @@ function planArrayFile(baseName: string, label: string, required: string[]): Pla
     update: items.length - invalid,
     skip: invalid,
     warnings,
+    reviewStats: collectReviewStats(data, items),
   };
 }
 
@@ -152,17 +155,64 @@ function readItems(data: unknown, baseName: string, label: string, warnings: str
   if (Array.isArray(data)) return data;
 
   const record = asRecord(data);
-  const wrappedItems =
-    baseName === "ticker"
-      ? record.sections
-      : baseName === "top-links"
-        ? record.links
-        : undefined;
+  const wrapperKeyByFile: Record<string, string> = {
+    ads: "ads",
+    "home-sections": "sections",
+    "news-categories": "categories",
+    "news-posts": "posts",
+    ticker: "sections",
+    "top-links": "links",
+  };
+  const wrapperKey = wrapperKeyByFile[baseName];
+  const wrappedItems = wrapperKey ? record[wrapperKey] : undefined;
 
   if (Array.isArray(wrappedItems)) return wrappedItems;
 
   warnings.push(`${label}: expected a JSON array or supported metadata wrapper.`);
   return [];
+}
+
+function collectReviewStats(data: unknown, items: unknown[]) {
+  const rootMetadata = asRecord(asRecord(data).metadata);
+  const stats: Record<string, number> = {};
+  const noteStats: Record<string, number> = {};
+
+  for (const key of [
+    "skipped_old_storage_image_count",
+    "needs_human_review_count",
+    "cover_needs_replacement_count",
+    "body_needs_review_count",
+    "needs_domain_review_count",
+    "needs_freshness_review_count",
+  ]) {
+    const value = rootMetadata[key];
+    if (typeof value === "number" && value > 0) stats[key] = value;
+  }
+
+  for (const item of items) {
+    const metadata = asRecord(asRecord(item).metadata);
+    const notes = Array.isArray(metadata.notes) ? metadata.notes : [];
+    for (const note of notes) {
+      if (typeof note !== "string") continue;
+      if (
+        note === "needs_human_review" ||
+        note === "cover_needs_replacement" ||
+        note === "body_needs_review" ||
+        note === "needs_domain_review" ||
+        note === "needs_freshness_review" ||
+        note === "skipped_old_storage_image"
+      ) {
+        const key = note === "skipped_old_storage_image" ? "skipped_old_storage_image_count" : `${note}_count`;
+        noteStats[key] = (noteStats[key] ?? 0) + 1;
+      }
+    }
+  }
+
+  for (const [key, value] of Object.entries(noteStats)) {
+    stats[key] = Math.max(stats[key] ?? 0, value);
+  }
+
+  return Object.keys(stats).length > 0 ? stats : undefined;
 }
 
 function resolveFile(baseName: string) {
@@ -224,6 +274,11 @@ function printPlan(plan: Plan) {
   console.log(`Would create/upsert: ${plan.create}`);
   console.log(`Would update/upsert: ${plan.update}`);
   console.log(`Would skip invalid: ${plan.skip}`);
+  if (plan.reviewStats) {
+    for (const [key, value] of Object.entries(plan.reviewStats)) {
+      console.log(`${key}: ${value}`);
+    }
+  }
   for (const warning of plan.warnings) console.log(`Warning: ${warning}`);
 }
 

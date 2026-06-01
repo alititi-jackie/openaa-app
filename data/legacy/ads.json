@@ -1,0 +1,540 @@
+{
+  "metadata": {
+    "source": "legacy_official_import",
+    "origin": "openaa-ny",
+    "approved_for": "initial_production_content",
+    "active_public_ads_seen": 31,
+    "imported_ads_count": 29,
+    "img_openaa_image_count": 18,
+    "skipped_old_storage_image_count": 2,
+    "needs_human_review_count": 1
+  },
+  "ads": [
+    {
+      "legacy_id": "c01f5b09-49c2-4afb-9cc1-3ca3c6e92bb4",
+      "placement": "home",
+      "title": "home banner",
+      "href": "https://app.openaa.com/news",
+      "image_url": "https://img.openaa.com/img/banners/4bd57d0e-08dc-4f07-a8a2-96158193c569.webp",
+      "open_mode": "same",
+      "sort_order": 10,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": null,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "home",
+        "legacy_open_mode": "external_same"
+      }
+    },
+    {
+      "legacy_id": "cb4980cd-e170-4698-a669-305c8ccda2d1",
+      "placement": "home",
+      "title": "home banner",
+      "href": "https://app.openaa.com/services",
+      "image_url": "https://img.openaa.com/img/banners/fb592415-540c-4cfa-ac66-161876571940.webp",
+      "open_mode": "same",
+      "sort_order": 20,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": "2027-12-10T14:55:00+00:00",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "home",
+        "legacy_open_mode": "external_same"
+      }
+    },
+    {
+      "legacy_id": "9854bae0-aaf9-4ed5-b8cf-511c0a4d7d17",
+      "placement": "home",
+      "title": "home banner",
+      "href": "https://app.openaa.com/jobs",
+      "image_url": "https://img.openaa.com/img/banners/5c6006d2-b716-43b4-98e7-cc1761718a48.webp",
+      "open_mode": "same",
+      "sort_order": 30,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": "2026-12-10T14:38:00+00:00",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "home",
+        "legacy_open_mode": "external_same"
+      }
+    },
+    {
+      "legacy_id": "2512d645-8e0b-4e06-b56d-9066f302309d",
+      "placement": "jobs_top",
+      "title": "jobs_top banner",
+      "href": "https://app.openaa.com/news",
+      "image_url": "https://img.openaa.com/img/banners/4bd57d0e-08dc-4f07-a8a2-96158193c569.png",
+      "open_mode": "same",
+      "sort_order": 10,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": "2027-12-10T14:54:00+00:00",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "jobs",
+        "legacy_open_mode": "external_same"
+      }
+    },
+    {
+      "legacy_id": "30c63443-06ba-4f65-9bc5-62819461bb96",
+      "placement": "jobs_top",
+      "title": "jobs_top banner",
+      "href": "https://openaa.com/nav/dmv",
+      "image_url": "https://img.openaa.com/img/banners/1fe24ddc-ba0e-4b39-9319-04167f139d29.png",
+      "open_mode": "same",
+      "sort_order": 20,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": "2027-12-10T14:51:00+00:00",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "jobs",
+        "legacy_open_mode": "external_same"
+      }
+    },
+    {
+      "legacy_id": "5e014d74-34d9-4466-868d-641d9a578c7a",
+      "placement": "jobs_top",
+      "title": "jobs_top banner",
+      "href": "https://app.openaa.com/marketplace",
+      "image_url": "https://img.openaa.com/img/banners/1215d9b3-f38c-4173-ad87-aa0792690bd8.png",
+      "open_mode": "same",
+      "sort_order": 30,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": "2027-12-10T14:50:00+00:00",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "jobs",
+        "legacy_open_mode": "external_same"
+      }
+    },
+    {
+      "legacy_id": "13c03d30-ccab-425a-bfc9-0dcf7e754db1",
+      "placement": "jobs_top",
+      "title": "jobs_top banner",
+      "href": "https://app.openaa.com/",
+      "image_url": "https://img.openaa.com/img/banners/6e374654-6816-4da8-9736-bd374ea70b04.png",
+      "open_mode": "same",
+      "sort_order": 40,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": "2027-12-10T14:46:00+00:00",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "jobs",
+        "legacy_open_mode": "external_same"
+      }
+    },
+    {
+      "legacy_id": "dc279a2e-a0ce-42c4-a2af-f39e4f17f688",
+      "placement": "housing_top",
+      "title": "housing_top banner",
+      "href": "https://app.openaa.com/news",
+      "image_url": "https://img.openaa.com/img/banners/0026e90b-6c28-4674-838e-986546de21a9.png",
+      "open_mode": "new",
+      "sort_order": 10,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": "2027-12-10T15:04:00+00:00",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "housing",
+        "legacy_open_mode": "external_new"
+      }
+    },
+    {
+      "legacy_id": "cb364ec1-85f0-4d5e-9a9c-0932f794686f",
+      "placement": "housing_top",
+      "title": "housing_top banner",
+      "href": "https://app.openaa.com/marketplace",
+      "image_url": "https://img.openaa.com/img/banners/1215d9b3-f38c-4173-ad87-aa0792690bd8.png",
+      "open_mode": "same",
+      "sort_order": 20,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": "2027-12-10T14:59:00+00:00",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "housing",
+        "legacy_open_mode": "external_same"
+      }
+    },
+    {
+      "legacy_id": "2d10411b-f142-4fd4-94df-f25899cb5e8f",
+      "placement": "housing_top",
+      "title": "housing_top banner",
+      "href": "https://app.openaa.com/jobs",
+      "image_url": "https://img.openaa.com/img/banners/ed34e822-4982-40ec-90d1-adbbcbfb13b7.png",
+      "open_mode": "same",
+      "sort_order": 30,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": "2026-12-28T21:09:00+00:00",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "housing",
+        "legacy_open_mode": "external_same"
+      }
+    },
+    {
+      "legacy_id": "0f85c4e1-12ac-4f34-9649-2e62a8d4d681",
+      "placement": "housing_top",
+      "title": "housing_top banner",
+      "href": "https://app.openaa.com/",
+      "image_url": "https://img.openaa.com/img/news/6e374654-6816-4da8-9736-bd374ea70b04.png",
+      "open_mode": "same",
+      "sort_order": 40,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": "2026-12-26T21:10:00+00:00",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "housing",
+        "legacy_open_mode": "external_same"
+      }
+    },
+    {
+      "legacy_id": "385442be-e3fd-46bd-b887-c498ba7127ca",
+      "placement": "marketplace_top",
+      "title": "marketplace_top banner",
+      "href": "https://app.openaa.com/services",
+      "image_url": "https://img.openaa.com/img/banners/17588ab5-0248-47ae-a9a2-b0e02e06ea5b.png",
+      "open_mode": "same",
+      "sort_order": 10,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": null,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "secondhand",
+        "legacy_open_mode": "external_same"
+      }
+    },
+    {
+      "legacy_id": "ded069bb-1354-4f06-8f11-8c2fe62925b7",
+      "placement": "marketplace_top",
+      "title": "marketplace_top banner",
+      "href": "https://app.openaa.com/jobs",
+      "image_url": "https://img.openaa.com/img/banners/b720c8f2-d90c-451b-87fc-bec4179d7d61.png",
+      "open_mode": "same",
+      "sort_order": 20,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": "2027-12-10T15:07:00+00:00",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "secondhand",
+        "legacy_open_mode": "external_same"
+      }
+    },
+    {
+      "legacy_id": "16042592-0a3c-472d-8a43-edd2e33d0c11",
+      "placement": "marketplace_top",
+      "title": "marketplace_top banner",
+      "href": "https://app.openaa.com/",
+      "image_url": "https://img.openaa.com/img/banners/5ecd92d7-6b42-4bc5-9237-2d1b85d83ec2.png",
+      "open_mode": "same",
+      "sort_order": 30,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": "2026-12-09T17:43:00+00:00",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "secondhand",
+        "legacy_open_mode": "external_same"
+      }
+    },
+    {
+      "legacy_id": "0921aa32-4474-4233-84c3-1c78cb4d7037",
+      "placement": "services_top",
+      "title": "services_top banner",
+      "href": "https://openaa.com/nav/dmv",
+      "image_url": "https://img.openaa.com/img/banners/af1cf36f-b523-4b76-90f9-0e623631411f.png",
+      "open_mode": "same",
+      "sort_order": 10,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": null,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "services",
+        "legacy_open_mode": "external_same"
+      }
+    },
+    {
+      "legacy_id": "75682ffe-1f23-432b-a46d-96c39ee8a629",
+      "placement": "services_top",
+      "title": "services_top banner",
+      "href": "https://app.openaa.com/marketplace",
+      "image_url": "https://img.openaa.com/img/banners/4cbbab1c-a91d-4414-9889-97a8844b1e24.png",
+      "open_mode": "same",
+      "sort_order": 20,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": null,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "services",
+        "legacy_open_mode": "external_same"
+      }
+    },
+    {
+      "legacy_id": "dc36daff-f4b6-468c-9302-04434a2c054a",
+      "placement": "services_top",
+      "title": "services_top banner",
+      "href": "https://app.openaa.com/",
+      "image_url": "https://img.openaa.com/img/banners/5ecd92d7-6b42-4bc5-9237-2d1b85d83ec2.png",
+      "open_mode": "same",
+      "sort_order": 30,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": null,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "services",
+        "legacy_open_mode": "external_same"
+      }
+    },
+    {
+      "legacy_id": "e52420cf-2d10-46a5-bdbe-78a2a4d4af3f",
+      "placement": "news_top",
+      "title": "news_top banner",
+      "href": "https://app.openaa.com/jobs",
+      "image_url": "https://img.openaa.com/img/banners/5c6006d2-b716-43b4-98e7-cc1761718a48.png",
+      "open_mode": "same",
+      "sort_order": 10,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": null,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "news",
+        "legacy_open_mode": "external_same"
+      }
+    },
+    {
+      "legacy_id": "c0ac7293-de96-4d02-946d-61fede75b872",
+      "placement": "news_top",
+      "title": "news_top banner",
+      "href": "https://openaa.com/nav/dmv",
+      "image_url": "https://img.openaa.com/img/banners/af1cf36f-b523-4b76-90f9-0e623631411f.png",
+      "open_mode": "same",
+      "sort_order": 20,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": null,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "news",
+        "legacy_open_mode": "external_same"
+      }
+    },
+    {
+      "legacy_id": "e7af0822-9598-4eb9-93a9-f155b021ce72",
+      "placement": "news_top",
+      "title": "news_top banner",
+      "href": "https://app.openaa.com/",
+      "image_url": "https://img.openaa.com/img/banners/6e374654-6816-4da8-9736-bd374ea70b04.png",
+      "open_mode": "same",
+      "sort_order": 30,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": "2026-12-08T20:31:00+00:00",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "news",
+        "legacy_open_mode": "external_same"
+      }
+    },
+    {
+      "legacy_id": "f9736490-51f8-471a-a340-b1dd01d23a71",
+      "placement": "news_top",
+      "title": "news_top banner",
+      "href": "https://numbermobi.com/",
+      "image_url": "https://img.openaa.com/img/banners/7cb4ef79-58f2-4cbb-9bbc-7d9eb90c9479.png",
+      "open_mode": "new",
+      "sort_order": 40,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": "2026-12-08T20:30:00+00:00",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "news",
+        "legacy_open_mode": "external_new"
+      }
+    },
+    {
+      "legacy_id": "3337c6a3-86aa-4daa-8077-a6ed3a501caa",
+      "placement": "navigation_top",
+      "title": "navigation_top banner",
+      "href": "https://app.openaa.com/jobs",
+      "image_url": "https://img.openaa.com/img/banners/b720c8f2-d90c-451b-87fc-bec4179d7d61.png",
+      "open_mode": "same",
+      "sort_order": 10,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": "2026-12-26T16:11:00+00:00",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "navigation",
+        "legacy_open_mode": "external_same"
+      }
+    },
+    {
+      "legacy_id": "10e41d54-1a17-459a-86d5-0c1e2fdbe7f3",
+      "placement": "navigation_top",
+      "title": "navigation_top banner",
+      "href": "https://numbermobi.com/",
+      "image_url": "https://img.openaa.com/img/banners/919b88a8-1ec1-4b2e-bbc6-d7a7eeaabbbb.png",
+      "open_mode": "new",
+      "sort_order": 20,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": "2026-12-26T13:38:00+00:00",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "navigation",
+        "legacy_open_mode": "external_new",
+        "notes": [
+          "upgraded_http_to_https",
+          "needs_human_review"
+        ]
+      }
+    },
+    {
+      "legacy_id": "74d810d0-f934-4f59-b1cb-a5b634a7448a",
+      "placement": "navigation_top",
+      "title": "navigation_top banner",
+      "href": "https://app.openaa.com/",
+      "image_url": "https://img.openaa.com/img/banners/0026e90b-6c28-4674-838e-986546de21a9.png",
+      "open_mode": "same",
+      "sort_order": 30,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": "2026-12-26T13:23:00+00:00",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "navigation",
+        "legacy_open_mode": "external_same"
+      }
+    },
+    {
+      "legacy_id": "7e620572-9729-46ba-bd5a-7ecdde2b8860",
+      "placement": "dmv_top",
+      "title": "dmv_top banner",
+      "href": "https://app.openaa.com/housing",
+      "image_url": "https://img.openaa.com/img/banners/ed34e822-4982-40ec-90d1-adbbcbfb13b7.png",
+      "open_mode": "same",
+      "sort_order": 10,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": "2027-12-10T14:48:00+00:00",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "dmv",
+        "legacy_open_mode": "external_same"
+      }
+    },
+    {
+      "legacy_id": "107ec8ae-09f1-4876-a145-9ccc1126b307",
+      "placement": "dmv_top",
+      "title": "dmv_top banner",
+      "href": "https://app.openaa.com/services",
+      "image_url": "https://img.openaa.com/img/banners/17588ab5-0248-47ae-a9a2-b0e02e06ea5b.png",
+      "open_mode": "same",
+      "sort_order": 20,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": "2026-12-10T14:43:00+00:00",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "dmv",
+        "legacy_open_mode": "external_same"
+      }
+    },
+    {
+      "legacy_id": "e354575c-3257-4e89-b1a0-56982f72ea00",
+      "placement": "dmv_top",
+      "title": "dmv_top banner",
+      "href": "https://app.openaa.com/news",
+      "image_url": "https://img.openaa.com/img/banners/4bd57d0e-08dc-4f07-a8a2-96158193c569.png",
+      "open_mode": "same",
+      "sort_order": 30,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": "2026-12-09T22:40:00+00:00",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "dmv",
+        "legacy_open_mode": "external_same"
+      }
+    },
+    {
+      "legacy_id": "6c05ff79-584a-4761-aa14-c4aa7b76491c",
+      "placement": "dmv_top",
+      "title": "dmv_top banner",
+      "href": "https://app.openaa.com/marketplace",
+      "image_url": "https://img.openaa.com/img/banners/1215d9b3-f38c-4173-ad87-aa0792690bd8.png",
+      "open_mode": "same",
+      "sort_order": 40,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": "2026-12-09T18:34:00+00:00",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "dmv",
+        "legacy_open_mode": "external_same"
+      }
+    },
+    {
+      "legacy_id": "cd923828-0d1b-424e-b8bb-7d21f5749c8d",
+      "placement": "dmv_top",
+      "title": "dmv_top banner",
+      "href": "https://openaa.com/nav/dmv",
+      "image_url": "https://img.openaa.com/img/banners/af1cf36f-b523-4b76-90f9-0e623631411f.png",
+      "open_mode": "same",
+      "sort_order": 50,
+      "is_active": true,
+      "starts_at": null,
+      "ends_at": "2026-12-09T17:46:00+00:00",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_position": "dmv",
+        "legacy_open_mode": "external_same"
+      }
+    }
+  ]
+}

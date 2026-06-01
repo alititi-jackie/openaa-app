@@ -1,0 +1,450 @@
+{
+  "metadata": {
+    "source": "legacy_official_import",
+    "origin": "openaa-ny",
+    "approved_for": "initial_production_content",
+    "notes": "Published public news migrated from old site public pages.",
+    "public_sitemap_count": 19,
+    "img_openaa_cover_count": 18,
+    "cover_needs_replacement_count": 1,
+    "body_needs_review_count": 0,
+    "needs_freshness_review_count": 11
+  },
+  "posts": [
+    {
+      "legacy_id": "openaa-post-safety-notice",
+      "title": "OpenAA 平台发布信息安全提醒",
+      "slug": "openaa-post-safety-notice",
+      "excerpt": "OpenAA 提醒用户在查看招聘、房屋、二手和本地服务信息时注意防诈骗，核实信息后再交易。",
+      "body": "OpenAA 提醒所有用户，在使用招聘、房屋、二手和本地服务等信息时，请注意信息安全。\n\n如果对方要求提前转账、缴纳保证金、购买礼品卡、提供验证码或点击不明链接，请提高警惕。\n\n租房时，请尽量核实房源真实性，不要只凭图片和低价就轻易付款。\n\n求职时，请注意异常高薪、无需面试、先交费用等可疑情况。\n\n二手交易时，建议优先当面交易，确认物品情况后再付款。\n\n本地服务联系时，请尽量确认服务方身份、价格、时间和服务范围，避免产生纠纷。\n\nOpenAA 会持续优化举报与反馈机制。如果你发现虚假信息、可疑内容或页面问题，后续可以通过反馈入口提交给平台处理。",
+      "body_format": "markdown",
+      "category_slug": "announcement",
+      "status": "published",
+      "is_featured": false,
+      "is_pinned": false,
+      "published_at": "2026-05-09T01:11:02.87+00:00",
+      "cover_image_url": "https://img.openaa.com/img/news/c7a91108-77d2-4b45-8123-d874f998bc82.png",
+      "seo_title": "OpenAA 信息安全提醒 - 招聘房屋二手交易防诈骗说明",
+      "seo_description": "OpenAA 提醒用户在查看招聘、房屋、二手和本地服务信息时注意防诈骗，核实信息后再交易。",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "source_url": "https://ny.openaa.com/news/openaa-post-safety-notice"
+      }
+    },
+    {
+      "legacy_id": "openaa-new-user-guide",
+      "title": "OpenAA 新用户使用指南：快速了解主要功能",
+      "slug": "openaa-new-user-guide",
+      "excerpt": "OpenAA 新用户使用指南，帮助美国华人快速了解招聘、房屋、二手、新闻资讯、DMV和本地服务等功能。",
+      "body": "欢迎使用 OpenAA。\n\nOpenAA 是一个面向美国华人的生活信息平台，主要提供招聘、房屋、二手、DMV、导航、新闻资讯和本地服务等功能。\n\n如果你想找工作，可以进入“招聘”栏目查看招聘信息，也可以登录后发布招聘或求职信息。\n\n如果你想租房、找室友或发布房屋出租信息，可以进入“房屋”栏目查看相关内容。\n\n如果你有二手物品想出售，或者想找便宜实用的二手商品，可以进入“二手”栏目。\n\n如果你刚来美国，或者需要办理 DMV、银行、保险、手机卡等生活事项，可以关注“新闻资讯”和“新手指南”分类。\n\nOpenAA 会持续优化页面体验，让用户可以像使用手机 App 一样方便地查看信息、发布内容和联系对方。\n\n使用平台时请注意安全，不要提前转账，不要轻信异常低价信息，涉及押金、租金、工资和交易时请尽量当面核实。",
+      "body_format": "markdown",
+      "category_slug": "newcomer-guide",
+      "status": "published",
+      "is_featured": false,
+      "is_pinned": false,
+      "published_at": "2026-05-09T01:06:41.348+00:00",
+      "cover_image_url": "https://img.openaa.com/img/news/openaa-first-time-user-guide.png",
+      "seo_title": "OpenAA 新用户使用指南 - 美国华人生活平台入门说明",
+      "seo_description": "OpenAA 新用户使用指南，帮助美国华人快速了解招聘、房屋、二手、新闻资讯、DMV和本地服务等功能。",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "source_url": "https://ny.openaa.com/news/openaa-new-user-guide"
+      }
+    },
+    {
+      "legacy_id": "ny-driver-license-application-guide",
+      "title": "纽约驾照申请流程基础说明",
+      "slug": "ny-driver-license-application-guide",
+      "excerpt": "纽约驾照申请流程基础说明，包括材料准备、DMV笔试、学习许可、练车和路考等常见步骤。",
+      "body": "在纽约申请驾照，一般需要先准备身份证明、地址证明和合法身份相关材料，然后前往 DMV 办理申请。\n\n第一步通常是准备材料。申请人需要根据 DMV 要求准备身份证明、纽约地址证明和其它相关文件。\n\n第二步是参加笔试。通过笔试后，可以获得 learner permit，也就是学习驾驶许可。\n\n第三步是练车。拿到学习许可后，需要按照规定练习驾驶，并了解纽约道路规则、停车规则和安全驾驶要求。\n\n第四步是预约并参加路考。路考通过后，申请人可以获得纽约驾照。\n\n不同身份、年龄和申请情况可能会有不同要求，办理前建议先查看纽约 DMV 官方网站的最新说明。\n\nOpenAA 后续会继续整理 DMV 笔试、路考、罚单查询和驾照相关实用教程，方便华人用户参考。",
+      "body_format": "markdown",
+      "category_slug": "dmv-guide",
+      "status": "published",
+      "is_featured": false,
+      "is_pinned": false,
+      "published_at": "2026-05-09T01:08:16.865+00:00",
+      "cover_image_url": "https://img.openaa.com/img/news/ny-driver-license-application-guide.png",
+      "seo_title": "纽约驾照申请流程基础说明 - OpenAA DMV教程",
+      "seo_description": "纽约驾照申请流程基础说明，包括材料准备、DMV笔试、学习许可、练车和路考等常见步骤。",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "source_url": "https://ny.openaa.com/news/ny-driver-license-application-guide",
+        "notes": [
+          "needs_freshness_review"
+        ]
+      }
+    },
+    {
+      "legacy_id": "openaa-news-center-launch",
+      "title": "纽约华人生活信息更新：OpenAA 新闻资讯中心上线",
+      "slug": "openaa-news-center-launch",
+      "excerpt": "OpenAA 新闻资讯中心上线，提供美国华人生活资讯、本地新闻、平台公告、新手指南、DMV教程和实用生活内容。",
+      "body": "OpenAA 新闻资讯中心正式上线。\n\n这个栏目会陆续整理美国华人常用的生活资讯、本地消息、DMV 教程、新手指南、平台公告和实用说明，方便用户在一个页面快速查看重要信息。\n\n第一阶段内容会以轻量实用为主，重点包括纽约华人生活、找工作、租房、二手交易、安全提醒、DMV 办事流程和 OpenAA 使用说明。\n\n后续 OpenAA 会继续完善招聘、房屋、二手、导航、新闻资讯和本地服务等模块，让用户更方便地找到自己需要的信息。\n\n如果你发现页面问题、虚假信息或需要反馈建议，可以通过 OpenAA 后续的反馈入口提交。",
+      "body_format": "markdown",
+      "category_slug": "local-news",
+      "status": "published",
+      "is_featured": false,
+      "is_pinned": false,
+      "published_at": "2026-05-09T01:04:43.354+00:00",
+      "cover_image_url": "https://img.openaa.com/img/news/us-rental-tips-for-chinese-newcomers.png",
+      "seo_title": "OpenAA 新闻资讯中心上线 - 美国华人生活资讯平台",
+      "seo_description": "OpenAA 新闻资讯中心上线，提供美国华人生活资讯、本地新闻、平台公告、新手指南、DMV教程和实用生活内容。",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "source_url": "https://ny.openaa.com/news/openaa-news-center-launch"
+      }
+    },
+    {
+      "legacy_id": "openaa-news-center-for-ny-chinese-community",
+      "title": "纽约华人生活信息平台 OpenAA 正式开放新闻资讯中心",
+      "slug": "openaa-news-center-for-ny-chinese-community",
+      "excerpt": "OpenAA 新闻资讯中心正式开放，面向纽约及美国华人用户发布生活资讯、平台公告、新手指南、DMV教程和实用生活内容。",
+      "body": "OpenAA 新闻资讯中心正式开放。\n\n这个栏目主要面向纽约及美国华人用户，整理和发布生活资讯、平台公告、新手指南、DMV 教程、本地消息和实用生活内容，帮助用户更方便地了解 OpenAA 平台，也更快找到日常生活中需要的信息。\n\nOpenAA 当前已经逐步完善招聘、房屋、二手、导航、新闻资讯等功能。新闻资讯中心上线后，平台不仅可以展示用户发布的信息，也可以长期整理对华人用户有帮助的文章内容。\n\n新闻资讯中心第一阶段会重点发布几类内容。\n\n第一类是新手指南，例如如何使用 OpenAA、如何发布招聘信息、如何发布房屋信息、如何发布二手商品、如何查看和联系发布者等。\n\n第二类是平台公告，例如功能上线说明、使用规则提醒、信息安全提示、反馈入口说明等。\n\n第三类是 DMV 和生活教程，例如纽约驾照申请流程、DMV 笔试准备、美国银行开户基础说明、租房注意事项、二手交易安全提醒等。\n\n第四类是本地生活资讯，例如纽约华人常用生活信息、社区消息、生活服务推荐方向和实用资源整理。\n\nOpenAA 的目标不是做复杂的大型门户，而是先把华人用户最常用、最需要、最实用的信息整理清楚，让手机端访问更简单，让用户查找信息更方便。\n\n后续 OpenAA 会继续优化内容质量、页面体验、信息分类和反馈机制，让平台更适合纽约及美国华人日常使用。",
+      "body_format": "markdown",
+      "category_slug": "local-news",
+      "status": "published",
+      "is_featured": false,
+      "is_pinned": false,
+      "published_at": "2026-05-09T01:20:17.876+00:00",
+      "cover_image_url": "https://img.openaa.com/img/news/openaa-news-center-for-ny-chinese-community.png",
+      "seo_title": "OpenAA 新闻资讯中心上线 - 纽约华人生活资讯平台",
+      "seo_description": "OpenAA 新闻资讯中心正式开放，面向纽约及美国华人用户发布生活资讯、平台公告、新手指南、DMV教程和实用生活内容。",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "source_url": "https://ny.openaa.com/news/openaa-news-center-for-ny-chinese-community"
+      }
+    },
+    {
+      "legacy_id": "openaa-first-time-user-guide",
+      "title": "OpenAA 新用户使用指南：第一次进入网站应该怎么看",
+      "slug": "openaa-first-time-user-guide",
+      "excerpt": "OpenAA 新用户使用指南，帮助第一次进入网站的用户了解招聘、房屋、二手、新闻资讯、导航和我的页面等主要功能。",
+      "body": "如果你是第一次使用 OpenAA，可以先从首页开始了解整个平台。\n\nOpenAA 是一个面向美国华人的轻量生活信息平台，主要功能包括招聘、房屋、二手、DMV、新闻资讯、导航和用户中心。平台的设计方向是手机端优先，希望用户可以像使用一个简单 App 一样快速查看信息。\n\n进入首页后，你会看到几个主要入口。\n\n招聘入口主要用于查看招聘信息、求职信息和发布相关内容。如果你正在找工作，可以先查看招聘列表；如果你需要招人，可以登录后发布招聘信息。\n\n房屋入口主要用于查看房屋出租、求租、合租等信息。用户可以根据地区和内容查看房源，也可以发布自己的房屋信息。\n\n二手入口主要用于发布和查看二手闲置物品。适合搬家、清理闲置、寻找便宜实用物品的用户使用。\n\n新闻资讯入口主要用于查看平台公告、新手指南、本地新闻、DMV 教程和生活指南。以后很多平台使用说明和实用教程都会放在这里。\n\n导航入口主要整理美国华人常用网站和生活服务链接。对于不熟悉美国各类网站的新用户来说，导航页面可以作为常用入口使用。\n\n我的页面主要用于管理自己的账号和发布内容。登录后，你可以查看自己发布过的招聘、房屋、二手等信息，并进行编辑或删除。\n\n使用 OpenAA 时，请注意保护个人信息。联系对方前，建议先看清楚信息内容；涉及转账、押金、工资、租金、验证码等问题时，一定要谨慎核实。\n\nOpenAA 会持续优化用户体验，让更多华人用户可以用更简单的方式查找生活信息、发布内容和联系对方。",
+      "body_format": "markdown",
+      "category_slug": "newcomer-guide",
+      "status": "published",
+      "is_featured": false,
+      "is_pinned": false,
+      "published_at": "2026-05-09T01:21:21.21+00:00",
+      "cover_image_url": "https://img.openaa.com/img/news/openaa-first-time-user-guide.png",
+      "seo_title": "OpenAA 新用户使用指南 - 第一次使用 OpenAA 应该怎么看",
+      "seo_description": "OpenAA 新用户使用指南，帮助第一次进入网站的用户了解招聘、房屋、二手、新闻资讯、导航和我的页面等主要功能。",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "source_url": "https://ny.openaa.com/news/openaa-first-time-user-guide"
+      }
+    },
+    {
+      "legacy_id": "us-rental-tips-for-chinese-newcomers",
+      "title": "美国租房前要注意什么：给华人新手的基础提醒",
+      "slug": "us-rental-tips-for-chinese-newcomers",
+      "excerpt": "美国租房前要注意房源真实性、租金包含内容、押金规则、交通位置、合同内容和付款安全，适合华人新手参考。",
+      "body": "在美国租房，对很多刚来的华人新手来说是一件非常重要的事情。房子不只是住的地方，也会影响通勤、生活成本、安全感和后续安排。\n\n租房前，建议先注意几个基础问题。\n\n第一，确认房源是否真实。\n\n看到房源图片后，不要只看装修和价格。要尽量确认房子位置、房型、房间数量、是否真实存在、是否可以看房。如果价格明显低于周边很多，需要特别谨慎。\n\n第二，了解周边位置和交通。\n\n租房不能只看房间本身，还要看交通是否方便、附近是否有超市、公交、地铁、停车位和日常生活设施。对于没有车的新手来说，交通尤其重要。\n\n第三，问清楚租金包含什么。\n\n有些房租包含水电网，有些不包含。有些需要额外支付电费、煤气费、暖气费、网络费、垃圾费或停车费。签约前一定要问清楚，不要只看表面租金。\n\n第四，确认押金和付款方式。\n\n正常租房可能会涉及押金和首月租金，但如果对方要求你在没看房、没签合同、没确认身份前就提前转账，一定要谨慎。特别是礼品卡、Zelle、现金转账等方式，更要小心核实。\n\n第五，看清合同内容。\n\n合同里通常会写租期、租金、押金、付款日期、维修责任、退租规则、是否允许转租、是否允许养宠物等内容。签字前要认真看清楚。\n\n第六，确认联系人的身份。\n\n如果是房东、二房东、中介或室友转租，情况会不同。你要尽量了解对方是否有出租权，避免入住后产生纠纷。\n\n第七，保留沟通记录。\n\n租房过程中，重要信息最好通过文字确认，例如租金、押金、入住时间、地址、包含费用和维修约定。这样以后出现问题时更容易说明情况。\n\n租房没有绝对简单的标准，但有一个原则很重要：不要因为着急入住，就忽略核实信息。\n\nOpenAA 房屋栏目会继续帮助用户发布和查看房屋相关信息，也会通过新闻资讯整理更多租房安全提醒和实用指南。",
+      "body_format": "markdown",
+      "category_slug": "life-guide",
+      "status": "published",
+      "is_featured": false,
+      "is_pinned": false,
+      "published_at": "2026-05-09T01:23:25.13+00:00",
+      "cover_image_url": "https://img.openaa.com/img/news/us-rental-tips-for-chinese-newcomers.png",
+      "seo_title": "美国租房前要注意什么 - 华人新手租房基础提醒",
+      "seo_description": "美国租房前要注意房源真实性、租金包含内容、押金规则、交通位置、合同内容和付款安全，适合华人新手参考。",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "source_url": "https://ny.openaa.com/news/us-rental-tips-for-chinese-newcomers"
+      }
+    },
+    {
+      "legacy_id": "us-bank-account-opening-guide",
+      "title": "美国银行开户基础说明：新手需要准备什么",
+      "slug": "us-bank-account-opening-guide",
+      "excerpt": "美国银行开户基础说明，介绍开户材料、checking账户、saving账户、手续费和新手注意事项。",
+      "body": "在美国生活，银行账户是非常常用的基础服务。\n\n开设银行账户时，银行通常会要求申请人提供身份证明、地址信息、联系方式和相关身份文件。不同银行和不同账户类型要求可能不完全一样。\n\n常见账户包括 checking account 和 savings account。Checking account 通常用于日常消费、收款、转账和支付账单。Savings account 通常用于储蓄。\n\n新手开户时要注意是否有月费、最低余额要求、转账限制、ATM 手续费和账户管理费。\n\n如果英文沟通不方便，可以优先选择附近有中文服务的银行网点，或者提前准备好需要咨询的问题。\n\n开户后要保管好银行卡、网上银行密码和验证码，不要把验证码告诉任何人，避免账户被盗用。",
+      "body_format": "markdown",
+      "category_slug": "life-guide",
+      "status": "published",
+      "is_featured": false,
+      "is_pinned": false,
+      "published_at": "2026-05-09T01:09:49.188+00:00",
+      "cover_image_url": "https://img.openaa.com/img/news/us-bank-account-opening-guide.png",
+      "seo_title": "美国银行开户基础说明 - 华人新手生活指南",
+      "seo_description": "美国银行开户基础说明，介绍开户材料、checking账户、saving账户、手续费和新手注意事项。",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "source_url": "https://ny.openaa.com/news/us-bank-account-opening-guide"
+      }
+    },
+    {
+      "legacy_id": "usa-iphone-download-china-app-guide",
+      "title": "美国苹果手机怎么下载中国 APP？华人最简单教程（2026 最新）",
+      "slug": "usa-iphone-download-china-app-guide",
+      "excerpt": "美国苹果手机怎么下载国内APP？详细教你 iPhone 切换中国区 App Store、更换中国地址、注册中国 Apple ID，以及用快帆等软件切换中国网络下载微信、抖音、小红书、淘宝、12306 等中国 APP。适合纽约华人、新移民和留学生。",
+      "body": "美国苹果手机怎么下载中国 APP？\n\n很多在美国生活的华人，经常都会遇到一个问题：\n\n明明是苹果手机，但怎么下载不了中国 APP？\n\n例如：\n\n抖音，淘宝，支付宝，拼多多，中国银行 APP，铁路 12306，国内视频 APP\n\n很多时候都会提示：\n\n“此 App 在你所在国家或地区不可用”\n\n其实，大部分原因是：\n\nApple ID 地区不对\n\nApp Store 还是美国区\n\n手机网络还是美国网络\n\n下面教大家最简单的方法。\n\n方法一：重新注册一个中国区 Apple ID\n\n登录中国区 App Store\n\n打开：App Store → 右上角头像 → 退出当前账号\n\n然后：登录刚注册的中国 Apple ID。\n\n注意：\n\n这里只退出 App Store 即可。\n\n不要在 iPhone 设置里乱退出整个 iCloud。\n\n第三步：下载国内 APP\n\n登录后：\n\n重新打开 App Store。\n\n很多国内 APP 就能搜索到了。\n\n方法二：直接把现在的 Apple ID 改成中国地区\n\n很多在美国的华人，都是这样做。\n\n需要下载国内 APP 时：\n\n临时改中国地区，下载完成后，再改回美国地区，这样最方便。\n\n第一步：打开 App Store。\n\n点击右上方的用户打开，再点上方的账户信息，付款方式各设置 → 国家/地区。\n\n然后：\n\n点击：“更改国家或地区”\n\n第二步：切换到中国大陆\n\n选择：\n\n“中国大陆”\n\n然后填写：\n\n中国地址\n\n中国电话\n\n邮编\n\n付款方式：\n\n很多情况下可以选择“无”。\n\n第三步：重新打开 App Store\n\n切换完成后：\n\n关闭 App Store。\n\n重新打开。\n\n然后再搜索国内 APP。\n\n如果还是下载不了怎么办？\n\n很多华人卡在这里。\n\n因为：\n\n有些国内 APP 不只是检测 Apple ID 地区。\n\n还会检测：\n\n手机网络地区\n\n当前 IP 地区\n\n所以：\n\n即使已经切换中国区账号。\n\n有时仍然下载不了。\n\n解决方法：先切回中国网络\n\n这时候。\n\n很多在美国的华人都会先下载：\n\n快帆\n\n穿梭\n\n回国加速器\n\n之类的软件。\n\n然后：\n\n选择“中国线路”。\n\n再重新打开 App Store。\n\n很多原本下载不了的 APP。\n\n这时候就能正常下载了。\n\n下载完成后怎么办？\n\n大部分情况下：\n\n下载完成后。\n\n你可以：\n\n切回美国 Apple ID\n\n或改回美国地区\n\n已经下载好的 APP：\n\n一般仍然可以继续使用。\n\n但以后更新时：\n\n有可能还需要重新切换中国区。\n\n注意事项\n\n不要随便购买陌生 Apple ID\n\n很多网上卖的共享账号：\n\n存在：\n\n被锁号\n\n被盗资料\n\n隐私泄露\n\n风险。\n\n不要随便安装来路不明的软件\n\n尤其是：\n\n描述文件\n\n企业证书 APP\n\n不明安装包\n\n避免影响手机安全。\n\n总结\n\n很多在美国生活的华人。\n\n其实不是不会下载中国 APP。\n\n而是：\n\n没切换中国区\n\n没改中国地址\n\n没切回中国网络\n\n只要按上面的方法一步步操作。\n\n大部分国内 APP：\n\n都能正常下载安装。\n\n如果：\n\nApp Store 搜不到\n\n提示地区不可用\n\n一直无法下载\n\n通常：\n\n切换中国区 + 切换中国网络后。\n\n基本就能解决。",
+      "body_format": "markdown",
+      "category_slug": "life-guide",
+      "status": "published",
+      "is_featured": false,
+      "is_pinned": false,
+      "published_at": "2026-05-21T16:00:23.963+00:00",
+      "cover_image_url": "https://img.openaa.com/img/news/usa-iphone-download-china-app-guide.png",
+      "seo_title": "美国苹果手机下载中国APP教程｜iPhone切换中国区App Store方法｜华人实测",
+      "seo_description": "美国苹果手机怎么下载国内APP？详细教你 iPhone 切换中国区 App Store、更换中国地址、注册中国 Apple ID，以及用快帆等软件切换中国网络下载微信、抖音、小红书、淘宝、12306 等中国 APP。适合纽约华人、新移民和留学生。",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "source_url": "https://ny.openaa.com/news/usa-iphone-download-china-app-guide",
+        "notes": [
+          "needs_freshness_review"
+        ]
+      }
+    },
+    {
+      "legacy_id": "uscis-annual-asylum-fee-payment-guide",
+      "title": "USCIS 庇护年费现在可以自己网上查询了｜很多律师不会主动通知",
+      "slug": "uscis-annual-asylum-fee-payment-guide",
+      "excerpt": "USCIS 庇护年费现在可以自己网上查询，不再只能等律师通知。本文整理 USCIS 官方查询入口、A Number 与 Receipt Number 填写方法、如何查看是否需要缴费，以及网上付款步骤中文说明。",
+      "body": "如果你的庇护案件目前还在 USCIS 等待处理中，现在有一个很多华人还不知道的重要变化：\n\n你已经可以自己直接上网查询，到底需不需要缴纳 USCIS 庇护年费了。\n\n以前，很多人只能等律师楼通知。\n\n但现实情况是，有些律师楼可能不会第一时间提醒，甚至有人直到快超期才知道需要缴费。\n\n现在 USCIS 已提供官方网上查询页面，用户可以自己直接查询是否需要缴费，也可以直接在线付款。\n\n这对于很多华人来说，会方便很多。\n\n一、什么是 USCIS 庇护年费？\n\n部分庇护申请案件，在达到一定等待时间后，USCIS 可能会要求申请人缴纳 Annual Asylum Fee（庇护年费）。\n\n目前不少通知中的金额显示为：\n\n$102\n\n但 USCIS 的费用、规则和政策未来都有可能变化，所以最终还是以移民局官方通知为准。\n\n二、为什么建议自己查询？\n\n很多华人用户现在最大的担心是：\n\n“我到底有没有被要求缴费？”\n\n“律师为什么没有通知我？”\n\n“如果没及时缴费，会不会影响案件？”\n\n实际上，现在 USCIS 已经提供了官方在线查询系统。\n\n即使律师没有联系你，你也可以自己登录官方页面查看。\n\n这样至少能知道：\n\n自己目前是否需要缴费；\n\n系统是否已经生成付款要求；\n\n是否已经进入需要缴费阶段。\n\n三、USCIS 官方查询入口:https://my.uscis.gov/accounts/annual-asylum-fee/questionnaire\n\nUSCIS 官方查询与缴费页面：\n\nUSCIS Annual Asylum Fee 官方页面\n\n进入页面后，按提示填写信息即可。\n\n四、需要准备什么信息？\n\n进入 USCIS 页面后，系统一般会要求填写：\n\n1，A Number（A 号码）\n\n通常是以 A 开头的移民号码。\n\n例如：\n\nA123456789\n\n2，Receipt Number（收据号）\n\n一般是 USCIS 通知上的收据号码。\n\n通常格式为：\n\n三个英文字母 + 10 位数字\n\n例如：\n\nIOE1234567890\n\n这些信息通常可以在：\n\nUSCIS 通知；\n\n律师发来的文件；\n\nI-797 收据；\n\n案件通知图片；\n\n里面找到。\n\n五、填写完成后怎样看是否需要缴费？\n\n填写 A Number 和 Receipt Number 后，页面会继续进入下一步。\n\n如果你的案件目前已经符合缴费要求，系统一般会显示：\n\n需要缴纳的金额；\n\n付款页面；\n\n付款按钮。\n\n如果系统没有要求缴费，也可能会显示暂时不需要付款。\n\n因此，现在最重要的是：\n\n不要只等律师通知。\n\n自己也可以定期上网检查。\n\n六、如果需要缴费，可以直接网上付款\n\n如果系统显示需要付款，可以直接在线完成缴费。\n\n目前 USCIS 页面一般支持两种付款方式：\n\n1，Bank account（银行账户）\n\n需要填写：\n\nRouting Number；\n\nAccount Number；\n\n账户姓名等信息。\n\n2，Debit or credit card（借记卡或信用卡）\n\n需要填写：\n\n银行卡号；\n\n有效期；\n\n安全码；\n\n账单地址等信息。\n\n确认信息后，勾选确认框，然后继续提交即可。\n\n七、缴费成功后会怎样？\n\n如果付款成功，页面一般会显示类似：\n\nYou successfully submitted your Annual Asylum Fee\n\n建议：\n\n立即截图保存；\n\n保存付款确认页面；\n\n必要时发给律师楼确认；\n\n同时保存付款邮件记录。\n\n八、几个非常重要的提醒\n\n1，尽量使用 USCIS 官方网站查询和付款。\n\n不要随便点击陌生短信或陌生链接。\n\n2，填写 A Number 和 Receipt Number 时一定要仔细确认。\n\n信息错误可能导致查询失败。\n\n3，如果收到通知后，建议尽量及时处理。\n\n不要长期拖延。\n\n4，如果自己不会操作，可以请律师或专业人士协助。\n\n但现在至少已经可以自己先查询。\n\n5，USCIS 政策未来可能变化。\n\n包括金额、期限、规则和页面内容，都可能调整。\n\nOpenAA 提醒\n\n现在很多华人还不知道：\n\nUSCIS 庇护年费已经可以自己网上查询。\n\n以前很多人完全依赖律师通知，但现在即使律师没有主动联系，你也可以自己先到 USCIS 官方网站检查。\n\n至少能知道：\n\n自己目前是否已经进入需要缴费阶段。\n\n对于很多等待庇护案件的华人来说，这会更安心一些。\n\n最终规则、费用和案件要求，请以 USCIS 官方通知和律师意见为准。",
+      "body_format": "markdown",
+      "category_slug": "local-news",
+      "status": "published",
+      "is_featured": false,
+      "is_pinned": false,
+      "published_at": "2026-05-17T00:27:58.53+00:00",
+      "cover_image_url": "https://img.openaa.com/img/dmv/uscis-annual-asylum-fee-payment-guide.png",
+      "seo_title": "USCIS 庇护年费怎么查｜现在可以自己网上查询是否需要缴费｜华人中文教程",
+      "seo_description": "USCIS 庇护年费现在可以自己网上查询，不再只能等律师通知。本文整理 USCIS 官方查询入口、A Number 与 Receipt Number 填写方法、如何查看是否需要缴费，以及网上付款步骤中文说明。",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "source_url": "https://ny.openaa.com/news/uscis-annual-asylum-fee-payment-guide",
+        "notes": [
+          "needs_freshness_review"
+        ]
+      }
+    },
+    {
+      "legacy_id": "openaa-official-launch-ny-chinese-life-platform",
+      "title": "OpenAA 正式上线：纽约华人生活入口平台，招聘、房屋、二手、DMV、新闻与本地服务一站式整合",
+      "slug": "openaa-official-launch-ny-chinese-life-platform",
+      "excerpt": "OpenAA 正式上线，服务纽约及周边华人，提供招聘求职、房屋租售、二手交易、DMV 驾照笔试、罚单查询、新闻资讯、本地服务和常用网站导航，打造实用、简洁、手机友好的华人生活入口。",
+      "body": "OpenAA 正式上线了。\n\nOpenAA 是一个面向纽约及周边华人的生活信息平台，希望帮助在美国生活、工作、学习和创业的华人，更方便地找到真实、有用、常用的信息。\n\n网站目前主域名为：\n\nhttps://ny.openaa.com/\n\nOpenAA 的定位很简单：\n\n做一个纽约华人日常生活入口。\n\n很多华人在美国生活时，经常会遇到这些问题：找工作不知道去哪里看，租房信息分散，二手物品不好发布，考驾照英文看不懂，DMV 流程复杂，本地服务不容易找到，常用网站也经常要到处搜索。\n\nOpenAA 希望把这些常用功能集中在一个平台里，让用户打开网站后，就能快速进入自己需要的板块。\n\n目前 OpenAA 已上线多个核心功能：\n\n一、招聘求职\n\nOpenAA 提供招聘信息发布和浏览功能，适合餐馆、装修、仓库、司机、办公室、兼职等本地岗位发布。用户可以按地区、分类查看招聘信息，也可以登录后发布自己的招聘内容。\n\n平台希望让招聘信息更清晰、更容易查看，也方便雇主和求职者之间直接联系。\n\n二、房屋租售\n\n房屋板块主要服务纽约及周边华人租房、找房、转租和房屋相关信息发布。用户可以查看房源标题、地区、介绍、图片和联系方式，方便快速了解房屋情况。\n\n无论是找单房、整租、合租，还是发布出租信息，都可以通过 OpenAA 更方便地展示。\n\n三、二手闲置\n\n二手板块适合发布家具、电器、手机、电脑、生活用品、车辆相关用品等闲置物品。用户可以上传图片、填写说明，让附近用户更容易看到。\n\n很多华人搬家、换家具、处理闲置物品时，都需要一个简单好用的平台。OpenAA 希望让二手信息发布更方便，也让买家更容易找到合适物品。\n\n四、本地服务\n\nOpenAA 本地服务板块面向华人日常生活需求，例如搬家、装修、清洁、维修、汽车服务、会计报税、法律咨询、电脑手机维修等。\n\n服务商可以发布服务信息，用户可以按分类和地区查找。这个板块的目标是做成一个轻量实用的华人本地服务黄页。\n\n五、DMV 驾照与罚单服务\n\nDMV 是很多新移民和华人用户非常关心的内容。OpenAA 已经整理 DMV 相关入口，包括纽约 DMV 笔试练习、模拟考试、题库查看、错题练习、罚单查询等功能。\n\n特别是纽约驾照笔试，对英文不熟悉的用户来说比较困难。OpenAA 希望通过中文说明、练习题和清晰流程，帮助更多华人顺利了解 DMV 办理步骤。\n\n六、新闻资讯\n\nOpenAA 新闻资讯中心会发布与纽约华人生活相关的实用内容，包括本地新闻、新手指南、DMV 教程、生活指南和平台公告。\n\n新闻板块不仅是资讯发布，也是 OpenAA 后续 SEO 和内容沉淀的重要部分。未来会继续增加更多适合华人搜索和阅读的实用文章。\n\n七、常用网站导航\n\nOpenAA 也提供常用网站导航功能，把政府服务、银行金融、保险、购物、社交媒体、视频平台、邮箱服务、AI 工具等常用链接集中整理，方便用户快速打开。\n\n对于很多不熟悉英文网站或不想反复搜索的用户来说，一个清晰的中文导航页会非常实用。\n\n八、手机端优先体验\n\nOpenAA 从一开始就重视手机端体验。因为大多数用户查看招聘、房屋、二手、DMV 和本地服务时，都是用手机打开。\n\n网站整体设计尽量保持简洁、清楚、容易点击。底部导航、返回顶部、分类栏、图片展示、详情页返回按钮等，都按照手机使用习惯进行优化。\n\nOpenAA 适合哪些用户？\n\nOpenAA 主要适合以下人群：\n\n在纽约生活的华人；\n\n刚来美国的新移民；\n\n正在找工作、找房、处理二手物品的用户；\n\n准备考纽约驾照笔试的人；\n\n需要本地服务的家庭或商家；\n\n希望快速找到常用网站和生活信息的人；\n\n需要发布招聘、房屋、服务、二手信息的用户。\n\nOpenAA 后续还会继续完善\n\nOpenAA 目前仍在持续优化中。后续会继续完善用户体验、后台管理、内容发布、搜索功能、SEO 收录、导航功能、图片展示和更多生活服务模块。\n\nOpenAA 的目标不是做一个复杂难用的网站，而是做一个稳定、实用、打开就能用的华人生活入口。\n\n未来，OpenAA 会继续围绕纽约华人真实生活需求，逐步增加更多实用内容和功能，让用户找信息更快，发布信息更方便，生活办事更省心。\n\n欢迎访问 OpenAA：\n\nhttps://ny.openaa.com/\n\nOpenAA · 美国华人生活入口",
+      "body_format": "markdown",
+      "category_slug": "local-news",
+      "status": "published",
+      "is_featured": false,
+      "is_pinned": false,
+      "published_at": "2026-05-17T22:25:29.795+00:00",
+      "cover_image_url": "https://img.openaa.com/img/news/openaa-official-launch-ny-chinese-life-platform.png",
+      "seo_title": "OpenAA 正式上线｜纽约华人生活入口平台｜招聘房屋二手DMV本地服务",
+      "seo_description": "OpenAA 正式上线，服务纽约及周边华人，提供招聘求职、房屋租售、二手交易、DMV 驾照笔试、罚单查询、新闻资讯、本地服务和常用网站导航，打造实用、简洁、手机友好的华人生活入口。",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "source_url": "https://ny.openaa.com/news/openaa-official-launch-ny-chinese-life-platform",
+        "notes": [
+          "needs_freshness_review"
+        ]
+      }
+    },
+    {
+      "legacy_id": "uscis-fee-rule-may-2026",
+      "title": "2026 美国移民局缴费新规来了？5月29日后这些费用和规定要特别注意",
+      "slug": "uscis-fee-rule-may-2026",
+      "excerpt": "美国 USCIS 2026 最新缴费规则整理，包括 5 月 29 日后生效的新费用、庇护年费、拒件风险和华人申请人需要注意的问题。",
+      "body": "最近很多华人圈都在讨论：“5 月 29 日后，如果没有按时缴费，会不会影响移民申请？”\n\n根据美国 USCIS（美国移民局）和 DHS（国土安全部）近期公布的新规则，2026 年开始，部分移民申请、庇护申请和相关表格，确实出现了新的费用和更严格的缴费要求。\n\n这次更新，最受关注的是：\n\n一些 USCIS 表格费用上涨\n\n新增年度庇护费用（Annual Asylum Fee）\n\n某些申请如果没有正确缴费，可能直接被拒件\n\n2026 年 5 月 29 日后，部分规则正式生效\n\n下面用简单中文整理一下重点。\n\n一、5 月 29 日后有什么变化？\n\n根据 USCIS 和 DHS 公布的信息，新的 USCIS Immigration Fees Rule（移民费用规则）将在 2026 年 5 月 29 日开始正式实施。\n\n重点之一是：\n\n某些申请如果没有按规定缴费，USCIS 会直接拒收（Reject）或拒绝处理。\n\n例如：\n\nI-102\n\nI-589（庇护申请）\n\n某些工作许可相关申请\n\n部分移民福利申请\n\nUSCIS 官方已经说明：\n\n如果申请在 2026 年 5 月 29 日之后寄出（postmarked），但没有附上正确费用，可能直接被退件。\n\n二、什么是新的“庇护年费”？\n\n这次变化里，最引人注意的是：\n\nAnnual Asylum Fee（年度庇护费用）\n\n简单理解：\n\n如果你的 I-589 庇护申请已经 pending（等待处理中）超过 1 年，之后 USCIS 可能会要求你每年缴一次费用。\n\nUSCIS 说明：\n\n庇护申请 pending 满 365 天后\n\nUSCIS 会寄通知\n\n申请人需要按通知缴费\n\n之后每年可能都需要继续缴费\n\n如果没有按时缴费，可能产生严重后果。\n\n三、不缴费会怎样？\n\n目前 USCIS 和相关移民法律提醒：\n\n如果收到缴费通知后长期不处理，可能会：\n\n庇护申请被拒绝\n\n申请被终止\n\n某些福利失效\n\n工作许可受影响\n\n甚至可能影响后续身份处理\n\n特别是：\n\n地址一定要更新。\n\n如果你搬家了，但没有更新 USCIS 地址，可能收不到缴费通知。\n\nUSCIS 规定：\n\n非美国公民更换地址后，一般需要在 10 天内更新地址。\n\n很多华人最容易忽略这一点。\n\n四、现在 USCIS 缴费还有哪些变化？\n\n除了 5 月的新规则外，USCIS 2026 年还有几项变化：\n\n1）部分费用上涨\n\nUSCIS 在 2026 年已经调整部分费用，包括：\n\nI-140\n\nI-129\n\nPremium Processing（加急处理）\n\n工作许可\n\n某些移民申请\n\n部分费用因为通货膨胀再次提高。\n\n2）越来越偏向电子支付\n\nUSCIS 正逐步改成：\n\n在线缴费\n\nACH 银行转账\n\n信用卡\n\n电子付款\n\n部分纸质支票处理正在减少。\n\n3）付款错误更容易被拒\n\nUSCIS 现在对：\n\n签名\n\n金额\n\n支票\n\n表格版本\n\n缴费方式\n\n审核更严格。\n\n以前有些小错误还能补，现在很多情况可能直接 Reject。\n\n五、华人申请人现在最应该注意什么？\n\n1）不要拖到最后一天\n\n很多人喜欢最后几天才寄材料。\n\n现在规则变化多，费用也容易改，最好提前确认。\n\n2）确认最新费用\n\n不要只看旧 YouTube 视频。\n\nUSCIS 经常更新费用。\n\n提交前一定要查看 USCIS 官方费用页面。\n\n3）搬家一定更新地址\n\n这是很多华人最容易踩坑的地方。\n\n如果收不到通知，可能错过缴费时间。\n\n4）收到缴费通知不要忽略\n\n特别是：\n\n庇护申请\n\n工作许可\n\nPending 超过 1 年的案件\n\n最好第一时间确认。\n\n六、OpenAA 提醒\n\n最近美国移民规则变化非常快。\n\n网上很多旧视频、旧文章，已经不一定准确。\n\n尤其是：\n\n费用\n\n缴费时间\n\n表格版本\n\n邮寄地址\n\n在线提交规则\n\n都可能变化。\n\n如果你的案件比较复杂，或者涉及：\n\n庇护\n\n工卡\n\n身份转换\n\n绿卡\n\n上庭\n\n被要求补件\n\n建议直接查看 USCIS 官方网站，或者咨询专业移民律师。",
+      "body_format": "markdown",
+      "category_slug": "local-news",
+      "status": "published",
+      "is_featured": false,
+      "is_pinned": false,
+      "published_at": "2026-05-17T00:21:21.848+00:00",
+      "cover_image_url": "https://img.openaa.com/img/dmv/uscis-fee-rule-may-2026.png",
+      "seo_title": "USCIS 2026 缴费新规｜5月29日后不缴费可能被拒件",
+      "seo_description": "美国 USCIS 2026 最新缴费规则整理，包括 5 月 29 日后生效的新费用、庇护年费、拒件风险和华人申请人需要注意的问题。",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "source_url": "https://ny.openaa.com/news/uscis-fee-rule-may-2026",
+        "notes": [
+          "needs_freshness_review"
+        ]
+      }
+    },
+    {
+      "legacy_id": "ny-dmv-preparation-checklist-for-beginners",
+      "title": "纽约 DMV 办事前准备清单：新手容易忽略的几个重点",
+      "slug": "ny-dmv-preparation-checklist-for-beginners",
+      "excerpt": "纽约 DMV 办事前准备清单，帮助新手提前确认材料、预约、地址证明、身份信息和办理类型，减少白跑一趟的情况。",
+      "body": "在纽约办理 DMV 相关业务时，很多新手最容易遇到的问题不是流程太复杂，而是出发前没有把材料和办理类型确认清楚。\n\n无论是申请 learner permit、办理驾照、更新证件、查询罚单，还是处理车辆相关事项，去 DMV 前都建议先做一次准备。\n\n第一，确认自己要办理的具体业务。\n\n不同业务需要的材料和步骤可能不一样。比如申请学习驾驶许可、更新驾照、办理 Real ID、车辆登记、地址变更等，都属于不同类型。出发前先确认业务名称，避免到现场才发现排错队或材料不符合要求。\n\n第二，提前查看官方说明。\n\nDMV 政策和材料要求可能会更新，办理前最好查看纽约 DMV 官方网站的最新说明。不要只依赖网上旧文章或朋友以前的经验，因为不同时间、不同身份、不同业务可能会有不同要求。\n\n第三，准备身份证明和地址证明。\n\n很多 DMV 业务都会涉及身份证明、地址证明和身份相关文件。材料最好提前整理好，原件和需要的复印件分开放，避免现场手忙脚乱。\n\n第四，确认姓名和地址是否一致。\n\n如果你的银行账单、租约、证件、信件上的姓名或地址不一致，可能会影响办理。去 DMV 前建议先检查材料上的信息是否匹配。\n\n第五，留意预约和现场等待时间。\n\n有些业务可以预约，有些业务可能需要现场排队。建议提前规划时间，不要赶在上班前、下班前或有急事时去办理。\n\n第六，笔试和路考要提前准备。\n\n如果是驾照相关业务，笔试和路考都需要认真准备。笔试要熟悉交通规则、标志和安全驾驶常识；路考则需要实际练车和掌握基本驾驶动作。\n\n第七，不懂英文时要提前准备。\n\n如果你英文不太熟，可以提前把要办理的事项、材料名称和问题写下来。必要时可以请熟悉流程的人陪同，或者先在网上查清楚关键词。\n\n办理 DMV 业务最重要的是提前准备，不要等到现场才发现少材料、选错业务或信息不一致。\n\nOpenAA 后续会继续整理 DMV 相关实用内容，帮助华人用户更清楚地了解驾照、笔试、路考和罚单查询等常见问题。",
+      "body_format": "markdown",
+      "category_slug": "dmv-guide",
+      "status": "published",
+      "is_featured": false,
+      "is_pinned": false,
+      "published_at": "2026-05-09T01:22:25.772+00:00",
+      "cover_image_url": "https://img.openaa.com/img/dmv/ny-road-test-schedule-guide.png",
+      "seo_title": "纽约 DMV 办事前准备清单 - 新手办理驾照和证件注意事项",
+      "seo_description": "纽约 DMV 办事前准备清单，帮助新手提前确认材料、预约、地址证明、身份信息和办理类型，减少白跑一趟的情况。",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "source_url": "https://ny.openaa.com/news/ny-dmv-preparation-checklist-for-beginners",
+        "notes": [
+          "needs_freshness_review"
+        ]
+      }
+    },
+    {
+      "legacy_id": "ny-dmv-permit-test-prepare",
+      "title": "纽约 DMV 笔试怎么准备？",
+      "slug": "ny-dmv-permit-test-prepare",
+      "excerpt": "纽约 DMV 笔试准备中文指南，适合第一次申请 Learner Permit 的华人新手，整理学习重点、刷题方法和考试注意事项。",
+      "body": "纽约 DMV 笔试主要考交通规则、道路标志、安全驾驶和基本驾驶常识。对新手来说，不要只靠背答案，最好先看一遍纽约州 Driver’s Manual，再配合中文题库反复练习。\n\n准备时可以分三步：\n\n第一步，先了解考试内容。纽约 DMV 笔试会涉及限速、让行、停车、校车、酒驾、路权、交通标志等内容。很多题目不是死记硬背，而是考你是否理解实际开车时该怎样判断。\n\n第二步，重点练习交通标志。交通标志题通常比较直观，但也容易因为英文不熟或图形相似而选错。建议把常见的 STOP、YIELD、限速、禁止停车、学校区域、铁路交叉、施工区域等标志单独练习。\n\n第三步，做模拟考试。练习时不要只看正确答案，要看自己错在哪里。连续几次模拟考试都能稳定通过后，再去参加正式笔试会更稳。\n\n参加考试前，还要准备好身份证明、地址证明和 DMV 要求的申请材料。申请 Learner Permit 通常需要填写 MV-44 表格，并通过视力和知识测试。\n\nOpenAA 提醒：本页面只做中文整理和入口导航，最终规则、费用、材料和预约信息，请以纽约 DMV 官方页面为准。",
+      "body_format": "markdown",
+      "category_slug": "dmv-guide",
+      "status": "published",
+      "is_featured": false,
+      "is_pinned": false,
+      "published_at": "2026-05-16T21:07:39.554+00:00",
+      "cover_image_url": "https://img.openaa.com/img/dmv/ny-dmv-permit-test-prepare.png",
+      "seo_title": "纽约 DMV 笔试怎么准备？新手考 Learner Permit 中文指南",
+      "seo_description": "纽约 DMV 笔试准备中文指南，适合第一次申请 Learner Permit 的华人新手，整理学习重点、刷题方法和考试注意事项。",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "source_url": "https://ny.openaa.com/news/ny-dmv-permit-test-prepare",
+        "notes": [
+          "needs_freshness_review"
+        ]
+      }
+    },
+    {
+      "legacy_id": "what-is-learner-permit-ny",
+      "title": "Learner Permit 是什么？",
+      "slug": "what-is-learner-permit-ny",
+      "excerpt": "纽约 Learner Permit 中文解释，适合第一次在纽约考驾照的新手，了解学习驾照用途、限制和后续路考流程。",
+      "body": "Learner Permit 可以理解为“学习驾照”或“学车许可”。它不是正式驾照，而是允许你在符合规定的情况下练习开车，为以后参加路考做准备。\n\n拿到 Learner Permit 后，不能自己单独开车。纽约 DMV 规定，持有 Learner Permit 的人开车时，必须有一名 21 岁或以上、并且持有相应有效驾照的监督驾驶员陪同。\n\n一般流程是：先准备材料，申请 Learner Permit，参加笔试和视力测试；通过后拿到 Permit；之后练车，完成必要课程或要求，再预约路考。纽约州说明，申请 Learner Permit 的费用通常包含笔试、两次路考和驾照费用，Permit 有效期为 5 年。\n\n新手要特别注意：Learner Permit 不是正式驾照，不等于可以随便上路。不同年龄、不同地区和不同道路可能有额外限制。练车前最好先了解纽约 DMV 的 Permit 限制，避免违规。\n\nOpenAA 提醒：如果你刚来美国、英文不熟，建议先用中文理解流程，再回到 DMV 官方页面核对材料和规则。",
+      "body_format": "markdown",
+      "category_slug": "dmv-guide",
+      "status": "published",
+      "is_featured": false,
+      "is_pinned": false,
+      "published_at": "2026-05-16T21:11:29.638+00:00",
+      "cover_image_url": "https://img.openaa.com/img/dmv/what-is-learner-permit-ny.png",
+      "seo_title": "Learner Permit 是什么？纽约学习驾照中文说明",
+      "seo_description": "纽约 Learner Permit 中文解释，适合第一次在纽约考驾照的新手，了解学习驾照用途、限制和后续路考流程。",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "source_url": "https://ny.openaa.com/news/what-is-learner-permit-ny",
+        "notes": [
+          "needs_freshness_review"
+        ]
+      }
+    },
+    {
+      "legacy_id": "ny-road-test-schedule-guide",
+      "title": "纽约路考预约流程",
+      "slug": "ny-road-test-schedule-guide",
+      "excerpt": "纽约 DMV 路考预约中文指南，说明预约前准备、需要的信息、考试地点选择和路考当天注意事项。",
+      "body": "在纽约考正式驾照，通常需要先拿到 Learner Permit，完成练车和相关课程后，再预约 Road Test 路考。\n\n预约路考前，一般需要准备好 Learner Permit 上的信息，例如 Client ID、Document Number、出生日期、邮编，以及可能需要的 Social Security 相关信息。纽约 DMV 官方预约页面说明，用户可以在线预约、取消、改期或确认路考时间。\n\n预约流程可以这样理解：\n\n第一步，确认自己已经符合路考条件。不要刚拿 Permit 就急着预约，建议先练熟基本驾驶、停车、转弯、变道、看镜、让行和路口判断。\n\n第二步，进入 DMV 官方 Road Test 预约系统，按要求填写个人信息。\n\n第三步，选择合适的考试地点和时间。不同地区排期不同，热门地点可能需要提前预约。\n\n第四步，预约成功后保存确认信息。考试当天要带好 Permit、预约信息、合规车辆和陪同人员。车辆本身也要符合路考要求，例如保险、注册和安全状态正常。\n\n如果第一次或第二次没有通过，也不要太紧张。纽约州说明，申请 Learner Permit 的费用通常包含两次路考；如果两次都没有通过，需要再购买额外路考次数。\n\nOpenAA 提醒：路考不是只看会不会开车，更看你是否安全、守规矩、观察到位。练车时要养成看镜、打灯、停稳、让行的习惯。",
+      "body_format": "markdown",
+      "category_slug": "dmv-guide",
+      "status": "published",
+      "is_featured": false,
+      "is_pinned": false,
+      "published_at": "2026-05-16T21:12:48.522+00:00",
+      "cover_image_url": "https://img.openaa.com/img/dmv/ny-road-test-schedule-guide.png",
+      "seo_title": "纽约路考怎么预约？DMV Road Test 中文流程",
+      "seo_description": "纽约 DMV 路考预约中文指南，说明预约前准备、需要的信息、考试地点选择和路考当天注意事项。",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "source_url": "https://ny.openaa.com/news/ny-road-test-schedule-guide",
+        "notes": [
+          "needs_freshness_review"
+        ]
+      }
+    },
+    {
+      "legacy_id": "new-driver-after-buying-car-ny",
+      "title": "新手买车后需要做什么？",
+      "slug": "new-driver-after-buying-car-ny",
+      "excerpt": "纽约新手买车后注意事项，包括车辆保险、注册、车牌、验车、停车罚单和日常驾驶提醒。 正文：",
+      "body": "在纽约买车后，不是拿到钥匙就可以放心开走。新手最容易忽略的是保险、注册、车牌、验车和停车规则。\n\n第一，确认车辆保险。纽约开车必须有合规保险。买车前后要和保险公司确认保单生效时间，不要出现车已经上路但保险还没生效的情况。\n\n第二，办理车辆注册和车牌。车辆需要按规定完成注册，取得合法车牌和相关文件。不同购买方式可能流程不同，例如从车行买车和私人交易买车，处理方式可能不一样。\n\n第三，注意车辆检查和安全状态。买二手车时，建议重点检查轮胎、刹车、灯光、雨刷、发动机、变速箱、仪表盘故障灯和是否有事故记录。必要时找懂车的人或维修店帮忙检查。\n\n第四，熟悉停车规则。纽约停车规则复杂，清扫街道、消防栓、学校区域、装卸区、计时停车、居民区限停都可能导致罚单。新手买车后，建议先学会看路牌，不确定时不要乱停。\n\n第五，保存好车辆文件。保险卡、注册文件、驾照、买卖文件、维修记录等都要保存好。以后续保、卖车、处理罚单或事故时都会用到。\n\n如果收到停车罚单或摄像头罚单，可以通过纽约市官方系统按罚单号或车牌查询。\n\nOpenAA 提醒：新手买车最重要的是合法上路、安全驾驶、停车谨慎。便宜车不一定省钱，保险、维修、停车和罚单成本也要一起算进去。",
+      "body_format": "markdown",
+      "category_slug": "dmv-guide",
+      "status": "published",
+      "is_featured": false,
+      "is_pinned": false,
+      "published_at": "2026-05-16T21:16:03.073+00:00",
+      "cover_image_url": "https://img.openaa.com/img/dmv/new-driver-after-buying-car-ny.png",
+      "seo_title": "纽约新手买车后需要做什么？保险注册验车中文指南",
+      "seo_description": "纽约新手买车后注意事项，包括车辆保险、注册、车牌、验车、停车罚单和日常驾驶提醒。 正文：",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "source_url": "https://ny.openaa.com/news/new-driver-after-buying-car-ny",
+        "notes": [
+          "needs_freshness_review"
+        ]
+      }
+    },
+    {
+      "legacy_id": "nyc-parking-ticket-lookup",
+      "title": "纽约停车罚单怎么查？",
+      "slug": "nyc-parking-ticket-lookup",
+      "excerpt": "纽约停车罚单和摄像头罚单查询中文说明，整理按罚单号或车牌查询的方法，以及付款和诈骗提醒。",
+      "body": "纽约停车罚单和摄像头罚单，通常可以通过纽约市官方系统查询。常见的查询方式有两种：按罚单号查询，或按车牌查询。\n\n如果你手上有罚单，可以使用 10 位数的 Ticket Number 或 Notice of Liability Number 查询。如果没有罚单号码，也可以用车牌号码、车牌发行州和车牌类型查询。纽约 311 页面也说明，可以通过罚单号/NOL 或车牌信息查询停车罚单或摄像头违规状态。\n\n查询时要注意：\n\n第一，看清楚是停车罚单、摄像头罚单，还是普通交通违规。停车罚单和摄像头罚单通常由 NYC Department of Finance 处理；纽约市五区部分非刑事交通违规则可能属于 DMV Traffic Violations Bureau。\n\n第二，尽量从官方网站进入，不要随便点短信里的付款链接。近年纽约有假罚单、假付款链接等诈骗提醒，收到可疑短信或二维码时要特别小心。\n\n第三，如果罚单刚开出，系统可能还没马上显示，可以过一段时间再查。\n\nOpenAA 提醒：罚单是否需要申诉、是否影响记录、是否涉及保险，情况可能不同。如金额较大或有争议，建议咨询专业人士或官方机构。",
+      "body_format": "markdown",
+      "category_slug": "dmv-guide",
+      "status": "published",
+      "is_featured": false,
+      "is_pinned": false,
+      "published_at": "2026-05-16T21:16:05.656+00:00",
+      "cover_image_url": "https://img.openaa.com/img/dmv/nyc-parking-ticket-lookup.png",
+      "seo_title": "纽约停车罚单怎么查？NYC Parking Ticket 查询中文指南",
+      "seo_description": "纽约停车罚单和摄像头罚单查询中文说明，整理按罚单号或车牌查询的方法，以及付款和诈骗提醒。",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "source_url": "https://ny.openaa.com/news/nyc-parking-ticket-lookup",
+        "notes": [
+          "needs_freshness_review"
+        ]
+      }
+    },
+    {
+      "legacy_id": "openaa-posting-rules-reminder",
+      "title": "OpenAA 信息发布规则提醒：真实、清楚、及时更新",
+      "slug": "openaa-posting-rules-reminder",
+      "excerpt": "OpenAA 提醒用户发布招聘、房屋、二手等信息时保持真实、清楚、联系方式有效，并及时更新或删除过期信息。",
+      "body": "为了让 OpenAA 上的信息更有用，也为了减少用户之间的误会，平台提醒所有发布者：发布信息时请尽量做到真实、清楚、及时更新。\n\n无论你发布的是招聘、房屋、二手商品，还是以后开放的本地服务信息，都建议遵守以下原则。\n\n第一，标题要清楚。\n\n标题应该让用户一眼看懂你发布的内容。比如招聘信息可以写清楚岗位类型，房屋信息可以写清楚出租类型，二手商品可以写清楚物品名称。\n\n第二，内容要真实。\n\n不要夸大工资、房源、商品情况或服务内容。虚假信息不仅会影响用户信任，也会影响平台整体质量。\n\n第三，联系方式要有效。\n\n如果电话、微信或其它联系方式已经不用了，请及时修改。联系方式错误会让用户无法联系，也会浪费双方时间。\n\n第四，价格和条件尽量说明。\n\n如果是招聘，建议说明工资范围、工作地点、工作时间和基本要求。如果是房屋，建议说明租金、位置、房型和入住时间。如果是二手商品，建议说明价格、成色和交易方式。\n\n第五，信息过期后及时处理。\n\n如果岗位已经招满、房子已经租出、商品已经卖掉，请及时编辑、下架或删除信息。这样可以减少无效联系，也能让平台信息更干净。\n\n第六，不要发布明显违法、欺诈或误导性内容。\n\nOpenAA 会逐步完善反馈和举报机制。发现虚假信息、可疑内容或严重违规内容时，平台会根据情况进行处理。\n\nOpenAA 希望成为一个轻量、实用、可信的美国华人生活信息平台。信息质量越高，用户体验越好，平台对大家的帮助也会越大。",
+      "body_format": "markdown",
+      "category_slug": "announcement",
+      "status": "published",
+      "is_featured": false,
+      "is_pinned": false,
+      "published_at": "2026-05-09T01:24:43.173+00:00",
+      "cover_image_url": null,
+      "seo_title": "OpenAA 信息发布规则提醒 - 招聘房屋二手信息发布注意事项",
+      "seo_description": "OpenAA 提醒用户发布招聘、房屋、二手等信息时保持真实、清楚、联系方式有效，并及时更新或删除过期信息。",
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "source_url": "https://ny.openaa.com/news/openaa-posting-rules-reminder",
+        "notes": [
+          "cover_needs_replacement"
+        ]
+      }
+    }
+  ]
+}

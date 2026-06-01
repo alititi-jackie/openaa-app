@@ -1,0 +1,301 @@
+{
+  "metadata": {
+    "source": "legacy_official_import",
+    "origin": "openaa-ny",
+    "approved_for": "initial_production_content",
+    "source_public_home_sections_count": 10,
+    "notes": "Home sections mapped to openaa-app quick_grid, utility_tools, latest_posts, and seo_content structure."
+  },
+  "sections": [
+    {
+      "legacy_id": "quick_grid",
+      "key": "quick_grid",
+      "title": "8 宫格入口",
+      "description": "首页 8 宫格入口配置。",
+      "module": "quick_grid",
+      "is_visible": true,
+      "sort_order": 10,
+      "config": {
+        "items": [
+          {
+            "label": "招聘",
+            "href": "/jobs",
+            "icon": "briefcase",
+            "sort_order": 10,
+            "is_visible": true
+          },
+          {
+            "label": "房屋",
+            "href": "/housing",
+            "icon": "home",
+            "sort_order": 20,
+            "is_visible": true
+          },
+          {
+            "label": "二手",
+            "href": "/marketplace",
+            "icon": "shopping-bag",
+            "sort_order": 30,
+            "is_visible": true,
+            "metadata": {
+              "notes": [
+                "mapped_secondhand_to_marketplace"
+              ]
+            }
+          },
+          {
+            "label": "DMV",
+            "href": "/dmv",
+            "icon": "car",
+            "sort_order": 40,
+            "is_visible": true
+          },
+          {
+            "label": "新闻",
+            "href": "/news",
+            "icon": "newspaper",
+            "sort_order": 50,
+            "is_visible": true
+          },
+          {
+            "label": "导航",
+            "href": "/navigation",
+            "icon": "navigation",
+            "sort_order": 60,
+            "is_visible": true
+          },
+          {
+            "label": "新手指南",
+            "href": "/news?category=newcomer-guide",
+            "icon": "book-open-check",
+            "sort_order": 70,
+            "is_visible": true
+          },
+          {
+            "label": "本地服务",
+            "href": "/services",
+            "icon": "store",
+            "sort_order": 80,
+            "is_visible": true
+          }
+        ]
+      },
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_source": "GridMenu"
+      }
+    },
+    {
+      "legacy_id": "utility_tools",
+      "key": "utility_tools",
+      "title": "实用工具",
+      "description": "首页实用工具入口配置。",
+      "module": "utility_tools",
+      "is_visible": true,
+      "sort_order": 20,
+      "config": {
+        "items": [
+          {
+            "title": "DMV 笔试练习",
+            "description": "中文题库、练习模式、模拟考试入口。",
+            "href": "/dmv",
+            "icon": "dmv",
+            "theme": "blue",
+            "cta": "练习",
+            "sort_order": 10,
+            "is_visible": true,
+            "open_mode": "same"
+          },
+          {
+            "title": "罚单查询",
+            "description": "停车、闯红灯、超速拍照查询入口。",
+            "href": "/dmv/tickets",
+            "icon": "ticket",
+            "theme": "orange",
+            "cta": "查询",
+            "sort_order": 20,
+            "is_visible": true,
+            "open_mode": "same"
+          },
+          {
+            "title": "常用导航",
+            "description": "政府服务、交通、生活网站入口。",
+            "href": "/navigation",
+            "icon": "navigation",
+            "theme": "cyan",
+            "cta": "打开",
+            "sort_order": 30,
+            "is_visible": true,
+            "open_mode": "same"
+          },
+          {
+            "title": "新手指南",
+            "description": "纽约生活、证件、交通和常用信息。",
+            "href": "/news?category=newcomer-guide",
+            "icon": "guide",
+            "theme": "amber",
+            "cta": "查看",
+            "sort_order": 40,
+            "is_visible": true,
+            "open_mode": "same"
+          }
+        ]
+      },
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_source": "fallbackUtilityTools"
+      }
+    },
+    {
+      "legacy_id": "latest_posts",
+      "key": "latest_posts",
+      "title": "最新发布",
+      "description": "首页最新发布模块配置。",
+      "module": "latest_posts",
+      "is_visible": true,
+      "sort_order": 30,
+      "config": {
+        "sections": [
+          {
+            "key": "jobs",
+            "title": "最新招聘",
+            "nav_label": "招聘",
+            "post_type": "job",
+            "route": "/jobs",
+            "is_visible": true,
+            "sort_order": 10,
+            "limit_count": 4,
+            "layout": "grid",
+            "description": "纽约华人招聘、求职、兼职和全职信息。",
+            "empty_message": "暂无最新招聘。"
+          },
+          {
+            "key": "housing",
+            "title": "最新房屋",
+            "nav_label": "房屋",
+            "post_type": "housing",
+            "route": "/housing",
+            "is_visible": true,
+            "sort_order": 20,
+            "limit_count": 2,
+            "layout": "grid",
+            "description": "租房、求租、合租和房屋信息。",
+            "empty_message": "暂无最新房屋信息。"
+          },
+          {
+            "key": "marketplace",
+            "title": "最新二手",
+            "nav_label": "二手",
+            "post_type": "marketplace",
+            "route": "/marketplace",
+            "is_visible": true,
+            "sort_order": 30,
+            "limit_count": 2,
+            "layout": "grid",
+            "description": "出售、求购和跳蚤市场信息。",
+            "empty_message": "暂无最新二手信息。",
+            "metadata": {
+              "notes": [
+                "mapped_secondhand_to_marketplace"
+              ]
+            }
+          },
+          {
+            "key": "services",
+            "title": "本地服务",
+            "nav_label": "服务",
+            "post_type": "service",
+            "route": "/services",
+            "is_visible": true,
+            "sort_order": 40,
+            "limit_count": 1,
+            "layout": "media",
+            "description": "搬家、维修、装修、报税等服务。",
+            "empty_message": "暂无最新本地服务。"
+          },
+          {
+            "key": "news",
+            "title": "最新新闻",
+            "nav_label": "新闻",
+            "post_type": "news",
+            "route": "/news",
+            "is_visible": true,
+            "sort_order": 50,
+            "limit_count": 3,
+            "layout": "news",
+            "description": "本地新闻、新手指南、DMV 教程和平台公告。",
+            "empty_message": "暂无最新新闻。",
+            "categories": [
+              {
+                "key": "news_local",
+                "category_slug": "local-news",
+                "title": "本地新闻",
+                "limit_count": 1,
+                "sort_order": 10
+              },
+              {
+                "key": "news_guide",
+                "category_slug": "newcomer-guide",
+                "title": "新手指南",
+                "limit_count": 2,
+                "sort_order": 20
+              },
+              {
+                "key": "news_dmv",
+                "category_slug": "dmv-guide",
+                "title": "DMV 教程",
+                "limit_count": 1,
+                "sort_order": 30
+              },
+              {
+                "key": "news_life",
+                "category_slug": "life-guide",
+                "title": "生活指南",
+                "limit_count": 1,
+                "sort_order": 40
+              },
+              {
+                "key": "news_announcement",
+                "category_slug": "announcement",
+                "title": "平台公告",
+                "limit_count": 2,
+                "sort_order": 50
+              }
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_source": "/api/home-sections",
+        "notes": [
+          "mapped_secondhand_to_marketplace"
+        ]
+      }
+    },
+    {
+      "legacy_id": "seo_content",
+      "key": "seo_content",
+      "title": "SEO 文案",
+      "description": "首页 SEO 文案配置。",
+      "module": "seo_content",
+      "is_visible": true,
+      "sort_order": 90,
+      "config": {
+        "title": "OpenAA 纽约华人生活入口",
+        "content": "OpenAA 是一个为美国华人和美华人提供生活信息的中文平台，涵盖华人招聘、找工作、房屋租售、二手市场、本地服务、DMV 驾照信息、新闻资讯和实用导航。平台重点服务纽约及周边华人用户，也适合更多在美国生活的中文用户使用。"
+      },
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "legacy_source": "public_home_page",
+        "notes": [
+          "needs_domain_review"
+        ]
+      }
+    }
+  ]
+}
