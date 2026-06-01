@@ -1,0 +1,20 @@
+[
+  {
+    "key": "quick_grid",
+    "title": "首页快捷入口",
+    "description": "首页 8 宫格入口配置。",
+    "module": "quick_grid",
+    "is_visible": true,
+    "sort_order": 10,
+    "config": {
+      "items": [
+        {
+          "label": "招聘",
+          "href": "/jobs",
+          "sort_order": 10,
+          "is_visible": true
+        }
+      ]
+    }
+  }
+]

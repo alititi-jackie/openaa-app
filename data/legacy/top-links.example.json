@@ -1,0 +1,11 @@
+[
+  {
+    "title": "招聘",
+    "href": "/jobs",
+    "icon": "briefcase",
+    "open_mode": "same",
+    "sort_order": 10,
+    "is_active": true,
+    "legacy_id": "openaa-ny-top-link-jobs"
+  }
+]

@@ -1,0 +1,17 @@
+[
+  {
+    "title": "OpenAA 平台公告示例",
+    "slug": "openaa-platform-announcement-example",
+    "excerpt": "这是旧站运营内容导入的新闻示例结构。",
+    "body": "正文内容会在 Seed-B 使用经过审核的旧站公开内容替换。",
+    "category_slug": "local-news",
+    "status": "published",
+    "is_featured": false,
+    "is_pinned": false,
+    "published_at": "2026-01-01T00:00:00.000Z",
+    "cover_image_url": "https://img.openaa.com/example/news-cover.webp",
+    "seo_title": "OpenAA 平台公告示例",
+    "seo_description": "旧站运营新闻导入示例。",
+    "legacy_id": "openaa-ny-news-example"
+  }
+]

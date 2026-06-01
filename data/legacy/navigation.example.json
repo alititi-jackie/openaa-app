@@ -1,0 +1,26 @@
+{
+  "categories": [
+    {
+      "slug": "government",
+      "name": "政府办事",
+      "description": "常用政府和公共服务入口。",
+      "icon": "building",
+      "sort_order": 10,
+      "is_active": true
+    }
+  ],
+  "links": [
+    {
+      "category_slug": "government",
+      "title": "NY DMV",
+      "description": "纽约 DMV 官方入口。",
+      "url": "https://dmv.ny.gov/",
+      "icon": "car",
+      "image_url": "https://img.openaa.com/example/navigation-dmv.webp",
+      "sort_order": 10,
+      "is_active": true,
+      "is_featured": true,
+      "legacy_id": "openaa-ny-navigation-dmv"
+    }
+  ]
+}
