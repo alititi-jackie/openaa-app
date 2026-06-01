@@ -132,9 +132,8 @@ function planNavigation(): Plan {
 function planArrayFile(baseName: string, label: string, required: string[]): Plan {
   const file = resolveFile(baseName);
   const data = readJson(file);
-  const items = Array.isArray(data) ? data : [];
   const warnings: string[] = [];
-  if (!Array.isArray(data)) warnings.push(`${label}: expected a JSON array.`);
+  const items = readItems(data, baseName, label, warnings);
 
   const invalid = countInvalid(items, required, warnings, label);
   warnImageUrls(items, warnings, label);
@@ -147,6 +146,23 @@ function planArrayFile(baseName: string, label: string, required: string[]): Pla
     skip: invalid,
     warnings,
   };
+}
+
+function readItems(data: unknown, baseName: string, label: string, warnings: string[]) {
+  if (Array.isArray(data)) return data;
+
+  const record = asRecord(data);
+  const wrappedItems =
+    baseName === "ticker"
+      ? record.sections
+      : baseName === "top-links"
+        ? record.links
+        : undefined;
+
+  if (Array.isArray(wrappedItems)) return wrappedItems;
+
+  warnings.push(`${label}: expected a JSON array or supported metadata wrapper.`);
+  return [];
 }
 
 function resolveFile(baseName: string) {

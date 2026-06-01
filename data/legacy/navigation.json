@@ -1,0 +1,1431 @@
+{
+  "metadata": {
+    "source": "legacy_official_import",
+    "origin": "openaa-ny",
+    "approved_for": "initial_production_content",
+    "generated_from": "public_api_or_readonly_export",
+    "notes": "Public active navigation content migrated from old site."
+  },
+  "categories": [
+    {
+      "legacy_id": "3352f6c6-63c7-4a26-ae61-371a9ace737f",
+      "slug": "featured",
+      "name": "热门推荐",
+      "description": "",
+      "icon": "",
+      "sort_order": 10,
+      "is_active": true
+    },
+    {
+      "legacy_id": "58ba8894-c797-4302-8f38-ba574ddf03fe",
+      "slug": "government",
+      "name": "政府服务",
+      "description": "",
+      "icon": "",
+      "sort_order": 20,
+      "is_active": true
+    },
+    {
+      "legacy_id": "33b59d1a-e881-43f0-b591-7192954715b3",
+      "slug": "finance",
+      "name": "银行金融",
+      "description": "",
+      "icon": "",
+      "sort_order": 30,
+      "is_active": true
+    },
+    {
+      "legacy_id": "e8aeb44b-cdd1-424a-94ec-35646af57361",
+      "slug": "shopping",
+      "name": "购物平台",
+      "description": "",
+      "icon": "",
+      "sort_order": 40,
+      "is_active": true
+    },
+    {
+      "legacy_id": "5466e98d-1d45-4d8d-bf25-340dff224d40",
+      "slug": "telecom",
+      "name": "通讯网络",
+      "description": "",
+      "icon": "",
+      "sort_order": 50,
+      "is_active": true
+    },
+    {
+      "legacy_id": "7c74026b-c4e0-40b7-9823-9ec879248790",
+      "slug": "ai",
+      "name": "AI工具",
+      "description": "",
+      "icon": "",
+      "sort_order": 60,
+      "is_active": true
+    },
+    {
+      "legacy_id": "5682cbb9-6a7b-42b5-a2ab-277c77584952",
+      "slug": "video",
+      "name": "视频娱乐",
+      "description": "",
+      "icon": "",
+      "sort_order": 70,
+      "is_active": true
+    },
+    {
+      "legacy_id": "97cd7ca4-5a6e-4bf7-b7d2-9b3346c50c77",
+      "slug": "social",
+      "name": "社交媒体",
+      "description": "",
+      "icon": "",
+      "sort_order": 80,
+      "is_active": true
+    },
+    {
+      "legacy_id": "1597b111-54c3-42af-9821-8422f5469b12",
+      "slug": "life",
+      "name": "生活服务",
+      "description": "",
+      "icon": "",
+      "sort_order": 90,
+      "is_active": true
+    },
+    {
+      "legacy_id": "391d24e9-4973-4f4c-946b-2bb2afa0c61c",
+      "slug": "other",
+      "name": "其它",
+      "description": "",
+      "icon": "",
+      "sort_order": 100,
+      "is_active": true
+    }
+  ],
+  "links": [
+    {
+      "legacy_id": "87e73c3b-1fa3-4dc4-b42c-e02a5f167419",
+      "category_slug": "ai",
+      "title": "更多AI",
+      "description": "整合分类用途的更多的AI",
+      "url": "https://openaa.com/nav/ai",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 0,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "b946aabf-d9cf-42c2-be06-166d7879b525",
+      "category_slug": "ai",
+      "title": "ChatGPT",
+      "description": "OpenAI ChatGPT。",
+      "url": "https://chat.openai.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 10,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "354d50ea-1703-49cb-bcb2-14c507f45305",
+      "category_slug": "ai",
+      "title": "DeepSeek",
+      "description": "DeepSeek。",
+      "url": "https://www.deepseek.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 20,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "48f237c4-0980-432b-a0e0-12a939b3a207",
+      "category_slug": "ai",
+      "title": "Gemini",
+      "description": "Google Gemini。",
+      "url": "https://gemini.google.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 30,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "2bdb3c0f-44bd-481b-94c3-27134356b148",
+      "category_slug": "ai",
+      "title": "Claude",
+      "description": "Anthropic Claude。",
+      "url": "https://claude.ai/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 40,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "fcb61e18-8180-4a45-bfe0-c92815f7244f",
+      "category_slug": "ai",
+      "title": "Copilot",
+      "description": "Microsoft Copilot。",
+      "url": "https://copilot.microsoft.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 50,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "b12d86aa-857c-44f5-8275-1798d0f8d06c",
+      "category_slug": "ai",
+      "title": "Grok",
+      "description": "xAI Grok。",
+      "url": "https://grok.x.ai/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 60,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "e3053a76-d2eb-4752-957b-5bfbc6906f46",
+      "category_slug": "ai",
+      "title": "Perplexity",
+      "description": "Perplexity 搜索助手。",
+      "url": "https://www.perplexity.ai/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 70,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "353e35b4-8539-4b28-92e0-b9309c23922c",
+      "category_slug": "ai",
+      "title": "Kimi",
+      "description": "Kimi 智能助手。",
+      "url": "https://kimi.moonshot.cn/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 80,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "c7afd27d-e4fd-4011-8a38-e7b9cca8337b",
+      "category_slug": "ai",
+      "title": "豆包",
+      "description": "豆包 AI。",
+      "url": "https://www.doubao.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 90,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "40129b31-0a4f-4219-a3fc-03eb57a481d0",
+      "category_slug": "ai",
+      "title": "通义千问",
+      "description": "阿里通义千问。",
+      "url": "https://tongyi.aliyun.com/qianwen/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 100,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "7abfc8ec-3e40-46de-a77d-fe343512bc1c",
+      "category_slug": "featured",
+      "title": "Google翻译",
+      "description": "中英文翻译、网页翻译与文档翻译。",
+      "url": "https://translate.google.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 1,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "12c28315-e093-48cb-be57-6019150f59a8",
+      "category_slug": "featured",
+      "title": "移民局收费",
+      "description": "庇护年费缴费页面",
+      "url": "https://my.uscis.gov/accounts/annual-asylum-fee/questionnaire",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 2,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "b398a0fa-bfdf-4656-b835-88abf531be2a",
+      "category_slug": "featured",
+      "title": "DMV小工具",
+      "description": "DMV 文件检查器，6 Points 计算器，REAL ID",
+      "url": "https://openaa.com/tool/dmv/document-checker.html",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 3,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "04a56077-a3d5-4566-85e8-34088345b1de",
+      "category_slug": "featured",
+      "title": "招聘信息",
+      "description": "OpenAA 招聘板块入口。",
+      "url": "/jobs",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 20,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "ffb92e90-564e-49f9-a30b-125ca49c87b9",
+      "category_slug": "featured",
+      "title": "二手闲置",
+      "description": "OpenAA 二手板块入口。",
+      "url": "/marketplace",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 30,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "2503681c-cf54-414e-8a2d-8c444eb8b3c6",
+      "category_slug": "featured",
+      "title": "手机靓号",
+      "description": "低价美国手机靓号",
+      "url": "https://numbermobi.com/#buy-note",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 31,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "c58549d7-4f8d-494f-92e1-ace1395452f4",
+      "category_slug": "featured",
+      "title": "纽约工作网",
+      "description": "纽约地区招聘信息。",
+      "url": "https://newyork.craigslist.org/search/jjj",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 40,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "f1f8010d-2e0d-4e1c-bb25-bf40c1b475c7",
+      "category_slug": "featured",
+      "title": "纽约生活",
+      "description": "纽约本地生活信息。",
+      "url": "https://newyork.craigslist.org/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 50,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "c8d06825-eb8e-41d0-bede-9f28814a0ee0",
+      "category_slug": "featured",
+      "title": "一亩三分地",
+      "description": "留学、求职、移民与北美生活社区。",
+      "url": "https://www.1point3acres.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 60,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "c2d73ce1-c5f5-493c-9ce0-e0a910fd4357",
+      "category_slug": "featured",
+      "title": "DMV NY",
+      "description": "纽约州 DMV 官方网站。",
+      "url": "https://dmv.ny.gov/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 70,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "169e3727-2dec-4544-a90d-e9e241c851d1",
+      "category_slug": "featured",
+      "title": "OpenAA站内搜索",
+      "description": "OpenAA站内搜索",
+      "url": "https://ny.openaa.com/search",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 80,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "5c679bef-1a68-4885-81dc-74f69254ffbb",
+      "category_slug": "finance",
+      "title": "更多",
+      "description": "整合更多的各类银行",
+      "url": "https://openaa.com/nav/bank",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 0,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "4c722ae7-4e12-4c71-b8fc-4f2ea237fe3f",
+      "category_slug": "finance",
+      "title": "Bank of America",
+      "description": "美国银行官网。",
+      "url": "https://www.bankofamerica.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 10,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "a4a5d45c-0706-402d-9630-fc151052db3d",
+      "category_slug": "finance",
+      "title": "Chase",
+      "description": "摩根大通 Chase 官网。",
+      "url": "https://www.chase.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 20,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "54962ea0-7409-4f58-9c24-af1bae3882d1",
+      "category_slug": "finance",
+      "title": "Wells Fargo",
+      "description": "富国银行官网。",
+      "url": "https://www.wellsfargo.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 30,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "264beec9-8aac-4456-a1cb-1e403b543352",
+      "category_slug": "finance",
+      "title": "Citi",
+      "description": "花旗银行官网。",
+      "url": "https://www.citi.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 40,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "f6d5197c-505e-48e7-9d3f-695d378d7726",
+      "category_slug": "finance",
+      "title": "TD",
+      "description": "TD Bank 官网。",
+      "url": "https://www.td.com/us/en/personal-banking",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 50,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "eef11327-6ffa-4519-af32-b94e2f6a57ad",
+      "category_slug": "finance",
+      "title": "Capital One",
+      "description": "Capital One 官网。",
+      "url": "https://www.capitalone.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 60,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "58b7800e-970c-420e-aaf7-b079b0ca1884",
+      "category_slug": "finance",
+      "title": "PNC",
+      "description": "PNC 银行官网。",
+      "url": "https://www.pnc.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 70,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "520b2506-6a7e-45c7-bd08-544baffa406a",
+      "category_slug": "finance",
+      "title": "Discover",
+      "description": "Discover 金融服务。",
+      "url": "https://www.discover.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 80,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "aea85f49-baa1-4172-8305-1bedb3eb6a90",
+      "category_slug": "finance",
+      "title": "Amex",
+      "description": "American Express 官网。",
+      "url": "https://www.americanexpress.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 90,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "7fc59537-e7f8-4f2c-a1f6-b73a2faf24e8",
+      "category_slug": "government",
+      "title": "DMV官方入口",
+      "description": "各州 DMV 官方导航入口。",
+      "url": "https://openaa.com/nav/dmv",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 10,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "6e98644c-e018-4dbc-892d-5185d05c0ef9",
+      "category_slug": "government",
+      "title": "USCIS",
+      "description": "移民/工卡/入籍等官方办理入口。",
+      "url": "https://www.uscis.gov/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 20,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "0f2d478c-58c0-4a4d-ab81-01fada9cec2c",
+      "category_slug": "government",
+      "title": "IRS",
+      "description": "联邦税务申报与查询。",
+      "url": "https://www.irs.gov/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 30,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "4dad046a-e9e7-485d-bbf4-32ae55d20698",
+      "category_slug": "government",
+      "title": "SSA",
+      "description": "社保号与社保服务。",
+      "url": "https://www.ssa.gov/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 40,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "88d140f2-9b62-4bd7-b65f-892b3226fe16",
+      "category_slug": "government",
+      "title": "USA.gov",
+      "description": "美国政府服务总入口。",
+      "url": "https://www.usa.gov/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 50,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "4ebe6410-0966-4912-84c0-8438090246dc",
+      "category_slug": "government",
+      "title": "美国国务院",
+      "description": "国务院信息与领事服务。",
+      "url": "https://www.state.gov/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 60,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "e7c4e362-4863-42f3-bfc8-e81dff797877",
+      "category_slug": "government",
+      "title": "CBP",
+      "description": "海关与边境保护。",
+      "url": "https://www.cbp.gov/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 70,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "ae8b8ea7-ea91-44b0-bbd3-b92ce237ff2e",
+      "category_slug": "government",
+      "title": "DOL",
+      "description": "劳工部与劳动相关信息。",
+      "url": "https://www.dol.gov/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 80,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "dfab989a-7f88-41b4-81a3-1827ad796f5d",
+      "category_slug": "life",
+      "title": "纽约生活",
+      "description": "纽约本地生活信息。",
+      "url": "https://newyork.craigslist.org/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 10,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "0323ba80-8fa8-4bac-8053-fc4e90b45546",
+      "category_slug": "life",
+      "title": "纽约华人365",
+      "description": "房屋与生活信息。",
+      "url": "https://www.365wuyu.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 20,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "b32fa9cd-6a98-4373-a4ff-260a9511884e",
+      "category_slug": "life",
+      "title": "华人工商黄页",
+      "description": "商家查询黄页。",
+      "url": "https://www.yellowpages.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 30,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "1f2c5246-6e36-4c8c-a099-31a6ed32453c",
+      "category_slug": "life",
+      "title": "Yelp",
+      "description": "Yelp 商家点评与搜索。",
+      "url": "https://www.yelp.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 40,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "6aa4ee4d-21eb-463b-b980-da2cb572b9b5",
+      "category_slug": "life",
+      "title": "Groupon",
+      "description": "Groupon 优惠与团购。",
+      "url": "https://www.groupon.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 50,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "fb16ce5d-1656-45ec-8972-24ffca1bc185",
+      "category_slug": "life",
+      "title": "DoorDash",
+      "description": "DoorDash 外卖配送。",
+      "url": "https://www.doordash.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 60,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "f1c67736-6e47-4b26-8a17-d55cf38d38ec",
+      "category_slug": "other",
+      "title": "百度",
+      "description": "百度搜索。",
+      "url": "https://www.baidu.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 10,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "718050e8-64e8-4dc1-8b7f-aa40db77eb81",
+      "category_slug": "other",
+      "title": "Gmail",
+      "description": "Gmail 邮箱。",
+      "url": "https://mail.google.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 20,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "a08cfd92-b1f5-49fc-965f-a93f461155ae",
+      "category_slug": "other",
+      "title": "Outlook",
+      "description": "Outlook 邮箱。",
+      "url": "https://outlook.live.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 30,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "45bf5456-1ec0-42bb-b2b2-39a742fd7829",
+      "category_slug": "other",
+      "title": "知乎",
+      "description": "知乎。",
+      "url": "https://www.zhihu.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 40,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "1769d7c8-af36-474c-9c15-a9e9a86b4706",
+      "category_slug": "other",
+      "title": "Steam",
+      "description": "Steam 游戏平台。",
+      "url": "https://store.steampowered.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 50,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "bcbf8bcf-6781-4596-bbc4-abdc98178cdc",
+      "category_slug": "other",
+      "title": "世界日报",
+      "description": "世界日报官网。",
+      "url": "https://www.worldjournal.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 60,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "83bfdc9c-7e53-49be-b0ca-1d8ba4b16367",
+      "category_slug": "shopping",
+      "title": "更多",
+      "description": "整合更多分类购物",
+      "url": "https://openaa.com/nav/onegobuy",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 0,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "d53e0fde-c099-4c5b-8af7-8cf86feede15",
+      "category_slug": "shopping",
+      "title": "Amazon",
+      "description": "电商平台。",
+      "url": "https://www.amazon.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 10,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "e10f6241-1eb0-4fbb-b1d3-5b5dec739590",
+      "category_slug": "shopping",
+      "title": "Walmart",
+      "description": "Walmart 超市与电商。",
+      "url": "https://www.walmart.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 20,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "f4f23903-153f-476b-9646-1a06b4c93a54",
+      "category_slug": "shopping",
+      "title": "eBay",
+      "description": "eBay 二手与拍卖平台。",
+      "url": "https://www.ebay.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 30,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "9fc96629-0add-4c8e-a090-2568670fc24c",
+      "category_slug": "shopping",
+      "title": "Costco",
+      "description": "Costco 仓储会员店。",
+      "url": "https://www.costco.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 40,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "7d628435-62c1-42ac-b546-1414b4200e9a",
+      "category_slug": "shopping",
+      "title": "Target",
+      "description": "Target 官网。",
+      "url": "https://www.target.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 50,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "9b9edc5d-cc62-4179-b163-bf4e76ef2b61",
+      "category_slug": "shopping",
+      "title": "BestBuy",
+      "description": "BestBuy 电子产品零售。",
+      "url": "https://www.bestbuy.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 60,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "253e58d0-8fbd-491d-b63e-ad5195a80adf",
+      "category_slug": "shopping",
+      "title": "Weee",
+      "description": "Weee 亚洲食品生鲜配送。",
+      "url": "https://www.sayweee.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 70,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "cdc11b1c-6b8c-4393-bf4b-ab33ebfeebe2",
+      "category_slug": "shopping",
+      "title": "AliExpress",
+      "description": "AliExpress 海淘平台。",
+      "url": "https://www.aliexpress.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 80,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "88371d02-2fa2-4d8a-8f3d-ca84569eb1f0",
+      "category_slug": "social",
+      "title": "Facebook",
+      "description": "Facebook 社交。",
+      "url": "https://www.facebook.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 10,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "1ccb3e13-76c8-4db7-818d-7dbcc894bcb0",
+      "category_slug": "social",
+      "title": "Instagram",
+      "description": "Instagram 社交。",
+      "url": "https://www.instagram.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 20,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "c96233e8-42f9-44ed-9d92-0d18d99fa3e2",
+      "category_slug": "social",
+      "title": "小红书",
+      "description": "小红书社区。",
+      "url": "https://www.xiaohongshu.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 30,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "f534f31d-6ff2-45bb-9f55-29326d8a8e99",
+      "category_slug": "social",
+      "title": "X",
+      "description": "X (Twitter)。",
+      "url": "https://x.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 40,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "d6f2d34f-85f9-4e07-b977-330c562d231a",
+      "category_slug": "social",
+      "title": "Reddit",
+      "description": "Reddit 社区。",
+      "url": "https://www.reddit.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 50,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "e8e90dd5-0760-4db5-9d90-90484fabf6fb",
+      "category_slug": "social",
+      "title": "LinkedIn",
+      "description": "LinkedIn 职场社交。",
+      "url": "https://www.linkedin.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 60,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "52ed509d-3350-4ac8-a19a-47e107faeed4",
+      "category_slug": "social",
+      "title": "微信网页版",
+      "description": "微信网页版。",
+      "url": "https://web.wechat.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 70,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "d496ef40-2459-4bf6-b244-888bd470f3b5",
+      "category_slug": "social",
+      "title": "微博",
+      "description": "微博。",
+      "url": "https://weibo.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 80,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "558f80d7-0859-477b-8f10-8f44beac96f5",
+      "category_slug": "telecom",
+      "title": "T-Mobile",
+      "description": "T-Mobile 官网。",
+      "url": "https://www.t-mobile.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 10,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "608d7923-8727-4806-b6b3-2ef4d0f93e6e",
+      "category_slug": "telecom",
+      "title": "Verizon",
+      "description": "Verizon 官网。",
+      "url": "https://www.verizon.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 20,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "e666a0f3-f653-4dfa-92fa-180084fad03d",
+      "category_slug": "telecom",
+      "title": "AT&T",
+      "description": "AT&T 官网。",
+      "url": "https://www.att.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 30,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "8071cf27-b558-4130-b749-7828bdb433da",
+      "category_slug": "telecom",
+      "title": "Tello",
+      "description": "Tello 虚拟运营商。",
+      "url": "https://tello.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 40,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "7ccd4bfd-9fbc-490b-a469-e96eb343b6f9",
+      "category_slug": "telecom",
+      "title": "Mint",
+      "description": "Mint Mobile 虚拟运营商。",
+      "url": "https://www.mintmobile.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 50,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "22872569-6c5f-4be0-8f9b-a663eb5c8841",
+      "category_slug": "telecom",
+      "title": "Lycamobile",
+      "description": "Lycamobile 官网。",
+      "url": "https://www.lycamobile.us/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 60,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "365faa22-5b86-42ca-be32-173dafc884e4",
+      "category_slug": "telecom",
+      "title": "Cricket",
+      "description": "Cricket Wireless 官网。",
+      "url": "https://www.cricketwireless.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 70,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "8a515687-e2e4-47f2-a2bd-ab0d6fbe16cc",
+      "category_slug": "telecom",
+      "title": "Google Fi",
+      "description": "Google Fi 官网。",
+      "url": "https://fi.google.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 80,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "5fca782c-9c24-4a52-921c-b0c845ede119",
+      "category_slug": "video",
+      "title": "YouTube",
+      "description": "YouTube 视频平台。",
+      "url": "https://www.youtube.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 10,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "1776f94f-ff51-4cfd-8923-fbee86da8cd8",
+      "category_slug": "video",
+      "title": "Netflix",
+      "description": "Netflix 流媒体。",
+      "url": "https://www.netflix.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 20,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "f489e3ff-3eac-4e99-b444-d9c4a6ad7a36",
+      "category_slug": "video",
+      "title": "TikTok",
+      "description": "TikTok 短视频。",
+      "url": "https://www.tiktok.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 30,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "c012d0e2-7c5d-4acb-b67f-1d16d617d7ec",
+      "category_slug": "video",
+      "title": "B站",
+      "description": "哔哩哔哩。",
+      "url": "https://www.bilibili.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 40,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "c9e2b62e-f9f1-44b3-8690-b91fc6734d27",
+      "category_slug": "video",
+      "title": "Disney+",
+      "description": "Disney+ 流媒体。",
+      "url": "https://www.disneyplus.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 50,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "36f47e9d-7a38-4e60-8b17-886c8f56a526",
+      "category_slug": "video",
+      "title": "Hulu",
+      "description": "Hulu 流媒体。",
+      "url": "https://www.hulu.com/",
+      "icon": "",
+      "image_url": null,
+      "sort_order": 60,
+      "is_active": true,
+      "is_featured": false,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    }
+  ]
+}

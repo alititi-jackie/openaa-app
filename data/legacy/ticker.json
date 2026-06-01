@@ -1,0 +1,92 @@
+{
+  "metadata": {
+    "source": "legacy_official_import",
+    "origin": "openaa-ny",
+    "approved_for": "initial_production_content",
+    "notes": "Ticker configuration migrated from old site fallback/settings, not user-post aggregation output."
+  },
+  "global": {
+    "is_enabled": true,
+    "interval_seconds": 4
+  },
+  "sections": [
+    {
+      "legacy_id": "ticker-news",
+      "title": "??",
+      "href": "/news",
+      "module": "news",
+      "is_enabled": true,
+      "sort_order": 10,
+      "display_count": 5,
+      "starts_at": null,
+      "ends_at": null,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "ticker-jobs",
+      "title": "??",
+      "href": "/jobs",
+      "module": "jobs",
+      "is_enabled": true,
+      "sort_order": 20,
+      "display_count": 3,
+      "starts_at": null,
+      "ends_at": null,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "ticker-housing",
+      "title": "??",
+      "href": "/housing",
+      "module": "housing",
+      "is_enabled": true,
+      "sort_order": 30,
+      "display_count": 3,
+      "starts_at": null,
+      "ends_at": null,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    },
+    {
+      "legacy_id": "ticker-marketplace",
+      "title": "??",
+      "href": "/marketplace",
+      "module": "marketplace",
+      "is_enabled": true,
+      "sort_order": 40,
+      "display_count": 3,
+      "starts_at": null,
+      "ends_at": null,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny",
+        "notes": [
+          "mapped_secondhand_to_marketplace"
+        ]
+      }
+    },
+    {
+      "legacy_id": "ticker-services",
+      "title": "????",
+      "href": "/services",
+      "module": "services",
+      "is_enabled": true,
+      "sort_order": 50,
+      "display_count": 3,
+      "starts_at": null,
+      "ends_at": null,
+      "metadata": {
+        "source": "legacy_official_import",
+        "origin": "openaa-ny"
+      }
+    }
+  ]
+}
