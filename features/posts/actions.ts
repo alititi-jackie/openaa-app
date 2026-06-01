@@ -5,11 +5,18 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { DEFAULT_CITY_SLUG, POST_TYPE_TO_ROUTE } from "./constants";
 import { postHref } from "./formMappers";
 import type { PostFormActionResult, PostFormValues, UploadedImageInput } from "./formTypes";
-import type { PostType } from "./types";
+import type { PostStatus, PostType } from "./types";
 import { shouldReviewPost, validatePostForm } from "./validators";
 
 type ProfileStatus = "active" | "restricted" | "banned" | "pending";
 type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
+type ManagePostAction = "hide" | "publish" | "delete";
+export type ManagePostActionState = {
+  ok: boolean;
+  message: string;
+  postId?: string;
+  action?: ManagePostAction;
+};
 type WriteContext =
   | { ok: false; error: string }
   | {
@@ -20,6 +27,7 @@ type WriteContext =
     };
 
 const allowedPostTypes = new Set<PostType>(["job", "housing", "marketplace", "service"]);
+const manageablePostStatuses = new Set<PostStatus>(["draft", "pending_review", "published", "hidden", "expired", "deleted"]);
 
 function numericOrNull(value: string) {
   const trimmed = value.trim();
@@ -73,6 +81,39 @@ async function assertCanEdit(supabase: SupabaseServerClient, userId: string, pos
   }
 
   return { ok: true as const, post: data as { id: string; author_id: string; status: string; post_type: PostType; published_at: string | null } };
+}
+
+async function getOwnPostForManagement(supabase: SupabaseServerClient, userId: string, postId: string) {
+  const { data, error } = await supabase
+    .from("posts")
+    .select("id,author_id,status,post_type,published_at")
+    .eq("id", postId)
+    .maybeSingle();
+
+  if (error || !data) {
+    return { ok: false as const, message: "内容不存在或无法操作。" };
+  }
+
+  if (data.author_id !== userId) {
+    return { ok: false as const, message: "你只能管理自己发布的内容。" };
+  }
+
+  if (!manageablePostStatuses.has(data.status as PostStatus)) {
+    return { ok: false as const, message: "当前状态暂不支持自助管理。" };
+  }
+
+  return {
+    ok: true as const,
+    post: data as { id: string; author_id: string; status: PostStatus; post_type: PostType; published_at: string | null },
+  };
+}
+
+function revalidatePostSurfaces(type: PostType, postId: string) {
+  const route = POST_TYPE_TO_ROUTE[type];
+  revalidatePath(route);
+  revalidatePath(postHref(type, postId));
+  revalidatePath("/profile/posts");
+  revalidatePath(`/profile/${route.slice(1)}`);
 }
 
 function categoryFor(values: PostFormValues) {
@@ -265,6 +306,88 @@ export async function updatePost(postId: string, values: PostFormValues): Promis
   return { ok: true, postId, href: `${postHref(values.postType, postId)}?updated=1` };
 }
 
+export async function manageOwnPostStatus(_previousState: ManagePostActionState, formData: FormData): Promise<ManagePostActionState> {
+  const postId = String(formData.get("postId") ?? "");
+  const action = String(formData.get("action") ?? "") as ManagePostAction;
+
+  if (!postId || !["hide", "publish", "delete"].includes(action)) {
+    return { ok: false, message: "操作参数无效。" };
+  }
+
+  const context = await getWriteContext();
+  if (!context.ok) return { ok: false, message: context.error, postId, action };
+
+  const postCheck = await getOwnPostForManagement(context.supabase, context.user.id, postId);
+  if (!postCheck.ok) return { ok: false, message: postCheck.message, postId, action };
+
+  const now = new Date().toISOString();
+  const { post } = postCheck;
+
+  if (action === "hide") {
+    if (context.status !== "active") {
+      return { ok: false, message: "账号受限或禁用时不能下架公开内容。", postId, action };
+    }
+
+    if (post.status !== "published") {
+      return { ok: false, message: "只有已发布内容可以下架。", postId, action };
+    }
+
+    const { error } = await context.supabase
+      .from("posts")
+      .update({ status: "hidden", hidden_at: now, updated_at: now })
+      .eq("id", postId)
+      .eq("author_id", context.user.id);
+
+    if (error) return { ok: false, message: "下架失败，请稍后再试。", postId, action };
+    revalidatePostSurfaces(post.post_type, postId);
+    return { ok: true, message: "已下架，其他用户暂时看不到。", postId, action };
+  }
+
+  if (action === "publish") {
+    if (context.status !== "active") {
+      return { ok: false, message: "账号受限或禁用时不能重新发布。", postId, action };
+    }
+
+    if (!["hidden", "draft", "expired"].includes(post.status)) {
+      return { ok: false, message: "当前状态不能重新发布。", postId, action };
+    }
+
+    const { error } = await context.supabase
+      .from("posts")
+      .update({
+        status: "published",
+        published_at: post.published_at ?? now,
+        hidden_at: null,
+        deleted_at: null,
+        updated_at: now,
+      })
+      .eq("id", postId)
+      .eq("author_id", context.user.id);
+
+    if (error) return { ok: false, message: "重新发布失败，请稍后再试。", postId, action };
+    revalidatePostSurfaces(post.post_type, postId);
+    return { ok: true, message: "已重新发布，内容恢复公开显示。", postId, action };
+  }
+
+  if (context.status === "banned") {
+    return { ok: false, message: "账号禁用时不能管理内容。", postId, action };
+  }
+
+  if (post.status === "deleted") {
+    return { ok: false, message: "内容已删除。", postId, action };
+  }
+
+  const { error } = await context.supabase
+    .from("posts")
+    .update({ status: "deleted", deleted_at: now, updated_at: now })
+    .eq("id", postId)
+    .eq("author_id", context.user.id);
+
+  if (error) return { ok: false, message: "删除失败，请稍后再试。", postId, action };
+  revalidatePostSurfaces(post.post_type, postId);
+  return { ok: true, message: "已删除，前台不会再显示。", postId, action };
+}
+
 async function syncPostImages(supabase: SupabaseServerClient, userId: string, postType: PostType, postId: string, images: UploadedImageInput[]) {
   if (postType === "job") return;
 
@@ -296,6 +419,7 @@ async function syncPostImages(supabase: SupabaseServerClient, userId: string, po
 export async function removePostImage(postId: string, imageAssetId: string): Promise<PostFormActionResult> {
   const context = await getWriteContext();
   if (!context.ok) return { ok: false, message: context.error };
+  if (context.status === "banned") return { ok: false, message: "账号禁用时不能编辑内容。" };
 
   const editCheck = await assertCanEdit(context.supabase, context.user.id, postId);
   if (!editCheck.ok) return { ok: false, message: editCheck.message };
@@ -317,6 +441,7 @@ export async function uploadPostImage(postId: string, postType: PostType, file: 
 
   const context = await getWriteContext();
   if (!context.ok) return { ok: false, message: context.error };
+  if (context.status === "banned") return { ok: false, message: "账号禁用时不能编辑内容。" };
 
   const editCheck = await assertCanEdit(context.supabase, context.user.id, postId);
   if (!editCheck.ok) return { ok: false, message: editCheck.message };
