@@ -12,10 +12,10 @@ export const metadata = buildPageMetadata({
 });
 
 const dmvEntries = [
-  { title: "查看题库", description: "题库列表占位", href: "/dmv/questions", icon: BookOpen },
-  { title: "练习模式", description: "按题练习占位", href: "/dmv/practice", icon: ClipboardList },
-  { title: "模拟考试", description: "考试流程占位", href: "/dmv/mock-test", icon: CircleHelp },
-  { title: "错题练习", description: "个人错题占位", href: "/dmv/wrong-questions", icon: RotateCcw },
+  { title: "查看题库", description: "浏览题目、筛选分类、查看答案解析", href: "/dmv/questions", icon: BookOpen },
+  { title: "练习模式", description: "随机刷题，答题后立即看反馈", href: "/dmv/practice", icon: ClipboardList },
+  { title: "模拟考试", description: "20 题模拟，按纽约 DMV 规则判分", href: "/dmv/mock-test", icon: CircleHelp },
+  { title: "错题练习", description: "复习本机保存的错题记录", href: "/dmv/wrong-questions", icon: RotateCcw },
 ];
 
 export default function DmvPage() {
@@ -26,7 +26,7 @@ export default function DmvPage() {
       title="纽约 DMV 中文学习平台"
       description="纽约 DMV 中文题库、练习模式、模拟考试、错题练习和罚单查询入口。"
     >
-      <ChannelHero title="纽约 DMV 中文学习平台" description="中文题库、练习模式、模拟考试、错题练习入口先建立壳，不接真实题库或答题逻辑。" icon={CarFront} />
+      <ChannelHero title="纽约 DMV 中文学习平台" description="查看中文题库，随机练习，按纽约 DMV 规则模拟考试，并在本机保存错题记录。" icon={CarFront} />
       <section className="grid grid-cols-2 gap-3">
         {dmvEntries.map((entry) => {
           const Icon = entry.icon;
@@ -48,7 +48,7 @@ export default function DmvPage() {
         </span>
         <span>
           <span className="block font-black text-slate-950">罚单查询</span>
-          <span className="mt-1 block text-sm leading-6 text-slate-600">纽约交通罚单查询入口占位。</span>
+          <span className="mt-1 block text-sm leading-6 text-slate-600">保留纽约交通罚单查询入口，后续继续完善。</span>
         </span>
       </Link>
       <section className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
@@ -58,7 +58,7 @@ export default function DmvPage() {
         </p>
       </section>
       <ChannelSeoCard title="纽约 DMV 中文练习">
-        OpenAA DMV 页面会在后续阶段承载题库浏览、练习模式、模拟考试和错题练习。Phase 4 只建立入口和说明，不实现答题逻辑。
+        OpenAA DMV 页面提供中文题库浏览、随机练习、模拟考试和本机错题练习。题库仅供学习参考，实际考试内容以 New York DMV 官方资料为准。
       </ChannelSeoCard>
     </ChannelPageChrome>
   );
