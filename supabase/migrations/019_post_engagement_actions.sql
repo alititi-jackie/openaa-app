@@ -47,6 +47,21 @@ begin
 end;
 $$;
 
+with ranked_reports as (
+  select
+    ctid,
+    row_number() over (
+      partition by reporter_id, post_id
+      order by created_at asc, id asc
+    ) as duplicate_rank
+  from public.post_reports
+  where reporter_id is not null
+)
+delete from public.post_reports pr
+using ranked_reports ranked
+where pr.ctid = ranked.ctid
+  and ranked.duplicate_rank > 1;
+
 create unique index if not exists post_reports_reporter_post_uidx
   on public.post_reports (reporter_id, post_id)
   where reporter_id is not null;
