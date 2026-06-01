@@ -22,7 +22,7 @@ export const fallbackHomeBanners: HomeBannerItem[] = [
 ];
 
 export const fallbackTickerItems: HomeTickerItem[] = [
-  { label: "OpenAA 首页模块显示方式已对齐，真实配置将在后续后台阶段接入。", href: "/news" },
+  { label: "OpenAA 纽约站已上线，欢迎发布招聘、房屋、二手和本地服务信息", href: "/news" },
 ];
 
 export const fallbackQuickGridItems: QuickGridItem[] = [

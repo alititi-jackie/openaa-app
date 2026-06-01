@@ -1,5 +1,5 @@
 const fallbackSiteUrl = "https://openaa.app";
-const fallbackPrimarySeoUrl = "https://openaa.com";
+const fallbackPrimarySeoUrl = fallbackSiteUrl;
 
 function normalizeBaseUrl(value: string | undefined, fallback: string) {
   const raw = value?.trim() || fallback;
@@ -24,7 +24,7 @@ export const siteConfig = {
   primarySeoBaseUrl: normalizeBaseUrl(process.env.NEXT_PUBLIC_PRIMARY_SEO_URL, fallbackPrimarySeoUrl),
   canonicalBaseUrl: normalizeBaseUrl(
     process.env.NEXT_PUBLIC_CANONICAL_URL,
-    process.env.NEXT_PUBLIC_PRIMARY_SEO_URL || fallbackPrimarySeoUrl,
+    process.env.NEXT_PUBLIC_PRIMARY_SEO_URL || process.env.NEXT_PUBLIC_SITE_URL || fallbackSiteUrl,
   ),
   allowedDomains: ["openaa.app", "openaa.com", "openaa.cn"],
   redirectDomains: ["openaa.cn"],
@@ -84,10 +84,6 @@ export const staticSitemapRoutes = [
   "/services",
   "/news",
   "/dmv",
-  "/dmv/questions",
-  "/dmv/practice",
-  "/dmv/mock-test",
-  "/dmv/tickets",
   "/navigation",
   "/privacy",
   "/terms",

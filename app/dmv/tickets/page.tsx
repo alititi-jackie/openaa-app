@@ -5,6 +5,7 @@ export const metadata = buildPageMetadata({
   title: "纽约罚单查询",
   description: "纽约 DMV 罚单查询入口占位。",
   path: "/dmv/tickets",
+  noIndex: true,
 });
 
 export default function DmvTicketsPage() {
