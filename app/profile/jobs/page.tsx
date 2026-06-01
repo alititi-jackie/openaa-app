@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata = buildPageMetadata({
   title: "我的招聘",
-  description: "OpenAA 我的招聘发布基础页。",
+  description: "OpenAA 我的招聘发布管理页。",
   path: "/profile/jobs",
   noIndex: true,
 });
@@ -24,7 +24,7 @@ export default async function ProfileJobsPage() {
   const posts = await getMyPosts("job");
 
   return (
-    <PageShell title="我的招聘" description="只读显示当前账号自己的招聘内容。本阶段不开放编辑或发布管理。" eyebrow="Profile">
+    <PageShell title="我的招聘" description="管理当前账号自己的招聘内容。" eyebrow="Profile">
       <UserPostsList posts={posts.data} />
     </PageShell>
   );

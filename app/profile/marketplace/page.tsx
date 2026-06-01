@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata = buildPageMetadata({
   title: "我的二手",
-  description: "OpenAA 我的二手市场发布基础页。",
+  description: "OpenAA 我的二手市场发布管理页。",
   path: "/profile/marketplace",
   noIndex: true,
 });
@@ -24,7 +24,7 @@ export default async function ProfileMarketplacePage() {
   const posts = await getMyPosts("marketplace");
 
   return (
-    <PageShell title="我的二手" description="只读显示当前账号自己的二手市场内容。本阶段不开放编辑或发布管理。" eyebrow="Profile">
+    <PageShell title="我的二手" description="管理当前账号自己的二手市场内容。" eyebrow="Profile">
       <UserPostsList posts={posts.data} />
     </PageShell>
   );
