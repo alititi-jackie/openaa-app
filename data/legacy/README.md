@@ -62,3 +62,21 @@ These files use `legacy_official_import` and are candidates for initial producti
 Seed-B2 includes only published public news from old-site sitemap/pages. Draft, hidden, deleted, and user-post content remain out of scope. Old Supabase Storage images are not migrated as official images: news covers are marked for replacement and ads with old Storage images are skipped.
 
 Old `/secondhand` references stay mapped to `/marketplace`, including `marketplace_top` ad placement and marketplace latest-post configuration. News, ads, and SEO content may include review notes such as `needs_freshness_review`, `cover_needs_replacement`, `needs_human_review`, or `needs_domain_review`.
+
+## Seed-B3
+
+Seed-B3 adds local/staging `--apply` support for the reviewed `legacy_official_import` files in this directory. The default command is still dry-run and does not write a database.
+
+Supported official modules:
+
+- `navigation`
+- `top-links`
+- `ticker`
+- `news`
+- `ads`
+- `home`
+- `all`
+
+Seed-B3 does not import user posts, contacts, user images, or demo content. It does not write migrations or `supabase/seed.sql`. External images stay as `https://img.openaa.com/...` references through `image_assets` records and are not downloaded or uploaded.
+
+Production apply is disabled for this phase. Local apply uses local Supabase credentials from environment variables or Supabase CLI status; staging apply requires explicit environment variables.
