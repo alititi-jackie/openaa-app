@@ -20,7 +20,7 @@ export function AdminActionForm({
   const [state, formAction, pending] = useActionState(action, initialState);
 
   return (
-    <form action={formAction} className={className}>
+    <form action={formAction} encType="multipart/form-data" className={className}>
       {children}
       <div className="flex flex-wrap items-center gap-3">
         <button
