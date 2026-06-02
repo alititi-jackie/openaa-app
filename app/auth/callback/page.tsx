@@ -29,6 +29,20 @@ function safeReturnTo(value: string | undefined) {
   return value;
 }
 
+function callbackErrorMessage(message: string | undefined) {
+  const normalized = message?.toLowerCase() || "";
+
+  if (normalized.includes("expired") || normalized.includes("invalid")) {
+    return "登录链接已失效或已过期，请重新登录或重新发送邮件。";
+  }
+
+  if (normalized.includes("email") && normalized.includes("confirm")) {
+    return "邮箱验证失败，请重新发送验证邮件后再试。";
+  }
+
+  return "登录回调失败，请重新登录。";
+}
+
 export default async function AuthCallbackPage({ searchParams }: AuthCallbackPageProps) {
   const params = await searchParams;
   const supabase = await createSupabaseServerClient();
@@ -44,7 +58,7 @@ export default async function AuthCallbackPage({ searchParams }: AuthCallbackPag
   }
 
   if (params.error_description) {
-    return <PageShell title="登录失败" description={params.error_description} eyebrow="Auth" />;
+    return <PageShell title="登录失败" description={callbackErrorMessage(params.error_description)} eyebrow="Auth" />;
   }
 
   if (params.code) {
