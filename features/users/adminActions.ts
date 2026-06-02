@@ -62,6 +62,10 @@ export async function setAdminUserStatus(_state: AdminUserActionState, formData:
   const context = await getAdminUserActionContext(statusPermissions[status]);
   if (!context.ok) return { ok: false, message: context.message };
 
+  if (id === context.userId) {
+    return { ok: false, message: "不能在用户管理页修改自己的账号状态，请让另一位管理员操作。" };
+  }
+
   const { data: before, error: readError } = await context.supabase
     .from("profiles")
     .select("id,email,nickname,status,account_type")
@@ -113,7 +117,7 @@ export async function updateAdminUserNote(_state: AdminUserActionState, formData
 
   if (!id) return { ok: false, message: "操作参数无效。" };
 
-  const context = await getAdminUserActionContext(["edit_user_notes", "manage_user_status"]);
+  const context = await getAdminUserActionContext(["manage_user_status"]);
   if (!context.ok) return { ok: false, message: context.message };
 
   const { data: before, error: readError } = await context.supabase
