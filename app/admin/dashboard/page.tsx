@@ -165,10 +165,11 @@ const adminEntryGroups: AdminEntryGroup[] = [
       {
         id: "settings",
         title: "站点设置",
-        description: "旧站可管理每日发帖上限等基础规则；新站后续补齐页面。",
+        description: "管理每日发帖上限等基础站点规则，使用新站 admin_roles 权限和审计日志。",
+        href: "/admin/settings",
         icon: <Settings size={20} aria-hidden="true" />,
         permissionKeys: ["manage_settings"],
-        status: "planned",
+        status: "ready",
       },
       {
         id: "image-cleanup",
