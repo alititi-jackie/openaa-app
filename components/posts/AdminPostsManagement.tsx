@@ -49,9 +49,10 @@ export function AdminPostsPermissionBadges({ permissions }: { permissions: Admin
   );
 }
 
-export function AdminPostsFilter({ type, status, q }: { type?: string; status?: string; q?: string }) {
+export function AdminPostsFilter({ type, status, q, author }: { type?: string; status?: string; q?: string; author?: string }) {
   return (
     <form action="/admin/posts" className="grid gap-3 md:grid-cols-3">
+      {author ? <input type="hidden" name="author" value={author} /> : null}
       <input
         name="q"
         defaultValue={q ?? ""}
@@ -135,6 +136,7 @@ export function AdminPostsPagination({
   type,
   status,
   q,
+  author,
 }: {
   page: number;
   pageCount: number;
@@ -142,9 +144,10 @@ export function AdminPostsPagination({
   type?: string;
   status?: string;
   q?: string;
+  author?: string;
 }) {
-  const previous = buildPageHref({ page: Math.max(1, page - 1), type, status, q });
-  const next = buildPageHref({ page: Math.min(pageCount, page + 1), type, status, q });
+  const previous = buildPageHref({ page: Math.max(1, page - 1), type, status, q, author });
+  const next = buildPageHref({ page: Math.min(pageCount, page + 1), type, status, q, author });
 
   return (
     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-600">
@@ -167,11 +170,12 @@ export function AdminPostsPagination({
   );
 }
 
-function buildPageHref({ page, type, status, q }: { page: number; type?: string; status?: string; q?: string }) {
+function buildPageHref({ page, type, status, q, author }: { page: number; type?: string; status?: string; q?: string; author?: string }) {
   const params = new URLSearchParams();
   if (type && type !== "all") params.set("type", type);
   if (status && status !== "all") params.set("status", status);
   if (q) params.set("q", q);
+  if (author) params.set("author", author);
   if (page > 1) params.set("page", String(page));
   const query = params.toString();
   return query ? `/admin/posts?${query}` : "/admin/posts";
