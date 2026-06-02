@@ -1,5 +1,6 @@
+import Image from "next/image";
 import { AdminActionForm, AdminCheckbox, AdminSelect, AdminTextInput } from "@/components/admin/AdminActionForm";
-import { upsertAd } from "@/features/ads/adminActions";
+import { deleteAd, upsertAd } from "@/features/ads/adminActions";
 import type { AdminAdRow } from "@/features/ads/adminQueries";
 
 const placementOptions = [
@@ -13,9 +14,9 @@ const placementOptions = [
   { value: "dmv_top", label: "DMV 顶部 dmv_top" },
 ];
 
-export function AdminAdsFilter({ placement }: { placement?: string }) {
+export function AdminAdsFilter({ placement, status }: { placement?: string; status?: string }) {
   return (
-    <form action="/admin/ads" className="grid gap-3 sm:grid-cols-[1fr_auto]">
+    <form action="/admin/ads" className="grid gap-3 sm:grid-cols-[1fr_180px_auto]">
       <select name="placement" defaultValue={placement ?? "all"} className="min-h-10 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-500">
         <option value="all">全部广告位</option>
         {placementOptions.map((option) => (
@@ -23,6 +24,11 @@ export function AdminAdsFilter({ placement }: { placement?: string }) {
             {option.label}
           </option>
         ))}
+      </select>
+      <select name="status" defaultValue={status ?? "all"} className="min-h-10 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-500">
+        <option value="all">全部状态</option>
+        <option value="active">启用中</option>
+        <option value="inactive">已停用</option>
       </select>
       <button type="submit" className="inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white">
         筛选广告
@@ -48,6 +54,11 @@ export function AdminAdsList({ ads }: { ads: AdminAdRow[] }) {
 export function AdForm({ ad }: { ad?: AdminAdRow }) {
   return (
     <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+      {ad?.image_url ? (
+        <div className="mb-3 overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <Image src={ad.image_url} alt={ad.title} width={960} height={240} className="h-32 w-full object-cover" unoptimized />
+        </div>
+      ) : null}
       <AdminActionForm action={upsertAd} submitLabel={ad ? "保存广告" : "新增广告"}>
         <input type="hidden" name="id" value={ad?.id ?? ""} />
         <input type="hidden" name="image_asset_id" value={ad?.image_asset_id ?? ""} />
@@ -63,6 +74,13 @@ export function AdForm({ ad }: { ad?: AdminAdRow }) {
         </div>
         <AdminCheckbox label="启用" name="is_active" defaultChecked={ad?.is_active ?? true} />
       </AdminActionForm>
+      {ad ? (
+        <AdminActionForm action={deleteAd} submitLabel="删除广告" className="mt-3 border-t border-slate-200 pt-3">
+          <input type="hidden" name="id" value={ad.id} />
+          <p className="text-xs font-semibold leading-5 text-red-600">删除只移除广告配置，不删除图片文件。</p>
+          <AdminCheckbox label="我确认删除这条广告配置" name="confirm_delete" />
+        </AdminActionForm>
+      ) : null}
     </div>
   );
 }

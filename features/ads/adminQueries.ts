@@ -29,7 +29,7 @@ type RawAdRow = Omit<AdminAdRow, "image_url"> & {
   image_assets?: { public_url: string | null; external_url: string | null } | Array<{ public_url: string | null; external_url: string | null }> | null;
 };
 
-export async function getAdminAdsData(placement?: string): Promise<AdminAdsResult> {
+export async function getAdminAdsData(placement?: string, status?: string): Promise<AdminAdsResult> {
   const supabase = await createSupabaseServerClient();
   const canManageAds = await hasAdminPermission("manage_ads");
 
@@ -49,6 +49,14 @@ export async function getAdminAdsData(placement?: string): Promise<AdminAdsResul
 
   if (placement && placement !== "all") {
     query = query.eq("placement", placement);
+  }
+
+  if (status === "active") {
+    query = query.eq("is_active", true);
+  }
+
+  if (status === "inactive") {
+    query = query.eq("is_active", false);
   }
 
   const { data, error } = await query;

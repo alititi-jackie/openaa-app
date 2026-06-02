@@ -4,9 +4,9 @@ import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
-import { createDefaultHomeConfig, updateHomeSection, upsertHomeBanner, upsertLatestTicker } from "@/features/admin-home/actions";
+import { createDefaultHomeConfig, updateHomeSection, updateLatestTickerSettings, upsertHomeBanner, upsertLatestTicker } from "@/features/admin-home/actions";
 import { getAdminHomeConfigData } from "@/features/admin-home/queries";
-import type { AdminHomeBannerRow, AdminHomeSectionRow, AdminTickerRow } from "@/features/admin-home/types";
+import type { AdminHomeBannerRow, AdminHomeSectionRow, AdminTickerGlobalSettingsRow, AdminTickerRow, AdminTickerSectionSettingsRow } from "@/features/admin-home/types";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
@@ -60,6 +60,7 @@ export default function AdminHomePage() {
             {data.permissions.manageLatestTicker ? (
               <AdminCard title="最新动态" description="管理首页单行 latest_ticker。">
                 <div className="grid gap-4">
+                  <TickerSettingsForm globalSettings={data.tickerGlobalSettings} sections={data.tickerSectionSettings} />
                   {data.tickerItems.map((item) => (
                     <TickerForm key={item.id} item={item} />
                   ))}
@@ -103,12 +104,52 @@ function HomeSectionForm({ section }: { section: AdminHomeSectionRow }) {
   );
 }
 
+function TickerSettingsForm({ globalSettings, sections }: { globalSettings: AdminTickerGlobalSettingsRow; sections: AdminTickerSectionSettingsRow[] }) {
+  return (
+    <div className="rounded-2xl border border-blue-100 bg-blue-50 p-3">
+      <AdminActionForm action={updateLatestTickerSettings} submitLabel="保存滚动条设置">
+        <div className="grid gap-3 md:grid-cols-2">
+          <AdminTextInput label="滚动间隔（秒）" name="interval_seconds" type="number" defaultValue={globalSettings.interval_seconds} />
+          <div className="flex items-end">
+            <AdminCheckbox label="启用最新动态滚动条" name="global_is_enabled" defaultChecked={globalSettings.is_enabled} />
+          </div>
+        </div>
+        <div className="grid gap-3">
+          {sections.map((section) => (
+            <div key={section.section_key} className="rounded-xl border border-blue-100 bg-white p-3">
+              <input type="hidden" name="section_key" value={section.section_key} />
+              <input type="hidden" name={`section_name_${section.section_key}`} value={section.section_name} />
+              <div className="grid gap-3 md:grid-cols-[1fr_120px_120px_auto]">
+                <div className="text-sm font-black text-slate-800">{section.section_name}</div>
+                <AdminTextInput label="排序" name={`sort_order_${section.section_key}`} type="number" defaultValue={section.sort_order} />
+                <AdminTextInput label="显示数量" name={`display_count_${section.section_key}`} type="number" defaultValue={section.display_count} />
+                <div className="flex items-end">
+                  <AdminCheckbox label="显示" name={`is_enabled_${section.section_key}`} defaultChecked={section.is_enabled} />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </AdminActionForm>
+    </div>
+  );
+}
+
+const tickerModuleOptions = [
+  { value: "news", label: "新闻" },
+  { value: "jobs", label: "招聘" },
+  { value: "housing", label: "房屋" },
+  { value: "marketplace", label: "二手 / 市场" },
+  { value: "services", label: "本地服务" },
+];
+
 function TickerForm({ item }: { item?: AdminTickerRow }) {
   return (
     <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
       <AdminActionForm action={upsertLatestTicker} submitLabel={item ? "保存动态" : "新增动态"}>
         <input type="hidden" name="id" value={item?.id ?? ""} />
         <div className="grid gap-3 md:grid-cols-2">
+          <AdminSelect label="模块" name="module" defaultValue={item?.module ?? "news"} options={tickerModuleOptions} />
           <AdminTextInput label="标题" name="title" defaultValue={item?.title} required />
           <AdminTextInput label="链接" name="href" defaultValue={item?.href} placeholder="/news" />
           <AdminTextInput label="排序" name="sort_order" type="number" defaultValue={item?.sort_order ?? 0} />

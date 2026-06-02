@@ -7,7 +7,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 const DEFAULT_TICKER_INTERVAL_MS = 4000;
 const SWIPE_THRESHOLD = 40;
 
-export function LatestTicker({ items }: { items: Array<{ label: string; href: string }> }) {
+export function LatestTicker({
+  items,
+  intervalSeconds,
+  enabled = true,
+}: {
+  items: Array<{ label: string; href: string }>;
+  intervalSeconds?: number;
+  enabled?: boolean;
+}) {
+  const intervalMs = normalizeIntervalMs(intervalSeconds);
   const tickerItems = items.length > 0 ? items : [{ label: "OpenAA 最新发布，点击右上角放大镜搜索更多内容", href: "/news" }];
   const [index, setIndex] = useState(0);
   const timerRef = useRef<number | null>(null);
@@ -17,11 +26,11 @@ export function LatestTicker({ items }: { items: Array<{ label: string; href: st
 
   const restartTimer = useCallback((count: number) => {
     if (timerRef.current) window.clearInterval(timerRef.current);
-    if (count <= 1) return;
+    if (!enabled || count <= 1) return;
     timerRef.current = window.setInterval(() => {
       setIndex((current) => (current + 1) % count);
-    }, DEFAULT_TICKER_INTERVAL_MS);
-  }, []);
+    }, intervalMs);
+  }, [enabled, intervalMs]);
 
   useEffect(() => {
     restartTimer(tickerItems.length);
@@ -55,6 +64,10 @@ export function LatestTicker({ items }: { items: Array<{ label: string; href: st
     didSwipeRef.current = false;
   }
 
+  if (!enabled) {
+    return null;
+  }
+
   return (
     <section className="min-w-0">
       <Link
@@ -71,4 +84,9 @@ export function LatestTicker({ items }: { items: Array<{ label: string; href: st
       </Link>
     </section>
   );
+}
+
+function normalizeIntervalMs(value?: number) {
+  if (!value || !Number.isFinite(value)) return DEFAULT_TICKER_INTERVAL_MS;
+  return Math.min(10, Math.max(3, Math.trunc(value))) * 1000;
 }

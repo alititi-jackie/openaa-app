@@ -14,6 +14,25 @@ export type HomeCity = {
 export type HomeTickerItem = {
   label: string;
   href: string;
+  module?: string | null;
+};
+
+export type HomeTickerGlobalSettings = {
+  isEnabled: boolean;
+  intervalSeconds: number;
+};
+
+export type HomeTickerSectionSettings = {
+  sectionKey: string;
+  sectionName: string;
+  isEnabled: boolean;
+  sortOrder: number;
+  displayCount: number;
+};
+
+export type HomeTickerSettings = {
+  global: HomeTickerGlobalSettings;
+  sections: HomeTickerSectionSettings[];
 };
 
 export type HomeSeoContent = {
@@ -58,6 +77,7 @@ export type HomeConfig = {
   topQuickLinks: TopQuickLink[];
   banners: HomeBannerItem[];
   tickerItems: HomeTickerItem[];
+  tickerSettings: HomeTickerSettings;
   quickGridItems: QuickGridItem[];
   utilityTools: UtilityCardItem[];
   latestPostGroups: LatestPostGroup[];

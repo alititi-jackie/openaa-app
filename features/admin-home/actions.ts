@@ -194,6 +194,7 @@ export async function upsertLatestTicker(_state: AdminHomeActionState, formData:
   const id = readText(formData, "id");
   const title = readText(formData, "title");
   const href = normalizeOptionalLink(readText(formData, "href"));
+  const tickerModule = normalizeTickerModule(readText(formData, "module"));
   const isEnabled = formData.get("is_enabled") === "on";
   const sortOrder = readInteger(formData, "sort_order", "最新动态排序");
   const startsAt = readDateTime(formData, "starts_at");
@@ -206,7 +207,7 @@ export async function upsertLatestTicker(_state: AdminHomeActionState, formData:
   const payload = {
     title,
     href: href.value,
-    module: "home",
+    module: tickerModule,
     is_enabled: isEnabled,
     sort_order: sortOrder.value,
     starts_at: startsAt,
@@ -224,6 +225,54 @@ export async function upsertLatestTicker(_state: AdminHomeActionState, formData:
   }
   revalidateAdminHome();
   return ok("最新动态已保存。");
+}
+
+export async function updateLatestTickerSettings(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
+  const context = await getAdminActionContext("manage_latest_ticker");
+  if (!context.ok) return fail(context.message);
+
+  const isEnabled = formData.get("global_is_enabled") === "on";
+  const intervalSeconds = readIntegerInRange(formData, "interval_seconds", "滚动间隔", 3, 10);
+  if (!intervalSeconds.ok) return fail(intervalSeconds.message);
+
+  const globalPayload = {
+    id: 1,
+    is_enabled: isEnabled,
+    interval_seconds: intervalSeconds.value,
+    updated_at: new Date().toISOString(),
+  };
+
+  const globalResult = await context.supabase.from("latest_ticker_global_settings").upsert(globalPayload, { onConflict: "id" });
+  if (globalResult.error) return fail("最新动态全局设置保存失败。");
+
+  const sectionKeys = formData.getAll("section_key").filter((value): value is string => typeof value === "string");
+  const sectionPayloads = [];
+
+  for (const sectionKey of sectionKeys) {
+    const displayCount = readIntegerInRange(formData, `display_count_${sectionKey}`, "显示数量", 1, 20);
+    const sortOrder = readInteger(formData, `sort_order_${sectionKey}`, "排序");
+    if (!displayCount.ok) return fail(displayCount.message);
+    if (!sortOrder.ok) return fail(sortOrder.message);
+
+    sectionPayloads.push({
+      section_key: normalizeTickerModule(sectionKey),
+      section_name: readText(formData, `section_name_${sectionKey}`) || sectionKey,
+      is_enabled: formData.get(`is_enabled_${sectionKey}`) === "on",
+      sort_order: sortOrder.value,
+      display_count: displayCount.value,
+      updated_at: new Date().toISOString(),
+    });
+  }
+
+  const sectionsResult = await context.supabase.from("latest_ticker_sections").upsert(sectionPayloads, { onConflict: "section_key" });
+  if (sectionsResult.error) return fail("最新动态分区设置保存失败。");
+
+  if (!(await auditLog(context, "update_latest_ticker_settings", "latest_ticker", "settings", { global: globalPayload, sections: sectionPayloads }))) {
+    return auditFailure();
+  }
+
+  revalidateAdminHome();
+  return ok("最新动态滚动条设置已保存。");
 }
 
 export async function upsertHomeBanner(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
@@ -331,6 +380,19 @@ function readInteger(formData: FormData, key: string, label: string): { ok: true
 
 function readOpenMode(formData: FormData) {
   return readText(formData, "open_mode") === "new" ? "new" : "same";
+}
+
+function readIntegerInRange(formData: FormData, key: string, label: string, min: number, max: number): { ok: true; value: number } | { ok: false; message: string } {
+  const value = readInteger(formData, key, label);
+  if (!value.ok) return value;
+  if (value.value < min || value.value > max) return { ok: false, message: `${label} 必须在 ${min} 到 ${max} 之间。` };
+  return value;
+}
+
+function normalizeTickerModule(value: string) {
+  if (value === "secondhand") return "marketplace";
+  if (value === "news" || value === "jobs" || value === "housing" || value === "marketplace" || value === "services") return value;
+  return "news";
 }
 
 function readDateTime(formData: FormData, key: string) {

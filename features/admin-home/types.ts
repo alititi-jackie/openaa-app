@@ -37,6 +37,19 @@ export type AdminTickerRow = {
   ends_at: string | null;
 };
 
+export type AdminTickerGlobalSettingsRow = {
+  is_enabled: boolean;
+  interval_seconds: number;
+};
+
+export type AdminTickerSectionSettingsRow = {
+  section_key: string;
+  section_name: string;
+  is_enabled: boolean;
+  sort_order: number;
+  display_count: number;
+};
+
 export type AdminHomeBannerRow = {
   id: string;
   title: string;

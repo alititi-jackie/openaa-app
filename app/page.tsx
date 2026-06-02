@@ -21,7 +21,7 @@ export default async function HomePage() {
   return (
     <div className="space-y-4">
       <HomeBanner items={homeConfig.banners} />
-      <LatestTicker items={homeConfig.tickerItems} />
+      <LatestTicker items={homeConfig.tickerItems} intervalSeconds={homeConfig.tickerSettings.global.intervalSeconds} enabled={homeConfig.tickerSettings.global.isEnabled} />
       {homeConfig.quickGridVisible ? <QuickGrid items={homeConfig.quickGridItems} /> : null}
       <UtilityCards items={homeConfig.utilityTools} isVisible={homeConfig.utilityToolsVisible} />
       <LatestPostsSection groups={homeConfig.latestPostGroups} isVisible={homeConfig.latestPostsVisible} />
