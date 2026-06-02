@@ -118,7 +118,7 @@ export default async function ProfilePage() {
         <Entry icon={<Compass size={18} />} title="我的导航" description="保存和管理常用网站入口。" href="/navigation/my" />
         <Entry icon={<Bookmark size={18} />} title="我的收藏" description="查看我收藏的公开信息。" href="/profile/favorites" />
         <Entry icon={<Clock size={18} />} title="最近浏览" description="查看我最近浏览的公开信息。" href="/profile/recent" />
-        <Entry icon={<Bell size={18} />} title="我的通知" description="查看平台通知入口，通知中心后续接入。" href="/profile/notifications" badge="入口" />
+        <Entry icon={<Bell size={18} />} title="我的通知" description="查看审核、举报处理和平台提醒。" href="/profile/notifications" />
         <Entry icon={<Mail size={18} />} title="反馈/联系平台" description="提交问题、建议或联系平台。" href="/feedback" />
       </section>
     </PageShell>

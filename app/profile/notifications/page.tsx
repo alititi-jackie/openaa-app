@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Bell, MessageCircle, UserRound } from "lucide-react";
-import { EmptyState } from "@/components/common/EmptyState";
+import { MessageCircle, UserRound } from "lucide-react";
 import { PageShell } from "@/components/layout/PageShell";
+import { ProfileNotificationsList } from "@/components/profile/ProfileNotificationsList";
+import { getMyNotifications } from "@/features/notifications/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getCurrentUser } from "@/lib/supabase/server";
 
@@ -22,13 +23,13 @@ export default async function ProfileNotificationsPage() {
     redirect("/login?returnTo=/profile/notifications");
   }
 
+  const notifications = await getMyNotifications();
+
   return (
-    <PageShell title="我的通知" description="通知中心入口已接入，系统通知会在后续通知批次中补齐。" eyebrow="Profile">
-      <EmptyState
-        icon={<Bell size={22} aria-hidden="true" />}
-        title="通知中心后续接入"
-        description="后续会在这里显示审核、举报处理、平台提醒等通知。当前不会显示假通知或占位消息。"
-      />
+    <PageShell title="我的通知" description="查看审核、举报处理和平台提醒等站内通知。" eyebrow="Profile">
+      {notifications.state === "error" ? <p className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">通知读取失败，请稍后再试。</p> : null}
+      {notifications.state === "missing_config" ? <p className="rounded-xl bg-slate-50 p-3 text-sm leading-6 text-slate-600">Supabase 环境变量尚未配置，当前显示空列表。</p> : null}
+      <ProfileNotificationsList notifications={notifications.data} />
       <div className="grid gap-3 sm:grid-cols-2">
         <ProfileLink href="/feedback" label="反馈/联系平台" icon={<MessageCircle size={18} aria-hidden="true" />} />
         <ProfileLink href="/profile" label="返回我的" icon={<UserRound size={18} aria-hidden="true" />} />
