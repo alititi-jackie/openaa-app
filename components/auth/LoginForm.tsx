@@ -2,8 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Mail } from "lucide-react";
-import { AuthCard, AuthLink } from "@/components/auth/AuthCard";
+import Link from "next/link";
 import { ensureCurrentUserProfile } from "@/features/auth/actions";
 import { featureFlags } from "@/lib/config/featureFlags";
 import { appUrl } from "@/lib/seo/siteConfig";
@@ -104,69 +103,108 @@ export function LoginForm() {
   }
 
   return (
-    <AuthCard
-      title="登录 OpenAA"
-      description="使用邮箱密码或 Google 账号进入你的 OpenAA 个人中心。"
-      footer={
-        <div className="flex flex-wrap gap-x-4 gap-y-2">
-          <span>
-            还没有账号？ <AuthLink href="/register">去注册</AuthLink>
-          </span>
-          <AuthLink href="/forgot-password">忘记密码</AuthLink>
-        </div>
-      }
-    >
+    <section className="mx-auto w-full max-w-md rounded-2xl bg-white p-6 shadow-sm">
+      <h1 className="text-center text-2xl font-bold text-gray-900">登录 OpenAA</h1>
+
+      <div className="mb-6 mt-3 text-center">
+        <p className="text-[13.5px] leading-relaxed text-zinc-500">登录后即可免费发布二手商品、招聘信息，管理您的内容并享受更多OpenAA服务。</p>
+        <p className="mt-1 text-[12px] text-zinc-400">Login to post listings, jobs and manage your OpenAA account.</p>
+      </div>
+
       {!isConfigured ? (
-        <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-800">
+        <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-800">
           Supabase 环境变量尚未配置。页面可以构建和预览，真实登录会在配置新 Supabase 后启用。
         </p>
       ) : null}
-
-      <form className="space-y-4" onSubmit={handleEmailLogin}>
-        <label className="block">
-          <span className="text-sm font-bold text-slate-800">邮箱</span>
-          <input
-            type="email"
-            required
-            autoComplete="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          />
-        </label>
-        <label className="block">
-          <span className="text-sm font-bold text-slate-800">密码</span>
-          <input
-            type="password"
-            required
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          />
-        </label>
-        <button
-          type="submit"
-          disabled={!featureFlags.auth_email || isSubmitting}
-          className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-300"
-        >
-          <Mail size={18} aria-hidden="true" />
-          {isSubmitting ? "登录中..." : "邮箱登录"}
-        </button>
-      </form>
 
       {featureFlags.auth_google ? (
         <button
           type="button"
           onClick={handleGoogleLogin}
-          className="mt-3 min-h-12 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-900"
+          disabled={!isConfigured}
+          className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 px-4 py-2.5 transition hover:bg-gray-50 disabled:opacity-50"
         >
-          Google 登录
+          <GoogleIcon />
+          使用 Google 登录
         </button>
       ) : null}
 
-      <p className="mt-3 text-xs leading-5 text-slate-500">注册后如需邮箱验证，请先点击验证邮件里的确认链接再登录。</p>
-      {message ? <p className="mt-4 rounded-xl bg-slate-100 p-3 text-sm leading-6 text-slate-700">{message}</p> : null}
-    </AuthCard>
+      {featureFlags.auth_google ? (
+        <div className="my-4 flex items-center gap-3">
+          <div className="h-px flex-1 bg-gray-200" />
+          <span className="text-xs text-gray-400">或</span>
+          <div className="h-px flex-1 bg-gray-200" />
+        </div>
+      ) : null}
+
+      <form className="space-y-4" onSubmit={handleEmailLogin}>
+        {message ? <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{message}</div> : null}
+
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium text-gray-700">邮箱地址</span>
+          <input
+            type="email"
+            required
+            placeholder="your@email.com"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none focus:border-transparent focus:ring-2 focus:ring-[#1976d2]"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium text-gray-700">密码</span>
+          <input
+            type="password"
+            required
+            placeholder="请输入密码"
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none focus:border-transparent focus:ring-2 focus:ring-[#1976d2]"
+          />
+        </label>
+        <button
+          type="submit"
+          disabled={!featureFlags.auth_email || isSubmitting}
+          className="w-full rounded-lg bg-[#1976d2] py-2.5 font-medium text-white transition hover:bg-[#1565c0] disabled:opacity-50"
+        >
+          {isSubmitting ? "登录中..." : "登录"}
+        </button>
+      </form>
+
+      <p className="mt-3 text-center text-sm text-gray-500">
+        <Link href="/forgot-password" className="text-[#1976d2] hover:underline">
+          忘记密码？
+        </Link>
+      </p>
+
+      <p className="mt-4 text-center text-sm text-gray-600">
+        还没有账号？{" "}
+        <Link href="/register" className="font-medium text-[#1976d2] hover:underline">
+          立即注册
+        </Link>
+      </p>
+    </section>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="#4285F4"
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+      />
+      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+      <path
+        fill="#EA4335"
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+      />
+    </svg>
   );
 }

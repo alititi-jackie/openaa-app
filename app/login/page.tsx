@@ -40,8 +40,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   }
 
   return (
-    <Suspense>
-      <LoginForm />
-    </Suspense>
+    <div className="-mx-4 -mt-4 flex min-h-[calc(100dvh-8rem)] items-center justify-center bg-zinc-100 px-4 py-12">
+      <Suspense>
+        <LoginForm />
+      </Suspense>
+    </div>
   );
 }
