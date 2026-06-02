@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
+  Bell,
   Bookmark,
   BriefcaseBusiness,
   Clock,
@@ -12,11 +14,10 @@ import {
   Mail,
   Pencil,
   Send,
-  ShieldCheck,
   ShoppingBag,
-  UserCircle,
 } from "lucide-react";
 import { PageShell } from "@/components/layout/PageShell";
+import { ProfileLogoutButton } from "@/components/profile/ProfileLogoutButton";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { ensureProfileForUser } from "@/lib/supabase/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -40,17 +41,16 @@ export default async function ProfilePage() {
   if (!supabase) {
     return (
       <PageShell title="我的" description="登录后可以管理发布、收藏、我的导航和账号资料。" eyebrow="Profile">
-        <GuestProfileCard note="Supabase 环境变量尚未配置，登录和注册暂时不可用。" />
+        <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+          <h2 className="text-lg font-black text-slate-950">登录暂不可用</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">Supabase 环境变量尚未配置。配置新 Supabase 后，这里会进入登录保护的用户中心。</p>
+        </section>
       </PageShell>
     );
   }
 
   if (!user) {
-    return (
-      <PageShell title="我的" description="登录后可以管理发布、收藏、我的导航和账号资料。" eyebrow="Profile">
-        <GuestProfileCard />
-      </PageShell>
-    );
+    redirect("/login?returnTo=/profile");
   }
 
   const profile = (await ensureProfileForUser(user)) as Profile;
@@ -103,6 +103,7 @@ export default async function ProfilePage() {
             <KeyRound size={17} aria-hidden="true" />
             账号安全
           </Link>
+          <ProfileLogoutButton />
         </div>
       </section>
 
@@ -115,46 +116,12 @@ export default async function ProfilePage() {
         <Entry icon={<ShoppingBag size={18} />} title="我的二手/市场" description="管理我发布的二手和市场信息。" href="/profile/marketplace" />
         <Entry icon={<HeartHandshake size={18} />} title="我的服务" description="管理我发布的本地服务信息。" href="/profile/services" />
         <Entry icon={<Compass size={18} />} title="我的导航" description="保存和管理常用网站入口。" href="/navigation/my" />
-        <Entry icon={<Bookmark size={18} />} title="我的收藏" description="收藏列表后续接入，当前可在帖子详情页收藏。" badge="后续开放" />
-        <Entry icon={<Clock size={18} />} title="最近浏览" description="最近浏览后续接入，当前不会跳转到空页面。" badge="后续开放" />
+        <Entry icon={<Bookmark size={18} />} title="我的收藏" description="查看收藏入口，完整列表后续接入。" href="/profile/favorites" badge="入口" />
+        <Entry icon={<Clock size={18} />} title="最近浏览" description="查看最近浏览入口，历史记录后续接入。" href="/profile/recent" badge="入口" />
+        <Entry icon={<Bell size={18} />} title="我的通知" description="查看平台通知入口，通知中心后续接入。" href="/profile/notifications" badge="入口" />
         <Entry icon={<Mail size={18} />} title="反馈/联系平台" description="提交问题、建议或联系平台。" href="/feedback" />
       </section>
     </PageShell>
-  );
-}
-
-function GuestProfileCard({ note }: { note?: string }) {
-  return (
-    <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-      <div className="flex items-start gap-4">
-        <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-700">
-          <UserCircle size={28} aria-hidden="true" />
-        </div>
-        <div>
-          <h2 className="text-xl font-black text-slate-950">登录 OpenAA</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">登录后可以管理发布、收藏、最近浏览、我的导航和账号资料。</p>
-        </div>
-      </div>
-
-      {note ? <p className="mt-4 rounded-xl bg-amber-50 p-3 text-sm leading-6 text-amber-800">{note}</p> : null}
-
-      <div className="mt-5 grid gap-3">
-        <Link
-          href="/login?returnTo=/profile"
-          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white"
-        >
-          <Mail size={18} aria-hidden="true" />
-          邮箱登录 / Google 登录
-        </Link>
-        <Link
-          href="/register"
-          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-900"
-        >
-          <ShieldCheck size={18} aria-hidden="true" />
-          注册账号
-        </Link>
-      </div>
-    </section>
   );
 }
 
