@@ -8,6 +8,7 @@ type DmvQuestionCardProps = {
   categoryLabel?: string;
   selectedIndex?: number | null;
   revealAnswer?: boolean;
+  feedbackMode?: "instant" | "selected";
   disabled?: boolean;
   onSelect?: (index: number) => void;
 };
@@ -18,9 +19,14 @@ export function DmvQuestionCard({
   categoryLabel,
   selectedIndex = null,
   revealAnswer = false,
+  feedbackMode = "instant",
   disabled = false,
   onSelect,
 }: DmvQuestionCardProps) {
+  const showInstantFeedback = feedbackMode === "instant";
+  const selectedWrong = !revealAnswer && showInstantFeedback && selectedIndex !== null && selectedIndex !== question.correctAnswerIndex;
+  const selectedCorrect = !revealAnswer && showInstantFeedback && selectedIndex !== null && selectedIndex === question.correctAnswerIndex;
+
   return (
     <article className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
       <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
@@ -42,13 +48,15 @@ export function DmvQuestionCard({
         {question.options.map((option, optionIndex) => {
           const isCorrect = optionIndex === question.correctAnswerIndex;
           const isSelected = optionIndex === selectedIndex;
-          const showState = revealAnswer || selectedIndex !== null;
+          const showState = revealAnswer || (showInstantFeedback && selectedIndex !== null);
           const stateClass =
             showState && isCorrect
               ? "border-green-200 bg-green-50 text-green-800"
               : showState && isSelected
                 ? "border-red-200 bg-red-50 text-red-800"
-                : "border-slate-200 bg-white text-slate-800";
+                : !showInstantFeedback && isSelected
+                  ? "border-blue-300 bg-blue-50 text-blue-800"
+                  : "border-slate-200 bg-white text-slate-800";
 
           return (
             <button
@@ -64,9 +72,15 @@ export function DmvQuestionCard({
         })}
       </div>
 
-      {revealAnswer || selectedIndex !== null ? (
-        <div className="mt-4 rounded-xl border border-green-100 bg-green-50 p-3 text-sm leading-6 text-green-800">
-          <p className="font-black">正确答案：{question.correctAnswer}</p>
+      {revealAnswer || (showInstantFeedback && selectedIndex !== null) ? (
+        <div
+          className={`mt-4 rounded-xl border p-3 text-sm leading-6 ${
+            selectedWrong ? "border-red-100 bg-red-50 text-red-800" : "border-green-100 bg-green-50 text-green-800"
+          }`}
+        >
+          {selectedCorrect ? <p className="font-black">回答正确！</p> : null}
+          {selectedWrong ? <p className="font-black">回答错误</p> : null}
+          <p className={selectedIndex !== null ? "mt-1 font-black" : "font-black"}>正确答案：{question.correctAnswer}</p>
           {question.explanation ? <p className="mt-1">{question.explanation}</p> : null}
         </div>
       ) : null}

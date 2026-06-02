@@ -1,32 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
+import { DmvLoginPrompt } from "@/components/dmv/DmvLoginPrompt";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
+import { addWrongQuestion, removeWrongQuestion } from "@/components/dmv/dmvStorage";
+import { getDmvCategoryLabel } from "@/components/dmv/dmvCategoryLabels";
 import type { DmvQuestion } from "@/features/dmv/types";
 
 type DmvQuestionsBrowserProps = {
   questions: DmvQuestion[];
 };
-
-const categoryLabels: Record<string, string> = {
-  "traffic-signs": "交通标志",
-  "road-signs-general": "交通标志基础",
-  "traffic-control": "交通信号与控制",
-  "right-of-way": "让路规则",
-  turns: "转弯",
-  "passing-lanes": "超车与车道",
-  parking: "停车",
-  "speed-weather": "速度与天气",
-  highway: "高速公路",
-  "alcohol-drugs": "酒精与药物",
-  law: "交通法规",
-  safety: "安全驾驶",
-  "sharing-road": "共享道路",
-};
-
-function getCategoryLabel(category: string) {
-  return categoryLabels[category] ?? category;
-}
 
 export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
   const [category, setCategory] = useState("all");
@@ -52,8 +36,26 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
     return <EmptyDmvState />;
   }
 
+  function selectAnswer(question: DmvQuestion, optionIndex: number) {
+    setSelectedById((current) => ({ ...current, [question.id]: optionIndex }));
+    if (optionIndex === question.correctAnswerIndex) {
+      removeWrongQuestion(question.id);
+    } else {
+      addWrongQuestion(question.id);
+    }
+  }
+
   return (
     <div className="space-y-4">
+      <section className="flex flex-wrap gap-2 rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+        <Link href="/dmv/practice" className="rounded-full bg-blue-50 px-3 py-2 text-sm font-black text-blue-700">
+          开始练习
+        </Link>
+        <Link href="/dmv/mock-test" className="rounded-full bg-green-50 px-3 py-2 text-sm font-black text-green-700">
+          模拟考试
+        </Link>
+      </section>
+
       <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
         <div className="grid gap-3">
           <input
@@ -73,7 +75,7 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
                   category === item ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"
                 }`}
               >
-                {item === "all" ? "全部" : getCategoryLabel(item)}
+                {item === "all" ? "全部" : getDmvCategoryLabel(item)}
               </button>
             ))}
           </div>
@@ -93,10 +95,10 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
               key={question.id}
               question={question}
               index={index}
-              categoryLabel={getCategoryLabel(question.category)}
+              categoryLabel={getDmvCategoryLabel(question.category)}
               selectedIndex={selectedById[question.id] ?? null}
               revealAnswer={revealAnswer}
-              onSelect={(optionIndex) => setSelectedById((current) => ({ ...current, [question.id]: optionIndex }))}
+              onSelect={(optionIndex) => selectAnswer(question, optionIndex)}
             />
           ))}
         </div>
@@ -106,6 +108,7 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
         </section>
       )}
 
+      <DmvLoginPrompt />
     </div>
   );
 }
@@ -114,7 +117,7 @@ export function EmptyDmvState() {
   return (
     <section className="rounded-2xl border border-slate-100 bg-white p-6 text-sm leading-6 text-slate-600 shadow-sm">
       <h2 className="text-lg font-black text-slate-950">题库暂未导入</h2>
-      <p className="mt-2">当前环境没有可用 DMV 题库数据。请先导入已审计题库到 `dmv_questions`，或确认静态审计题库文件存在。</p>
+      <p className="mt-2">当前环境没有可用 DMV 题库数据。请先导入已审计题库到 `dmv_questions`，或确认静态题库文件存在。</p>
     </section>
   );
 }
