@@ -17,7 +17,7 @@ export const metadata = buildPageMetadata({
 });
 
 type AdminUsersPageProps = {
-  searchParams?: Promise<{ status?: string; q?: string; page?: string }>;
+  searchParams?: Promise<{ status?: string; accountType?: string; q?: string; page?: string }>;
 };
 
 export default function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
@@ -27,6 +27,7 @@ export default function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
         const params = await searchParams;
         const data = await getAdminUsersData({
           status: normalizeStatus(params?.status),
+          accountType: normalizeAccountType(params?.accountType),
           q: params?.q,
           page: normalizePage(params?.page),
         });
@@ -53,8 +54,8 @@ export default function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
 
             <AdminUsersStats totals={data.totals} />
 
-            <AdminCard title="筛选用户" description="按状态、邮箱、昵称或用户 ID 搜索。">
-              <AdminUsersFilter status={params?.status} q={params?.q} />
+            <AdminCard title="筛选用户" description="按状态、账号类型、邮箱、昵称、联系方式或用户 ID 搜索。">
+              <AdminUsersFilter status={params?.status} accountType={params?.accountType} q={params?.q} canSearchContacts={data.permissions.viewUserContacts} />
             </AdminCard>
 
             <AdminCard title="用户列表" description="只更新账号状态，不删除用户，不修改 Auth 账号。">
@@ -62,8 +63,8 @@ export default function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
                 <Users size={15} aria-hidden="true" />
                 默认按最近更新排序，每页显示 {data.pageSize} 位用户。
               </div>
-              <AdminUsersList users={data.users} permissions={data.permissions} />
-              <AdminUsersPagination page={data.page} pageCount={data.pageCount} totalCount={data.totalCount} status={params?.status} q={params?.q} />
+              <AdminUsersList users={data.users} permissions={data.permissions} currentAdminId={data.currentAdminId} />
+              <AdminUsersPagination page={data.page} pageCount={data.pageCount} totalCount={data.totalCount} status={params?.status} accountType={params?.accountType} q={params?.q} />
             </AdminCard>
           </div>
         );
@@ -75,6 +76,11 @@ export default function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
 function normalizeStatus(value?: string): ProfileStatus | "all" | undefined {
   if (value === "active" || value === "restricted" || value === "banned" || value === "pending") return value;
   if (value === "all") return "all";
+  return undefined;
+}
+
+function normalizeAccountType(value?: string): "all" | "personal" | "business" | undefined {
+  if (value === "personal" || value === "business" || value === "all") return value;
   return undefined;
 }
 
