@@ -22,7 +22,7 @@ export const metadata = buildPageMetadata({
 });
 
 type AdminAuditLogsPageProps = {
-  searchParams?: Promise<{ action?: string; entityType?: string; q?: string; page?: string }>;
+  searchParams?: Promise<{ action?: string; entityType?: string; actorId?: string; entityId?: string; dateFrom?: string; dateTo?: string; scope?: string; q?: string; page?: string }>;
 };
 
 export default function AdminAuditLogsPage({ searchParams }: AdminAuditLogsPageProps) {
@@ -33,6 +33,11 @@ export default function AdminAuditLogsPage({ searchParams }: AdminAuditLogsPageP
         const data = await getAdminAuditLogsData({
           action: params?.action,
           entityType: params?.entityType,
+          actorId: params?.actorId,
+          entityId: params?.entityId,
+          dateFrom: params?.dateFrom,
+          dateTo: params?.dateTo,
+          scope: params?.scope,
           q: params?.q,
           page: normalizePage(params?.page),
         });
@@ -60,7 +65,18 @@ export default function AdminAuditLogsPage({ searchParams }: AdminAuditLogsPageP
             <AdminAuditLogsStats totals={data.totals} />
 
             <AdminCard title="筛选审计日志" description="按操作、实体类型、实体 ID 或管理员 ID 快速筛选。">
-              <AdminAuditLogsFilter action={params?.action} entityType={params?.entityType} q={params?.q} actionOptions={data.actionOptions} entityTypeOptions={data.entityTypeOptions} />
+              <AdminAuditLogsFilter
+                action={params?.action}
+                entityType={params?.entityType}
+                actorId={params?.actorId}
+                entityId={params?.entityId}
+                dateFrom={params?.dateFrom}
+                dateTo={params?.dateTo}
+                scope={params?.scope}
+                q={params?.q}
+                actionOptions={data.actionOptions}
+                entityTypeOptions={data.entityTypeOptions}
+              />
             </AdminCard>
 
             <AdminCard title="日志列表" description="审计日志只读展示，不在本页提供删除或修改操作。">
@@ -75,6 +91,11 @@ export default function AdminAuditLogsPage({ searchParams }: AdminAuditLogsPageP
                 totalCount={data.totalCount}
                 action={params?.action}
                 entityType={params?.entityType}
+                actorId={params?.actorId}
+                entityId={params?.entityId}
+                dateFrom={params?.dateFrom}
+                dateTo={params?.dateTo}
+                scope={params?.scope}
                 q={params?.q}
               />
             </AdminCard>

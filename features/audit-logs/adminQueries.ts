@@ -8,6 +8,11 @@ const PAGE_SIZE = 20;
 export type AuditLogFilter = {
   action?: string;
   entityType?: string;
+  actorId?: string;
+  entityId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  scope?: string;
   q?: string;
   page?: number;
 };
@@ -35,6 +40,7 @@ export type AdminAuditLogsData = {
     currentPage: number;
     actionCount: number;
     entityTypeCount: number;
+    filtered: number;
   };
   actionOptions: string[];
   entityTypeOptions: string[];
@@ -72,13 +78,28 @@ export async function getAdminAuditLogsData(filters: AuditLogFilter = {}): Promi
 
   const action = filters.action?.trim();
   const entityType = filters.entityType?.trim();
+  const actorId = filters.actorId?.trim();
+  const entityId = filters.entityId?.trim();
+  const dateFrom = filters.dateFrom?.trim();
+  const dateTo = filters.dateTo?.trim();
+  const scope = filters.scope?.trim();
   const search = filters.q?.trim();
 
   if (action && action !== "all") query = query.eq("action", action);
   if (entityType && entityType !== "all") query = query.eq("entity_type", entityType);
+  if (actorId && isUuid(actorId)) query = query.eq("actor_id", actorId);
+  if (entityId) query = query.eq("entity_id", entityId);
+  if (dateFrom) query = query.gte("created_at", startOfDayIso(dateFrom));
+  if (dateTo) query = query.lte("created_at", endOfDayIso(dateTo));
+  if (scope && scope !== "all") {
+    const scopeConfig = auditScopes.find((item) => item.key === scope);
+    if (scopeConfig) query = query.in("entity_type", scopeConfig.entityTypes).in("action", scopeConfig.actions);
+  }
   if (search) {
     const escaped = escapeLike(search);
-    query = query.or(`action.ilike.%${escaped}%,entity_type.ilike.%${escaped}%,entity_id.ilike.%${escaped}%,actor_id.eq.${escaped}`);
+    const searchParts = [`action.ilike.%${escaped}%`, `entity_type.ilike.%${escaped}%`, `entity_id.ilike.%${escaped}%`];
+    if (isUuid(search)) searchParts.push(`actor_id.eq.${search}`);
+    query = query.or(searchParts.join(","));
   }
 
   const from = (page - 1) * PAGE_SIZE;
@@ -102,6 +123,7 @@ export async function getAdminAuditLogsData(filters: AuditLogFilter = {}): Promi
       currentPage: data?.length ?? 0,
       actionCount: actionOptions.length,
       entityTypeCount: entityTypeOptions.length,
+      filtered: totalCount,
     },
     actionOptions,
     entityTypeOptions,
@@ -163,7 +185,7 @@ function emptyResult(
     error,
     canViewAuditLogs,
     logs: [],
-    totals: { total: 0, currentPage: 0, actionCount: 0, entityTypeCount: 0 },
+    totals: { total: 0, currentPage: 0, actionCount: 0, entityTypeCount: 0, filtered: 0 },
     actionOptions: [],
     entityTypeOptions: [],
     page,
@@ -175,4 +197,67 @@ function emptyResult(
 
 function escapeLike(value: string) {
   return value.replaceAll("%", "\\%").replaceAll("_", "\\_");
+}
+
+const auditScopes = [
+  {
+    key: "home_ops",
+    entityTypes: ["home_sections", "home_banners", "latest_ticker", "top_quick_links"],
+    actions: [
+      "create_default_home_sections",
+      "create_default_top_quick_links",
+      "create_default_latest_ticker",
+      "update_home_section",
+      "create_home_banner",
+      "update_home_banner",
+      "remove_home_banner_image",
+      "update_latest_ticker",
+      "create_latest_ticker",
+      "update_latest_ticker_settings",
+      "update_top_quick_link",
+      "create_top_quick_link",
+      "disable_top_quick_link",
+    ],
+  },
+  {
+    key: "ads_ops",
+    entityTypes: ["ads"],
+    actions: ["create_ad", "update_ad", "delete_ad", "remove_ad_image"],
+  },
+  {
+    key: "content_ops",
+    entityTypes: ["news_posts", "news_categories", "navigation_links", "navigation_categories", "posts", "post_reports"],
+    actions: [
+      "create_news_post",
+      "update_news_post",
+      "set_news_published",
+      "set_news_hidden",
+      "set_news_deleted",
+      "pin_news_post",
+      "unpin_news_post",
+      "create_navigation_link",
+      "update_navigation_link",
+      "hide_post",
+      "publish_post",
+      "delete_post",
+      "mark_post_pending_review",
+      "resolve_report",
+      "dismiss_report",
+      "reopen_report",
+    ],
+  },
+];
+
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+function startOfDayIso(value: string) {
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? value : date.toISOString();
+}
+
+function endOfDayIso(value: string) {
+  const date = new Date(`${value}T23:59:59.999`);
+  return Number.isNaN(date.getTime()) ? value : date.toISOString();
 }
