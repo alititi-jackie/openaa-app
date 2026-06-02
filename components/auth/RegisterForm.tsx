@@ -29,6 +29,10 @@ function registerErrorMessage(message: string) {
   return "注册失败，请稍后再试。";
 }
 
+function registerFallbackMessage(isConfigured: boolean) {
+  return isConfigured ? "注册失败，请稍后再试。" : "Supabase 环境变量尚未配置，暂时无法注册。";
+}
+
 export function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -86,9 +90,9 @@ export function RegisterForm() {
       }
 
       setIsSuccess(true);
-      setMessage("注册成功，验证邮件已发送。请到邮箱点击验证链接后再登录；如果没有收到，请检查垃圾邮件。");
+      setMessage("注册成功，验证邮件已发送。请到邮箱点击验证链接后再登录。如果没有收到，请检查垃圾邮件。");
     } catch {
-      setMessage("Supabase 环境变量尚未配置，暂时无法注册。");
+      setMessage(registerFallbackMessage(isConfigured));
     } finally {
       setIsSubmitting(false);
     }

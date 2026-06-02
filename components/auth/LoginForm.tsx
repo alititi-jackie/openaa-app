@@ -35,6 +35,10 @@ function loginErrorMessage(message: string) {
   return "登录失败，请稍后再试。";
 }
 
+function loginFallbackMessage(isConfigured: boolean) {
+  return isConfigured ? "登录失败，请稍后再试。" : "Supabase 环境变量尚未配置，暂时无法登录。";
+}
+
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -73,7 +77,7 @@ export function LoginForm() {
       router.replace(returnTo);
       router.refresh();
     } catch {
-      setMessage("Supabase 环境变量尚未配置，暂时无法登录。");
+      setMessage(loginFallbackMessage(isConfigured));
     } finally {
       setIsSubmitting(false);
     }
@@ -95,7 +99,7 @@ export function LoginForm() {
         setMessage("Google 登录启动失败，请稍后再试。");
       }
     } catch {
-      setMessage("Supabase 环境变量尚未配置，暂时无法启动 Google 登录。");
+      setMessage(isConfigured ? "Google 登录启动失败，请稍后再试。" : "Supabase 环境变量尚未配置，暂时无法启动 Google 登录。");
     }
   }
 
