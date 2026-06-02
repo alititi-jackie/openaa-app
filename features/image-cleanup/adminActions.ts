@@ -16,6 +16,7 @@ const fail = (message: string): AdminHomeActionState => ({ ok: false, message })
 export async function markImageAssetDeleted(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
   const id = readText(formData, "id");
   if (!id) return fail("图片资产参数无效。");
+  if (formData.get("confirm_cleanup") !== "on") return fail("请先勾选确认清理图片资产。");
 
   const context = await getImageCleanupActionContext();
   if (!context.ok) return fail(context.message);
@@ -60,12 +61,9 @@ async function getImageCleanupActionContext(): Promise<ImageCleanupActionContext
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, message: "请先登录管理员账号。" };
 
-  const [manage, deleteImages] = await Promise.all([
-    supabase.rpc("has_admin_permission", { p_permission_key: "manage_image_assets" }),
-    supabase.rpc("has_admin_permission", { p_permission_key: "delete_images" }),
-  ]);
-  if (manage.error || deleteImages.error || (!manage.data && !deleteImages.data)) {
-    return { ok: false, message: "当前账号没有 manage_image_assets 或 delete_images 权限。" };
+  const { data: canManage, error } = await supabase.rpc("has_admin_permission", { p_permission_key: "manage_image_assets" });
+  if (error || !canManage) {
+    return { ok: false, message: "当前账号没有 manage_image_assets 权限。" };
   }
 
   return { ok: true, supabase, userId: user.id };

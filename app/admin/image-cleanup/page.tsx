@@ -41,7 +41,7 @@ export default function AdminImageCleanupPage({ searchParams }: AdminImageCleanu
           page: normalizePage(params?.page),
         });
         const canView = data.permissions.viewImages || data.permissions.manageImageAssets;
-        const canDelete = data.permissions.manageImageAssets || data.permissions.deleteImages;
+        const canDelete = data.permissions.manageImageAssets;
 
         if (!canView) {
           return (
@@ -53,7 +53,7 @@ export default function AdminImageCleanupPage({ searchParams }: AdminImageCleanu
 
         return (
           <div className="space-y-4">
-            <AdminPageHeader title="图片清理工具" description="扫描 image_assets 中疑似未使用的图片资产，管理员确认后只标记删除，不物理删除文件。">
+            <AdminPageHeader title="图片清理工具" description="扫描 image_assets 中疑似未使用的图片资产，展示引用状态和风险提示；确认后只标记删除，不物理删除文件。">
               <AdminImageCleanupPermissionBadges permissions={data.permissions} />
             </AdminPageHeader>
 
@@ -65,7 +65,7 @@ export default function AdminImageCleanupPage({ searchParams }: AdminImageCleanu
 
             <AdminImageCleanupStats totals={data.totals} />
 
-            <AdminCard title="扫描图片资产" description="默认显示未绑定业务内容、也未被帖子图片引用的疑似未使用图片。">
+            <AdminCard title="扫描图片资产" description="默认显示未绑定业务内容、也未被帖子图片引用的疑似未使用图片；使用中的图片只读展示。">
               <AdminImageCleanupFilter filter={params?.filter} source={params?.source} q={params?.q} />
             </AdminCard>
 

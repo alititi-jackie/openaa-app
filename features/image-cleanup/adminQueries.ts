@@ -29,6 +29,9 @@ export type AdminImageAssetItem = {
   updatedAt: string;
   deletedAt: string | null;
   referenceLabels: string[];
+  protectionReasons: string[];
+  cleanupRisk: "protected" | "low" | "medium";
+  cleanupHint: string;
   isProbablyUnused: boolean;
 };
 
@@ -96,11 +99,13 @@ export async function getAdminImageCleanupData({
   const postImageIds = permissions.manageImageAssets ? await getReferencedPostImageAssetIds(supabase) : new Set<string>();
   const totals = await getImageAssetTotals(supabase, postImageIds);
 
-  let query = supabase
+  const baseQuery = () =>
+    supabase
     .from("image_assets")
     .select("id,source_type,bucket,path,public_url,external_url,external_host,owner_id,entity_type,entity_id,status,is_public,size_bytes,width,height,created_at,updated_at,deleted_at", { count: "exact" })
     .order("created_at", { ascending: false });
 
+  let query = baseQuery();
   if (source !== "all") query = query.eq("source_type", source);
   if (filter === "deleted") query = query.eq("status", "deleted");
   if (filter === "protected") query = query.neq("status", "deleted").not("entity_id", "is", null);
@@ -108,8 +113,37 @@ export async function getAdminImageCleanupData({
 
   const search = q?.trim();
   if (search) {
-    const escaped = escapeLike(search);
-    query = query.or(`id.eq.${escaped},bucket.ilike.%${escaped}%,path.ilike.%${escaped}%,external_url.ilike.%${escaped}%,external_host.ilike.%${escaped}%,entity_type.ilike.%${escaped}%,entity_id.eq.${escaped},owner_id.eq.${escaped}`);
+    const escaped = escapeLike(search.replaceAll(",", " "));
+    const filters = [`bucket.ilike.%${escaped}%`, `path.ilike.%${escaped}%`, `external_url.ilike.%${escaped}%`, `external_host.ilike.%${escaped}%`, `entity_type.ilike.%${escaped}%`];
+    if (isUuid(search)) {
+      filters.push(`id.eq.${search}`, `entity_id.eq.${search}`, `owner_id.eq.${search}`);
+    }
+    query = query.or(filters.join(","));
+  }
+
+  if (filter === "deletable") {
+    const { data, error } = await query.limit(5000);
+    if (error) return emptyResult("error", permissions, normalizedPage, "图片资产读取失败，请稍后再试。");
+
+    const allDeletableAssets = ((data ?? []) as RawImageAsset[])
+      .map((row) => mapImageAsset(row, postImageIds))
+      .filter((asset) => asset.isProbablyUnused);
+    const from = (normalizedPage - 1) * PAGE_SIZE;
+    const filteredAssets = allDeletableAssets.slice(from, from + PAGE_SIZE);
+
+    return {
+      state: "ready",
+      permissions,
+      assets: filteredAssets,
+      totals: {
+        ...totals,
+        currentPage: filteredAssets.length,
+      },
+      page: normalizedPage,
+      pageSize: PAGE_SIZE,
+      pageCount: Math.max(1, Math.ceil(allDeletableAssets.length / PAGE_SIZE)),
+      totalCount: allDeletableAssets.length,
+    };
   }
 
   const from = (normalizedPage - 1) * PAGE_SIZE;
@@ -118,8 +152,8 @@ export async function getAdminImageCleanupData({
   if (error) return emptyResult("error", permissions, normalizedPage, "图片资产读取失败，请稍后再试。");
 
   const assets = ((data ?? []) as RawImageAsset[]).map((row) => mapImageAsset(row, postImageIds));
-  const filteredAssets = filter === "deletable" ? assets.filter((asset) => asset.isProbablyUnused) : assets;
-  const totalCount = filter === "deletable" ? totals.deletable : count ?? 0;
+  const filteredAssets = assets;
+  const totalCount = count ?? 0;
 
   return {
     state: "ready",
@@ -184,8 +218,22 @@ async function getImageAssetTotals(supabase: NonNullable<Awaited<ReturnType<type
 
 function mapImageAsset(row: RawImageAsset, postImageIds: Set<string>): AdminImageAssetItem {
   const references: string[] = [];
-  if (row.entity_type && row.entity_id) references.push(`${row.entity_type}:${row.entity_id}`);
-  if (postImageIds.has(row.id)) references.push("post_images");
+  const protectionReasons: string[] = [];
+  if (row.entity_type && row.entity_id) {
+    references.push(`${formatEntityType(row.entity_type)}：${row.entity_id}`);
+    protectionReasons.push(`已绑定 ${formatEntityType(row.entity_type)} 业务记录`);
+  }
+  if (postImageIds.has(row.id)) {
+    references.push("用户帖子图片");
+    protectionReasons.push("仍被用户帖子图片表引用");
+  }
+  const isProbablyUnused = row.status !== "deleted" && references.length === 0;
+  const cleanupRisk = !isProbablyUnused ? "protected" : row.source_type === "external" ? "low" : "medium";
+  const cleanupHint = !isProbablyUnused
+    ? "这张图片仍有业务引用，清理工具不会提供删除入口。"
+    : row.source_type === "external"
+      ? "外部图片只会标记 image_assets 记录，不会删除 img.openaa.com 原图。"
+      : "Storage 图片只会标记资产记录为 deleted，本工具不会物理删除文件。";
 
   return {
     id: row.id,
@@ -208,8 +256,20 @@ function mapImageAsset(row: RawImageAsset, postImageIds: Set<string>): AdminImag
     updatedAt: row.updated_at,
     deletedAt: row.deleted_at,
     referenceLabels: references,
-    isProbablyUnused: row.status !== "deleted" && references.length === 0,
+    protectionReasons,
+    cleanupRisk,
+    cleanupHint,
+    isProbablyUnused,
   };
+}
+
+function formatEntityType(value: string) {
+  if (value === "ad") return "广告";
+  if (value === "home_banner") return "首页 Banner";
+  if (value === "news_post") return "新闻";
+  if (value === "navigation_link") return "导航链接";
+  if (value === "post") return "用户帖子";
+  return value;
 }
 
 function emptyResult(
@@ -233,4 +293,8 @@ function emptyResult(
 
 function escapeLike(value: string) {
   return value.replaceAll("%", "\\%").replaceAll("_", "\\_");
+}
+
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
