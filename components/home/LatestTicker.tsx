@@ -1,17 +1,73 @@
+"use client";
+
 import Link from "next/link";
-import { Megaphone } from "lucide-react";
+import { ChevronRight, Zap } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+const DEFAULT_TICKER_INTERVAL_MS = 4000;
+const SWIPE_THRESHOLD = 40;
 
 export function LatestTicker({ items }: { items: Array<{ label: string; href: string }> }) {
-  const item = items[0] ?? { label: "欢迎来到 OpenAA", href: "/news" };
+  const tickerItems = items.length > 0 ? items : [{ label: "OpenAA 最新发布，点击右上角放大镜搜索更多内容", href: "/news" }];
+  const [index, setIndex] = useState(0);
+  const timerRef = useRef<number | null>(null);
+  const touchStartXRef = useRef<number | null>(null);
+  const didSwipeRef = useRef(false);
+  const item = tickerItems[index] ?? tickerItems[0];
+
+  const restartTimer = useCallback((count: number) => {
+    if (timerRef.current) window.clearInterval(timerRef.current);
+    if (count <= 1) return;
+    timerRef.current = window.setInterval(() => {
+      setIndex((current) => (current + 1) % count);
+    }, DEFAULT_TICKER_INTERVAL_MS);
+  }, []);
+
+  useEffect(() => {
+    restartTimer(tickerItems.length);
+    return () => {
+      if (timerRef.current) window.clearInterval(timerRef.current);
+    };
+  }, [restartTimer, tickerItems.length]);
+
+  function handleTouchStart(event: React.TouchEvent) {
+    touchStartXRef.current = event.touches[0]?.clientX ?? null;
+    didSwipeRef.current = false;
+  }
+
+  function handleTouchEnd(event: React.TouchEvent) {
+    const startX = touchStartXRef.current;
+    const endX = event.changedTouches[0]?.clientX ?? null;
+    touchStartXRef.current = null;
+    if (startX === null || endX === null || tickerItems.length <= 1) return;
+
+    const deltaX = endX - startX;
+    if (Math.abs(deltaX) < SWIPE_THRESHOLD) return;
+
+    didSwipeRef.current = true;
+    setIndex((current) => (deltaX < 0 ? (current + 1) % tickerItems.length : (current - 1 + tickerItems.length) % tickerItems.length));
+    restartTimer(tickerItems.length);
+  }
+
+  function handleClick(event: React.MouseEvent) {
+    if (!didSwipeRef.current) return;
+    event.preventDefault();
+    didSwipeRef.current = false;
+  }
 
   return (
-    <section className="flex min-h-11 items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm shadow-sm">
-      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-white text-blue-700">
-        <Megaphone size={17} aria-hidden="true" />
-      </span>
-      <Link href={item.href} className="min-w-0 flex-1 truncate whitespace-nowrap font-bold text-slate-900">
-        <span className="mr-2 font-black text-blue-700">最新动态</span>
-        {item.label}
+    <section className="min-w-0">
+      <Link
+        href={item.href}
+        className="flex h-11 min-w-0 items-center rounded-full border border-zinc-100 bg-zinc-50 pl-4 pr-3 text-sm text-zinc-600 shadow-sm transition-colors hover:bg-zinc-100"
+        aria-label={`查看最新动态：${item.label}`}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onClick={handleClick}
+      >
+        <Zap size={15} className="mr-2 shrink-0 text-blue-400" aria-hidden="true" />
+        <span className="flex-1 truncate font-medium">{item.label}</span>
+        <ChevronRight size={14} className="ml-1 shrink-0 text-zinc-400" aria-hidden="true" />
       </Link>
     </section>
   );
