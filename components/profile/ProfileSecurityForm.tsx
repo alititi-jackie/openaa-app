@@ -15,12 +15,12 @@ export function ProfileSecurityForm() {
     setMessage("");
 
     if (password.length < 8) {
-      setMessage("Password must be at least 8 characters.");
+      setMessage("新密码至少需要 8 位。");
       return;
     }
 
     if (password !== confirmPassword) {
-      setMessage("Passwords do not match.");
+      setMessage("两次输入的密码不一致。");
       return;
     }
 
@@ -31,15 +31,15 @@ export function ProfileSecurityForm() {
       const { error } = await supabase.auth.updateUser({ password });
 
       if (error) {
-        setMessage("Password update failed. Please try again.");
+        setMessage("密码更新失败，请稍后再试。");
         return;
       }
 
       setPassword("");
       setConfirmPassword("");
-      setMessage("Password updated.");
+      setMessage("密码已更新。");
     } catch {
-      setMessage("Supabase is not configured. Password cannot be updated yet.");
+      setMessage("Supabase 环境变量尚未配置，暂时无法更新密码。");
     } finally {
       setIsSubmitting(false);
     }
@@ -48,13 +48,11 @@ export function ProfileSecurityForm() {
   return (
     <form className="space-y-4" onSubmit={handleSave}>
       <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-        <h2 className="text-lg font-black text-slate-950">Account security</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-600">
-          Set a new password for email login. This does not change your email address or linked OAuth providers.
-        </p>
+        <h2 className="text-lg font-black text-slate-950">账号安全</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600">设置邮箱登录密码。这里不会修改邮箱地址，也不会影响已绑定的 Google 登录。</p>
         <div className="mt-4 space-y-4">
           <label className="block">
-            <span className="text-sm font-bold text-slate-800">New password</span>
+            <span className="text-sm font-bold text-slate-800">新密码</span>
             <input
               type="password"
               required
@@ -66,7 +64,7 @@ export function ProfileSecurityForm() {
             />
           </label>
           <label className="block">
-            <span className="text-sm font-bold text-slate-800">Confirm password</span>
+            <span className="text-sm font-bold text-slate-800">确认新密码</span>
             <input
               type="password"
               required
@@ -86,7 +84,7 @@ export function ProfileSecurityForm() {
         className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-300"
       >
         <KeyRound size={18} aria-hidden="true" />
-        {isSubmitting ? "Saving..." : "Update password"}
+        {isSubmitting ? "保存中..." : "更新密码"}
       </button>
 
       {message ? <p className="rounded-xl bg-slate-100 p-3 text-sm leading-6 text-slate-700">{message}</p> : null}

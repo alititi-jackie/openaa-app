@@ -8,8 +8,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 export const metadata = buildPageMetadata({
-  title: "Account security",
-  description: "Manage OpenAA account password.",
+  title: "账号安全",
+  description: "管理 OpenAA 账号密码。",
   path: "/profile/security",
   noIndex: true,
 });
@@ -20,8 +20,8 @@ export default async function ProfileSecurityPage() {
   if (!supabase) {
     return (
       <PageShell
-        title="Account security"
-        description="Supabase is not configured yet. Password changes will be available after the new Supabase project is configured."
+        title="账号安全"
+        description="Supabase 环境变量尚未配置。配置新 Supabase 后即可修改或设置邮箱登录密码。"
         eyebrow="Profile"
       />
     );
@@ -38,7 +38,7 @@ export default async function ProfileSecurityPage() {
   await ensureProfileForUser(user);
 
   return (
-    <PageShell title="Account security" description="Update the password for your OpenAA account." eyebrow="Profile">
+    <PageShell title="账号安全" description="修改或设置你的 OpenAA 邮箱登录密码。" eyebrow="Profile">
       <ProfileSecurityForm />
     </PageShell>
   );
