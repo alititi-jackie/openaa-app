@@ -121,6 +121,15 @@ const adminEntryGroups: AdminEntryGroup[] = [
         status: "ready",
       },
       {
+        id: "admins",
+        title: "管理员授权",
+        description: "搜索真实用户后授予后台角色，管理管理员角色、停用和恢复。",
+        href: "/admin/admins",
+        icon: <Shield size={20} aria-hidden="true" />,
+        permissionKeys: ["view_admins", "add_admins", "edit_admin_roles", "manage_admins"],
+        status: "ready",
+      },
+      {
         id: "feedback",
         title: "反馈管理",
         description: "查看并处理用户提交的问题反馈、功能建议、内容举报和新闻线索。",
