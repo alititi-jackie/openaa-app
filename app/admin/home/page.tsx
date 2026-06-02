@@ -1,10 +1,11 @@
 import Link from "next/link";
+import Image from "next/image";
 import { AdminActionForm, AdminCheckbox, AdminSelect, AdminTextarea, AdminTextInput } from "@/components/admin/AdminActionForm";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
-import { createDefaultHomeConfig, updateHomeSection, updateLatestTickerSettings, upsertHomeBanner, upsertLatestTicker } from "@/features/admin-home/actions";
+import { createDefaultHomeConfig, removeHomeBannerImage, updateHomeSection, updateLatestTickerSettings, upsertHomeBanner, upsertLatestTicker } from "@/features/admin-home/actions";
 import { getAdminHomeConfigData } from "@/features/admin-home/queries";
 import type { AdminHomeBannerRow, AdminHomeSectionRow, AdminTickerGlobalSettingsRow, AdminTickerRow, AdminTickerSectionSettingsRow } from "@/features/admin-home/types";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -18,11 +19,16 @@ export const metadata = buildPageMetadata({
   noIndex: true,
 });
 
-export default function AdminHomePage() {
+type AdminHomePageProps = {
+  searchParams?: Promise<{ bannerStatus?: string }>;
+};
+
+export default function AdminHomePage({ searchParams }: AdminHomePageProps) {
   return (
     <AdminAuthGate>
       {async () => {
-        const data = await getAdminHomeConfigData();
+        const params = await searchParams;
+        const data = await getAdminHomeConfigData(params?.bannerStatus);
         const canManageAny = data.permissions.manageHomeSections || data.permissions.manageTopLinks || data.permissions.manageLatestTicker || data.permissions.manageAds;
 
         if (!canManageAny) {
@@ -70,8 +76,9 @@ export default function AdminHomePage() {
             ) : null}
 
             {data.permissions.manageHomeSections ? (
-              <AdminCard title="首页 Banner" description="基础管理 home_banners。图片第一版支持 https://img.openaa.com/ 外部 URL。">
+              <AdminCard title="首页 Banner" description="管理首页 Banner 图片、链接、启用状态和排期。支持上传图片，也支持 https://img.openaa.com/ 外部 URL。">
                 <div className="grid gap-4">
+                  <BannerStatusFilter status={params?.bannerStatus} />
                   {data.banners.map((banner) => (
                     <BannerForm key={banner.id} banner={banner} />
                   ))}
@@ -89,6 +96,7 @@ export default function AdminHomePage() {
 function HomeSectionForm({ section }: { section: AdminHomeSectionRow }) {
   return (
     <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+      <HomeSectionSummary section={section} />
       <AdminActionForm action={updateHomeSection} submitLabel="保存模块">
         <input type="hidden" name="key" value={section.key} />
         <div className="grid gap-3 md:grid-cols-2">
@@ -102,6 +110,79 @@ function HomeSectionForm({ section }: { section: AdminHomeSectionRow }) {
       </AdminActionForm>
     </div>
   );
+}
+
+function HomeSectionSummary({ section }: { section: AdminHomeSectionRow }) {
+  const summary = getHomeSectionSummary(section);
+
+  return (
+    <div className="mb-3 rounded-xl border border-slate-200 bg-white p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="rounded-full bg-slate-950 px-2.5 py-1 text-xs font-black text-white">{section.key}</span>
+        <span className={section.is_visible ? "rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700 ring-1 ring-emerald-100" : "rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600 ring-1 ring-slate-200"}>
+          {section.is_visible ? "正在显示" : "已隐藏"}
+        </span>
+      </div>
+      <p className="mt-2 text-sm font-bold text-slate-800">{summary.title}</p>
+      <p className="mt-1 text-xs leading-5 text-slate-500">{summary.description}</p>
+      {summary.items.length > 0 ? (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {summary.items.map((item) => (
+            <span key={item} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
+              {item}
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function getHomeSectionSummary(section: AdminHomeSectionRow) {
+  const config = section.config ?? {};
+
+  if (section.key === "quick_grid") {
+    const items = Array.isArray(config.items) ? config.items : [];
+    return {
+      title: "首页 8 宫格入口",
+      description: "控制首页主要频道入口的显示、顺序和跳转。",
+      items: [`入口数量 ${items.length}`],
+    };
+  }
+
+  if (section.key === "utility_tools") {
+    const items = Array.isArray(config.items) ? config.items : [];
+    return {
+      title: "实用工具模块",
+      description: "控制 DMV、导航、指南等工具卡片。",
+      items: [`工具数量 ${items.length}`],
+    };
+  }
+
+  if (section.key === "latest_posts") {
+    const sections = Array.isArray(config.sections) ? config.sections : [];
+    const visibleCount = sections.filter((item) => typeof item === "object" && item && "is_visible" in item && item.is_visible !== false).length;
+    return {
+      title: "最新发布模块",
+      description: "控制招聘、房屋、市场、服务、新闻等首页聚合模块。",
+      items: [`分区 ${sections.length}`, `显示 ${visibleCount}`],
+    };
+  }
+
+  if (section.key === "seo_content") {
+    const title = typeof config.title === "string" ? config.title : "SEO 文案";
+    return {
+      title,
+      description: "控制首页底部 SEO 文案内容。",
+      items: [],
+    };
+  }
+
+  return {
+    title: section.title,
+    description: "可通过下方 JSON 配置调整模块结构。",
+    items: [],
+  };
 }
 
 function TickerSettingsForm({ globalSettings, sections }: { globalSettings: AdminTickerGlobalSettingsRow; sections: AdminTickerSectionSettingsRow[] }) {
@@ -162,9 +243,32 @@ function TickerForm({ item }: { item?: AdminTickerRow }) {
   );
 }
 
+function BannerStatusFilter({ status }: { status?: string }) {
+  return (
+    <form action="/admin/home" className="grid gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-3 sm:grid-cols-[220px_auto]">
+      <select name="bannerStatus" defaultValue={status ?? "all"} className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-900 outline-none focus:border-blue-500">
+        <option value="all">全部 Banner</option>
+        <option value="active">正在显示</option>
+        <option value="scheduled">未开始</option>
+        <option value="expired">已过期</option>
+        <option value="inactive">已停用</option>
+      </select>
+      <button type="submit" className="inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white">
+        筛选 Banner
+      </button>
+    </form>
+  );
+}
+
 function BannerForm({ banner }: { banner?: AdminHomeBannerRow }) {
   return (
     <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+      {banner ? <BannerStatusBadge banner={banner} /> : null}
+      {banner?.image_url ? (
+        <div className="mb-3 overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <Image src={banner.image_url} alt={banner.title} width={960} height={240} className="h-32 w-full object-cover" unoptimized />
+        </div>
+      ) : null}
       <AdminActionForm action={upsertHomeBanner} submitLabel={banner ? "保存 Banner" : "新增 Banner"}>
         <input type="hidden" name="id" value={banner?.id ?? ""} />
         <input type="hidden" name="image_asset_id" value={banner?.image_asset_id ?? ""} />
@@ -172,7 +276,12 @@ function BannerForm({ banner }: { banner?: AdminHomeBannerRow }) {
           <AdminTextInput label="标题" name="title" defaultValue={banner?.title} required />
           <AdminTextInput label="副标题" name="subtitle" defaultValue={banner?.subtitle} />
           <AdminTextInput label="链接" name="href" defaultValue={banner?.href} placeholder="/navigation" />
-          <AdminTextInput label="图片 URL" name="image_url" defaultValue={banner?.image_url} placeholder="https://img.openaa.com/..." />
+          <AdminTextInput label="图片 URL" name="image_url" defaultValue={banner?.image_source_type === "external" ? banner.image_url : ""} placeholder="https://img.openaa.com/..." />
+          <label className="grid gap-1.5 text-sm font-bold text-slate-700">
+            <span>上传 Banner 图</span>
+            <input name="image_file" type="file" accept="image/jpeg,image/png,image/webp" className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 outline-none file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-black file:text-slate-700 focus:border-blue-500" />
+            <span className="text-xs font-semibold text-slate-500">支持 JPG / PNG / WebP，最大 5MB。上传图片优先于外部 URL。</span>
+          </label>
           <AdminSelect label="打开方式" name="open_mode" defaultValue={banner?.open_mode ?? "same"} options={[{ value: "same", label: "当前窗口" }, { value: "new", label: "新窗口" }]} />
           <AdminTextInput label="排序" name="sort_order" type="number" defaultValue={banner?.sort_order ?? 0} />
           <AdminTextInput label="开始时间" name="starts_at" type="datetime-local" defaultValue={toDateTimeLocal(banner?.starts_at)} />
@@ -180,6 +289,35 @@ function BannerForm({ banner }: { banner?: AdminHomeBannerRow }) {
         </div>
         <AdminCheckbox label="启用" name="is_active" defaultChecked={banner?.is_active ?? true} />
       </AdminActionForm>
+      {banner?.image_asset_id ? (
+        <AdminActionForm action={removeHomeBannerImage} submitLabel="移除图片" className="mt-3 border-t border-slate-200 pt-3">
+          <input type="hidden" name="id" value={banner.id} />
+          <p className="text-xs font-semibold leading-5 text-amber-700">只解除这条 Banner 的图片引用，图片资产会标记为 deleted。</p>
+          <AdminCheckbox label="我确认移除这张 Banner 图" name="confirm_remove_image" />
+        </AdminActionForm>
+      ) : null}
+    </div>
+  );
+}
+
+function BannerStatusBadge({ banner }: { banner: AdminHomeBannerRow }) {
+  const labelMap: Record<AdminHomeBannerRow["computed_status"], string> = {
+    active: "正在显示",
+    inactive: "已停用",
+    scheduled: "未开始",
+    expired: "已过期",
+  };
+  const classMap: Record<AdminHomeBannerRow["computed_status"], string> = {
+    active: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+    inactive: "bg-slate-100 text-slate-600 ring-slate-200",
+    scheduled: "bg-blue-50 text-blue-700 ring-blue-100",
+    expired: "bg-amber-50 text-amber-700 ring-amber-100",
+  };
+
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-black">
+      <span className={`rounded-full px-2.5 py-1 ring-1 ${classMap[banner.computed_status]}`}>{labelMap[banner.computed_status]}</span>
+      {banner.image_source_type ? <span className="rounded-full bg-white px-2.5 py-1 text-slate-500 ring-1 ring-slate-200">{banner.image_source_type === "storage" ? "上传图片" : "外链图片"}</span> : null}
     </div>
   );
 }

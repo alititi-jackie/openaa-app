@@ -58,11 +58,13 @@ export type AdminHomeBannerRow = {
   open_mode: "same" | "new";
   image_asset_id: string | null;
   image_url: string | null;
+  image_source_type: "storage" | "external" | null;
   city_id: string | null;
   sort_order: number;
   is_active: boolean;
   starts_at: string | null;
   ends_at: string | null;
+  computed_status: "active" | "inactive" | "scheduled" | "expired";
 };
 
 export type AdminHomePermissions = {
