@@ -26,7 +26,7 @@ export function ForgotPasswordForm() {
       setMessage(
         error
           ? "重置邮件发送失败，请稍后再试。"
-          : "如果该邮箱已注册，你会收到密码重置邮件。请点击邮件链接后在账号安全页设置新密码。",
+          : "如果该邮箱已注册，我们已发送密码重置邮件。请打开邮箱查看来自 Supabase Auth（noreply@mail.app.supabase.io）的邮件，并按邮件提示重置密码。\n如果没有收到邮件，请检查垃圾邮件箱，或稍后重试。",
       );
     } catch {
       setMessage(isConfigured ? "重置邮件发送失败，请稍后再试。" : "Supabase 环境变量尚未配置，暂时无法发送重置邮件。");
@@ -67,7 +67,7 @@ export function ForgotPasswordForm() {
           {isSubmitting ? "发送中..." : "发送重置邮件"}
         </button>
       </form>
-      {message ? <p className="mt-4 rounded-xl bg-slate-100 p-3 text-sm leading-6 text-slate-700">{message}</p> : null}
+      {message ? <p className="mt-4 whitespace-pre-line rounded-xl bg-slate-100 p-3 text-sm leading-6 text-slate-700">{message}</p> : null}
     </AuthCard>
   );
 }

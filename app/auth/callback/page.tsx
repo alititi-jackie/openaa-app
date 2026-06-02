@@ -33,14 +33,14 @@ function callbackErrorMessage(message: string | undefined) {
   const normalized = message?.toLowerCase() || "";
 
   if (normalized.includes("expired") || normalized.includes("invalid")) {
-    return "登录链接已失效或已过期，请重新登录或重新发送邮件。";
+    return "重置链接无效或已过期，请重新申请密码重置邮件。";
   }
 
   if (normalized.includes("email") && normalized.includes("confirm")) {
-    return "邮箱验证失败，请重新发送验证邮件后再试。";
+    return "如果登录时仍提示未验证，请稍等几秒后刷新再试。";
   }
 
-  return "登录回调失败，请重新登录。";
+  return "重置链接无效或已过期，请重新申请密码重置邮件。";
 }
 
 export default async function AuthCallbackPage({ searchParams }: AuthCallbackPageProps) {
@@ -65,7 +65,7 @@ export default async function AuthCallbackPage({ searchParams }: AuthCallbackPag
     const { error } = await supabase.auth.exchangeCodeForSession(params.code);
 
     if (error) {
-      return <PageShell title="登录失败" description="登录链接已失效或无法完成会话交换，请重新登录。" eyebrow="Auth" />;
+      return <PageShell title="登录失败" description="重置链接无效或已过期，请重新申请密码重置邮件。" eyebrow="Auth" />;
     }
   }
 
