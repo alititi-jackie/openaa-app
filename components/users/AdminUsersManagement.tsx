@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { Search, ShieldCheck, UserRound } from "lucide-react";
-import { setAdminUserStatus, type AdminUserActionState } from "@/features/users/adminActions";
+import { setAdminUserStatus, updateAdminUserNote, type AdminUserActionState } from "@/features/users/adminActions";
 import type { AdminUserListItem, AdminUsersPermissions } from "@/features/users/adminQueries";
 import type { ProfileStatus } from "@/lib/supabase/types";
 
@@ -28,10 +28,23 @@ export function AdminUsersPermissionBadges({ permissions }: { permissions: Admin
     <>
       <Badge allowed={permissions.viewUsers} label="view_users" />
       <Badge allowed={permissions.manageUserStatus} label="manage_user_status" />
+      <Badge allowed={permissions.editUserNotes} label="edit_user_notes" />
       <Badge allowed={permissions.restrictUsers} label="restrict_users" />
       <Badge allowed={permissions.banUsers} label="ban_users" />
       <Badge allowed={permissions.restoreUsers} label="restore_users" />
     </>
+  );
+}
+
+export function AdminUsersStats({ totals }: { totals: { total: number; active: number; restricted: number; banned: number; pending: number } }) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-5">
+      <StatCard label="用户总数" value={totals.total} />
+      <StatCard label="正常" value={totals.active} />
+      <StatCard label="受限" value={totals.restricted} />
+      <StatCard label="禁用" value={totals.banned} />
+      <StatCard label="待完善" value={totals.pending} />
+    </div>
   );
 }
 
@@ -91,8 +104,17 @@ export function AdminUsersList({ users, permissions }: { users: AdminUserListIte
             <InfoRow label="所在区域" value={user.locationArea || "未填写"} />
             <InfoRow label="更新时间" value={formatDate(user.updatedAt)} />
             <InfoRow label="创建时间" value={formatDate(user.createdAt)} />
-            <InfoRow label="用户帖子" value={permissions.viewUserPosts ? "可通过帖子管理按用户核查" : "无 view_user_posts 权限"} />
+            <InfoRow label="用户帖子" value={formatPostCounts(user.postCounts, permissions)} />
           </dl>
+
+          {(user.adminNote || user.bannedReason || permissions.editUserNotes) ? (
+            <div className="mt-4 rounded-xl bg-slate-50 p-3">
+              <p className="text-xs font-black uppercase tracking-wide text-slate-400">Admin Note</p>
+              {user.adminNote ? <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">{user.adminNote}</p> : null}
+              {user.bannedReason ? <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-red-700">禁用原因：{user.bannedReason}</p> : null}
+              {permissions.editUserNotes ? <UserNoteForm user={user} /> : null}
+            </div>
+          ) : null}
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
             {canChangeStatus(permissions) ? <UserStatusForm user={user} permissions={permissions} /> : <span className="text-xs font-bold text-slate-500">当前账号只能查看，不能修改用户状态。</span>}
@@ -103,6 +125,39 @@ export function AdminUsersList({ users, permissions }: { users: AdminUserListIte
         </article>
       ))}
     </div>
+  );
+}
+
+function UserNoteForm({ user }: { user: AdminUserListItem }) {
+  const [state, formAction, pending] = useActionState(updateAdminUserNote, initialState);
+
+  return (
+    <form action={formAction} className="mt-3 grid gap-2">
+      <input type="hidden" name="id" value={user.id} />
+      <label className="grid gap-1 text-xs font-bold text-slate-600">
+        <span>管理员备注</span>
+        <textarea
+          name="admin_note"
+          rows={2}
+          defaultValue={user.adminNote ?? ""}
+          className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-500"
+        />
+      </label>
+      <label className="grid gap-1 text-xs font-bold text-slate-600">
+        <span>禁用原因</span>
+        <input
+          name="banned_reason"
+          defaultValue={user.bannedReason ?? ""}
+          className="min-h-9 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-500"
+        />
+      </label>
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="submit" disabled={pending} className="rounded-full bg-white px-3 py-1.5 text-xs font-black text-slate-700 disabled:cursor-not-allowed disabled:opacity-60">
+          {pending ? "保存中..." : "保存备注"}
+        </button>
+        {state.message ? <span className={state.ok ? "text-xs font-bold text-emerald-700" : "text-xs font-bold text-red-600"}>{state.message}</span> : null}
+      </div>
+    </form>
   );
 }
 
@@ -192,6 +247,21 @@ function InfoRow({ label, value }: { label: string; value: string }) {
       <dd className="min-w-0 truncate text-right text-slate-600">{value}</dd>
     </div>
   );
+}
+
+function StatCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+      <div className="text-xs font-black text-slate-500">{label}</div>
+      <p className="mt-2 text-2xl font-black text-slate-950">{value}</p>
+    </div>
+  );
+}
+
+function formatPostCounts(postCounts: AdminUserListItem["postCounts"], permissions: AdminUsersPermissions) {
+  if (!permissions.viewUserPosts) return "无 view_user_posts 权限";
+  if (!postCounts) return "需要 view_posts 或 moderate_posts 权限";
+  return `总 ${postCounts.total} · 招聘 ${postCounts.job} · 房屋 ${postCounts.housing} · 二手 ${postCounts.marketplace} · 服务 ${postCounts.service}`;
 }
 
 function Badge({ allowed, label }: { allowed: boolean; label: string }) {
