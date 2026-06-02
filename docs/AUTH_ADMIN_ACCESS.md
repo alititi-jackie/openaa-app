@@ -2,40 +2,18 @@
 
 This project does not force-merge Supabase Auth users in application code. Google same-email behavior should be verified in staging against the configured Supabase Auth providers.
 
-## Grant admin access by email
+## Grant admin access
 
-Run this in the new Supabase project's SQL Editor. Replace `<ADMIN_EMAIL>` and choose an allowed role such as `admin`, `moderator`, `editor`, `support`, or `super_admin`.
+Do not grant admin access by email alone.
 
-```sql
-with target_user as (
-  select u.id, u.email, u.email_confirmed_at
-  from auth.users u
-  where lower(u.email) = lower('<ADMIN_EMAIL>')
-  limit 1
-),
-ensure_profile as (
-  insert into public.profiles (id, email, email_verified, updated_at)
-  select id, email, email_confirmed_at is not null, now()
-  from target_user
-  on conflict (id) do update
-  set email = excluded.email,
-      email_verified = excluded.email_verified,
-      updated_at = now()
-  returning id
-)
-insert into public.admin_roles (user_id, role, is_active, note, updated_at)
-select id, 'admin'::public.admin_role, true, 'Granted via Supabase SQL Editor', now()
-from target_user
-on conflict (user_id) do update
-set role = excluded.role,
-    is_active = true,
-    revoked_at = null,
-    revoked_by = null,
-    note = excluded.note,
-    updated_at = now();
-```
+Use `docs/ADMIN_ONLINE_AUTHORIZATION.md`:
 
-The `/admin` area still checks `admin_roles.is_active` and the seeded permission mapping. Do not commit Supabase keys or run this against the old Supabase project.
+1. Search and confirm the real Supabase Auth user.
+2. Confirm the matching `profiles.id`.
+3. Grant by confirmed user id.
+4. Use `/admin/admins` for later grants, role changes, disable, and restore operations.
+
+The `/admin` area checks `admin_roles.is_active` and the seeded permission mapping. Do not commit Supabase keys or run this against the old Supabase project.
 
 ## Google same-email staging test
 
