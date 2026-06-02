@@ -1,22 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import type { ReactNode } from "react";
 import {
   Bell,
-  Bookmark,
-  BriefcaseBusiness,
-  Clock,
-  Compass,
-  FileText,
-  HeartHandshake,
+  Briefcase,
+  ChevronDown,
   Home,
-  KeyRound,
-  Mail,
-  Pencil,
-  Send,
+  PlusSquare,
+  Share2,
   ShoppingBag,
 } from "lucide-react";
-import { PageShell } from "@/components/layout/PageShell";
 import { ProfileLogoutButton } from "@/components/profile/ProfileLogoutButton";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { ensureProfileForUser } from "@/lib/supabase/profile";
@@ -37,167 +30,245 @@ export default async function ProfilePage() {
   const {
     data: { user },
   } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
-
-  if (!supabase) {
-    return (
-      <PageShell title="我的" description="登录后可以管理发布、收藏、我的导航和账号资料。" eyebrow="Profile">
-        <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-black text-slate-950">登录暂不可用</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">Supabase 环境变量尚未配置。配置新 Supabase 后，这里会进入登录保护的用户中心。</p>
-        </section>
-      </PageShell>
-    );
-  }
-
-  if (!user) {
-    redirect("/login?returnTo=/profile");
-  }
-
-  const profile = (await ensureProfileForUser(user)) as Profile;
-  const displayName = profile.nickname || profile.email?.split("@")[0] || user.email?.split("@")[0] || "OpenAA 用户";
+  const profile = user ? ((await ensureProfileForUser(user)) as Profile) : null;
 
   return (
-    <PageShell title="我的" description="管理你的发布、资料、收藏和常用入口。" eyebrow="Profile">
-      <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-        <div className="flex items-start gap-4">
-          <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-2xl bg-slate-100 text-xl font-black text-slate-500">
-            {profile.avatar_url ? (
-              <Image src={profile.avatar_url} alt={displayName} width={64} height={64} className="h-full w-full object-cover" />
-            ) : (
-              displayName.slice(0, 1).toUpperCase()
-            )}
+    <div className="-mx-4 -mt-4 min-h-[calc(100dvh-8rem)] bg-zinc-100 px-4 pb-24 pt-6">
+      <div className="mx-auto w-full max-w-[560px] space-y-4 md:max-w-[760px] lg:max-w-[960px] xl:max-w-[1040px]">
+        <div className="px-1">
+          <h1 className="text-[18px] font-black tracking-tight text-zinc-900">OpenAA 用户中心</h1>
+          <p className="mt-1 text-[12px] text-zinc-500">管理我的信息与发布入口</p>
+        </div>
+
+        {profile ? <ProfileHeader profile={profile} email={user?.email ?? ""} /> : <GuestHeader />}
+
+        <section className="px-1 space-y-3">
+          <h2 className="text-[14px] font-black tracking-tight text-zinc-900">快捷操作</h2>
+          <div className="grid grid-cols-2 gap-3 max-[359px]:grid-cols-1">
+            <QuickAction
+              href="/offline"
+              eyebrow="OpenAA"
+              title="添加到桌面"
+              icon={<PlusSquare size={18} className="text-blue-600" aria-hidden="true" />}
+              tone="blue"
+            />
+            <QuickAction
+              href="/"
+              eyebrow="OpenAA"
+              title="分享给朋友"
+              icon={<Share2 size={17} className="text-orange-500" aria-hidden="true" />}
+              tone="orange"
+            />
           </div>
-          <div className="min-w-0 flex-1">
-            <h2 className="truncate text-xl font-black text-slate-950">{displayName}</h2>
-            <p className="mt-1 truncate text-sm text-slate-600">{profile.email || user.email || "未绑定邮箱"}</p>
-            <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold">
-              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700">已登录</span>
-              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">账号状态：{profile.status}</span>
-              <span className="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">
-                {profile.account_type === "business" ? "商家账号" : "个人账号"}
+        </section>
+
+        <section className="overflow-hidden rounded-2xl bg-white shadow-[0_2px_14px_rgba(0,0,0,0.06)] ring-1 ring-black/5">
+          <div className="grid grid-cols-2 border-b border-zinc-100">
+            <MenuCard
+              href="/profile/favorites"
+              title="我的收藏"
+              description="查看你收藏的招聘、房屋、二手、服务和新闻"
+              className="border-r border-zinc-100"
+            />
+            <MenuCard href="/profile/recent" title="最近浏览" description="查看你最近看过的内容" />
+          </div>
+
+          <MenuRow
+            href="/profile/notifications"
+            title="通知中心"
+            description="查看账号、内容和平台相关通知"
+            icon={
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-blue-50">
+                <Bell size={17} className="text-blue-600" aria-hidden="true" />
               </span>
+            }
+          />
+          <MenuRow href="/navigation/my" title="🧭 管理我的导航" description="添加和整理自己的常用网站" />
+
+          <details className="border-b border-zinc-100">
+            <summary className="flex cursor-pointer list-none items-center justify-between p-4 transition hover:bg-zinc-50">
+              <span className="flex items-center gap-2">
+                <span className="font-medium text-zinc-900">🚀 我要发布</span>
+                <span className="text-[11px] text-zinc-400">招聘 / 房屋 / 二手 / 服务</span>
+              </span>
+              <ChevronDown size={18} className="text-zinc-400" aria-hidden="true" />
+            </summary>
+            <div className="border-t border-zinc-100 px-4 pb-4 pt-2">
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                <PublishCard href="/jobs/publish" title="发布招聘" subtitle="去发布职位" icon={<Briefcase size={18} className="text-blue-600" />} tone="blue" />
+                <PublishCard href="/housing/publish" title="发布房屋" subtitle="去发布房源" icon={<Home size={18} className="text-emerald-600" />} tone="emerald" />
+                <PublishCard href="/marketplace/publish" title="发布二手" subtitle="去发布商品" icon={<ShoppingBag size={18} className="text-amber-600" />} tone="amber" />
+                <PublishCard href="/services/publish" title="发布服务" subtitle="去发布服务" icon={<span className="text-base leading-none">🛠️</span>} tone="cyan" />
+              </div>
             </div>
+          </details>
+
+          <div className="grid grid-cols-2 border-b border-zinc-100">
+            <MenuTile href="/profile/jobs" label="💼 我的招聘" className="border-r border-zinc-100" />
+            <MenuTile href="/profile/housing" label="🏠 我的房屋" />
+            <MenuTile href="/profile/marketplace" label="🛍️ 我的二手" className="border-r border-t border-zinc-100" />
+            <MenuTile href="/profile/services" label="🛠️ 我的服务" className="border-t border-zinc-100" />
           </div>
-        </div>
 
-        <dl className="mt-5 grid gap-3 text-sm">
-          <InfoRow label="手机" value={profile.phone} />
-          <InfoRow label="微信" value={profile.wechat_id} />
-          <InfoRow label="WhatsApp" value={profile.whatsapp} />
-          <InfoRow label="偏好联系方式" value={profile.preferred_contact_method} />
-          <InfoRow label="所在区域" value={profile.location_area} />
-        </dl>
+          <MenuRow href="/feedback" title="📝 反馈与举报" description="提交问题、举报虚假信息或提出建议" />
+          <MenuRow href="/profile/edit" title="✏️ 编辑资料" />
 
-        <div className="mt-5 grid grid-cols-2 gap-3">
+          {profile ? <ProfileLogoutButton variant="legacy" /> : <div className="p-4 text-[12px] text-zinc-400">登录后可使用更多功能</div>}
+        </section>
+
+        <section className="space-y-3 pb-4">
           <Link
-            href="/profile/edit"
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white"
+            href="/news?category=announcement"
+            className="block rounded-2xl border border-blue-100 bg-blue-50 px-4 py-4 text-center transition hover:bg-blue-100"
           >
-            <Pencil size={17} aria-hidden="true" />
-            编辑资料
+            <p className="text-[14px] font-bold text-blue-700">平台公告</p>
+            <p className="mt-1 text-[12px] text-blue-500">查看 OpenAA 最新规则与更新</p>
           </Link>
           <Link
-            href="/profile/security"
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-900"
+            href="/contact"
+            className="block rounded-2xl border border-blue-100 bg-blue-50 px-4 py-4 text-center transition hover:bg-blue-100"
           >
-            <KeyRound size={17} aria-hidden="true" />
-            账号安全
+            <p className="text-[14px] font-bold text-blue-700">关于 OpenAA</p>
           </Link>
-          <ProfileLogoutButton />
-        </div>
-      </section>
-
-      <PublishPanel />
-
-      <section className="grid gap-3 sm:grid-cols-2">
-        <Entry icon={<FileText size={18} />} title="我的发布" description="查看所有招聘、房屋、市场和服务内容。" href="/profile/posts" />
-        <Entry icon={<BriefcaseBusiness size={18} />} title="我的招聘" description="管理我发布的招聘或求职信息。" href="/profile/jobs" />
-        <Entry icon={<Home size={18} />} title="我的房屋" description="管理我发布的租房、求租和房屋信息。" href="/profile/housing" />
-        <Entry icon={<ShoppingBag size={18} />} title="我的二手/市场" description="管理我发布的二手和市场信息。" href="/profile/marketplace" />
-        <Entry icon={<HeartHandshake size={18} />} title="我的服务" description="管理我发布的本地服务信息。" href="/profile/services" />
-        <Entry icon={<Compass size={18} />} title="我的导航" description="保存和管理常用网站入口。" href="/navigation/my" />
-        <Entry icon={<Bookmark size={18} />} title="我的收藏" description="查看我收藏的公开信息。" href="/profile/favorites" />
-        <Entry icon={<Clock size={18} />} title="最近浏览" description="查看我最近浏览的公开信息。" href="/profile/recent" />
-        <Entry icon={<Bell size={18} />} title="我的通知" description="查看审核、举报处理和平台提醒。" href="/profile/notifications" />
-        <Entry icon={<Mail size={18} />} title="反馈/联系平台" description="提交问题、建议或联系平台。" href="/feedback" />
-      </section>
-    </PageShell>
+        </section>
+      </div>
+    </div>
   );
 }
 
-function PublishPanel() {
+function ProfileHeader({ profile, email }: { profile: Profile; email: string }) {
+  const username = profile.nickname || profile.email?.split("@")[0] || email.split("@")[0] || "用户";
+
   return (
-    <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-      <div className="flex items-start gap-3">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700">
-          <Send size={18} aria-hidden="true" />
-        </div>
-        <div>
-          <h2 className="font-black text-slate-950">我要发布</h2>
-          <p className="mt-1 text-sm leading-6 text-slate-600">选择要发布的内容类型，填写后即可进入对应频道。</p>
-        </div>
+    <section className="rounded-[24px] border border-zinc-100 bg-white px-5 py-5 text-center shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+      <div className="relative mx-auto mb-2 h-[76px] w-[76px] overflow-hidden rounded-full">
+        {profile.avatar_url ? (
+          <Image src={profile.avatar_url} alt={username} fill className="object-cover" />
+        ) : (
+          <div className="flex h-[76px] w-[76px] items-center justify-center rounded-full bg-[#1976d2] text-[22px] font-bold text-white">
+            {username[0]?.toUpperCase() ?? "?"}
+          </div>
+        )}
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        <PublishLink href="/jobs/publish" label="发布招聘" />
-        <PublishLink href="/housing/publish" label="发布房屋" />
-        <PublishLink href="/marketplace/publish" label="发布二手/市场" />
-        <PublishLink href="/services/publish" label="发布服务" />
+      <h2 className="text-lg font-bold leading-tight text-gray-900">{username}</h2>
+      <p className="mt-1 text-sm leading-tight text-gray-500">{profile.email || email}</p>
+      {profile.bio ? <p className="mt-1.5 text-sm leading-tight text-gray-600">{profile.bio}</p> : null}
+      {profile.phone ? <p className="mt-1.5 text-sm leading-tight text-gray-500">📞 {profile.phone}</p> : null}
+    </section>
+  );
+}
+
+function GuestHeader() {
+  return (
+    <section className="rounded-2xl bg-white p-4 shadow-[0_2px_14px_rgba(0,0,0,0.06)] ring-1 ring-black/5">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-[13px] font-black text-zinc-900">未登录</div>
+          <div className="mt-0.5 text-[11px] text-zinc-500">登录后可管理发布与个人信息</div>
+        </div>
+        <Link href="/login?returnTo=/profile" className="rounded-2xl bg-zinc-900 px-4 py-2 text-[13px] font-bold text-white">
+          登录
+        </Link>
       </div>
     </section>
   );
 }
 
-function PublishLink({ href, label }: { href: string; label: string }) {
+function QuickAction({
+  href,
+  eyebrow,
+  title,
+  icon,
+  tone,
+}: {
+  href: string;
+  eyebrow: string;
+  title: string;
+  icon: ReactNode;
+  tone: "blue" | "orange";
+}) {
+  const color = tone === "blue" ? "border-blue-100 bg-blue-50" : "border-orange-100 bg-orange-50";
+
   return (
-    <Link href={href} className="rounded-xl bg-slate-50 px-3 py-3 text-center text-sm font-black text-slate-800">
-      {label}
+    <Link
+      href={href}
+      className={`rounded-2xl border bg-white p-3.5 text-left shadow-[0_8px_24px_rgba(15,23,42,0.08)] transition active:scale-[0.98] ${tone === "blue" ? "border-blue-100" : "border-orange-100"}`}
+    >
+      <div className="flex min-w-0 items-center gap-3">
+        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${color}`}>
+          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white shadow-sm">{icon}</div>
+        </div>
+        <div className="min-w-0">
+          <div className="text-[12px] font-bold leading-tight text-blue-600">{eyebrow}</div>
+          <div className="mt-1 text-[13px] font-semibold leading-tight text-slate-900">{title}</div>
+        </div>
+      </div>
     </Link>
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string | null }) {
+function MenuCard({ href, title, description, className = "" }: { href: string; title: string; description: string; className?: string }) {
   return (
-    <div className="flex justify-between gap-4 rounded-xl bg-slate-50 px-3 py-2">
-      <dt className="shrink-0 font-bold text-slate-700">{label}</dt>
-      <dd className="min-w-0 truncate text-right text-slate-600">{value || "未填写"}</dd>
-    </div>
+    <Link href={href} className={`min-w-0 p-4 transition hover:bg-zinc-50 ${className}`}>
+      <p className="text-sm font-medium text-zinc-900">{title}</p>
+      <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-zinc-500">{description}</p>
+    </Link>
   );
 }
 
-function Entry({
-  icon,
-  title,
-  description,
-  href,
-  badge,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  href?: string;
-  badge?: string;
-}) {
-  const className = "flex h-full items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm";
-  const content = (
-    <>
-      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-50 text-slate-700">{icon}</div>
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="font-black text-slate-950">{title}</h3>
-          {badge ? <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-500">{badge}</span> : null}
+function MenuRow({ href, title, description, icon }: { href: string; title: string; description?: string; icon?: ReactNode }) {
+  return (
+    <Link href={href} className="flex w-full items-center justify-between gap-3 border-b border-zinc-100 p-4 transition hover:bg-zinc-50">
+      <div className="flex min-w-0 items-center gap-3">
+        {icon}
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-zinc-900">{title}</p>
+          {description ? <p className="mt-0.5 line-clamp-1 text-[11px] text-zinc-500">{description}</p> : null}
         </div>
-        <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
       </div>
-    </>
+      <span className="shrink-0 text-zinc-300">›</span>
+    </Link>
   );
+}
 
-  if (href) {
-    return (
-      <Link href={href} className={className}>
-        {content}
-      </Link>
-    );
-  }
+function MenuTile({ href, label, className = "" }: { href: string; label: string; className?: string }) {
+  return (
+    <Link href={href} className={`flex items-center justify-between p-4 transition hover:bg-zinc-50 ${className}`}>
+      <span className="text-zinc-900">{label}</span>
+      <span className="text-zinc-300">›</span>
+    </Link>
+  );
+}
 
-  return <div className={className}>{content}</div>;
+function PublishCard({
+  href,
+  title,
+  subtitle,
+  icon,
+  tone,
+}: {
+  href: string;
+  title: string;
+  subtitle: string;
+  icon: ReactNode;
+  tone: "blue" | "emerald" | "amber" | "cyan";
+}) {
+  const toneClass = {
+    blue: "bg-blue-50 ring-blue-100",
+    emerald: "bg-emerald-50 ring-emerald-100",
+    amber: "bg-amber-50 ring-amber-100",
+    cyan: "bg-cyan-50 ring-cyan-100",
+  }[tone];
+
+  return (
+    <Link href={href} className="rounded-2xl bg-zinc-50 p-3 text-left ring-1 ring-zinc-100 transition hover:bg-white hover:ring-zinc-200">
+      <div className="flex items-center gap-2">
+        <div className={`flex h-9 w-9 items-center justify-center rounded-xl ring-1 ${toneClass}`}>{icon}</div>
+        <div>
+          <div className="text-[13px] font-black text-zinc-900">{title}</div>
+          <div className="mt-0.5 text-[11px] text-zinc-500">{subtitle}</div>
+        </div>
+      </div>
+    </Link>
+  );
 }
