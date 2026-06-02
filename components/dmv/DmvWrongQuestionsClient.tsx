@@ -21,7 +21,11 @@ export function DmvWrongQuestionsClient({ questions }: { questions: DmvQuestion[
   const [result, setResult] = useState({ total: 0, correct: 0, wrong: 0, remaining: 0 });
 
   useEffect(() => {
-    setWrongIds(readWrongQuestionIds());
+    const timer = window.setTimeout(() => {
+      setWrongIds(readWrongQuestionIds());
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   const wrongQuestions = useMemo(() => {
@@ -41,7 +45,6 @@ export function DmvWrongQuestionsClient({ questions }: { questions: DmvQuestion[
     [practiceQuestions, selectedById],
   );
   const wrongCount = answeredCount - correctCount;
-  const correctRate = answeredCount === 0 ? 0 : Math.round((correctCount / answeredCount) * 100);
 
   function refreshWrongIds() {
     const nextIds = readWrongQuestionIds();

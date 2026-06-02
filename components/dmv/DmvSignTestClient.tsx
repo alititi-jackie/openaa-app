@@ -25,7 +25,6 @@ export function DmvSignTestClient({ questions }: { questions: DmvQuestion[] }) {
     [practiceQuestions, selectedById],
   );
   const wrongCount = answeredCount - correctCount;
-  const correctRate = answeredCount === 0 ? 0 : Math.round((correctCount / answeredCount) * 100);
 
   function startPractice() {
     const nextQuestions = shuffleQuestions(signQuestions);
