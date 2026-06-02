@@ -2,7 +2,7 @@ import { Users } from "lucide-react";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import { AdminUsersFilter, AdminUsersList, AdminUsersPagination, AdminUsersPermissionBadges } from "@/components/users/AdminUsersManagement";
+import { AdminUsersFilter, AdminUsersList, AdminUsersPagination, AdminUsersPermissionBadges, AdminUsersStats } from "@/components/users/AdminUsersManagement";
 import { getAdminUsersData } from "@/features/users/adminQueries";
 import type { ProfileStatus } from "@/lib/supabase/types";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -50,6 +50,8 @@ export default function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
                 用户后台读取暂时不可用：{data.error ?? "请稍后再试。"}
               </div>
             ) : null}
+
+            <AdminUsersStats totals={data.totals} />
 
             <AdminCard title="筛选用户" description="按状态、邮箱、昵称或用户 ID 搜索。">
               <AdminUsersFilter status={params?.status} q={params?.q} />
