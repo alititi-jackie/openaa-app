@@ -141,10 +141,11 @@ const adminEntryGroups: AdminEntryGroup[] = [
       {
         id: "notifications",
         title: "通知管理",
-        description: "旧站可查看已发送通知、已读状态和删除通知；新站后续补齐。",
+        description: "查看已发送站内通知、已读状态，并删除不再需要的通知记录。",
+        href: "/admin/notifications",
         icon: <Bell size={20} aria-hidden="true" />,
         permissionKeys: ["manage_notifications"],
-        status: "planned",
+        status: "ready",
       },
     ],
   },
