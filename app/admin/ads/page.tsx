@@ -17,7 +17,7 @@ export const metadata = buildPageMetadata({
 });
 
 type AdminAdsPageProps = {
-  searchParams?: Promise<{ placement?: string }>;
+  searchParams?: Promise<{ placement?: string; status?: string }>;
 };
 
 export default function AdminAdsPage({ searchParams }: AdminAdsPageProps) {
@@ -25,7 +25,7 @@ export default function AdminAdsPage({ searchParams }: AdminAdsPageProps) {
     <AdminAuthGate>
       {async () => {
         const params = await searchParams;
-        const data = await getAdminAdsData(params?.placement);
+        const data = await getAdminAdsData(params?.placement, params?.status);
 
         if (!data.canManageAds) {
           return (
@@ -52,7 +52,7 @@ export default function AdminAdsPage({ searchParams }: AdminAdsPageProps) {
             </AdminCard>
 
             <AdminCard title="筛选广告" description="按广告位查看当前配置。">
-              <AdminAdsFilter placement={params?.placement} />
+              <AdminAdsFilter placement={params?.placement} status={params?.status} />
             </AdminCard>
 
             <AdminCard title="广告列表" description="保存后会刷新首页和频道页顶部广告。">

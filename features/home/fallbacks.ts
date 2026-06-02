@@ -4,7 +4,7 @@ import { DEFAULT_HOME_CITY_NAME, DEFAULT_HOME_CITY_SLUG } from "./constants";
 import type { HomeBannerItem } from "@/components/home/HomeBanner";
 import type { QuickGridItem } from "@/components/home/QuickGrid";
 import type { UtilityCardItem } from "@/components/home/UtilityCards";
-import type { HomeCity, HomeLatestPostSectionConfig, HomeSeoContent, HomeTickerItem } from "./types";
+import type { HomeCity, HomeLatestPostSectionConfig, HomeSeoContent, HomeTickerItem, HomeTickerSettings } from "./types";
 
 export const fallbackHomeCity: HomeCity = {
   id: null,
@@ -24,6 +24,20 @@ export const fallbackHomeBanners: HomeBannerItem[] = [
 export const fallbackTickerItems: HomeTickerItem[] = [
   { label: "OpenAA 纽约站已上线，欢迎发布招聘、房屋、二手和本地服务信息", href: "/news" },
 ];
+
+export const fallbackTickerSettings: HomeTickerSettings = {
+  global: {
+    isEnabled: true,
+    intervalSeconds: 4,
+  },
+  sections: [
+    { sectionKey: "news", sectionName: "新闻", isEnabled: true, sortOrder: 10, displayCount: 5 },
+    { sectionKey: "jobs", sectionName: "招聘", isEnabled: true, sortOrder: 20, displayCount: 3 },
+    { sectionKey: "housing", sectionName: "房屋", isEnabled: true, sortOrder: 30, displayCount: 3 },
+    { sectionKey: "marketplace", sectionName: "二手 / 市场", isEnabled: true, sortOrder: 40, displayCount: 3 },
+    { sectionKey: "services", sectionName: "本地服务", isEnabled: true, sortOrder: 50, displayCount: 3 },
+  ],
+};
 
 export const fallbackQuickGridItems: QuickGridItem[] = [
   { href: "/jobs", label: "招聘", icon: BriefcaseBusiness },

@@ -15,6 +15,7 @@ import {
   fallbackQuickGridItems,
   fallbackSeoContent,
   fallbackTickerItems,
+  fallbackTickerSettings,
   fallbackTopQuickLinks,
   fallbackUtilityTools,
 } from "./fallbacks";
@@ -49,12 +50,14 @@ export async function getHomeConfig(): Promise<HomeConfig> {
   const latestPostSections = mapLatestPostSections(latestSectionConfig).filter((section) => section.isVisible);
   const quickGridItems = mapQuickGridItems(quickGridSectionConfig);
   const utilityTools = mapUtilityTools(utilitySectionConfig).filter((item) => item.isVisible !== false);
+  const tickerSettings = await getLatestTickerSettings(supabase);
 
   return {
     city,
     topQuickLinks: await getTopQuickLinks(supabase, city),
     banners: await getHomeBanners(supabase, city),
-    tickerItems: await getLatestTickerItems(supabase, city),
+    tickerItems: await getLatestTickerItems(supabase, city, tickerSettings),
+    tickerSettings,
     quickGridItems,
     utilityTools,
     latestPostGroups: await getLatestPostGroups(latestPostSections),
@@ -119,8 +122,12 @@ export async function getHomeBanners(client?: HomeSupabaseClient | null, city = 
   return ads.length > 0 ? ads : fallbackHomeBanners;
 }
 
-export async function getLatestTickerItems(client?: HomeSupabaseClient | null, city = fallbackHomeCity) {
+export async function getLatestTickerItems(client?: HomeSupabaseClient | null, city = fallbackHomeCity, settings = fallbackTickerSettings) {
   const supabase = client ?? (await createSupabaseServerClient());
+
+  if (!settings.global.isEnabled) {
+    return [];
+  }
 
   if (!supabase) {
     return fallbackTickerItems;
@@ -141,14 +148,52 @@ export async function getLatestTickerItems(client?: HomeSupabaseClient | null, c
       return fallbackTickerItems;
     }
 
-    const items = (data ?? [])
+    const items = applyTickerSectionSettings(
+      (data ?? [])
       .map((row) => mapTickerItem({ ...(row as Record<string, unknown>), city_id: city.slug }))
-      .filter((item): item is NonNullable<typeof item> => item !== null);
+      .filter((item): item is NonNullable<typeof item> => item !== null),
+      settings,
+    );
 
     return items.length > 0 ? items : fallbackTickerItems;
   } catch (error) {
     warnHomeConfig("latest_ticker", error);
     return fallbackTickerItems;
+  }
+}
+
+export async function getLatestTickerSettings(client?: HomeSupabaseClient | null) {
+  const supabase = client ?? (await createSupabaseServerClient());
+
+  if (!supabase) {
+    return fallbackTickerSettings;
+  }
+
+  try {
+    const [{ data: global }, { data: sections }] = await Promise.all([
+      supabase.from("latest_ticker_global_settings").select("is_enabled,interval_seconds").eq("id", 1).maybeSingle(),
+      supabase.from("latest_ticker_sections").select("section_key,section_name,is_enabled,sort_order,display_count").order("sort_order", { ascending: true }),
+    ]);
+
+    return {
+      global: {
+        isEnabled: typeof global?.is_enabled === "boolean" ? global.is_enabled : fallbackTickerSettings.global.isEnabled,
+        intervalSeconds: clampTickerNumber(global?.interval_seconds, 3, 10, fallbackTickerSettings.global.intervalSeconds),
+      },
+      sections:
+        sections && sections.length > 0
+          ? sections.map((section) => ({
+              sectionKey: String(section.section_key),
+              sectionName: String(section.section_name),
+              isEnabled: section.is_enabled !== false,
+              sortOrder: clampTickerNumber(section.sort_order, 0, 9999, 0),
+              displayCount: clampTickerNumber(section.display_count, 1, 20, 3),
+            }))
+          : fallbackTickerSettings.sections,
+    };
+  } catch (error) {
+    warnHomeConfig("latest_ticker_settings", error);
+    return fallbackTickerSettings;
   }
 }
 
@@ -305,12 +350,45 @@ function getVisibleSection(sections: Record<string, HomeSectionRecord>, key: str
   return section?.is_visible === false ? undefined : section;
 }
 
+function applyTickerSectionSettings<T extends { module?: string | null }>(items: T[], settings = fallbackTickerSettings) {
+  const sections = settings.sections
+    .filter((section) => section.isEnabled)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  if (sections.length === 0) {
+    return items;
+  }
+
+  const configuredKeys = new Set(sections.map((section) => section.sectionKey));
+  const result: T[] = [];
+
+  for (const section of sections) {
+    const sectionItems = items.filter((item) => normalizeTickerModule(item.module) === section.sectionKey);
+    result.push(...sectionItems.slice(0, section.displayCount));
+  }
+
+  result.push(...items.filter((item) => !configuredKeys.has(normalizeTickerModule(item.module))));
+  return result;
+}
+
+function normalizeTickerModule(module?: string | null) {
+  if (module === "secondhand") return "marketplace";
+  return module ?? "";
+}
+
+function clampTickerNumber(value: unknown, min: number, max: number, fallback: number) {
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return Math.min(max, Math.max(min, Math.trunc(numeric)));
+}
+
 function fallbackHomeConfig(): HomeConfig {
   return {
     city: fallbackHomeCity,
     topQuickLinks: fallbackTopQuickLinks,
     banners: fallbackHomeBanners,
     tickerItems: fallbackTickerItems,
+    tickerSettings: fallbackTickerSettings,
     quickGridItems: fallbackQuickGridItems,
     utilityTools: fallbackUtilityTools,
     latestPostGroups: fallbackLatestPostSections.map((section) => ({ ...section, posts: [] })),

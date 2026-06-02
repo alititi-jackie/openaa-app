@@ -71,6 +71,27 @@ export async function upsertAd(_state: AdminHomeActionState, formData: FormData)
   return ok("广告已保存。");
 }
 
+export async function deleteAd(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
+  const context = await getAdminActionContext();
+  if (!context.ok) return fail(context.message);
+
+  const id = readText(formData, "id");
+  if (!id) return fail("缺少广告 ID。");
+  if (formData.get("confirm_delete") !== "on") return fail("请先勾选确认删除。");
+
+  const before = await readAd(context.supabase, id);
+  if (!before) return fail("广告不存在或已删除。");
+
+  const result = await context.supabase.from("ads").delete().eq("id", id);
+  if (result.error) return fail("广告删除失败。");
+
+  const audited = await auditLog(context, "delete_ad", "ads", id, before, null);
+  if (!audited) return auditFailure();
+
+  revalidateAds();
+  return ok("广告已删除。");
+}
+
 async function getAdminActionContext(): Promise<AdminActionContext> {
   const supabase = await createSupabaseServerClient();
   if (!supabase) return { ok: false, message: "Supabase 环境变量未配置，暂时无法保存广告。" };

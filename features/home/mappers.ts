@@ -67,6 +67,7 @@ export function mapTickerItem(row: Record<string, unknown>): HomeTickerItem | nu
   return {
     label,
     href,
+    module: asString(row.module) || null,
   };
 }
 

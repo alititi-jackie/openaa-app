@@ -2,7 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { HomeBannerItem } from "@/components/home/HomeBanner";
-import { getLatestTickerItems } from "@/features/home/queries";
+import { getLatestTickerItems, getLatestTickerSettings } from "@/features/home/queries";
 import { mapBanner } from "@/features/home/mappers";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { ChannelKey, ChannelTickerItem } from "./types";
@@ -49,6 +49,12 @@ export async function getChannelBanner(channelKey: ChannelKey): Promise<HomeBann
 
 export async function getChannelTickerItems(client?: ChannelSupabaseClient | null): Promise<ChannelTickerItem[]> {
   return getLatestTickerItems(client);
+}
+
+export async function getChannelTickerConfig(client?: ChannelSupabaseClient | null) {
+  const settings = await getLatestTickerSettings(client);
+  const items = await getLatestTickerItems(client, undefined, settings);
+  return { items, settings };
 }
 
 function warnChannelChrome(source: string, error: unknown) {
