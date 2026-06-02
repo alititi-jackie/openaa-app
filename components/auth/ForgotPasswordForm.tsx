@@ -19,11 +19,15 @@ export function ForgotPasswordForm() {
 
     try {
       const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: appUrl("/auth/callback?returnTo=/profile/security"),
       });
 
-      setMessage(error ? "重置邮件发送失败，请稍后重试。" : "如果该邮箱已注册，你会收到密码重置邮件。");
+      setMessage(
+        error
+          ? "重置邮件发送失败，请稍后再试。"
+          : "如果该邮箱已注册，你会收到密码重置邮件。请点击邮件链接后在账号安全页设置新密码。",
+      );
     } catch {
       setMessage("Supabase 环境变量尚未配置，暂时无法发送重置邮件。");
     } finally {
@@ -34,7 +38,7 @@ export function ForgotPasswordForm() {
   return (
     <AuthCard
       title="忘记密码"
-      description="输入注册邮箱，我们会通过 Supabase Auth 发送密码重置邮件。"
+      description="输入注册邮箱，我们会发送密码重置邮件。"
       footer={<AuthLink href="/login">返回登录</AuthLink>}
     >
       {!isConfigured ? (

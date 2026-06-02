@@ -1,7 +1,21 @@
 import Image from "next/image";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { Bell, Bookmark, FileText, KeyRound, Pencil, Send } from "lucide-react";
+import {
+  Bookmark,
+  BriefcaseBusiness,
+  Clock,
+  Compass,
+  FileText,
+  HeartHandshake,
+  Home,
+  KeyRound,
+  Mail,
+  Pencil,
+  Send,
+  ShieldCheck,
+  ShoppingBag,
+  UserCircle,
+} from "lucide-react";
 import { PageShell } from "@/components/layout/PageShell";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { ensureProfileForUser } from "@/lib/supabase/profile";
@@ -11,53 +25,56 @@ import type { Profile } from "@/lib/supabase/types";
 export const dynamic = "force-dynamic";
 
 export const metadata = buildPageMetadata({
-  title: "我的资料",
-  description: "OpenAA 用户资料。",
+  title: "我的",
+  description: "OpenAA 我的页面，管理发布、收藏、导航和账号资料。",
   path: "/profile",
   noIndex: true,
 });
 
 export default async function ProfilePage() {
   const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
 
   if (!supabase) {
     return (
-      <PageShell
-        title="我的资料"
-        description="Supabase 环境变量尚未配置。配置新 Supabase 后，这里会读取当前登录用户资料。"
-        eyebrow="Profile"
-      />
+      <PageShell title="我的" description="登录后可以管理发布、收藏、我的导航和账号资料。" eyebrow="Profile">
+        <GuestProfileCard note="Supabase 环境变量尚未配置，登录和注册暂时不可用。" />
+      </PageShell>
     );
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   if (!user) {
-    redirect("/login?returnTo=/profile");
+    return (
+      <PageShell title="我的" description="登录后可以管理发布、收藏、我的导航和账号资料。" eyebrow="Profile">
+        <GuestProfileCard />
+      </PageShell>
+    );
   }
 
   const profile = (await ensureProfileForUser(user)) as Profile;
+  const displayName = profile.nickname || profile.email?.split("@")[0] || user.email?.split("@")[0] || "OpenAA 用户";
 
   return (
-    <PageShell title="我的资料" description="查看账号状态、联系方式和后续个人中心入口。" eyebrow="Profile">
+    <PageShell title="我的" description="管理你的发布、资料、收藏和常用入口。" eyebrow="Profile">
       <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
         <div className="flex items-start gap-4">
           <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-2xl bg-slate-100 text-xl font-black text-slate-500">
             {profile.avatar_url ? (
-              <Image src={profile.avatar_url} alt={profile.nickname || "头像"} width={64} height={64} className="h-full w-full object-cover" />
+              <Image src={profile.avatar_url} alt={displayName} width={64} height={64} className="h-full w-full object-cover" />
             ) : (
-              (profile.nickname || profile.email || "O").slice(0, 1).toUpperCase()
+              displayName.slice(0, 1).toUpperCase()
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-xl font-black text-slate-950">{profile.nickname || "未设置昵称"}</h2>
+            <h2 className="truncate text-xl font-black text-slate-950">{displayName}</h2>
             <p className="mt-1 truncate text-sm text-slate-600">{profile.email || user.email || "未绑定邮箱"}</p>
             <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold">
-              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">状态：{profile.status}</span>
+              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-700">已登录</span>
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">账号状态：{profile.status}</span>
               <span className="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">
-                {profile.account_type === "business" ? "Business account" : "Personal account"}
+                {profile.account_type === "business" ? "商家账号" : "个人账号"}
               </span>
             </div>
           </div>
@@ -71,23 +88,103 @@ export default async function ProfilePage() {
           <InfoRow label="所在区域" value={profile.location_area} />
         </dl>
 
-        <Link
-          href="/profile/edit"
-          className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white"
-        >
-          <Pencil size={17} aria-hidden="true" />
-          编辑资料
-        </Link>
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <Link
+            href="/profile/edit"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white"
+          >
+            <Pencil size={17} aria-hidden="true" />
+            编辑资料
+          </Link>
+          <Link
+            href="/profile/security"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-900"
+          >
+            <KeyRound size={17} aria-hidden="true" />
+            账号安全
+          </Link>
+        </div>
       </section>
 
-      <section className="grid gap-3">
-        <Entry icon={<Send size={18} />} title="我的发布" description="后续 Phase 接入发布内容列表。" />
-        <Entry icon={<KeyRound size={18} />} title="账号安全" description="修改或设置邮箱登录密码。" href="/profile/security" />
-        <Entry icon={<Bookmark size={18} />} title="我的收藏" description="后续 Phase 接入收藏内容。" />
-        <Entry icon={<Bell size={18} />} title="通知" description="后续 Phase 接入站内通知。" />
-        <Entry icon={<FileText size={18} />} title="草稿" description="后续 Phase 接入草稿入口。" />
+      <PublishPanel />
+
+      <section className="grid gap-3 sm:grid-cols-2">
+        <Entry icon={<FileText size={18} />} title="我的发布" description="查看所有招聘、房屋、市场和服务内容。" href="/profile/posts" />
+        <Entry icon={<BriefcaseBusiness size={18} />} title="我的招聘" description="管理我发布的招聘或求职信息。" href="/profile/jobs" />
+        <Entry icon={<Home size={18} />} title="我的房屋" description="管理我发布的租房、求租和房屋信息。" href="/profile/housing" />
+        <Entry icon={<ShoppingBag size={18} />} title="我的二手/市场" description="管理我发布的二手和市场信息。" href="/profile/marketplace" />
+        <Entry icon={<HeartHandshake size={18} />} title="我的服务" description="管理我发布的本地服务信息。" href="/profile/services" />
+        <Entry icon={<Compass size={18} />} title="我的导航" description="保存和管理常用网站入口。" href="/navigation/my" />
+        <Entry icon={<Bookmark size={18} />} title="我的收藏" description="收藏列表后续接入，当前可在帖子详情页收藏。" badge="后续开放" />
+        <Entry icon={<Clock size={18} />} title="最近浏览" description="最近浏览后续接入，当前不会跳转到空页面。" badge="后续开放" />
+        <Entry icon={<Mail size={18} />} title="反馈/联系平台" description="提交问题、建议或联系平台。" href="/feedback" />
       </section>
     </PageShell>
+  );
+}
+
+function GuestProfileCard({ note }: { note?: string }) {
+  return (
+    <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+      <div className="flex items-start gap-4">
+        <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-700">
+          <UserCircle size={28} aria-hidden="true" />
+        </div>
+        <div>
+          <h2 className="text-xl font-black text-slate-950">登录 OpenAA</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">登录后可以管理发布、收藏、最近浏览、我的导航和账号资料。</p>
+        </div>
+      </div>
+
+      {note ? <p className="mt-4 rounded-xl bg-amber-50 p-3 text-sm leading-6 text-amber-800">{note}</p> : null}
+
+      <div className="mt-5 grid gap-3">
+        <Link
+          href="/login?returnTo=/profile"
+          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white"
+        >
+          <Mail size={18} aria-hidden="true" />
+          邮箱登录 / Google 登录
+        </Link>
+        <Link
+          href="/register"
+          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-900"
+        >
+          <ShieldCheck size={18} aria-hidden="true" />
+          注册账号
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function PublishPanel() {
+  return (
+    <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+      <div className="flex items-start gap-3">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700">
+          <Send size={18} aria-hidden="true" />
+        </div>
+        <div>
+          <h2 className="font-black text-slate-950">我要发布</h2>
+          <p className="mt-1 text-sm leading-6 text-slate-600">选择要发布的内容类型，填写后即可进入对应频道。</p>
+        </div>
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <PublishLink href="/jobs/publish" label="发布招聘" />
+        <PublishLink href="/housing/publish" label="发布房屋" />
+        <PublishLink href="/marketplace/publish" label="发布二手/市场" />
+        <PublishLink href="/services/publish" label="发布服务" />
+      </div>
+    </section>
+  );
+}
+
+function PublishLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link href={href} className="rounded-xl bg-slate-50 px-3 py-3 text-center text-sm font-black text-slate-800">
+      {label}
+    </Link>
   );
 }
 
@@ -100,13 +197,28 @@ function InfoRow({ label, value }: { label: string; value: string | null }) {
   );
 }
 
-function Entry({ icon, title, description, href }: { icon: React.ReactNode; title: string; description: string; href?: string }) {
-  const className = "flex items-center gap-3 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4";
+function Entry({
+  icon,
+  title,
+  description,
+  href,
+  badge,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  href?: string;
+  badge?: string;
+}) {
+  const className = "flex h-full items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm";
   const content = (
     <>
-      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-slate-700">{icon}</div>
-      <div>
-        <h3 className="font-black text-slate-950">{title}</h3>
+      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-50 text-slate-700">{icon}</div>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="font-black text-slate-950">{title}</h3>
+          {badge ? <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-500">{badge}</span> : null}
+        </div>
         <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
       </div>
     </>
@@ -120,9 +232,5 @@ function Entry({ icon, title, description, href }: { icon: React.ReactNode; titl
     );
   }
 
-  return (
-    <div className={className}>
-      {content}
-    </div>
-  );
+  return <div className={className}>{content}</div>;
 }

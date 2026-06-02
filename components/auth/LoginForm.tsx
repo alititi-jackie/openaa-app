@@ -17,6 +17,24 @@ function safeReturnTo(value: string | null) {
   return value;
 }
 
+function loginErrorMessage(message: string) {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("email not confirmed") || normalized.includes("not confirmed")) {
+    return "邮箱尚未验证，请先到邮箱点击验证链接后再登录。";
+  }
+
+  if (normalized.includes("invalid login credentials") || normalized.includes("invalid credentials")) {
+    return "邮箱或密码不正确，请检查后再试。";
+  }
+
+  if (normalized.includes("email") && normalized.includes("disabled")) {
+    return "邮箱密码登录暂未开启，请联系平台确认 Supabase Auth 设置。";
+  }
+
+  return "登录失败，请稍后再试。";
+}
+
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -35,17 +53,20 @@ export function LoginForm() {
 
     try {
       const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
 
       if (error) {
-        setMessage("登录失败，请检查邮箱和密码。");
+        setMessage(loginErrorMessage(error.message));
         return;
       }
 
       const profileResult = await ensureCurrentUserProfile();
 
       if (!profileResult.ok) {
-        setMessage("登录已成功，但资料初始化失败，请稍后再试。");
+        setMessage("登录已成功，但资料初始化失败，请刷新后再试。");
         return;
       }
 
@@ -81,7 +102,7 @@ export function LoginForm() {
   return (
     <AuthCard
       title="登录 OpenAA"
-      description="使用邮箱密码或 Google 账号进入你的 OpenAA 资料页。"
+      description="使用邮箱密码或 Google 账号进入你的 OpenAA 个人中心。"
       footer={
         <div className="flex flex-wrap gap-x-4 gap-y-2">
           <span>
@@ -140,7 +161,7 @@ export function LoginForm() {
         </button>
       ) : null}
 
-      <p className="mt-3 text-xs leading-5 text-slate-500">Apple、微信和手机号登录已预留，当前阶段未启用。</p>
+      <p className="mt-3 text-xs leading-5 text-slate-500">注册后如需邮箱验证，请先点击验证邮件里的确认链接再登录。</p>
       {message ? <p className="mt-4 rounded-xl bg-slate-100 p-3 text-sm leading-6 text-slate-700">{message}</p> : null}
     </AuthCard>
   );

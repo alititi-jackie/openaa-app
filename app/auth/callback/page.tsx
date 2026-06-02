@@ -37,7 +37,7 @@ export default async function AuthCallbackPage({ searchParams }: AuthCallbackPag
     return (
       <PageShell
         title="登录回调"
-        description="Supabase 环境变量尚未配置。配置新 Supabase 后，此页面会处理 OAuth 和邮箱登录回调。"
+        description="Supabase 环境变量尚未配置。配置新 Supabase 后，此页面会处理 OAuth、邮箱验证和密码重置回调。"
         eyebrow="Auth"
       />
     );
