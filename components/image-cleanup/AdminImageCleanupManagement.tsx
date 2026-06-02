@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Image as ImageIcon, ShieldCheck, Trash2, UploadCloud } from "lucide-react";
-import { AdminActionForm } from "@/components/admin/AdminActionForm";
+import { AdminActionForm, AdminCheckbox } from "@/components/admin/AdminActionForm";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { markImageAssetDeleted } from "@/features/image-cleanup/adminActions";
 import type { AdminImageAssetItem, AdminImageCleanupData, ImageCleanupFilter, ImageSourceFilter } from "@/features/image-cleanup/adminQueries";
@@ -94,16 +94,22 @@ export function AdminImageAssetsList({ assets, canDelete }: { assets: AdminImage
                 <span className={`rounded-full px-2.5 py-1 text-xs font-black ${asset.isProbablyUnused ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
                   {asset.status === "deleted" ? "已删除" : asset.isProbablyUnused ? "疑似未使用" : "使用中"}
                 </span>
+                <span className={`rounded-full px-2.5 py-1 text-xs font-black ${riskClassName(asset.cleanupRisk)}`}>{riskLabel(asset.cleanupRisk)}</span>
                 <span className="rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-700">{asset.sourceType}</span>
                 {asset.isPublic ? <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-black text-blue-700">公开</span> : null}
               </div>
               <h3 className="mt-2 break-all text-sm font-black text-slate-950">{asset.path || asset.externalUrl || asset.id}</h3>
               <div className="mt-2 grid gap-1 break-all text-xs font-semibold text-slate-500">
                 <span>ID：{asset.id}</span>
-                <span>引用：{asset.referenceLabels.length ? asset.referenceLabels.join(" / ") : "未发现引用"}</span>
+                <span>引用状态：{asset.referenceLabels.length ? asset.referenceLabels.join(" / ") : "未发现业务引用"}</span>
+                {asset.protectionReasons.length ? <span>保护原因：{asset.protectionReasons.join("；")}</span> : null}
                 <span>大小：{formatSize(asset.sizeBytes)} · 尺寸：{formatDimension(asset.width, asset.height)}</span>
-                <span>创建：{formatDateTime(asset.createdAt)}</span>
+                <span>创建：{formatDateTime(asset.createdAt)} · 更新：{formatDateTime(asset.updatedAt)}</span>
+                {asset.deletedAt ? <span>删除标记：{formatDateTime(asset.deletedAt)}</span> : null}
               </div>
+              <p className={`mt-3 rounded-xl px-3 py-2 text-xs font-bold leading-5 ${asset.isProbablyUnused ? "bg-amber-50 text-amber-800" : "bg-emerald-50 text-emerald-800"}`}>
+                {asset.cleanupHint}
+              </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {asset.displayUrl ? (
                   <a href={asset.displayUrl} target="_blank" rel="noreferrer" className="rounded-full bg-white px-3 py-1.5 text-xs font-black text-blue-700">
@@ -111,8 +117,9 @@ export function AdminImageAssetsList({ assets, canDelete }: { assets: AdminImage
                   </a>
                 ) : null}
                 {asset.isProbablyUnused && canDelete ? (
-                  <AdminActionForm action={markImageAssetDeleted} submitLabel="标记删除" className="contents">
+                  <AdminActionForm action={markImageAssetDeleted} submitLabel="标记删除" className="grid gap-2">
                     <input type="hidden" name="id" value={asset.id} />
+                    <AdminCheckbox label="我确认这张图片未被业务使用，只标记记录为 deleted" name="confirm_cleanup" />
                   </AdminActionForm>
                 ) : null}
               </div>
@@ -191,6 +198,18 @@ function formatDateTime(value: string | null) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "未记录";
   return date.toLocaleString("zh-CN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+function riskLabel(value: AdminImageAssetItem["cleanupRisk"]) {
+  if (value === "protected") return "受保护";
+  if (value === "low") return "低风险";
+  return "需谨慎";
+}
+
+function riskClassName(value: AdminImageAssetItem["cleanupRisk"]) {
+  if (value === "protected") return "bg-emerald-50 text-emerald-700";
+  if (value === "low") return "bg-blue-50 text-blue-700";
+  return "bg-amber-50 text-amber-700";
 }
 
 function buildPageHref({ page, filter, source, q }: { page: number; filter?: string; source?: string; q?: string }) {
