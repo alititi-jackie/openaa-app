@@ -174,10 +174,11 @@ const adminEntryGroups: AdminEntryGroup[] = [
       {
         id: "image-cleanup",
         title: "图片清理工具",
-        description: "旧站可扫描疑似未使用图片并人工确认删除；新站后续补齐。",
+        description: "扫描 image_assets 中疑似未使用的图片资产，管理员确认后标记删除。",
+        href: "/admin/image-cleanup",
         icon: <ImageIcon size={20} aria-hidden="true" />,
         permissionKeys: ["view_images", "manage_image_assets"],
-        status: "planned",
+        status: "ready",
       },
       {
         id: "audit-logs",
