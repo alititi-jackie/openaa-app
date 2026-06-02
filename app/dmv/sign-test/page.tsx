@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { DmvBackLink } from "@/components/dmv/DmvBackLink";
 import { DmvSignTestClient } from "@/components/dmv/DmvSignTestClient";
 import { PageShell } from "@/components/layout/PageShell";
 import { getDmvQuestionBank } from "@/features/dmv/questions";
@@ -18,9 +18,7 @@ export default async function DmvSignTestPage() {
 
   return (
     <PageShell title="DMV 交通标志专项练习" description="随机练习交通标志题，答题后立即查看正确与否，并把错题保存在本机浏览器。" eyebrow="DMV">
-      <Link href="/dmv" className="inline-flex text-sm font-black text-blue-700 underline underline-offset-4">
-        返回 DMV 首页
-      </Link>
+      <DmvBackLink />
       <DmvSignTestClient questions={bank.questions} />
     </PageShell>
   );

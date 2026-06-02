@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { DmvLoginPrompt } from "@/components/dmv/DmvLoginPrompt";
+import { dmvBackLinkClassName } from "@/components/dmv/DmvBackLink";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
 import { addWrongQuestion, removeWrongQuestion, shuffleQuestions } from "@/components/dmv/dmvStorage";
 import { getDmvCategoryLabel } from "@/components/dmv/dmvCategoryLabels";
@@ -111,8 +112,8 @@ export function DmvSignTestClient({ questions }: { questions: DmvQuestion[] }) {
         </div>
 
         <div className="flex justify-center">
-          <button type="button" onClick={exitPractice} className="rounded-xl border border-slate-200 bg-white px-5 py-2 text-sm font-black text-slate-600">
-            退出练习 / 返回入口
+          <button type="button" onClick={exitPractice} className={dmvBackLinkClassName}>
+            退出练习
           </button>
         </div>
       </div>
@@ -147,7 +148,7 @@ export function DmvSignTestClient({ questions }: { questions: DmvQuestion[] }) {
           <Link href="/dmv/questions" className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-center text-sm font-black text-slate-700">
             去题库
           </Link>
-          <Link href="/dmv" className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-center text-sm font-black text-slate-700 sm:col-span-2">
+          <Link href="/dmv" className={`${dmvBackLinkClassName} sm:col-span-2`}>
             返回 DMV 首页
           </Link>
         </div>
@@ -183,6 +184,9 @@ export function DmvSignTestClient({ questions }: { questions: DmvQuestion[] }) {
         </Link>
         <Link href="/dmv/mock-test" className="rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-center text-sm font-black text-green-700">
           模拟考试
+        </Link>
+        <Link href="/dmv" className={`${dmvBackLinkClassName} col-span-2`}>
+          返回 DMV 首页
         </Link>
       </div>
     </div>
