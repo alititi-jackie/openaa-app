@@ -17,7 +17,7 @@ export const metadata = buildPageMetadata({
 });
 
 type AdminPostsPageProps = {
-  searchParams?: Promise<{ type?: string; status?: string; q?: string; page?: string }>;
+  searchParams?: Promise<{ type?: string; status?: string; q?: string; author?: string; page?: string }>;
 };
 
 export default function AdminPostsPage({ searchParams }: AdminPostsPageProps) {
@@ -29,6 +29,7 @@ export default function AdminPostsPage({ searchParams }: AdminPostsPageProps) {
           type: normalizeType(params?.type),
           status: normalizeStatus(params?.status),
           q: params?.q,
+          authorId: params?.author,
           page: normalizePage(params?.page),
         });
         const canRead = data.permissions.viewPosts || data.permissions.moderatePosts;
@@ -53,8 +54,9 @@ export default function AdminPostsPage({ searchParams }: AdminPostsPageProps) {
               </div>
             ) : null}
 
-            <AdminCard title="筛选帖子" description="按频道、状态、标题或摘要快速筛选当前用户帖子。">
-              <AdminPostsFilter type={params?.type} status={params?.status} q={params?.q} />
+            <AdminCard title="筛选帖子" description="按频道、状态、标题、摘要或作者快速筛选当前用户帖子。">
+              {params?.author ? <p className="mb-3 rounded-xl bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700">正在按作者筛选：{params.author}</p> : null}
+              <AdminPostsFilter type={params?.type} status={params?.status} q={params?.q} author={params?.author} />
             </AdminCard>
 
             <AdminCard title="帖子列表" description="支持发布/恢复、下架、拒绝和软删除；不做物理删除。">
@@ -63,7 +65,7 @@ export default function AdminPostsPage({ searchParams }: AdminPostsPageProps) {
                 默认按最近更新排序，每页显示 {data.pageSize} 条。
               </div>
               <AdminPostsList posts={data.posts} permissions={data.permissions} />
-              <AdminPostsPagination page={data.page} pageCount={data.pageCount} totalCount={data.totalCount} type={params?.type} status={params?.status} q={params?.q} />
+              <AdminPostsPagination page={data.page} pageCount={data.pageCount} totalCount={data.totalCount} type={params?.type} status={params?.status} q={params?.q} author={params?.author} />
             </AdminCard>
           </div>
         );

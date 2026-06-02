@@ -61,6 +61,7 @@ export type AdminPostsParams = {
   type?: PostType | "all";
   status?: PostStatus | "all";
   q?: string;
+  authorId?: string;
   page?: number;
 };
 
@@ -110,6 +111,10 @@ export async function getAdminPostsData(params: AdminPostsParams = {}): Promise<
     query = query.eq("status", params.status);
   }
 
+  if (params.authorId && isUuid(params.authorId)) {
+    query = query.eq("author_id", params.authorId);
+  }
+
   if (params.q) {
     const keyword = sanitizeSearchTerm(params.q);
     if (keyword) {
@@ -147,6 +152,10 @@ function normalizePage(value?: number) {
 
 function sanitizeSearchTerm(value: string) {
   return value.trim().replace(/[%_,]/g, "").slice(0, 80);
+}
+
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
 
 function mapAdminPost(record: AdminPostRecord): AdminPostListItem {
