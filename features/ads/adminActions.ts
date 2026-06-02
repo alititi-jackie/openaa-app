@@ -27,6 +27,7 @@ export async function upsertAd(_state: AdminHomeActionState, formData: FormData)
   const href = normalizeOptionalLink(readText(formData, "href"));
   const openMode = readText(formData, "open_mode") === "new" ? "new" : "same";
   const imageUrl = normalizeImageUrl(readText(formData, "image_url"));
+  const imageFile = readFile(formData, "image_file");
   const sortOrder = readInteger(formData, "sort_order", "排序");
   const isActive = formData.get("is_active") === "on";
   const startsAt = readDateTime(formData, "starts_at");
@@ -37,11 +38,15 @@ export async function upsertAd(_state: AdminHomeActionState, formData: FormData)
   if (!href.ok) return fail(href.message);
   if (!imageUrl.ok) return fail(imageUrl.message);
   if (!sortOrder.ok) return fail(sortOrder.message);
-  if (!id && !imageUrl.value) return fail("新增广告需要填写 https://img.openaa.com/ 图片 URL。");
+  if (!id && !imageUrl.value && !imageFile) return fail("新增广告需要上传广告图片或填写 https://img.openaa.com/ 图片 URL。");
 
   const before = id ? await readAd(context.supabase, id) : null;
-  const imageAssetId = imageUrl.value ? await upsertExternalImageAsset(context, imageUrl.value, id || null) : readText(formData, "image_asset_id") || null;
-  if (imageAssetId === false) return fail("图片 URL 保存失败，请确认地址为 https://img.openaa.com/ 开头。");
+  const imageAssetId = imageFile
+    ? await uploadAdImageAsset(context, imageFile, id || null)
+    : imageUrl.value
+      ? await upsertExternalImageAsset(context, imageUrl.value, id || null)
+      : readText(formData, "image_asset_id") || null;
+  if (imageAssetId === false) return fail("图片保存失败，请确认上传的是 5MB 以内的 JPG、PNG、WebP，或填写 https://img.openaa.com/ 地址。");
 
   const payload = {
     placement,
@@ -62,6 +67,13 @@ export async function upsertAd(_state: AdminHomeActionState, formData: FormData)
 
   if (imageAssetId && !id) {
     await context.supabase.from("image_assets").update({ entity_id: result.data.id }).eq("id", imageAssetId).eq("owner_id", context.userId);
+  }
+
+  if (imageAssetId && before?.image_asset_id && before.image_asset_id !== imageAssetId) {
+    await context.supabase
+      .from("image_assets")
+      .update({ status: "deleted", deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .eq("id", before.image_asset_id);
   }
 
   const audited = await auditLog(context, id ? "update_ad" : "create_ad", "ads", result.data.id, before, payload);
@@ -90,6 +102,33 @@ export async function deleteAd(_state: AdminHomeActionState, formData: FormData)
 
   revalidateAds();
   return ok("广告已删除。");
+}
+
+export async function removeAdImage(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
+  const context = await getAdminActionContext();
+  if (!context.ok) return fail(context.message);
+
+  const id = readText(formData, "id");
+  if (!id) return fail("缺少广告 ID。");
+  if (formData.get("confirm_remove_image") !== "on") return fail("请先勾选确认移除图片。");
+
+  const before = await readAd(context.supabase, id);
+  if (!before) return fail("广告不存在或已删除。");
+  if (!before.image_asset_id) return fail("这条广告没有可移除的图片。");
+
+  const result = await context.supabase.from("ads").update({ image_asset_id: null, updated_at: new Date().toISOString() }).eq("id", id);
+  if (result.error) return fail("广告图片移除失败。");
+
+  await context.supabase
+    .from("image_assets")
+    .update({ status: "deleted", deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .eq("id", before.image_asset_id);
+
+  const audited = await auditLog(context, "remove_ad_image", "ads", id, before, { image_asset_id: null });
+  if (!audited) return auditFailure();
+
+  revalidateAds();
+  return ok("广告图片已移除。");
 }
 
 async function getAdminActionContext(): Promise<AdminActionContext> {
@@ -151,6 +190,50 @@ async function upsertExternalImageAsset(context: Extract<AdminActionContext, { o
   }
 }
 
+async function uploadAdImageAsset(context: Extract<AdminActionContext, { ok: true }>, file: File, entityId: string | null) {
+  const validation = validateImageFile(file);
+  if (!validation.ok) return false;
+
+  const imageId = crypto.randomUUID();
+  const path = `ads/${context.userId}/${entityId || "draft"}/${imageId}.${validation.extension}`;
+  const { error: uploadError } = await context.supabase.storage.from("ad-images").upload(path, file, {
+    contentType: file.type,
+    upsert: false,
+  });
+
+  if (uploadError) return false;
+
+  const { data: publicUrlData } = context.supabase.storage.from("ad-images").getPublicUrl(path);
+  const { data, error } = await context.supabase
+    .from("image_assets")
+    .insert({
+      source_type: "storage",
+      bucket: "ad-images",
+      path,
+      public_url: publicUrlData.publicUrl,
+      owner_id: context.userId,
+      entity_type: "ad",
+      entity_id: entityId,
+      mime_type: file.type,
+      size_bytes: file.size,
+      status: "active",
+      is_public: true,
+    })
+    .select("id")
+    .single();
+
+  if (error || !data) return false;
+  return data.id as string;
+}
+
+function validateImageFile(file: File): { ok: true; extension: "jpg" | "png" | "webp" } | { ok: false } {
+  if (!file || file.size <= 0 || file.size > 5 * 1024 * 1024) return { ok: false };
+  if (file.type === "image/jpeg") return { ok: true, extension: "jpg" };
+  if (file.type === "image/png") return { ok: true, extension: "png" };
+  if (file.type === "image/webp") return { ok: true, extension: "webp" };
+  return { ok: false };
+}
+
 function normalizePlacement(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9_-]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 80);
 }
@@ -188,6 +271,11 @@ function normalizeImageUrl(raw: string): { ok: true; value: string | null } | { 
 function readText(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value.trim() : "";
+}
+
+function readFile(formData: FormData, key: string) {
+  const value = formData.get(key);
+  return value instanceof File && value.size > 0 ? value : null;
 }
 
 function readInteger(formData: FormData, key: string, label: string): { ok: true; value: number } | { ok: false; message: string } {
