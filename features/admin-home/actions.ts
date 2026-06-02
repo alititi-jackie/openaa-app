@@ -284,6 +284,7 @@ export async function upsertHomeBanner(_state: AdminHomeActionState, formData: F
   const subtitle = readText(formData, "subtitle") || null;
   const href = normalizeOptionalLink(readText(formData, "href"));
   const imageUrl = normalizeImageUrl(readText(formData, "image_url"));
+  const imageFile = readFile(formData, "image_file");
   const openMode = readOpenMode(formData);
   const isActive = formData.get("is_active") === "on";
   const sortOrder = readInteger(formData, "sort_order", "Banner 排序");
@@ -295,10 +296,15 @@ export async function upsertHomeBanner(_state: AdminHomeActionState, formData: F
   if (!href.ok) return fail(href.message);
   if (!imageUrl.ok) return fail(imageUrl.message);
   if (!sortOrder.ok) return fail(sortOrder.message);
-  if (!id && !imageUrl.value) return fail("新增 Banner 需要填写 https://img.openaa.com/ 图片 URL。");
+  if (!id && !imageUrl.value && !imageFile) return fail("新增 Banner 需要上传图片或填写 https://img.openaa.com/ 图片 URL。");
 
-  const imageAssetId = imageUrl.value ? await upsertExternalImageAsset(context, imageUrl.value, id || null) : readText(formData, "image_asset_id") || null;
-  if (imageAssetId === false) return fail("图片 URL 保存失败，请确认地址为 https://img.openaa.com/ 开头。");
+  const before = id ? await readHomeBanner(context.supabase, id) : null;
+  const imageAssetId = imageFile
+    ? await uploadHomeBannerImageAsset(context, imageFile, id || null)
+    : imageUrl.value
+      ? await upsertExternalImageAsset(context, imageUrl.value, id || null)
+      : readText(formData, "image_asset_id") || null;
+  if (imageAssetId === false) return fail("图片保存失败，请确认上传的是 5MB 以内的 JPG、PNG、WebP，或填写 https://img.openaa.com/ 地址。");
 
   const payload = {
     title,
@@ -323,11 +329,45 @@ export async function upsertHomeBanner(_state: AdminHomeActionState, formData: F
     await context.supabase.from("image_assets").update({ entity_id: result.data.id }).eq("id", imageAssetId).eq("owner_id", context.userId);
   }
 
+  if (imageAssetId && before?.image_asset_id && before.image_asset_id !== imageAssetId) {
+    await markImageAssetDeleted(context.supabase, before.image_asset_id);
+  }
+
   if (!(await auditLog(context, id ? "update_home_banner" : "create_home_banner", "home_banners", result.data.id, payload))) {
     return auditFailure();
   }
   revalidateAdminHome();
   return ok("首页 Banner 已保存。");
+}
+
+export async function removeHomeBannerImage(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
+  const context = await getAdminActionContext("manage_home_sections");
+  if (!context.ok) return fail(context.message);
+
+  const id = readText(formData, "id");
+  if (!id) return fail("缺少 Banner ID。");
+  if (formData.get("confirm_remove_image") !== "on") return fail("请先勾选确认移除图片。");
+
+  const before = await readHomeBanner(context.supabase, id);
+  if (!before) return fail("Banner 不存在。");
+  if (!before.image_asset_id) return fail("这条 Banner 没有可移除的图片。");
+
+  const result = await context.supabase.from("home_banners").update({ image_asset_id: null, updated_at: new Date().toISOString() }).eq("id", id);
+  if (result.error) return fail("Banner 图片移除失败。");
+
+  await markImageAssetDeleted(context.supabase, before.image_asset_id);
+
+  if (!(await auditLog(context, "remove_home_banner_image", "home_banners", id, { image_asset_id: null }))) {
+    return auditFailure();
+  }
+
+  revalidateAdminHome();
+  return ok("Banner 图片已移除。");
+}
+
+async function readHomeBanner(supabase: SupabaseServerClient, id: string) {
+  const { data } = await supabase.from("home_banners").select("id,image_asset_id").eq("id", id).maybeSingle();
+  return data ?? null;
 }
 
 async function upsertExternalImageAsset(context: Extract<AdminActionContext, { ok: true }>, imageUrl: string, entityId: string | null) {
@@ -355,6 +395,57 @@ async function upsertExternalImageAsset(context: Extract<AdminActionContext, { o
   }
 }
 
+async function uploadHomeBannerImageAsset(context: Extract<AdminActionContext, { ok: true }>, file: File, entityId: string | null) {
+  const validation = validateImageFile(file);
+  if (!validation.ok) return false;
+
+  const imageId = crypto.randomUUID();
+  const path = `home-banners/${context.userId}/${entityId || "draft"}/${imageId}.${validation.extension}`;
+  const { error: uploadError } = await context.supabase.storage.from("home-banner-images").upload(path, file, {
+    contentType: file.type,
+    upsert: false,
+  });
+
+  if (uploadError) return false;
+
+  const { data: publicUrlData } = context.supabase.storage.from("home-banner-images").getPublicUrl(path);
+  const { data, error } = await context.supabase
+    .from("image_assets")
+    .insert({
+      source_type: "storage",
+      bucket: "home-banner-images",
+      path,
+      public_url: publicUrlData.publicUrl,
+      owner_id: context.userId,
+      entity_type: "home_banner",
+      entity_id: entityId,
+      mime_type: file.type,
+      size_bytes: file.size,
+      status: "active",
+      is_public: true,
+    })
+    .select("id")
+    .single();
+
+  if (error || !data) return false;
+  return data.id as string;
+}
+
+async function markImageAssetDeleted(supabase: SupabaseServerClient, imageAssetId: string) {
+  await supabase
+    .from("image_assets")
+    .update({ status: "deleted", deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .eq("id", imageAssetId);
+}
+
+function validateImageFile(file: File): { ok: true; extension: "jpg" | "png" | "webp" } | { ok: false } {
+  if (!file || file.size <= 0 || file.size > 5 * 1024 * 1024) return { ok: false };
+  if (file.type === "image/jpeg") return { ok: true, extension: "jpg" };
+  if (file.type === "image/png") return { ok: true, extension: "png" };
+  if (file.type === "image/webp") return { ok: true, extension: "webp" };
+  return { ok: false };
+}
+
 async function hasPermission(supabase: SupabaseServerClient, permissionKey: string) {
   const { data } = await supabase.rpc("has_admin_permission", { p_permission_key: permissionKey });
   return Boolean(data);
@@ -368,6 +459,11 @@ async function getDefaultCityId(supabase: SupabaseServerClient) {
 function readText(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value.trim() : "";
+}
+
+function readFile(formData: FormData, key: string) {
+  const value = formData.get(key);
+  return value instanceof File && value.size > 0 ? value : null;
 }
 
 function readInteger(formData: FormData, key: string, label: string): { ok: true; value: number } | { ok: false; message: string } {
