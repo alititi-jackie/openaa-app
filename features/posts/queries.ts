@@ -231,6 +231,109 @@ export async function getMyPosts(type?: PostType): Promise<PostsQueryResult<Post
   return getUserPosts(user.id, type);
 }
 
+function uniqueOrderedPostIds(rows: Array<{ post_id: string | null }>) {
+  const seen = new Set<string>();
+  const ids: string[] = [];
+
+  for (const row of rows) {
+    if (!row.post_id || seen.has(row.post_id)) continue;
+    seen.add(row.post_id);
+    ids.push(row.post_id);
+  }
+
+  return ids;
+}
+
+async function getPublicCardsByOrderedIds(ids: string[]): Promise<PostsQueryResult<PostCardView[]>> {
+  if (ids.length === 0) {
+    return { state: "ready", data: [] };
+  }
+
+  const supabase = await createSupabaseServerClient();
+
+  if (!supabase) {
+    return emptyResult([]);
+  }
+
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("posts")
+    .select(publicPostSelect)
+    .in("id", ids)
+    .eq("status", "published")
+    .eq("visibility", "public")
+    .eq("cities.slug", DEFAULT_CITY_SLUG)
+    .or(`expires_at.is.null,expires_at.gt.${now}`);
+
+  if (error) {
+    return { state: "error", data: [], error: error.message };
+  }
+
+  const records = (data ?? []) as unknown as PostRecord[];
+  const authors = await fetchAuthors(records.map((post) => post.author_id));
+  const cardsById = new Map(records.map((record) => [record.id, mapPostRecordToCard(record, authors)]));
+
+  return { state: "ready", data: ids.flatMap((id) => cardsById.get(id) ?? []) };
+}
+
+export async function getMyFavoritePosts(): Promise<PostsQueryResult<PostCardView[]>> {
+  const supabase = await createSupabaseServerClient();
+
+  if (!supabase) {
+    return emptyResult([]);
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { state: "ready", data: [] };
+  }
+
+  const { data, error } = await supabase
+    .from("post_favorites")
+    .select("post_id")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  if (error) {
+    return { state: "error", data: [], error: error.message };
+  }
+
+  return getPublicCardsByOrderedIds(uniqueOrderedPostIds((data ?? []) as Array<{ post_id: string | null }>));
+}
+
+export async function getMyRecentPosts(): Promise<PostsQueryResult<PostCardView[]>> {
+  const supabase = await createSupabaseServerClient();
+
+  if (!supabase) {
+    return emptyResult([]);
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { state: "ready", data: [] };
+  }
+
+  const { data, error } = await supabase
+    .from("post_views")
+    .select("post_id")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(80);
+
+  if (error) {
+    return { state: "error", data: [], error: error.message };
+  }
+
+  return getPublicCardsByOrderedIds(uniqueOrderedPostIds((data ?? []) as Array<{ post_id: string | null }>));
+}
+
 export async function getEditablePostById(id: string, type: PostType): Promise<PostsQueryResult<PostDetailView | null>> {
   const supabase = await createSupabaseServerClient();
 

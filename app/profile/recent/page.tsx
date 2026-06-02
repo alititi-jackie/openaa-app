@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { Clock, FileText, Search } from "lucide-react";
 import { EmptyState } from "@/components/common/EmptyState";
 import { PageShell } from "@/components/layout/PageShell";
+import { PostCard } from "@/components/posts/PostCard";
+import { getMyRecentPosts } from "@/features/posts/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getCurrentUser } from "@/lib/supabase/server";
 
@@ -22,13 +24,25 @@ export default async function ProfileRecentPage() {
     redirect("/login?returnTo=/profile/recent");
   }
 
+  const posts = await getMyRecentPosts();
+
   return (
-    <PageShell title="最近浏览" description="最近浏览入口已接入，浏览历史同步会在后续批次中补齐。" eyebrow="Profile">
-      <EmptyState
-        icon={<Clock size={22} aria-hidden="true" />}
-        title="最近浏览后续接入"
-        description="当前帖子详情页已有浏览统计，个人最近浏览列表会在后续收藏与浏览批次中补齐。"
-      />
+    <PageShell title="最近浏览" description="查看当前账号最近浏览过的公开信息。" eyebrow="Profile">
+      {posts.state === "error" ? <p className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">最近浏览读取失败，请稍后再试。</p> : null}
+      {posts.state === "missing_config" ? <p className="rounded-xl bg-slate-50 p-3 text-sm leading-6 text-slate-600">Supabase 环境变量尚未配置，当前显示空列表。</p> : null}
+      {posts.data.length > 0 ? (
+        <section className="space-y-3">
+          {posts.data.map((post) => (
+            <PostCard key={post.id} post={post} />
+          ))}
+        </section>
+      ) : (
+        <EmptyState
+          icon={<Clock size={22} aria-hidden="true" />}
+          title="还没有最近浏览"
+          description="登录后浏览招聘、房屋、二手市场或本地服务详情页，记录会显示在这里。"
+        />
+      )}
       <div className="grid gap-3 sm:grid-cols-2">
         <ProfileLink href="/jobs" label="浏览招聘" icon={<Search size={18} aria-hidden="true" />} />
         <ProfileLink href="/profile/posts" label="查看我的发布" icon={<FileText size={18} aria-hidden="true" />} />

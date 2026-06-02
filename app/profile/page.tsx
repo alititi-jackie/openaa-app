@@ -116,8 +116,8 @@ export default async function ProfilePage() {
         <Entry icon={<ShoppingBag size={18} />} title="我的二手/市场" description="管理我发布的二手和市场信息。" href="/profile/marketplace" />
         <Entry icon={<HeartHandshake size={18} />} title="我的服务" description="管理我发布的本地服务信息。" href="/profile/services" />
         <Entry icon={<Compass size={18} />} title="我的导航" description="保存和管理常用网站入口。" href="/navigation/my" />
-        <Entry icon={<Bookmark size={18} />} title="我的收藏" description="查看收藏入口，完整列表后续接入。" href="/profile/favorites" badge="入口" />
-        <Entry icon={<Clock size={18} />} title="最近浏览" description="查看最近浏览入口，历史记录后续接入。" href="/profile/recent" badge="入口" />
+        <Entry icon={<Bookmark size={18} />} title="我的收藏" description="查看我收藏的公开信息。" href="/profile/favorites" />
+        <Entry icon={<Clock size={18} />} title="最近浏览" description="查看我最近浏览的公开信息。" href="/profile/recent" />
         <Entry icon={<Bell size={18} />} title="我的通知" description="查看平台通知入口，通知中心后续接入。" href="/profile/notifications" badge="入口" />
         <Entry icon={<Mail size={18} />} title="反馈/联系平台" description="提交问题、建议或联系平台。" href="/feedback" />
       </section>
