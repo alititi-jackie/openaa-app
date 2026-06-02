@@ -10,6 +10,8 @@ import { appUrl } from "@/lib/seo/siteConfig";
 import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
 
 const consentVersion = "2026-05-31";
+const signupSuccessMessage =
+  "注册成功！\n请打开您的邮箱，查收来自 Supabase Auth（noreply@mail.app.supabase.io）的确认邮件，并点击邮件中的 Confirm your mail / 确认邮箱 链接。\n邮箱确认完成后，请回到您刚才注册 OpenAA 的页面重新登录；也可以在确认成功页面点击“前往登录”按钮登录。\n如果没有收到确认邮件，请检查垃圾邮件箱，或稍后重新注册/重试。";
 
 function registerErrorMessage(message: string) {
   const normalized = message.toLowerCase();
@@ -85,12 +87,12 @@ export function RegisterForm() {
         }
 
         setIsSuccess(true);
-        setMessage("注册成功，已为你创建账号资料。你现在可以进入“我的”页面。");
+        setMessage(signupSuccessMessage);
         return;
       }
 
       setIsSuccess(true);
-      setMessage("注册成功，验证邮件已发送。请到邮箱点击验证链接后再登录。如果没有收到，请检查垃圾邮件。");
+      setMessage(signupSuccessMessage);
     } catch {
       setMessage(registerFallbackMessage(isConfigured));
     } finally {
@@ -170,7 +172,7 @@ export function RegisterForm() {
         </button>
       </form>
       {message ? (
-        <p className={`mt-4 rounded-xl p-3 text-sm leading-6 ${isSuccess ? "bg-emerald-50 text-emerald-800" : "bg-slate-100 text-slate-700"}`}>
+        <p className={`mt-4 whitespace-pre-line rounded-xl p-3 text-sm leading-6 ${isSuccess ? "bg-emerald-50 text-emerald-800" : "bg-slate-100 text-slate-700"}`}>
           {message}
         </p>
       ) : null}
