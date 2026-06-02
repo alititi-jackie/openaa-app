@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { DmvBackLink } from "@/components/dmv/DmvBackLink";
 import { DmvQuestionsBrowser } from "@/components/dmv/DmvQuestionsBrowser";
 import { PageShell } from "@/components/layout/PageShell";
 import { getDmvQuestionBank } from "@/features/dmv/questions";
@@ -18,9 +18,7 @@ export default async function DmvQuestionsPage() {
 
   return (
     <PageShell title="DMV 题库" description="按分类或关键词查看纽约 DMV 中文练习题，可选择显示答案。" eyebrow="DMV">
-      <Link href="/dmv" className="inline-flex text-sm font-black text-blue-700 underline underline-offset-4">
-        返回 DMV 首页
-      </Link>
+      <DmvBackLink />
       <SourceNotice source={bank.source} sourceVersion={bank.sourceVersion} disclaimer={bank.disclaimer} />
       <DmvQuestionsBrowser questions={bank.questions} />
     </PageShell>

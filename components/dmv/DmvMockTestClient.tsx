@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { DmvLoginPrompt } from "@/components/dmv/DmvLoginPrompt";
+import { dmvBackLinkClassName } from "@/components/dmv/DmvBackLink";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
 import { addWrongQuestion, removeWrongQuestion, saveExamResult, shuffleQuestions } from "@/components/dmv/dmvStorage";
 import { getDmvCategoryLabel } from "@/components/dmv/dmvCategoryLabels";
@@ -46,14 +47,6 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
     if (!currentQuestion) return;
     setAnswers((current) => ({ ...current, [currentQuestion.id]: optionIndex }));
     setSubmitWarning("");
-  }
-
-  function goPrevious() {
-    setCurrentIndex((value) => Math.max(0, value - 1));
-  }
-
-  function goNext() {
-    setCurrentIndex((value) => Math.min(examQuestions.length - 1, value + 1));
   }
 
   function submitExam({ force = false } = {}) {
@@ -131,6 +124,9 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
           <Link href="/dmv/questions" className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-center text-sm font-black text-blue-700">
             查看题库
           </Link>
+          <Link href="/dmv" className={`${dmvBackLinkClassName} col-span-2`}>
+            返回 DMV 首页
+          </Link>
         </div>
       </div>
     );
@@ -190,14 +186,14 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
-            onClick={goPrevious}
+            onClick={() => setCurrentIndex((value) => Math.max(0, value - 1))}
             disabled={currentIndex === 0}
             className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 disabled:opacity-40"
           >
             上一题
           </button>
           {currentIndex < examQuestions.length - 1 ? (
-            <button type="button" onClick={goNext} className="min-h-11 rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white">
+            <button type="button" onClick={() => setCurrentIndex((value) => Math.min(examQuestions.length - 1, value + 1))} className="min-h-11 rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white">
               下一题
             </button>
           ) : (
@@ -208,8 +204,8 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
         </div>
 
         <div className="flex justify-center">
-          <Link href="/dmv" className="rounded-xl border border-red-100 bg-red-50 px-5 py-2 text-sm font-black text-red-600">
-            退出考试 / 返回 DMV 首页
+          <Link href="/dmv" className={dmvBackLinkClassName}>
+            退出考试
           </Link>
         </div>
       </div>
@@ -254,6 +250,7 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
         {examQuestions.map((question, index) => {
           const selectedIndex = answers[question.id] ?? null;
           const isCorrect = selectedIndex === question.correctAnswerIndex;
+          const categoryLabel = getDmvCategoryLabel(question.category);
           return (
             <article
               key={question.id}
@@ -261,8 +258,8 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
             >
               <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
                 <span className="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">第 {index + 1} 题</span>
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">{getDmvCategoryLabel(question.category)}</span>
-                {question.isRoadSign ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700">交通标志</span> : null}
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">{categoryLabel}</span>
+                {question.isRoadSign && categoryLabel !== "交通标志" ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700">标志题</span> : null}
               </div>
               <p className="mt-3 text-sm font-black leading-6 text-slate-950">{question.questionText}</p>
               {question.imageUrl ? (
@@ -296,7 +293,7 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
         <button type="button" onClick={shareResult} className="min-h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700">
           分享结果
         </button>
-        <Link href="/dmv" className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-center text-sm font-black text-slate-700 sm:col-span-2">
+        <Link href="/dmv" className={`${dmvBackLinkClassName} sm:col-span-2`}>
           返回 DMV 首页
         </Link>
       </div>

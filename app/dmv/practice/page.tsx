@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { DmvBackLink } from "@/components/dmv/DmvBackLink";
 import { DmvPracticeClient } from "@/components/dmv/DmvPracticeClient";
 import { PageShell } from "@/components/layout/PageShell";
 import { getDmvQuestionBank } from "@/features/dmv/questions";
@@ -18,9 +18,7 @@ export default async function DmvPracticePage() {
 
   return (
     <PageShell title="DMV 练习模式" description="选择随机或顺序练习、设置题数，答题后立即查看正确与否，并把错题保存在本机浏览器。" eyebrow="DMV">
-      <Link href="/dmv" className="inline-flex text-sm font-black text-blue-700 underline underline-offset-4">
-        返回 DMV 首页
-      </Link>
+      <DmvBackLink />
       <DmvPracticeClient questions={bank.questions} />
     </PageShell>
   );

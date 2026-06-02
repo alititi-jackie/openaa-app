@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { DmvLoginPrompt } from "@/components/dmv/DmvLoginPrompt";
+import { dmvBackLinkClassName } from "@/components/dmv/DmvBackLink";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
 import { addWrongQuestion, readWrongQuestionIds, removeWrongQuestion, saveWrongQuestionIds } from "@/components/dmv/dmvStorage";
 import { getDmvCategoryLabel } from "@/components/dmv/dmvCategoryLabels";
@@ -75,10 +76,6 @@ export function DmvWrongQuestionsClient({ questions }: { questions: DmvQuestion[
     refreshWrongIds();
   }
 
-  function goPrevious() {
-    setCurrentIndex((value) => Math.max(0, value - 1));
-  }
-
   function finishPractice() {
     const nextWrongIds = refreshWrongIds();
     setResult({
@@ -148,7 +145,7 @@ export function DmvWrongQuestionsClient({ questions }: { questions: DmvQuestion[
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
-            onClick={goPrevious}
+            onClick={() => setCurrentIndex((value) => Math.max(0, value - 1))}
             disabled={currentIndex === 0}
             className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 disabled:opacity-40"
           >
@@ -165,8 +162,8 @@ export function DmvWrongQuestionsClient({ questions }: { questions: DmvQuestion[
         </div>
 
         <div className="flex justify-center">
-          <button type="button" onClick={backToList} className="rounded-xl border border-slate-200 bg-white px-5 py-2 text-sm font-black text-slate-600">
-            退出练习 / 返回错题列表
+          <button type="button" onClick={backToList} className={dmvBackLinkClassName}>
+            退出错题练习 / 返回错题列表
           </button>
         </div>
       </div>
@@ -202,7 +199,7 @@ export function DmvWrongQuestionsClient({ questions }: { questions: DmvQuestion[
           <Link href="/dmv/mock-test" className="rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-center text-sm font-black text-green-700">
             去模拟考试
           </Link>
-          <Link href="/dmv" className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-center text-sm font-black text-slate-700 sm:col-span-2">
+          <Link href="/dmv" className={`${dmvBackLinkClassName} sm:col-span-2`}>
             返回 DMV 首页
           </Link>
         </div>
@@ -214,6 +211,10 @@ export function DmvWrongQuestionsClient({ questions }: { questions: DmvQuestion[
 
   return (
     <div className="space-y-4">
+      <Link href="/dmv" className={dmvBackLinkClassName}>
+        返回 DMV 首页
+      </Link>
+
       <section className="rounded-2xl border border-red-100 bg-white p-4 shadow-sm">
         <h2 className="text-xl font-black text-slate-950">错题本</h2>
         <div className="mt-4 grid grid-cols-2 gap-3 text-center">
@@ -296,12 +297,14 @@ function EmptyWrongQuestions() {
 }
 
 function WrongQuestionPreview({ question, index }: { question: DmvQuestion; index: number }) {
+  const categoryLabel = getDmvCategoryLabel(question.category);
+
   return (
     <article className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
       <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
         <span className="rounded-full bg-red-50 px-2.5 py-1 text-red-700">错题 {index + 1}</span>
-        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">{getDmvCategoryLabel(question.category)}</span>
-        {question.isRoadSign ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700">交通标志</span> : null}
+        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">{categoryLabel}</span>
+        {question.isRoadSign && categoryLabel !== "交通标志" ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700">标志题</span> : null}
       </div>
       <p className="mt-3 text-sm font-black leading-6 text-slate-950">{question.questionText}</p>
       {question.imageUrl ? (

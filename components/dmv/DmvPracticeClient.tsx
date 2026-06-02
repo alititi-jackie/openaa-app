@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { DmvLoginPrompt } from "@/components/dmv/DmvLoginPrompt";
+import { dmvBackLinkClassName } from "@/components/dmv/DmvBackLink";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
 import { addWrongQuestion, removeWrongQuestion, savePracticeProgress, savePracticeResult, shuffleQuestions } from "@/components/dmv/dmvStorage";
 import { getDmvCategoryLabel } from "@/components/dmv/dmvCategoryLabels";
@@ -190,6 +191,9 @@ export function DmvPracticeClient({ questions }: { questions: DmvQuestion[] }) {
           <button type="button" onClick={shareResult} className="min-h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700">
             分享结果
           </button>
+          <Link href="/dmv" className={dmvBackLinkClassName}>
+            返回 DMV 首页
+          </Link>
         </div>
 
         {shareMessage ? <p className="text-center text-xs font-bold text-blue-600">{shareMessage}</p> : null}
@@ -256,7 +260,7 @@ export function DmvPracticeClient({ questions }: { questions: DmvQuestion[] }) {
       </div>
 
       <div className="flex justify-center">
-        <button type="button" onClick={() => setMode("setup")} className="rounded-xl border border-slate-200 bg-white px-5 py-2 text-sm font-black text-slate-600">
+        <button type="button" onClick={() => setMode("setup")} className={dmvBackLinkClassName}>
           退出练习
         </button>
       </div>

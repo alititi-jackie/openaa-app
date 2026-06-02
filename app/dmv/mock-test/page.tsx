@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { DmvBackLink } from "@/components/dmv/DmvBackLink";
 import { DmvMockTestClient } from "@/components/dmv/DmvMockTestClient";
 import { PageShell } from "@/components/layout/PageShell";
 import { getDmvQuestionBank } from "@/features/dmv/questions";
@@ -18,9 +18,7 @@ export default async function DmvMockTestPage() {
 
   return (
     <PageShell title="DMV 模拟考试" description="按纽约 DMV Permit 规则模拟：20 题，至少答对 14 题，交通标志至少答对 2 题。" eyebrow="DMV">
-      <Link href="/dmv" className="inline-flex text-sm font-black text-blue-700 underline underline-offset-4">
-        返回 DMV 首页
-      </Link>
+      <DmvBackLink />
       <DmvMockTestClient questions={bank.questions} />
     </PageShell>
   );
