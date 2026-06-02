@@ -8,10 +8,31 @@ type DmvQuestionsBrowserProps = {
   questions: DmvQuestion[];
 };
 
+const categoryLabels: Record<string, string> = {
+  "traffic-signs": "交通标志",
+  "road-signs-general": "交通标志基础",
+  "traffic-control": "交通信号与控制",
+  "right-of-way": "让路规则",
+  turns: "转弯",
+  "passing-lanes": "超车与车道",
+  parking: "停车",
+  "speed-weather": "速度与天气",
+  highway: "高速公路",
+  "alcohol-drugs": "酒精与药物",
+  law: "交通法规",
+  safety: "安全驾驶",
+  "sharing-road": "共享道路",
+};
+
+function getCategoryLabel(category: string) {
+  return categoryLabels[category] ?? category;
+}
+
 export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");
   const [revealAnswer, setRevealAnswer] = useState(false);
+  const [selectedById, setSelectedById] = useState<Record<string, number>>({});
   const categories = useMemo(() => ["all", ...Array.from(new Set(questions.map((question) => question.category)))], [questions]);
 
   const filtered = useMemo(() => {
@@ -52,7 +73,7 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
                   category === item ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"
                 }`}
               >
-                {item === "all" ? "全部" : item}
+                {item === "all" ? "全部" : getCategoryLabel(item)}
               </button>
             ))}
           </div>
@@ -68,7 +89,15 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
       {filtered.length > 0 ? (
         <div className="space-y-3">
           {filtered.map((question, index) => (
-            <DmvQuestionCard key={question.id} question={question} index={index} revealAnswer={revealAnswer} />
+            <DmvQuestionCard
+              key={question.id}
+              question={question}
+              index={index}
+              categoryLabel={getCategoryLabel(question.category)}
+              selectedIndex={selectedById[question.id] ?? null}
+              revealAnswer={revealAnswer}
+              onSelect={(optionIndex) => setSelectedById((current) => ({ ...current, [question.id]: optionIndex }))}
+            />
           ))}
         </div>
       ) : (
