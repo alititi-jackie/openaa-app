@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { PageShell } from "@/components/layout/PageShell";
 import { DmvWrongQuestionsClient } from "@/components/dmv/DmvWrongQuestionsClient";
+import { PageShell } from "@/components/layout/PageShell";
 import { getDmvQuestionBank } from "@/features/dmv/questions";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
