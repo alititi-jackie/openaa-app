@@ -5,18 +5,27 @@ import type { DmvQuestion } from "@/features/dmv/types";
 type DmvQuestionCardProps = {
   question: DmvQuestion;
   index: number;
+  categoryLabel?: string;
   selectedIndex?: number | null;
   revealAnswer?: boolean;
   disabled?: boolean;
   onSelect?: (index: number) => void;
 };
 
-export function DmvQuestionCard({ question, index, selectedIndex = null, revealAnswer = false, disabled = false, onSelect }: DmvQuestionCardProps) {
+export function DmvQuestionCard({
+  question,
+  index,
+  categoryLabel,
+  selectedIndex = null,
+  revealAnswer = false,
+  disabled = false,
+  onSelect,
+}: DmvQuestionCardProps) {
   return (
     <article className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
       <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
         <span className="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">第 {index + 1} 题</span>
-        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">{question.category}</span>
+        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">{categoryLabel ?? question.category}</span>
         {question.isRoadSign ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700">交通标志</span> : null}
       </div>
 
