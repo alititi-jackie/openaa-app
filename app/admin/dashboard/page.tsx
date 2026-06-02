@@ -1,4 +1,20 @@
-import { Database, FileText, Shield, Users } from "lucide-react";
+import Link from "next/link";
+import {
+  Bell,
+  ClipboardList,
+  Database,
+  FileText,
+  Home,
+  Image as ImageIcon,
+  LayoutGrid,
+  Megaphone,
+  MessageSquareText,
+  Newspaper,
+  ScrollText,
+  Settings,
+  Shield,
+  Users,
+} from "lucide-react";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
@@ -9,46 +25,215 @@ export const dynamic = "force-dynamic";
 
 export const metadata = buildPageMetadata({
   title: "后台 Dashboard",
-  description: "OpenAA 后台 Dashboard 占位。",
+  description: "OpenAA 后台管理入口。",
   path: "/admin/dashboard",
   noIndex: true,
 });
+
+type AdminEntry = {
+  id: string;
+  title: string;
+  description: string;
+  href?: string;
+  icon: React.ReactNode;
+  permissionKeys: string[];
+  status: "ready" | "planned";
+};
+
+type AdminEntryGroup = {
+  title: string;
+  description: string;
+  entries: AdminEntry[];
+};
+
+const adminEntryGroups: AdminEntryGroup[] = [
+  {
+    title: "内容管理",
+    description: "管理前台展示内容、用户发布内容和首页运营模块。",
+    entries: [
+      {
+        id: "posts",
+        title: "帖子管理",
+        description: "统一管理招聘、房屋、市场和本地服务帖子，支持隐藏、恢复、待审和软删除。",
+        href: "/admin/posts",
+        icon: <ClipboardList size={20} aria-hidden="true" />,
+        permissionKeys: ["view_posts", "moderate_posts"],
+        status: "ready",
+      },
+      {
+        id: "news",
+        title: "新闻管理",
+        description: "管理新闻分类、草稿、发布、下架、置顶、封面和 SEO 字段。",
+        href: "/admin/news",
+        icon: <Newspaper size={20} aria-hidden="true" />,
+        permissionKeys: ["view_news", "create_news", "edit_news", "publish_news", "delete_news"],
+        status: "ready",
+      },
+      {
+        id: "services",
+        title: "本地服务管理",
+        description: "旧站独立服务后台；新站通过帖子管理里的服务筛选统一处理。",
+        href: "/admin/posts?type=services",
+        icon: <FileText size={20} aria-hidden="true" />,
+        permissionKeys: ["view_posts", "moderate_posts"],
+        status: "ready",
+      },
+      {
+        id: "navigation",
+        title: "导航管理",
+        description: "管理公共导航分类、链接、推荐状态、启用状态和排序。",
+        href: "/admin/navigation",
+        icon: <LayoutGrid size={20} aria-hidden="true" />,
+        permissionKeys: ["manage_navigation"],
+        status: "ready",
+      },
+      {
+        id: "top-links",
+        title: "顶部快捷入口",
+        description: "管理 Header 城市入口展开后的快捷导航。",
+        href: "/admin/top-links",
+        icon: <Home size={20} aria-hidden="true" />,
+        permissionKeys: ["manage_top_links"],
+        status: "ready",
+      },
+      {
+        id: "home",
+        title: "首页配置管理",
+        description: "管理首页模块、ticker、Banner 和 home sections。",
+        href: "/admin/home",
+        icon: <Database size={20} aria-hidden="true" />,
+        permissionKeys: ["manage_home_sections", "manage_latest_ticker", "manage_ads"],
+        status: "ready",
+      },
+    ],
+  },
+  {
+    title: "用户与安全",
+    description: "管理用户状态、反馈、举报和站内通知。",
+    entries: [
+      {
+        id: "users",
+        title: "用户管理",
+        description: "查看用户资料状态，管理 active / restricted / banned 等账号状态。",
+        href: "/admin/users",
+        icon: <Users size={20} aria-hidden="true" />,
+        permissionKeys: ["view_users", "manage_user_status"],
+        status: "ready",
+      },
+      {
+        id: "feedback",
+        title: "反馈管理",
+        description: "查看并处理用户提交的问题反馈、功能建议、内容举报和新闻线索。",
+        href: "/admin/feedback",
+        icon: <MessageSquareText size={20} aria-hidden="true" />,
+        permissionKeys: ["view_feedback", "handle_feedback"],
+        status: "ready",
+      },
+      {
+        id: "reports",
+        title: "举报管理",
+        description: "处理帖子举报，并可联动帖子隐藏、恢复、待审和软删除。",
+        href: "/admin/reports",
+        icon: <Shield size={20} aria-hidden="true" />,
+        permissionKeys: ["view_reports", "view_post_reports", "handle_reports", "handle_post_reports", "moderate_posts"],
+        status: "ready",
+      },
+      {
+        id: "notifications",
+        title: "通知管理",
+        description: "旧站可查看已发送通知、已读状态和删除通知；新站后续补齐。",
+        icon: <Bell size={20} aria-hidden="true" />,
+        permissionKeys: ["manage_notifications"],
+        status: "planned",
+      },
+    ],
+  },
+  {
+    title: "运营设置",
+    description: "管理广告、站点规则、图片维护和审计记录。",
+    entries: [
+      {
+        id: "ads",
+        title: "广告管理",
+        description: "管理首页和频道页广告位、图片外链、跳转链接、起止时间和启用状态。",
+        href: "/admin/ads",
+        icon: <Megaphone size={20} aria-hidden="true" />,
+        permissionKeys: ["manage_ads"],
+        status: "ready",
+      },
+      {
+        id: "settings",
+        title: "站点设置",
+        description: "旧站可管理每日发帖上限等基础规则；新站后续补齐页面。",
+        icon: <Settings size={20} aria-hidden="true" />,
+        permissionKeys: ["manage_settings"],
+        status: "planned",
+      },
+      {
+        id: "image-cleanup",
+        title: "图片清理工具",
+        description: "旧站可扫描疑似未使用图片并人工确认删除；新站后续补齐。",
+        icon: <ImageIcon size={20} aria-hidden="true" />,
+        permissionKeys: ["view_images", "manage_image_assets"],
+        status: "planned",
+      },
+      {
+        id: "audit-logs",
+        title: "审计日志",
+        description: "查看后台操作记录和关键实体变更，方便上线后追溯。",
+        icon: <ScrollText size={20} aria-hidden="true" />,
+        permissionKeys: ["view_admin_audit_logs", "view_audit_logs"],
+        status: "planned",
+      },
+    ],
+  },
+];
 
 export default function AdminDashboardPage() {
   return (
     <AdminAuthGate>
       {async ({ user, adminRole }) => {
-        const [superAdmin, canViewUsers, canViewSettings, canViewAuditLogs] = await Promise.all([
-          isSuperAdmin(),
-          hasAdminPermission("view_users"),
-          hasAdminPermission("view_settings"),
-          hasAdminPermission("view_admin_audit_logs"),
-        ]);
+        const permissions = await getDashboardPermissions();
+        const superAdmin = await isSuperAdmin();
+        const readyEntries = adminEntryGroups.flatMap((group) => group.entries).filter((entry) => entry.status === "ready");
+        const accessibleReadyCount = readyEntries.filter((entry) => canAccessEntry(entry, permissions)).length;
 
         return (
           <div className="space-y-4">
-            <AdminPageHeader title="后台 Dashboard" description="Phase 3 只建立后台身份和权限检查基础。">
+            <AdminPageHeader title="OpenAA 管理后台" description="集中管理内容、用户、安全反馈和运营配置。已完成模块可直接进入，旧站已有但新站尚未补齐的模块会标记为待补齐。">
               <AdminPermissionBadge allowed={superAdmin} label="super_admin" />
-              <AdminPermissionBadge allowed={canViewUsers} label="view_users" />
-              <AdminPermissionBadge allowed={canViewSettings} label="view_settings" />
-              <AdminPermissionBadge allowed={canViewAuditLogs} label="view_admin_audit_logs" />
+              <AdminPermissionBadge allowed={accessibleReadyCount > 0} label={`可进入 ${accessibleReadyCount}/${readyEntries.length}`} />
+              <AdminPermissionBadge allowed={adminRole.is_active} label={adminRole.role} />
             </AdminPageHeader>
 
             <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-              <h2 className="text-lg font-black text-slate-950">当前管理员</h2>
-              <dl className="mt-4 grid gap-3 text-sm">
-                <InfoRow label="邮箱" value={user.email ?? "未绑定邮箱"} />
-                <InfoRow label="角色" value={adminRole.role} />
-                <InfoRow label="权限状态" value={adminRole.is_active ? "active" : "inactive"} />
-              </dl>
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-blue-600">Current Admin</p>
+                  <h2 className="mt-1 text-lg font-black text-slate-950">{user.email ?? "未绑定邮箱"}</h2>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">角色：{adminRole.role} · 状态：{adminRole.is_active ? "active" : "inactive"}</p>
+                </div>
+                <Link href="/" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+                  返回首页
+                </Link>
+              </div>
             </section>
 
-            <section className="grid gap-3">
-              <AdminModule icon={<Users size={18} />} title="用户与资料" description="后续 Phase 接入用户列表和状态管理。" />
-              <AdminModule icon={<FileText size={18} />} title="内容审核" description="后续 Phase 接入发布内容审核，不在本阶段实现。" />
-              <AdminModule icon={<Database size={18} />} title="系统设置" description="后续 Phase 接入配置和运营设置。" />
-              <AdminModule icon={<Shield size={18} />} title="审计日志" description="后续 Phase 接入 admin_audit_logs 查看。" />
-            </section>
+            <div className="space-y-5">
+              {adminEntryGroups.map((group) => (
+                <section key={group.title} className="space-y-3">
+                  <div>
+                    <h2 className="text-lg font-black text-slate-950">{group.title}</h2>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">{group.description}</p>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {group.entries.map((entry) => (
+                      <AdminEntryCard key={entry.id} entry={entry} allowed={canAccessEntry(entry, permissions)} />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
           </div>
         );
       }}
@@ -56,23 +241,51 @@ export default function AdminDashboardPage() {
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between gap-4 rounded-xl bg-slate-50 px-3 py-2">
-      <dt className="shrink-0 font-bold text-slate-700">{label}</dt>
-      <dd className="min-w-0 truncate text-right text-slate-600">{value}</dd>
-    </div>
-  );
+async function getDashboardPermissions() {
+  const keys = Array.from(new Set(adminEntryGroups.flatMap((group) => group.entries.flatMap((entry) => entry.permissionKeys))));
+  const results = await Promise.all(keys.map(async (key) => [key, await hasAdminPermission(key)] as const));
+  return new Map(results);
 }
 
-function AdminModule({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
+function canAccessEntry(entry: AdminEntry, permissions: Map<string, boolean>) {
+  return entry.permissionKeys.some((key) => permissions.get(key));
+}
+
+function AdminEntryCard({ entry, allowed }: { entry: AdminEntry; allowed: boolean }) {
+  const ready = entry.status === "ready";
+  const enabled = ready && allowed && entry.href;
+
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4">
-      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-slate-700">{icon}</div>
-      <div>
-        <h3 className="font-black text-slate-950">{title}</h3>
-        <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
+    <article className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+      <div className="flex items-start gap-3">
+        <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${ready ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-500"}`}>
+          {entry.icon}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="font-black text-slate-950">{entry.title}</h3>
+            <span className={`rounded-full px-2.5 py-1 text-xs font-black ${ready ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+              {ready ? "已可用" : "待补齐"}
+            </span>
+            {ready && !allowed ? <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-500">无权限</span> : null}
+          </div>
+          <p className="mt-2 text-sm leading-6 text-slate-600">{entry.description}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {enabled ? (
+              <Link href={entry.href ?? "#"} className="inline-flex min-h-9 items-center justify-center rounded-xl bg-slate-950 px-3 py-2 text-xs font-black text-white hover:bg-slate-800">
+                进入
+              </Link>
+            ) : (
+              <span className="inline-flex min-h-9 items-center justify-center rounded-xl bg-slate-100 px-3 py-2 text-xs font-black text-slate-500">
+                {ready ? "需要权限" : "后续补齐"}
+              </span>
+            )}
+            <span className="inline-flex min-h-9 items-center rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">
+              {entry.permissionKeys.join(" / ")}
+            </span>
+          </div>
+        </div>
       </div>
-    </div>
+    </article>
   );
 }
