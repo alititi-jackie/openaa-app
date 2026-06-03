@@ -1,7 +1,21 @@
 import "server-only";
 
 import type { User } from "@supabase/supabase-js";
+import { normalizeNickname } from "@/features/auth/nicknameValidation";
 import { createSupabaseServerClient } from "./server";
+
+function metadataString(value: unknown) {
+  return typeof value === "string" ? normalizeNickname(value) : "";
+}
+
+function nicknameFromUser(user: User) {
+  const metadataNickname = metadataString(user.user_metadata?.nickname);
+  const metadataName = metadataString(user.user_metadata?.name);
+  const metadataFullName = metadataString(user.user_metadata?.full_name);
+  const emailPrefix = normalizeNickname(user.email?.split("@")[0] ?? "");
+
+  return metadataNickname || metadataName || metadataFullName || emailPrefix || null;
+}
 
 export async function ensureProfileForUser(user: User) {
   const supabase = await createSupabaseServerClient();
@@ -11,12 +25,7 @@ export async function ensureProfileForUser(user: User) {
   }
 
   const email = user.email ?? null;
-  const nickname =
-    typeof user.user_metadata?.nickname === "string"
-      ? user.user_metadata.nickname
-      : typeof user.user_metadata?.name === "string"
-        ? user.user_metadata.name
-        : null;
+  const nickname = nicknameFromUser(user);
   const avatarUrl = typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : null;
   const consentVersion =
     typeof user.user_metadata?.consent_version === "string" ? user.user_metadata.consent_version : null;
@@ -36,6 +45,7 @@ export async function ensureProfileForUser(user: User) {
       .from("profiles")
       .update({
         email,
+        nickname: existingProfile.nickname || nickname,
         email_verified: Boolean(user.email_confirmed_at),
         last_login_at: new Date().toISOString(),
         last_active_at: new Date().toISOString(),
