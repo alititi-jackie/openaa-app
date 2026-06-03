@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { defaultHomeSections, defaultLatestTicker, defaultTopQuickLinks } from "./defaults";
+import { fallbackLatestPostSections } from "@/features/home/fallbacks";
 import type { AdminHomeActionState } from "./types";
 
 type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
@@ -130,6 +131,56 @@ export async function updateHomeSection(_state: AdminHomeActionState, formData: 
   if (!(await auditLog(context, "update_home_section", "home_sections", key, payload))) return auditFailure();
   revalidateAdminHome();
   return ok(`模块「${title}」已保存。`);
+}
+
+export async function updateLatestPostsSection(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
+  const context = await getAdminActionContext("manage_home_sections");
+  if (!context.ok) return fail(context.message);
+
+  const sectionTitle = readText(formData, "section_title") || "最新发布";
+  const sectionDescription = readText(formData, "section_description") || null;
+  const sectionSortOrder = readInteger(formData, "section_sort_order", "最新发布模块排序");
+  if (!sectionSortOrder.ok) return fail(sectionSortOrder.message);
+
+  const sections = [];
+  for (const fallback of fallbackLatestPostSections) {
+    const limit = readIntegerInRange(formData, `limit_count_${fallback.key}`, `${fallback.title}显示数量`, 1, 30);
+    const sortOrder = readInteger(formData, `sort_order_${fallback.key}`, `${fallback.title}排序`);
+    if (!limit.ok) return fail(limit.message);
+    if (!sortOrder.ok) return fail(sortOrder.message);
+
+    sections.push({
+      key: fallback.key,
+      title: readText(formData, `title_${fallback.key}`) || fallback.title,
+      nav_label: readText(formData, `nav_label_${fallback.key}`) || fallback.navLabel,
+      post_type: fallback.postType,
+      route: fallback.route,
+      is_visible: formData.get(`is_visible_${fallback.key}`) === "on",
+      sort_order: sortOrder.value,
+      limit_count: limit.value,
+      layout: fallback.layout,
+      description: readText(formData, `description_${fallback.key}`) || fallback.description,
+      empty_message: readText(formData, `empty_message_${fallback.key}`) || fallback.emptyMessage,
+    });
+  }
+
+  const payload = {
+    key: "latest_posts",
+    title: sectionTitle,
+    description: sectionDescription,
+    module: "home",
+    config: { sections },
+    is_visible: formData.get("section_is_visible") === "on",
+    sort_order: sectionSortOrder.value,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error } = await context.supabase.from("home_sections").upsert(payload, { onConflict: "key" });
+  if (error) return fail("最新发布模块保存失败，请检查字段后重试。");
+
+  if (!(await auditLog(context, "update_latest_posts_section", "home_sections", "latest_posts", payload))) return auditFailure();
+  revalidateAdminHome();
+  return ok("最新发布模块已保存。");
 }
 
 export async function upsertTopQuickLink(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {

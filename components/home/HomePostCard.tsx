@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin } from "lucide-react";
+import { Clock, MapPin } from "lucide-react";
 import type { PostListItem } from "@/components/posts/PostList";
 
 export function HomePostCard({ post, variant = "grid" }: { post: PostListItem; variant?: "grid" | "media" | "news" }) {
@@ -21,16 +21,24 @@ export function HomePostCard({ post, variant = "grid" }: { post: PostListItem; v
   }
 
   if (variant === "news") {
+    const rank = Number(post.meta);
     return (
       <Link
         href={post.href}
-        className="flex gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-[0_1px_10px_rgba(15,23,42,0.06)] transition active:scale-[0.99]"
+        className="flex gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_2px_12px_rgba(15,23,42,0.06)] transition active:scale-[0.99]"
       >
-        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-black text-blue-700">
+        <span className={`mt-0.5 w-6 shrink-0 text-center text-xs font-black tabular-nums ${rankClassName(rank)}`}>
           {post.meta}
         </span>
         <span className="min-w-0 flex-1">
-          {post.tag ? <span className="text-[11px] font-bold text-blue-600">{post.tag}</span> : null}
+          <span className="mb-1.5 flex flex-wrap items-center gap-2">
+            {post.tag ? <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-600">{post.tag}</span> : null}
+            {post.fields?.[0]?.value ? <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">{post.fields[0].value}</span> : null}
+            <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-slate-400">
+              <Clock size={10} aria-hidden="true" />
+              {post.location || "最新"}
+            </span>
+          </span>
           <Title post={post} />
           <span className="mt-1 block line-clamp-2 text-xs leading-5 text-slate-500">{post.description}</span>
         </span>
@@ -41,7 +49,7 @@ export function HomePostCard({ post, variant = "grid" }: { post: PostListItem; v
   return (
     <Link
       href={post.href}
-      className="flex min-h-[104px] flex-col rounded-2xl border border-slate-100 bg-white p-3 shadow-[0_1px_10px_rgba(15,23,42,0.06)] transition active:scale-[0.98]"
+      className="flex min-h-[96px] flex-col rounded-xl border border-slate-100 bg-white px-3 py-2.5 shadow-[0_1px_6px_rgba(15,23,42,0.06)] transition active:scale-[0.98]"
     >
       <Title post={post} />
       <MetaLine post={post} />
@@ -75,6 +83,13 @@ function MetaLine({ post }: { post: PostListItem }) {
       )}
     </span>
   );
+}
+
+function rankClassName(rank: number) {
+  if (rank === 1) return "text-rose-500";
+  if (rank === 2) return "text-orange-400";
+  if (rank === 3) return "text-amber-400";
+  return "text-slate-300";
 }
 
 function FieldLine({ post }: { post: PostListItem }) {

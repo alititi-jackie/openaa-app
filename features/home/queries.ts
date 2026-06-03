@@ -341,7 +341,9 @@ function mapNewsToHomePost(post: Awaited<ReturnType<typeof getLatestNews>>["data
     href: post.href,
     meta: formatNewsDate(post.publishedAt),
     tag: post.categoryName,
+    location: formatNewsDate(post.publishedAt),
     imageUrl: post.coverImageUrl ?? undefined,
+    fields: post.isPinned ? [{ label: "pinned", value: "置顶" }] : undefined,
   };
 }
 

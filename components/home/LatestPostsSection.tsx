@@ -1,6 +1,6 @@
 import type { PostListItem } from "@/components/posts/PostList";
 import { HomeSectionShell } from "./HomeSectionShell";
-import { LatestPostsTabs } from "./LatestPostsTabs";
+import { LatestPostsList } from "./LatestPostsTabs";
 
 export type LatestPostGroup = {
   key: string;
@@ -23,7 +23,7 @@ export function LatestPostsSection({ groups, isVisible = true }: { groups: Lates
 
   return (
     <HomeSectionShell title="最新发布">
-      <LatestPostsTabs groups={visibleGroups} />
+      <LatestPostsList groups={visibleGroups} />
     </HomeSectionShell>
   );
 }
