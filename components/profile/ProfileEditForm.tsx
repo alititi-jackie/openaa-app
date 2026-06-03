@@ -113,7 +113,7 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
       <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
         <h2 className="text-lg font-black text-slate-950">基础资料</h2>
         <div className="mt-4 space-y-4">
-          <Field label="昵称" value={profile.nickname} onChange={(value) => updateProfileField("nickname", value)} />
+          <Field label="用户名" value={profile.nickname} onChange={(value) => updateProfileField("nickname", value)} />
           <Field label="手机" value={profile.phone} onChange={(value) => updateProfileField("phone", value)} />
           <Field label="微信" value={profile.wechat_id} onChange={(value) => updateProfileField("wechat_id", value)} />
           <Field label="WhatsApp" value={profile.whatsapp} onChange={(value) => updateProfileField("whatsapp", value)} />

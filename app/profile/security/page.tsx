@@ -8,8 +8,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 export const metadata = buildPageMetadata({
-  title: "账号安全",
-  description: "管理 OpenAA 账号密码。",
+  title: "修改密码",
+  description: "修改 OpenAA 账号密码。",
   path: "/profile/security",
   noIndex: true,
 });
@@ -20,8 +20,8 @@ export default async function ProfileSecurityPage() {
   if (!supabase) {
     return (
       <PageShell
-        title="账号安全"
-        description="Supabase 环境变量尚未配置。配置新 Supabase 后即可修改或设置邮箱登录密码。"
+        title="修改密码"
+        description="Supabase 环境变量尚未配置。配置新 Supabase 后即可修改密码。"
         eyebrow="Profile"
       />
     );
@@ -41,7 +41,7 @@ export default async function ProfileSecurityPage() {
     console.error("[profile/security] ensureProfileForUser failed", error);
     return (
       <PageShell
-        title="账号安全"
+        title="修改密码"
         description="登录成功，资料正在补全中。请稍后刷新再试。"
         eyebrow="Profile"
       />
@@ -49,8 +49,8 @@ export default async function ProfileSecurityPage() {
   }
 
   return (
-    <PageShell title="账号安全" description="修改或设置你的 OpenAA 邮箱登录密码。" eyebrow="Profile">
-      <ProfileSecurityForm />
+    <PageShell title="修改密码" description="请输入原密码和新密码。修改成功后，请使用新密码重新登录。" eyebrow="Profile">
+      <ProfileSecurityForm email={user.email ?? null} />
     </PageShell>
   );
 }
