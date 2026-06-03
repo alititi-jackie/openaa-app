@@ -19,15 +19,7 @@ function loginErrorMessage(message: string) {
   const normalized = message.toLowerCase();
 
   if (normalized.includes("email not confirmed") || normalized.includes("not confirmed")) {
-    return "如果登录时仍提示未验证，请稍等几秒后刷新再试。";
-  }
-
-  if (normalized.includes("invalid login credentials") || normalized.includes("invalid credentials")) {
-    return "邮箱或密码错误，请重试";
-  }
-
-  if (normalized.includes("email") && normalized.includes("disabled")) {
-    return "邮箱密码登录暂未开启，请联系平台确认 Supabase Auth 设置。";
+    return "邮箱尚未验证，请先到邮箱点击验证链接后再登录。";
   }
 
   return "邮箱或密码错误，请重试";
@@ -145,7 +137,7 @@ export function LoginForm() {
       const profileResult = await ensureCurrentUserProfile();
 
       if (!profileResult.ok) {
-        setMessage("登录已成功，但资料初始化失败，请刷新后再试。");
+        setMessage("登录成功，但资料初始化失败，请刷新后再试。");
       }
 
       router.replace(returnTo);
@@ -172,11 +164,11 @@ export function LoginForm() {
       });
 
       if (error) {
-        setMessage("Google 登录启动失败，请稍后再试。");
+        setMessage("Google 登录失败，请重试");
         setIsGoogleSubmitting(false);
       }
     } catch {
-      setMessage(isConfigured ? "Google 登录启动失败，请稍后再试。" : "Supabase 环境变量尚未配置，暂时无法启动 Google 登录。");
+      setMessage(isConfigured ? "Google 登录失败，请重试" : "Supabase 环境变量尚未配置，暂时无法启动 Google 登录。");
       setIsGoogleSubmitting(false);
     }
   }
@@ -204,7 +196,7 @@ export function LoginForm() {
           className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 px-4 py-2.5 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <GoogleIcon />
-          {isGoogleSubmitting ? "正在跳转..." : "使用 Google 登录"}
+          {isGoogleSubmitting ? "登录中..." : "使用 Google 登录"}
         </button>
       ) : null}
 

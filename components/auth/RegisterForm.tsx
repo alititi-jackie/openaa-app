@@ -10,33 +10,15 @@ import { appUrl } from "@/lib/seo/siteConfig";
 import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
 
 const consentVersion = "2026-05-31";
-const signupSuccessMessage = "注册成功，验证邮件已发送。请到邮箱点击验证链接后再登录；如果没收到，请检查垃圾邮件。";
-
-function registerErrorMessage(message: string) {
-  const normalized = message.toLowerCase();
-
-  if (normalized.includes("already registered") || normalized.includes("already exists")) {
-    return "这个邮箱可能已经注册过，请直接登录或使用忘记密码。";
-  }
-
-  if (normalized.includes("password")) {
-    return "注册失败，请确认密码至少 8 位。";
-  }
-
-  if (normalized.includes("email")) {
-    return "注册失败，请确认邮箱格式正确后再试。";
-  }
-
-  return "注册失败，请稍后再试。";
-}
 
 function registerFallbackMessage(isConfigured: boolean) {
-  return isConfigured ? "注册失败，请稍后再试。" : "Supabase 环境变量尚未配置，暂时无法注册。";
+  return isConfigured ? "注册失败，请重试" : "Supabase 环境变量尚未配置，暂时无法注册。";
 }
 
 export function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [nickname, setNickname] = useState("");
   const [accepted, setAccepted] = useState(false);
   const [message, setMessage] = useState("");
@@ -53,6 +35,16 @@ export function RegisterForm() {
 
     if (!nicknameResult.ok) {
       setMessage(nicknameResult.message);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setMessage("两次密码不一致");
+      return;
+    }
+
+    if (password.length < 6) {
+      setMessage("密码至少需要6个字符");
       return;
     }
 
@@ -80,14 +72,14 @@ export function RegisterForm() {
       });
 
       if (error) {
-        setMessage(registerErrorMessage(error.message));
+        setMessage(error.message || "注册失败，请重试");
         return;
       }
 
       setPassword("");
+      setConfirmPassword("");
       setAccepted(false);
       setIsSuccess(true);
-      setMessage(signupSuccessMessage);
     } catch {
       setMessage(registerFallbackMessage(isConfigured));
     } finally {
@@ -95,13 +87,25 @@ export function RegisterForm() {
     }
   }
 
+  if (isSuccess) {
+    return (
+      <AuthCard title="注册成功！" description="请打开您的邮箱完成确认。" footer={<AuthLink href="/login">返回登录页面</AuthLink>}>
+        <div className="space-y-3 text-sm leading-6 text-slate-700">
+          <p>请打开您的邮箱，查收来自 Supabase Auth（noreply@mail.app.supabase.io）的确认邮件，并点击邮件中的 Confirm your mail / 确认邮箱 链接。</p>
+          <p>邮箱确认完成后，请回到您刚才注册 OpenAA 的页面重新登录；也可以在确认成功页面点击“前往登录”按钮登录。</p>
+          <p className="text-slate-500">如果没有收到确认邮件，请检查垃圾邮件箱，或稍后重新注册/重试。</p>
+        </div>
+      </AuthCard>
+    );
+  }
+
   return (
     <AuthCard
       title="注册 OpenAA"
-      description="创建账号后可以管理发布、收藏、我的导航和个人资料。"
+      description=""
       footer={
         <span>
-          已有账号？<AuthLink href="/login">去登录</AuthLink>
+          已有账号？ <AuthLink href="/login">立即登录</AuthLink>
         </span>
       }
     >
@@ -112,23 +116,27 @@ export function RegisterForm() {
       ) : null}
 
       <form className="space-y-4" onSubmit={handleRegister}>
+        {message ? <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{message}</div> : null}
+
         <label className="block">
-          <span className="text-sm font-bold text-slate-800">昵称</span>
+          <span className="text-sm font-bold text-slate-800">用户名</span>
           <input
             type="text"
             required
             minLength={4}
+            placeholder="请输入用户名"
             value={nickname}
             onChange={(event) => setNickname(event.target.value)}
             className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
           />
         </label>
         <label className="block">
-          <span className="text-sm font-bold text-slate-800">邮箱</span>
+          <span className="text-sm font-bold text-slate-800">邮箱地址</span>
           <input
             type="email"
             required
             autoComplete="email"
+            placeholder="your@email.com"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
@@ -139,10 +147,24 @@ export function RegisterForm() {
           <input
             type="password"
             required
-            minLength={8}
+            minLength={6}
             autoComplete="new-password"
+            placeholder="至少6个字符"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
+            className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+          />
+        </label>
+        <label className="block">
+          <span className="text-sm font-bold text-slate-800">确认密码</span>
+          <input
+            type="password"
+            required
+            minLength={6}
+            autoComplete="new-password"
+            placeholder="再次输入密码"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
             className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
           />
         </label>
@@ -164,14 +186,9 @@ export function RegisterForm() {
           className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-300"
         >
           <UserPlus size={18} aria-hidden="true" />
-          {isSubmitting ? "注册中..." : "注册"}
+          {isSubmitting ? "注册中..." : "创建账号"}
         </button>
       </form>
-      {message ? (
-        <p className={`mt-4 whitespace-pre-line rounded-xl p-3 text-sm leading-6 ${isSuccess ? "bg-emerald-50 text-emerald-800" : "bg-slate-100 text-slate-700"}`}>
-          {message}
-        </p>
-      ) : null}
     </AuthCard>
   );
 }

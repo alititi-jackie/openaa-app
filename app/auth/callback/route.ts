@@ -54,6 +54,8 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const callbackType = requestUrl.searchParams.get("type");
+  const callbackError = requestUrl.searchParams.get("error");
+  const callbackErrorCode = requestUrl.searchParams.get("error_code");
   const errorDescription = requestUrl.searchParams.get("error_description");
   const returnTo = safeReturnTo(requestUrl.searchParams.get("returnTo"), requestUrl.origin);
   const isRecoveryCallback = callbackType === "recovery" || returnTo.startsWith("/reset-password");
@@ -61,10 +63,23 @@ export async function GET(request: Request) {
   const loginErrorParams = { error: loginErrorMessage, source: "oauth" };
 
   if (errorDescription) {
+    console.error("[auth/callback] provider returned error", {
+      error: callbackError,
+      errorCode: callbackErrorCode,
+      errorDescription,
+      callbackType,
+      returnTo,
+    });
     return redirectUrl(requestUrl, "/login", isRecoveryCallback ? recoveryErrorParams : loginErrorParams);
   }
 
   if (!code) {
+    console.error("[auth/callback] missing code", {
+      error: callbackError,
+      errorCode: callbackErrorCode,
+      callbackType,
+      returnTo,
+    });
     return redirectUrl(requestUrl, "/login", isRecoveryCallback ? recoveryErrorParams : loginErrorParams);
   }
 
