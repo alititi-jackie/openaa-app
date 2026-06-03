@@ -5,9 +5,11 @@ import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
-import { createDefaultHomeConfig, removeHomeBannerImage, updateHomeSection, updateLatestTickerSettings, upsertHomeBanner, upsertLatestTicker } from "@/features/admin-home/actions";
+import { createDefaultHomeConfig, removeHomeBannerImage, updateHomeSection, updateLatestPostsSection, updateLatestTickerSettings, upsertHomeBanner, upsertLatestTicker } from "@/features/admin-home/actions";
 import { getAdminHomeConfigData } from "@/features/admin-home/queries";
 import type { AdminHomeBannerRow, AdminHomeSectionRow, AdminTickerGlobalSettingsRow, AdminTickerRow, AdminTickerSectionSettingsRow } from "@/features/admin-home/types";
+import { fallbackLatestPostSections } from "@/features/home/fallbacks";
+import { mapLatestPostSections } from "@/features/home/mappers";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
@@ -58,7 +60,13 @@ export default function AdminHomePage({ searchParams }: AdminHomePageProps) {
             {data.permissions.manageHomeSections ? (
               <AdminCard title="首页模块" description="控制 quick_grid、utility_tools、latest_posts、seo_content 等模块的显隐、标题、排序和 config。">
                 <div className="grid gap-4">
-                  {data.homeSections.length > 0 ? data.homeSections.map((section) => <HomeSectionForm key={section.key} section={section} />) : <p className="text-sm text-slate-500">暂无 home_sections 配置，可先创建默认配置。</p>}
+                  {data.homeSections.length > 0 ? (
+                    data.homeSections.map((section) =>
+                      section.key === "latest_posts" ? <LatestPostsSectionForm key={section.key} section={section} /> : <HomeSectionForm key={section.key} section={section} />,
+                    )
+                  ) : (
+                    <p className="text-sm text-slate-500">暂无 home_sections 配置，可先创建默认配置。</p>
+                  )}
                 </div>
               </AdminCard>
             ) : null}
@@ -90,6 +98,52 @@ export default function AdminHomePage({ searchParams }: AdminHomePageProps) {
         );
       }}
     </AdminAuthGate>
+  );
+}
+
+function LatestPostsSectionForm({ section }: { section: AdminHomeSectionRow }) {
+  const currentSections = mapLatestPostSections(section);
+  const formSections = fallbackLatestPostSections.map((fallback) => currentSections.find((item) => item.key === fallback.key || item.postType === fallback.postType) ?? fallback);
+
+  return (
+    <div className="rounded-2xl border border-blue-100 bg-blue-50 p-3">
+      <HomeSectionSummary section={section} />
+      <AdminActionForm action={updateLatestPostsSection} submitLabel="保存最新发布模块">
+        <div className="grid gap-3 md:grid-cols-2">
+          <AdminTextInput label="模块标题" name="section_title" defaultValue={section.title} required />
+          <AdminTextInput label="模块说明" name="section_description" defaultValue={section.description} />
+          <AdminTextInput label="模块排序" name="section_sort_order" type="number" defaultValue={section.sort_order} />
+          <div className="flex items-end">
+            <AdminCheckbox label="显示最新发布模块" name="section_is_visible" defaultChecked={section.is_visible} />
+          </div>
+        </div>
+
+        <div className="grid gap-3">
+          {formSections.map((item) => (
+            <div key={item.key} className="rounded-xl border border-blue-100 bg-white p-3">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-slate-950 px-2.5 py-1 text-xs font-black text-white">{item.key}</span>
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">{item.route}</span>
+                <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">显示 {item.limitCount} 条</span>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <AdminTextInput label="模块标题" name={`title_${item.key}`} defaultValue={item.title} required />
+                <AdminTextInput label="顶部入口文字" name={`nav_label_${item.key}`} defaultValue={item.navLabel ?? item.title} required />
+                <AdminTextInput label="排序" name={`sort_order_${item.key}`} type="number" defaultValue={item.sortOrder} />
+                <AdminTextInput label="显示数量" name={`limit_count_${item.key}`} type="number" defaultValue={item.limitCount} />
+                <AdminTextInput label="说明" name={`description_${item.key}`} defaultValue={item.description} />
+                <AdminTextInput label="无数据提示" name={`empty_message_${item.key}`} defaultValue={item.emptyMessage ?? "暂无最新信息"} />
+              </div>
+              <AdminCheckbox label="显示这个最新发布分区" name={`is_visible_${item.key}`} defaultChecked={item.isVisible !== false} />
+            </div>
+          ))}
+        </div>
+
+        <p className="rounded-xl bg-white px-3 py-2 text-xs font-semibold leading-5 text-slate-500">
+          最新发布按旧站方式纵向展示招聘、房屋、二手、本地服务和新闻；二手在新站使用 /marketplace，不恢复 /secondhand。
+        </p>
+      </AdminActionForm>
+    </div>
   );
 }
 

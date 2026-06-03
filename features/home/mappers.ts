@@ -205,7 +205,7 @@ export function mapLatestPostSections(section?: HomeSectionRecord): HomeLatestPo
         route: normalizeRoute(asString(record.route, fallback.route)),
         isVisible: asBoolean(record.is_visible, asBoolean(record.isVisible, true)),
         sortOrder: asNumber(record.sort_order, index),
-        limitCount: clamp(asNumber(record.limit_count, fallback.limitCount), 1, 12),
+        limitCount: clamp(asNumber(record.limit_count, fallback.limitCount), 1, 30),
         layout: normalizeLayout(record.layout, fallback.layout),
         description: asString(record.description, fallback.description),
         emptyMessage: asString(record.emptyMessage, asString(record.empty_message, fallback.emptyMessage)),
