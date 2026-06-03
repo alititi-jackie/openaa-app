@@ -20,13 +20,13 @@ export function ForgotPasswordForm() {
     try {
       const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: appUrl("/auth/callback?returnTo=/profile/security"),
+        redirectTo: appUrl("/auth/callback?returnTo=/reset-password"),
       });
 
       setMessage(
         error
           ? "重置邮件发送失败，请稍后再试。"
-          : "如果该邮箱已注册，我们已发送密码重置邮件。请打开邮箱查看来自 Supabase Auth（noreply@mail.app.supabase.io）的邮件，并按邮件提示重置密码。\n如果没有收到邮件，请检查垃圾邮件箱，或稍后重试。",
+          : "如果该邮箱已注册，我们已发送密码重置邮件。请打开邮箱点击链接设置新密码；如果没收到，请检查垃圾邮件。",
       );
     } catch {
       setMessage(isConfigured ? "重置邮件发送失败，请稍后再试。" : "Supabase 环境变量尚未配置，暂时无法发送重置邮件。");
@@ -43,7 +43,7 @@ export function ForgotPasswordForm() {
     >
       {!isConfigured ? (
         <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-800">
-          Supabase 环境变量尚未配置。页面可以构建和预览，真实邮件会在配置新 Supabase 后启用。
+          Supabase 环境变量尚未配置。页面可以构建和预览，真实邮件会在配置 Supabase 后启用。
         </p>
       ) : null}
       <form className="space-y-4" onSubmit={handleReset}>
@@ -60,7 +60,7 @@ export function ForgotPasswordForm() {
         </label>
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={!isConfigured || isSubmitting}
           className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-300"
         >
           <KeyRound size={18} aria-hidden="true" />

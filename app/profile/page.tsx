@@ -30,7 +30,17 @@ export default async function ProfilePage() {
   const {
     data: { user },
   } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
-  const profile = user ? ((await ensureProfileForUser(user)) as Profile) : null;
+  let profile: Profile | null = null;
+  let profileWarning = false;
+
+  if (user) {
+    try {
+      profile = (await ensureProfileForUser(user)) as Profile;
+    } catch (error) {
+      console.error("[profile] ensureProfileForUser failed", error);
+      profileWarning = true;
+    }
+  }
 
   return (
     <div className="-mx-4 -mt-4 min-h-[calc(100dvh-8rem)] bg-zinc-100 px-4 pb-24 pt-6">
@@ -39,6 +49,12 @@ export default async function ProfilePage() {
           <h1 className="text-[18px] font-black tracking-tight text-zinc-900">OpenAA 用户中心</h1>
           <p className="mt-1 text-[12px] text-zinc-500">管理我的信息与发布入口</p>
         </div>
+
+        {profileWarning ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
+            登录成功，资料正在补全中。你可以先继续使用个人中心，稍后刷新再试。
+          </div>
+        ) : null}
 
         {profile ? <ProfileHeader profile={profile} email={user?.email ?? ""} /> : <GuestHeader />}
 

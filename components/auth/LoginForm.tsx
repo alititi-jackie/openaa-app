@@ -20,32 +20,34 @@ function loginErrorMessage(message: string) {
   const normalized = message.toLowerCase();
 
   if (normalized.includes("email not confirmed") || normalized.includes("not confirmed")) {
-    return "如果登录时仍提示未验证，请稍等几秒后刷新再试。";
+    return "请先到邮箱点击验证链接后再登录。";
   }
 
   if (normalized.includes("invalid login credentials") || normalized.includes("invalid credentials")) {
-    return "邮箱或密码错误，请重试";
+    return "邮箱或密码不正确。";
   }
 
   if (normalized.includes("email") && normalized.includes("disabled")) {
-    return "邮箱密码登录暂未开启，请联系平台确认 Supabase Auth 设置。";
+    return "邮箱密码登录暂未开启，请联系平台确认登录设置。";
   }
 
-  return "邮箱或密码错误，请重试";
+  return "登录失败，请稍后再试。";
 }
 
 function loginFallbackMessage(isConfigured: boolean) {
-  return isConfigured ? "邮箱或密码错误，请重试" : "Supabase 环境变量尚未配置，暂时无法登录。";
+  return isConfigured ? "登录失败，请稍后再试。" : "Supabase 环境变量尚未配置，暂时无法登录。";
 }
 
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = safeReturnTo(searchParams.get("returnTo"));
+  const initialError = searchParams.get("error") ?? "";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(initialError);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const isConfigured = isSupabaseBrowserConfigured();
   const callbackUrl = useMemo(() => appUrl(`/auth/callback?returnTo=${encodeURIComponent(returnTo)}`), [returnTo]);
 
@@ -69,8 +71,7 @@ export function LoginForm() {
       const profileResult = await ensureCurrentUserProfile();
 
       if (!profileResult.ok) {
-        setMessage("登录已成功，但资料初始化失败，请刷新后再试。");
-        return;
+        setMessage("登录已成功，资料稍后补全。正在进入个人中心。");
       }
 
       router.replace(returnTo);
@@ -84,6 +85,7 @@ export function LoginForm() {
 
   async function handleGoogleLogin() {
     setMessage("");
+    setIsGoogleSubmitting(true);
 
     try {
       const supabase = createSupabaseBrowserClient();
@@ -96,9 +98,11 @@ export function LoginForm() {
 
       if (error) {
         setMessage("Google 登录启动失败，请稍后再试。");
+        setIsGoogleSubmitting(false);
       }
     } catch {
       setMessage(isConfigured ? "Google 登录启动失败，请稍后再试。" : "Supabase 环境变量尚未配置，暂时无法启动 Google 登录。");
+      setIsGoogleSubmitting(false);
     }
   }
 
@@ -107,13 +111,13 @@ export function LoginForm() {
       <h1 className="text-center text-2xl font-bold text-gray-900">登录 OpenAA</h1>
 
       <div className="mb-6 mt-3 text-center">
-        <p className="text-[13.5px] leading-relaxed text-zinc-500">登录后即可免费发布二手商品、招聘信息，管理您的内容并享受更多OpenAA服务。</p>
-        <p className="mt-1 text-[12px] text-zinc-400">Login to post listings, jobs and manage your OpenAA account.</p>
+        <p className="text-[13.5px] leading-relaxed text-zinc-500">登录后可发布信息、管理内容和使用个人中心。</p>
+        <p className="mt-1 text-[12px] text-zinc-400">Login to post listings and manage your OpenAA account.</p>
       </div>
 
       {!isConfigured ? (
         <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-800">
-          Supabase 环境变量尚未配置。页面可以构建和预览，真实登录会在配置新 Supabase 后启用。
+          Supabase 环境变量尚未配置。页面可以构建和预览，真实登录会在配置 Supabase 后启用。
         </p>
       ) : null}
 
@@ -121,11 +125,11 @@ export function LoginForm() {
         <button
           type="button"
           onClick={handleGoogleLogin}
-          disabled={!isConfigured}
-          className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 px-4 py-2.5 transition hover:bg-gray-50 disabled:opacity-50"
+          disabled={!isConfigured || isGoogleSubmitting || isSubmitting}
+          className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 px-4 py-2.5 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <GoogleIcon />
-          使用 Google 登录
+          {isGoogleSubmitting ? "正在跳转..." : "使用 Google 登录"}
         </button>
       ) : null}
 
@@ -138,7 +142,7 @@ export function LoginForm() {
       ) : null}
 
       <form className="space-y-4" onSubmit={handleEmailLogin}>
-        {message ? <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{message}</div> : null}
+        {message ? <div className="rounded-lg bg-red-50 p-3 text-sm leading-6 text-red-700">{message}</div> : null}
 
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-gray-700">邮箱地址</span>
@@ -166,8 +170,8 @@ export function LoginForm() {
         </label>
         <button
           type="submit"
-          disabled={!featureFlags.auth_email || isSubmitting}
-          className="w-full rounded-lg bg-[#1976d2] py-2.5 font-medium text-white transition hover:bg-[#1565c0] disabled:opacity-50"
+          disabled={!featureFlags.auth_email || !isConfigured || isSubmitting || isGoogleSubmitting}
+          className="w-full rounded-lg bg-[#1976d2] py-2.5 font-medium text-white transition hover:bg-[#1565c0] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSubmitting ? "登录中..." : "登录"}
         </button>

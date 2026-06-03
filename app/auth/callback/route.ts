@@ -1,0 +1,99 @@
+import { NextResponse } from "next/server";
+import { ensureProfileForUser } from "@/lib/supabase/profile";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+export const dynamic = "force-dynamic";
+
+const fallbackReturnTo = "/profile";
+const allowedReturnToPrefixes = [
+  "/profile",
+  "/reset-password",
+  "/jobs",
+  "/housing",
+  "/marketplace",
+  "/services",
+  "/navigation/my",
+  "/dmv",
+  "/admin",
+];
+
+function redirectUrl(requestUrl: URL, path: string, params?: Record<string, string>) {
+  const url = new URL(path, requestUrl.origin);
+
+  for (const [key, value] of Object.entries(params ?? {})) {
+    url.searchParams.set(key, value);
+  }
+
+  return NextResponse.redirect(url);
+}
+
+function safeReturnTo(value: string | null) {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return fallbackReturnTo;
+  }
+
+  try {
+    const parsed = new URL(value, "https://openaa.app");
+
+    if (parsed.origin !== "https://openaa.app") {
+      return fallbackReturnTo;
+    }
+
+    const pathWithSearch = `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    const isAllowed = allowedReturnToPrefixes.some((prefix) => parsed.pathname === prefix || parsed.pathname.startsWith(`${prefix}/`));
+
+    return isAllowed ? pathWithSearch : fallbackReturnTo;
+  } catch {
+    return fallbackReturnTo;
+  }
+}
+
+export async function GET(request: Request) {
+  const requestUrl = new URL(request.url);
+  const code = requestUrl.searchParams.get("code");
+  const errorDescription = requestUrl.searchParams.get("error_description");
+  const returnTo = safeReturnTo(requestUrl.searchParams.get("returnTo"));
+  const loginErrorParams = {
+    error: "验证链接无效或已过期，请重新发送邮件",
+  };
+
+  if (errorDescription) {
+    return redirectUrl(requestUrl, "/login", loginErrorParams);
+  }
+
+  if (!code) {
+    return redirectUrl(requestUrl, "/login", { error: "链接无效或已过期" });
+  }
+
+  const supabase = await createSupabaseServerClient();
+
+  if (!supabase) {
+    return redirectUrl(requestUrl, "/login", { error: "登录服务暂时不可用，请稍后再试" });
+  }
+
+  const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+
+  if (exchangeError) {
+    console.error("[auth/callback] exchangeCodeForSession failed", exchangeError);
+    return redirectUrl(requestUrl, "/login", loginErrorParams);
+  }
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    console.error("[auth/callback] getUser failed", userError);
+    return redirectUrl(requestUrl, "/login", loginErrorParams);
+  }
+
+  try {
+    await ensureProfileForUser(user);
+  } catch (profileError) {
+    console.error("[auth/callback] ensureProfileForUser failed", profileError);
+    return redirectUrl(requestUrl, returnTo, { warning: "资料稍后补全" });
+  }
+
+  return redirectUrl(requestUrl, returnTo);
+}
