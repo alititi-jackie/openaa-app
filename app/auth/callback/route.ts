@@ -54,7 +54,7 @@ export async function GET(request: Request) {
   const errorDescription = requestUrl.searchParams.get("error_description");
   const returnTo = safeReturnTo(requestUrl.searchParams.get("returnTo"));
   const loginErrorParams = {
-    error: "验证链接无效或已过期，请重新发送邮件",
+    error: "重置链接无效或已过期，请重新申请密码重置邮件。",
   };
 
   if (errorDescription) {
@@ -62,7 +62,7 @@ export async function GET(request: Request) {
   }
 
   if (!code) {
-    return redirectUrl(requestUrl, "/login", { error: "链接无效或已过期" });
+    return redirectUrl(requestUrl, "/login", { error: "重置链接无效或已过期，请重新申请密码重置邮件。" });
   }
 
   const supabase = await createSupabaseServerClient();
