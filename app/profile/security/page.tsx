@@ -35,7 +35,18 @@ export default async function ProfileSecurityPage() {
     redirect("/login?returnTo=/profile/security");
   }
 
-  await ensureProfileForUser(user);
+  try {
+    await ensureProfileForUser(user);
+  } catch (error) {
+    console.error("[profile/security] ensureProfileForUser failed", error);
+    return (
+      <PageShell
+        title="账号安全"
+        description="登录成功，资料正在补全中。请稍后刷新再试。"
+        eyebrow="Profile"
+      />
+    );
+  }
 
   return (
     <PageShell title="账号安全" description="修改或设置你的 OpenAA 邮箱登录密码。" eyebrow="Profile">

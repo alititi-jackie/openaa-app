@@ -4,14 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { UserPlus } from "lucide-react";
 import { AuthCard, AuthLink } from "@/components/auth/AuthCard";
-import { ensureCurrentUserProfile } from "@/features/auth/actions";
 import { featureFlags } from "@/lib/config/featureFlags";
 import { appUrl } from "@/lib/seo/siteConfig";
 import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
 
 const consentVersion = "2026-05-31";
-const signupSuccessMessage =
-  "注册成功！\n请打开您的邮箱，查收来自 Supabase Auth（noreply@mail.app.supabase.io）的确认邮件，并点击邮件中的 Confirm your mail / 确认邮箱 链接。\n邮箱确认完成后，请回到您刚才注册 OpenAA 的页面重新登录；也可以在确认成功页面点击“前往登录”按钮登录。\n如果没有收到确认邮件，请检查垃圾邮件箱，或稍后重新注册/重试。";
+const signupSuccessMessage = "注册成功，验证邮件已发送。请到邮箱点击验证链接后再登录；如果没收到，请检查垃圾邮件。";
 
 function registerErrorMessage(message: string) {
   const normalized = message.toLowerCase();
@@ -59,7 +57,7 @@ export function RegisterForm() {
 
     try {
       const supabase = createSupabaseBrowserClient();
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
@@ -78,19 +76,8 @@ export function RegisterForm() {
         return;
       }
 
-      if (data.user && data.session) {
-        const profileResult = await ensureCurrentUserProfile();
-
-        if (!profileResult.ok) {
-          setMessage("注册已成功，但资料初始化失败。请稍后登录后进入“我的”页面。");
-          return;
-        }
-
-        setIsSuccess(true);
-        setMessage(signupSuccessMessage);
-        return;
-      }
-
+      setPassword("");
+      setAccepted(false);
       setIsSuccess(true);
       setMessage(signupSuccessMessage);
     } catch {
@@ -103,16 +90,16 @@ export function RegisterForm() {
   return (
     <AuthCard
       title="注册 OpenAA"
-      description="创建账号后可以管理发布、收藏、我的导航和个人资料。"
+      description="创建账号后，请先完成邮箱验证，再登录管理发布、收藏和个人资料。"
       footer={
         <span>
-          已有账号？ <AuthLink href="/login">去登录</AuthLink>
+          已有账号？<AuthLink href="/login">去登录</AuthLink>
         </span>
       }
     >
       {!isConfigured ? (
         <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-800">
-          Supabase 环境变量尚未配置。页面可以构建和预览，真实注册会在配置新 Supabase 后启用。
+          Supabase 环境变量尚未配置。页面可以构建和预览，真实注册会在配置 Supabase 后启用。
         </p>
       ) : null}
 
@@ -164,7 +151,7 @@ export function RegisterForm() {
         </label>
         <button
           type="submit"
-          disabled={!featureFlags.auth_email || isSubmitting}
+          disabled={!featureFlags.auth_email || !isConfigured || isSubmitting}
           className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-300"
         >
           <UserPlus size={18} aria-hidden="true" />
