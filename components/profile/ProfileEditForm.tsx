@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Save } from "lucide-react";
+import { validateNickname } from "@/features/auth/nicknameValidation";
 import { featureFlags } from "@/lib/config/featureFlags";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { AccountType, BusinessProfile, Profile } from "@/lib/supabase/types";
@@ -47,13 +48,20 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
     event.preventDefault();
     setMessage("");
     setIsSubmitting(true);
+    const nicknameResult = validateNickname(profile.nickname);
+
+    if (!nicknameResult.ok) {
+      setMessage(nicknameResult.message);
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       const supabase = createSupabaseBrowserClient();
       const { error: profileError } = await supabase
         .from("profiles")
         .update({
-          nickname: profile.nickname || null,
+          nickname: nicknameResult.nickname,
           phone: profile.phone || null,
           wechat_id: profile.wechat_id || null,
           whatsapp: profile.whatsapp || null,

@@ -4,13 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { UserPlus } from "lucide-react";
 import { AuthCard, AuthLink } from "@/components/auth/AuthCard";
+import { validateNickname } from "@/features/auth/nicknameValidation";
 import { featureFlags } from "@/lib/config/featureFlags";
 import { appUrl } from "@/lib/seo/siteConfig";
 import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
 
 const consentVersion = "2026-05-31";
-const signupSuccessMessage =
-  "注册成功！\n请打开您的邮箱，查收来自 Supabase Auth（noreply@mail.app.supabase.io）的确认邮件，并点击邮件中的 Confirm your mail / 确认邮箱 链接。\n邮箱确认完成后，请回到您刚才注册 OpenAA 的页面重新登录；也可以在确认成功页面点击“前往登录”按钮登录。\n如果没有收到确认邮件，请检查垃圾邮件箱，或稍后重新注册/重试。";
+const signupSuccessMessage = "注册成功，验证邮件已发送。请到邮箱点击验证链接后再登录；如果没收到，请检查垃圾邮件。";
 
 function registerErrorMessage(message: string) {
   const normalized = message.toLowerCase();
@@ -49,6 +49,13 @@ export function RegisterForm() {
     setMessage("");
     setIsSuccess(false);
 
+    const nicknameResult = validateNickname(nickname);
+
+    if (!nicknameResult.ok) {
+      setMessage(nicknameResult.message);
+      return;
+    }
+
     if (!accepted) {
       setMessage("请先同意服务条款和隐私政策。");
       return;
@@ -64,7 +71,7 @@ export function RegisterForm() {
         options: {
           emailRedirectTo: appUrl("/auth/callback?returnTo=/profile"),
           data: {
-            nickname: nickname.trim(),
+            nickname: nicknameResult.nickname,
             consent_version: consentVersion,
             accepted_terms: true,
             accepted_privacy: true,
@@ -94,7 +101,7 @@ export function RegisterForm() {
       description="创建账号后可以管理发布、收藏、我的导航和个人资料。"
       footer={
         <span>
-          已有账号？ <AuthLink href="/login">去登录</AuthLink>
+          已有账号？<AuthLink href="/login">去登录</AuthLink>
         </span>
       }
     >
@@ -110,6 +117,7 @@ export function RegisterForm() {
           <input
             type="text"
             required
+            minLength={4}
             value={nickname}
             onChange={(event) => setNickname(event.target.value)}
             className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"

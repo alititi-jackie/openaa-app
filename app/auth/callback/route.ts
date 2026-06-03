@@ -16,6 +16,8 @@ const allowedReturnToPrefixes = [
   "/dmv",
   "/admin",
 ];
+const recoveryErrorMessage = "重置链接无效或已过期，请重新申请密码重置邮件。";
+const loginErrorMessage = "登录失败，请重新尝试。";
 
 function redirectUrl(requestUrl: URL, path: string, params?: Record<string, string>) {
   const url = new URL(path, requestUrl.origin);
@@ -27,15 +29,15 @@ function redirectUrl(requestUrl: URL, path: string, params?: Record<string, stri
   return NextResponse.redirect(url);
 }
 
-function safeReturnTo(value: string | null) {
+function safeReturnTo(value: string | null, requestOrigin: string) {
   if (!value || !value.startsWith("/") || value.startsWith("//")) {
     return fallbackReturnTo;
   }
 
   try {
-    const parsed = new URL(value, "https://openaa.app");
+    const parsed = new URL(value, requestOrigin);
 
-    if (parsed.origin !== "https://openaa.app") {
+    if (parsed.origin !== requestOrigin) {
       return fallbackReturnTo;
     }
 
@@ -51,31 +53,36 @@ function safeReturnTo(value: string | null) {
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
+  const callbackType = requestUrl.searchParams.get("type");
   const errorDescription = requestUrl.searchParams.get("error_description");
-  const returnTo = safeReturnTo(requestUrl.searchParams.get("returnTo"));
-  const loginErrorParams = {
-    error: "重置链接无效或已过期，请重新申请密码重置邮件。",
-  };
+  const returnTo = safeReturnTo(requestUrl.searchParams.get("returnTo"), requestUrl.origin);
+  const isRecoveryCallback = callbackType === "recovery" || returnTo.startsWith("/reset-password");
+  const recoveryErrorParams = { error: recoveryErrorMessage, source: "recovery", type: "recovery" };
+  const loginErrorParams = { error: loginErrorMessage, source: "oauth" };
 
   if (errorDescription) {
-    return redirectUrl(requestUrl, "/login", loginErrorParams);
+    return redirectUrl(requestUrl, "/login", isRecoveryCallback ? recoveryErrorParams : loginErrorParams);
   }
 
   if (!code) {
-    return redirectUrl(requestUrl, "/login", { error: "重置链接无效或已过期，请重新申请密码重置邮件。" });
+    return redirectUrl(requestUrl, "/login", isRecoveryCallback ? recoveryErrorParams : loginErrorParams);
   }
 
   const supabase = await createSupabaseServerClient();
 
   if (!supabase) {
-    return redirectUrl(requestUrl, "/login", { error: "登录服务暂时不可用，请稍后再试" });
+    return redirectUrl(requestUrl, "/login", { error: "登录服务暂时不可用，请稍后再试。" });
   }
 
   const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
   if (exchangeError) {
     console.error("[auth/callback] exchangeCodeForSession failed", exchangeError);
-    return redirectUrl(requestUrl, "/login", loginErrorParams);
+    return redirectUrl(requestUrl, "/login", isRecoveryCallback ? recoveryErrorParams : loginErrorParams);
+  }
+
+  if (isRecoveryCallback) {
+    return redirectUrl(requestUrl, returnTo);
   }
 
   const {

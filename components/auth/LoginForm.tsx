@@ -1,11 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ensureCurrentUserProfile } from "@/features/auth/actions";
 import { featureFlags } from "@/lib/config/featureFlags";
-import { appUrl } from "@/lib/seo/siteConfig";
 import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
 
 function safeReturnTo(value: string | null) {
@@ -38,18 +37,93 @@ function loginFallbackMessage(isConfigured: boolean) {
   return isConfigured ? "邮箱或密码错误，请重试" : "Supabase 环境变量尚未配置，暂时无法登录。";
 }
 
+const recoveryErrorMessage = "重置链接无效或已过期，请重新申请密码重置邮件。";
+const authParamNames = ["error", "error_code", "error_description", "message", "type", "source"];
+
+type AuthParams = Pick<URLSearchParams, "get" | "has">;
+
+function isRecoveryParams(params: AuthParams) {
+  return params.get("type") === "recovery" || params.get("source") === "recovery";
+}
+
+function isLoginParams(params: AuthParams) {
+  return params.get("source") === "login" || params.get("source") === "oauth";
+}
+
+function getInitialLoginMessage(searchParams: AuthParams) {
+  const hasMessage = searchParams.has("error") || searchParams.has("message") || searchParams.has("error_description");
+
+  if (!hasMessage) {
+    return "";
+  }
+
+  if (isRecoveryParams(searchParams)) {
+    return recoveryErrorMessage;
+  }
+
+  return isLoginParams(searchParams) ? searchParams.get("message") || searchParams.get("error") || "" : "";
+}
+
+function readHashLoginMessage() {
+  if (typeof window === "undefined" || !window.location.hash) {
+    return "";
+  }
+
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const hasMessage = hashParams.has("error") || hashParams.has("message") || hashParams.has("error_description");
+
+  return hasMessage && isRecoveryParams(hashParams) ? recoveryErrorMessage : "";
+}
+
+function clearAuthParamsFromUrl() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const url = new URL(window.location.href);
+  let changed = Boolean(url.hash);
+
+  for (const param of authParamNames) {
+    if (url.searchParams.has(param)) {
+      url.searchParams.delete(param);
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    const search = url.searchParams.toString();
+    window.history.replaceState(window.history.state, "", `${url.pathname}${search ? `?${search}` : ""}`);
+  }
+}
+
+function authCallbackUrl(returnTo: string) {
+  const url = new URL("/auth/callback", window.location.origin);
+  url.searchParams.set("returnTo", returnTo);
+  return url.toString();
+}
+
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = safeReturnTo(searchParams.get("returnTo"));
-  const initialError = searchParams.get("error") ?? "";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState(initialError);
+  const [message, setMessage] = useState(() => getInitialLoginMessage(searchParams));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const isConfigured = isSupabaseBrowserConfigured();
-  const callbackUrl = useMemo(() => appUrl(`/auth/callback?returnTo=${encodeURIComponent(returnTo)}`), [returnTo]);
+
+  useEffect(() => {
+    const hashMessage = readHashLoginMessage();
+
+    if (hashMessage) {
+      queueMicrotask(() => setMessage(hashMessage));
+    }
+
+    if (hashMessage || searchParams.has("error") || searchParams.has("message") || searchParams.has("type")) {
+      clearAuthParamsFromUrl();
+    }
+  }, [searchParams]);
 
   async function handleEmailLogin(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -85,6 +159,7 @@ export function LoginForm() {
 
   async function handleGoogleLogin() {
     setMessage("");
+    clearAuthParamsFromUrl();
     setIsGoogleSubmitting(true);
 
     try {
@@ -92,7 +167,7 @@ export function LoginForm() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: callbackUrl,
+          redirectTo: authCallbackUrl(returnTo),
         },
       });
 
