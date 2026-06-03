@@ -4,7 +4,18 @@ const fallbackPrimarySeoUrl = fallbackSiteUrl;
 function normalizeBaseUrl(value: string | undefined, fallback: string) {
   const raw = value?.trim() || fallback;
   const withProtocol = raw.startsWith("http://") || raw.startsWith("https://") ? raw : `https://${raw}`;
-  return withProtocol.replace(/\/+$/, "");
+  const normalized = withProtocol.replace(/\/+$/, "");
+
+  try {
+    const parsed = new URL(normalized);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parsed.toString().replace(/\/+$/, "");
+    }
+  } catch {
+    return fallback;
+  }
+
+  return fallback;
 }
 
 function hostnameFromUrl(value: string) {
