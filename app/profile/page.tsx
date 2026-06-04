@@ -7,10 +7,10 @@ import {
   ChevronDown,
   Home,
   PlusSquare,
-  Share2,
   ShoppingBag,
 } from "lucide-react";
 import { ProfileLogoutButton } from "@/components/profile/ProfileLogoutButton";
+import { ProfileShareButton } from "@/components/profile/ProfileShareButton";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { ensureProfileForUser } from "@/lib/supabase/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -68,13 +68,7 @@ export default async function ProfilePage() {
               icon={<PlusSquare size={18} className="text-blue-600" aria-hidden="true" />}
               tone="blue"
             />
-            <QuickAction
-              href="/"
-              eyebrow="OpenAA"
-              title="分享给朋友"
-              icon={<Share2 size={17} className="text-orange-500" aria-hidden="true" />}
-              tone="orange"
-            />
+            <ProfileShareButton />
           </div>
         </section>
 
