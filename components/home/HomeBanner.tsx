@@ -26,6 +26,8 @@ export function HomeBanner({ item, items }: { item?: HomeBannerItem; items?: Hom
   const startYRef = useRef<number | null>(null);
   const dragLockedRef = useRef<"x" | "y" | null>(null);
   const pauseUntilRef = useRef(0);
+  const resetFrameRef = useRef<number | null>(null);
+  const enableFrameRef = useRef<number | null>(null);
 
   const trackSlides = useMemo(() => {
     if (slides.length <= 1) return slides;
@@ -38,8 +40,11 @@ export function HomeBanner({ item, items }: { item?: HomeBannerItem; items?: Hom
     setTransitionEnabled(false);
     setOffset(0);
     setIndex(slides.length > 1 ? 1 : 0);
-    const frame = window.requestAnimationFrame(() => setTransitionEnabled(true));
-    return () => window.cancelAnimationFrame(frame);
+    enableTransitionAfterPaint();
+
+    return () => {
+      cancelScheduledFrames();
+    };
   }, [slides.length]);
 
   useEffect(() => {
@@ -61,6 +66,36 @@ export function HomeBanner({ item, items }: { item?: HomeBannerItem; items?: Hom
 
   function pauseAutoPlay() {
     pauseUntilRef.current = Date.now() + autoPlayMs;
+  }
+
+  function cancelScheduledFrames() {
+    if (resetFrameRef.current !== null) {
+      window.cancelAnimationFrame(resetFrameRef.current);
+      resetFrameRef.current = null;
+    }
+
+    if (enableFrameRef.current !== null) {
+      window.cancelAnimationFrame(enableFrameRef.current);
+      enableFrameRef.current = null;
+    }
+  }
+
+  function enableTransitionAfterPaint() {
+    cancelScheduledFrames();
+    resetFrameRef.current = window.requestAnimationFrame(() => {
+      enableFrameRef.current = window.requestAnimationFrame(() => {
+        setTransitionEnabled(true);
+        resetFrameRef.current = null;
+        enableFrameRef.current = null;
+      });
+    });
+  }
+
+  function jumpToRealSlideWithoutAnimation(realTrackIndex: number) {
+    setTransitionEnabled(false);
+    setOffset(0);
+    setIndex(realTrackIndex);
+    enableTransitionAfterPaint();
   }
 
   function handleTouchStart(event: React.TouchEvent<HTMLDivElement>) {
@@ -111,17 +146,14 @@ export function HomeBanner({ item, items }: { item?: HomeBannerItem; items?: Hom
     setIndex((current) => current + (finalOffset < 0 ? 1 : -1));
   }
 
-  function handleTransitionEnd() {
+  function handleTransitionEnd(event: React.TransitionEvent<HTMLDivElement>) {
     if (slides.length <= 1) return;
+    if (event.target !== event.currentTarget) return;
 
     if (index === 0) {
-      setTransitionEnabled(false);
-      setIndex(slides.length);
-      window.requestAnimationFrame(() => setTransitionEnabled(true));
+      jumpToRealSlideWithoutAnimation(slides.length);
     } else if (index === slides.length + 1) {
-      setTransitionEnabled(false);
-      setIndex(1);
-      window.requestAnimationFrame(() => setTransitionEnabled(true));
+      jumpToRealSlideWithoutAnimation(1);
     }
   }
 
@@ -130,6 +162,17 @@ export function HomeBanner({ item, items }: { item?: HomeBannerItem; items?: Hom
     pauseAutoPlay();
     setTransitionEnabled(true);
     setOffset(0);
+
+    if (activeIndex === slides.length - 1 && slideIndex === 0) {
+      setIndex(slides.length + 1);
+      return;
+    }
+
+    if (activeIndex === 0 && slideIndex === slides.length - 1) {
+      setIndex(0);
+      return;
+    }
+
     setIndex(slideIndex + 1);
   }
 
@@ -162,7 +205,7 @@ export function HomeBanner({ item, items }: { item?: HomeBannerItem; items?: Hom
               type="button"
               onClick={() => goToSlide(slideIndex)}
               className={`h-1.5 rounded-full transition-all ${slideIndex === activeIndex ? "w-5 bg-white" : "w-1.5 bg-white/60"}`}
-              aria-label={`切换到第 ${slideIndex + 1} 张广告`}
+              aria-label={`Go to banner ${slideIndex + 1}`}
             />
           ))}
         </div>
