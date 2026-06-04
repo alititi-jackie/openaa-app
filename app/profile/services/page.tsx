@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { PageShell } from "@/components/layout/PageShell";
 import { UserPostsList } from "@/components/posts/UserPostsList";
 import { getMyPosts } from "@/features/posts/queries";
@@ -24,7 +25,19 @@ export default async function ProfileServicesPage() {
   const posts = await getMyPosts("service");
 
   return (
-    <PageShell title="我的服务" description="管理当前账号自己的本地服务内容。" eyebrow="Profile">
+    <PageShell
+      title="我的服务"
+      description="管理当前账号自己的本地服务内容。"
+      eyebrow="Profile"
+      actions={
+        <Link
+          href="/services/publish"
+          className="inline-flex min-h-10 items-center justify-center rounded-full bg-slate-950 px-4 py-2 text-sm font-black text-white shadow-sm"
+        >
+          发布服务
+        </Link>
+      }
+    >
       <UserPostsList posts={posts.data} />
     </PageShell>
   );

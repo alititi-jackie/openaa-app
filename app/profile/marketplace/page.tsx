@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { PageShell } from "@/components/layout/PageShell";
 import { UserPostsList } from "@/components/posts/UserPostsList";
 import { getMyPosts } from "@/features/posts/queries";
@@ -24,7 +25,19 @@ export default async function ProfileMarketplacePage() {
   const posts = await getMyPosts("marketplace");
 
   return (
-    <PageShell title="我的二手" description="管理当前账号自己的二手市场内容。" eyebrow="Profile">
+    <PageShell
+      title="我的二手"
+      description="管理当前账号自己的二手市场内容。"
+      eyebrow="Profile"
+      actions={
+        <Link
+          href="/secondhand/publish"
+          className="inline-flex min-h-10 items-center justify-center rounded-full bg-slate-950 px-4 py-2 text-sm font-black text-white shadow-sm"
+        >
+          发布二手
+        </Link>
+      }
+    >
       <UserPostsList posts={posts.data} />
     </PageShell>
   );
