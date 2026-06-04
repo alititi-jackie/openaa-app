@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Store } from "lucide-react";
 import { PageShell } from "@/components/layout/PageShell";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+import { redirectToAuthRequired } from "@/lib/auth/redirects";
 export const dynamic = "force-dynamic";
 
 export const metadata = buildPageMetadata({
@@ -23,7 +23,7 @@ export default async function BusinessProfilePage() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      redirect("/login?returnTo=/profile/business");
+      redirectToAuthRequired("/profile/business");
     }
   }
 

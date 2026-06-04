@@ -17,10 +17,11 @@ function registerFallbackMessage(isConfigured: boolean) {
 }
 
 type RegisterFormProps = {
+  authReturnTo?: string;
   initialAccepted?: boolean;
 };
 
-export function RegisterForm({ initialAccepted = false }: RegisterFormProps) {
+export function RegisterForm({ authReturnTo = "/profile", initialAccepted = false }: RegisterFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -30,7 +31,7 @@ export function RegisterForm({ initialAccepted = false }: RegisterFormProps) {
   const [isSuccess, setIsSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isConfigured = isSupabaseBrowserConfigured();
-  const consentHref = `/legal/consent?returnTo=/register&agreed=${accepted ? "1" : "0"}`;
+  const consentHref = `/legal/consent?returnTo=/register&agreed=${accepted ? "1" : "0"}&next=${encodeURIComponent(authReturnTo)}`;
   const liveNicknameResult = nickname.trim() ? validateNickname(nickname) : null;
 
   async function handleRegister(event: React.FormEvent<HTMLFormElement>) {
@@ -75,7 +76,7 @@ export function RegisterForm({ initialAccepted = false }: RegisterFormProps) {
         email: email.trim(),
         password,
         options: {
-          emailRedirectTo: appUrl("/auth/callback?returnTo=/profile"),
+          emailRedirectTo: appUrl(`/auth/callback?returnTo=${encodeURIComponent(authReturnTo)}`),
           data: {
             nickname: serverNicknameResult.nickname,
             consent_version: consentVersion,

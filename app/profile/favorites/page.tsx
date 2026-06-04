@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Bookmark, FileText } from "lucide-react";
 import { EmptyState } from "@/components/common/EmptyState";
 import { PageShell } from "@/components/layout/PageShell";
@@ -8,6 +7,7 @@ import { getMyFavoritePosts } from "@/features/posts/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getCurrentUser } from "@/lib/supabase/server";
 
+import { redirectToAuthRequired } from "@/lib/auth/redirects";
 export const dynamic = "force-dynamic";
 
 export const metadata = buildPageMetadata({
@@ -21,7 +21,7 @@ export default async function ProfileFavoritesPage() {
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect("/login?returnTo=/profile/favorites");
+    redirectToAuthRequired("/profile/favorites");
   }
 
   const posts = await getMyFavoritePosts();

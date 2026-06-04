@@ -1,9 +1,9 @@
-import { redirect } from "next/navigation";
 import { PostForm } from "@/components/forms/PostForm";
 import { emptyPostFormValues } from "@/features/posts/formMappers";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getCurrentUser } from "@/lib/supabase/server";
 
+import { redirectToAuthRequired } from "@/lib/auth/redirects";
 export const dynamic = "force-dynamic";
 
 export const metadata = buildPageMetadata({
@@ -15,7 +15,7 @@ export const metadata = buildPageMetadata({
 
 export default async function ServicesPublishPage() {
   const user = await getCurrentUser();
-  if (!user) redirect("/login?returnTo=/services/publish");
+  if (!user) redirectToAuthRequired("/services/publish");
 
   return <PostForm mode="create" postType="service" initialValues={emptyPostFormValues("service")} />;
 }

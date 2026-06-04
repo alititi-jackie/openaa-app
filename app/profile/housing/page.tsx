@@ -1,10 +1,10 @@
-import { redirect } from "next/navigation";
 import { PageShell } from "@/components/layout/PageShell";
 import { UserPostsList } from "@/components/posts/UserPostsList";
 import { getMyPosts } from "@/features/posts/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getCurrentUser } from "@/lib/supabase/server";
 
+import { redirectToAuthRequired } from "@/lib/auth/redirects";
 export const dynamic = "force-dynamic";
 
 export const metadata = buildPageMetadata({
@@ -18,7 +18,7 @@ export default async function ProfileHousingPage() {
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect("/login?returnTo=/profile/housing");
+    redirectToAuthRequired("/profile/housing");
   }
 
   const posts = await getMyPosts("housing");

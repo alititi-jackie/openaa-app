@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { PageShell } from "@/components/layout/PageShell";
 import { ProfileEditForm } from "@/components/profile/ProfileEditForm";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -6,6 +5,7 @@ import { ensureProfileForUser } from "@/lib/supabase/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { BusinessProfile, Profile } from "@/lib/supabase/types";
 
+import { redirectToAuthRequired } from "@/lib/auth/redirects";
 export const dynamic = "force-dynamic";
 
 export const metadata = buildPageMetadata({
@@ -33,7 +33,7 @@ export default async function ProfileEditPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login?returnTo=/profile/edit");
+    redirectToAuthRequired("/profile/edit");
   }
 
   const profile = (await ensureProfileForUser(user)) as Profile;

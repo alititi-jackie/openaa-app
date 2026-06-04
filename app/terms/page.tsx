@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { BackToTopButton } from "@/components/common/BackToTopButton";
 import { LegalPageActions } from "@/components/legal/LegalPageActions";
 import { PageShell } from "@/components/layout/PageShell";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -68,7 +67,6 @@ export default function TermsPage() {
         <Suspense>
           <LegalPageActions />
         </Suspense>
-        <BackToTopButton />
       </div>
     </PageShell>
   );

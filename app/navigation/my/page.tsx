@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { MapPinned } from "lucide-react";
 import { MyNavigationForm } from "@/components/navigation/MyNavigationForm";
 import { MyNavigationList } from "@/components/navigation/MyNavigationList";
@@ -6,6 +5,7 @@ import { ChannelHero } from "@/components/posts/ChannelHero";
 import { getCurrentUserNavigationLinks } from "@/features/navigation/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
+import { redirectToAuthRequired } from "@/lib/auth/redirects";
 export const dynamic = "force-dynamic";
 
 export const metadata = buildPageMetadata({
@@ -19,7 +19,7 @@ export default async function MyNavigationPage() {
   const data = await getCurrentUserNavigationLinks();
 
   if (data.state !== "missing_config" && !data.userId) {
-    redirect("/login?returnTo=/navigation/my");
+    redirectToAuthRequired("/navigation/my");
   }
 
   return (

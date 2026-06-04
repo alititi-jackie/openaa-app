@@ -1,9 +1,9 @@
-import { redirect } from "next/navigation";
 import { PostForm } from "@/components/forms/PostForm";
 import { emptyPostFormValues } from "@/features/posts/formMappers";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getCurrentUser } from "@/lib/supabase/server";
 
+import { redirectToAuthRequired } from "@/lib/auth/redirects";
 export const dynamic = "force-dynamic";
 
 export const metadata = buildPageMetadata({
@@ -15,7 +15,7 @@ export const metadata = buildPageMetadata({
 
 export default async function JobsPublishPage() {
   const user = await getCurrentUser();
-  if (!user) redirect("/login?returnTo=/jobs/publish");
+  if (!user) redirectToAuthRequired("/jobs/publish");
 
   return <PostForm mode="create" postType="job" initialValues={emptyPostFormValues("job")} />;
 }
