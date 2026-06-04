@@ -127,6 +127,15 @@ export type PostCardView = {
   favoriteCount: number;
   viewCount: number;
   fields: Array<{ label: string; value: string }>;
+  housing?: {
+    mode: "renting" | "seeking";
+    price: string;
+    rawPrice: number | string | null;
+    roomType: string;
+    area: string;
+    isPinned: boolean;
+    pinnedOrder: number;
+  };
 };
 
 export type PostDetailView = PostCardView & {

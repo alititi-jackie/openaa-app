@@ -9,13 +9,13 @@ export const dynamic = "force-dynamic";
 export const metadata = buildPageMetadata({
   title: "发布房屋",
   description: "发布纽约租房、求租、合租或房屋信息。",
-  path: "/housing/publish",
+  path: "/publish/housing",
   noIndex: true,
 });
 
-export default async function HousingPublishPage({ searchParams }: { searchParams?: Promise<{ type?: string; mode?: string }> }) {
+export default async function PublishHousingAliasPage({ searchParams }: { searchParams?: Promise<{ type?: string; mode?: string }> }) {
   const user = await getCurrentUser();
-  if (!user) redirectToAuthRequired("/housing/publish");
+  if (!user) redirectToAuthRequired("/publish/housing");
 
   const params = (await searchParams) ?? {};
   const initialValues = emptyPostFormValues("housing");

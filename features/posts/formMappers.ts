@@ -119,8 +119,9 @@ export function formValuesFromDetail(post: PostDetailView): PostFormValues {
   if (post.type === "housing") {
     values.housing = {
       ...values.housing!,
-      room_type: fieldValue(post, "房型"),
-      price: fieldValue(post, "价格").replace(/[$,]/g, ""),
+      housing_mode: post.housing?.mode ?? values.housing!.housing_mode,
+      room_type: post.housing?.roomType || fieldValue(post, "房型"),
+      price: String(post.housing?.rawPrice ?? fieldValue(post, "价格").replace(/[^\d.]/g, "")),
     };
   }
 

@@ -2,25 +2,22 @@ import { PageShell } from "@/components/layout/PageShell";
 import { PublishCta } from "@/components/posts/PublishCta";
 import { UserHousingList } from "@/components/housing/UserHousingList";
 import { getMyPosts } from "@/features/posts/queries";
-import { buildPageMetadata } from "@/lib/seo/metadata";
 import { redirectToAuthRequired } from "@/lib/auth/redirects";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = buildPageMetadata({
   title: "我的房屋",
-  description: "OpenAA 我的房屋发布管理页面。",
-  path: "/profile/housing",
+  description: "管理您发布的房屋出租与求租信息。",
+  path: "/profile/my-housing",
   noIndex: true,
 });
 
-export default async function ProfileHousingPage() {
+export default async function ProfileMyHousingPage() {
   const user = await getCurrentUser();
-
-  if (!user) {
-    redirectToAuthRequired("/profile/housing");
-  }
+  if (!user) redirectToAuthRequired("/profile/my-housing");
 
   const posts = await getMyPosts("housing");
 

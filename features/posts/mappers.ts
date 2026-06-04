@@ -1,4 +1,5 @@
 import { POST_TYPE_LABELS, POST_TYPE_TO_ROUTE } from "./constants";
+import { firstHousingDetail, formatHousingLocation, formatHousingPrice, inferHousingMode, isEffectivePinned, pinnedOrder } from "@/features/housing/legacy";
 import type {
   AuthorSummary,
   HousingDetailRecord,
@@ -99,6 +100,7 @@ export function mapPostRecordToCard(record: PostRecord, authors: Record<string, 
     [...(record.post_images ?? [])].sort((a, b) => Number(Boolean(b.is_cover)) - Number(Boolean(a.is_cover)) || (a.sort_order ?? 0) - (b.sort_order ?? 0))[0] ?? null,
   );
   const author = record.author_id ? authors[record.author_id] : null;
+  const housingDetail = record.post_type === "housing" ? firstHousingDetail(record) : null;
 
   return {
     id: record.id,
@@ -109,12 +111,33 @@ export function mapPostRecordToCard(record: PostRecord, authors: Record<string, 
     description: record.summary || record.body || "暂无摘要。",
     meta: publishedMeta(record),
     tag: record.category || POST_TYPE_LABELS[record.post_type],
-    location: cityName(record),
+    location: record.post_type === "housing" ? formatHousingLocation(housingDetail?.address_area) : cityName(record),
     authorName: author?.nickname || undefined,
     imageUrl: cover,
     favoriteCount: postStats.favorite_count ?? 0,
     viewCount: postStats.view_count ?? 0,
     fields: detailFields(record),
+    housing: housingDetail
+      ? {
+          mode: inferHousingMode(record),
+          price: formatHousingPrice(housingDetail.rent_amount),
+          rawPrice: housingDetail.rent_amount,
+          roomType: housingDetail.housing_type || "",
+          area: formatHousingLocation(housingDetail.address_area),
+          isPinned: isEffectivePinned(record.metadata),
+          pinnedOrder: pinnedOrder(record.metadata),
+        }
+      : record.post_type === "housing"
+        ? {
+            mode: inferHousingMode(record),
+            price: "面议",
+            rawPrice: null,
+            roomType: "",
+            area: "纽约 New York",
+            isPinned: isEffectivePinned(record.metadata),
+            pinnedOrder: pinnedOrder(record.metadata),
+          }
+        : undefined,
   };
 }
 

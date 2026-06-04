@@ -22,6 +22,7 @@ type PostFormProps = {
   mode: "create" | "edit";
   postType: PostType;
   initialValues: PostFormValues;
+  legacyParity?: boolean;
 };
 
 const draftVersion = 2;
@@ -34,7 +35,8 @@ function draftKey(postType: PostType, mode: "create" | "edit", postId?: string) 
   return `openaa:post-form:${draftVersion}:${postType}:${mode}:${postId ?? "new"}`;
 }
 
-function titleFor(postType: PostType, mode: "create" | "edit") {
+function titleFor(postType: PostType, mode: "create" | "edit", legacyParity = false) {
+  if (legacyParity && postType === "housing") return mode === "edit" ? "编辑房屋信息" : "发布房源";
   return `${mode === "create" ? "发布" : "编辑"}${POST_TYPE_LABELS[postType]}`;
 }
 
@@ -98,7 +100,7 @@ function normalizeRestoredValues(values: PostFormValues, postType: PostType, mod
   };
 }
 
-export function PostForm({ mode, postType, initialValues }: PostFormProps) {
+export function PostForm({ mode, postType, initialValues, legacyParity = false }: PostFormProps) {
   const router = useRouter();
   const [values, setValues] = useState<PostFormValues>({ ...initialValues, mode, postType });
   const [errors, setErrors] = useState<PostFormErrors>({});
@@ -201,20 +203,26 @@ export function PostForm({ mode, postType, initialValues }: PostFormProps) {
       }
 
       window.localStorage.removeItem(storageKey);
+      if (legacyParity && mode === "create" && postType === "housing") {
+        router.push(POST_TYPE_TO_ROUTE[postType]);
+        return;
+      }
+
       router.push(result.href);
     });
   }
 
   return (
-    <FormShell title={titleFor(postType, mode)} description={descriptionFor(postType)}>
+    <FormShell title={titleFor(postType, mode, legacyParity)} description={descriptionFor(postType)}>
       <form className="space-y-4 rounded-2xl bg-white p-4 shadow-sm sm:p-6" onSubmit={onSubmit}>
-        <DraftRestoreBanner visible={hasDraft} onRestore={restoreDraft} onClear={clearDraft} />
+        <DraftRestoreBanner visible={!legacyParity && hasDraft} onRestore={restoreDraft} onClear={clearDraft} />
 
         {postType === "job" ? (
           <>
             <ModeSwitch
               label="发布类型"
               locked={typeSwitchLocked}
+              lockedMessage="编辑模式下不支持切换类型。"
               options={[
                 { value: "hiring", label: "我要招人" },
                 { value: "seeking", label: "我要求职" },
@@ -286,6 +294,7 @@ export function PostForm({ mode, postType, initialValues }: PostFormProps) {
             <ModeSwitch
               label="发布类型"
               locked={typeSwitchLocked}
+              lockedMessage="编辑模式下不支持切换类型（出租/求租）。"
               options={[
                 { value: "renting", label: "发布房源" },
                 { value: "seeking", label: "求租求购" },
@@ -316,9 +325,11 @@ export function PostForm({ mode, postType, initialValues }: PostFormProps) {
               <FormField label="房型" error={errors.room_type}>
                 <TextInput value={values.housing?.room_type} onChange={(event) => setHousing({ room_type: event.target.value })} placeholder="例：一室一厅 / 主卧 / 次卧（可不填）" />
               </FormField>
-              <FormField label="入住日期">
-                <TextInput value={values.housing?.available_from} onChange={(event) => setHousing({ available_from: event.target.value })} type="date" />
-              </FormField>
+              {!legacyParity ? (
+                <FormField label="入住日期">
+                  <TextInput value={values.housing?.available_from} onChange={(event) => setHousing({ available_from: event.target.value })} type="date" />
+                </FormField>
+              ) : null}
             </div>
           </>
         ) : null}
@@ -328,6 +339,7 @@ export function PostForm({ mode, postType, initialValues }: PostFormProps) {
             <ModeSwitch
               label="发布类型"
               locked={typeSwitchLocked}
+              lockedMessage="编辑模式下不支持切换类型。"
               options={[
                 { value: "selling", label: "我要出售" },
                 { value: "buying", label: "我要求购" },
@@ -418,7 +430,7 @@ export function PostForm({ mode, postType, initialValues }: PostFormProps) {
 
         {postType !== "job" ? <ImageUploader images={values.images} onChange={(images) => setValue("images", images)} disabled={isPending} maxImages={3} error={errors.images} /> : null}
 
-        <ContactFields value={values.contact} errors={errors} onChange={(contact) => setValue("contact", contact)} />
+        <ContactFields value={values.contact} errors={errors} onChange={(contact) => setValue("contact", contact)} hideExtendedFields={legacyParity && postType === "housing"} />
 
         <div ref={bottomMessageRef}>
           <SubmitBar cancelHref={cancelHref} submitting={isPending} mode={mode} error={message} submitLabel={submitLabelFor(values, mode)} />
@@ -445,12 +457,14 @@ function ModeSwitch({
   value,
   options,
   locked,
+  lockedMessage = "编辑模式下不支持切换类型。",
   onChange,
 }: {
   label: string;
   value: string;
   options: Array<{ value: string; label: string }>;
   locked?: boolean;
+  lockedMessage?: string;
   onChange: (value: string) => void;
 }) {
   return (
@@ -475,7 +489,7 @@ function ModeSwitch({
           </button>
         ))}
       </div>
-      {locked ? <p className="mt-2 text-xs text-gray-400">编辑模式下不支持切换类型。</p> : null}
+      {locked ? <p className="mt-2 text-xs text-gray-400">{lockedMessage}</p> : null}
     </div>
   );
 }

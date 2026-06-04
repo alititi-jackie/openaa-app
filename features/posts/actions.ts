@@ -145,6 +145,7 @@ function revalidatePostSurfaces(type: PostType, postId: string) {
   revalidatePath(postHref(type, postId));
   revalidatePath("/profile/posts");
   revalidatePath(`/profile/${route.slice(1)}`);
+  if (type === "housing") revalidatePath("/profile/my-housing");
 }
 
 function categoryFor(values: PostFormValues) {
@@ -171,6 +172,7 @@ function titleFor(values: PostFormValues) {
 function mainPostPayload(values: PostFormValues, userId: string, cityId: string | null) {
   const status = shouldReviewPost(values) ? "pending_review" : "published";
   const publishedAt = status === "published" ? new Date().toISOString() : null;
+  const metadata = values.postType === "housing" ? { housing_mode: values.housing?.housing_mode === "seeking" ? "seeking" : "renting" } : null;
 
   return {
     post_type: values.postType,
@@ -183,6 +185,7 @@ function mainPostPayload(values: PostFormValues, userId: string, cityId: string 
     status,
     visibility: values.visibility,
     price_amount: priceFor(values),
+    ...(values.postType === "housing" ? { metadata } : {}),
     published_at: publishedAt,
     updated_at: new Date().toISOString(),
   };
@@ -302,7 +305,7 @@ export async function createPost(values: PostFormValues): Promise<PostFormAction
   if (contactResult.error) return { ok: false, message: `内容已创建，但联系方式保存失败：${contactResult.error.message}` };
 
   await syncPostImages(context.supabase, context.user.id, values.postType, post.id, values.images);
-  revalidatePath(POST_TYPE_TO_ROUTE[values.postType]);
+  revalidatePostSurfaces(values.postType, post.id);
   return { ok: true, postId: post.id, href: `${postHref(values.postType, post.id)}?created=1` };
 }
 
@@ -312,7 +315,7 @@ export async function updatePost(postId: string, values: PostFormValues): Promis
 
   const context = await getWriteContext();
   if (!context.ok) return { ok: false, message: context.error };
-  if (context.status === "banned") return { ok: false, message: "你的账号当前禁止编辑内容。" };
+  if (context.status === "banned" && values.postType !== "housing") return { ok: false, message: "你的账号当前禁止编辑内容。" };
 
   const editCheck = await assertCanEdit(context.supabase, context.user.id, postId);
   if (!editCheck.ok) return { ok: false, message: editCheck.message };
@@ -328,6 +331,7 @@ export async function updatePost(postId: string, values: PostFormValues): Promis
       category: mainPayload.category,
       visibility: mainPayload.visibility,
       price_amount: mainPayload.price_amount,
+      ...(values.postType === "housing" ? { metadata: mainPayload.metadata } : {}),
       status: editCheck.post.status === "published" ? "published" : editCheck.post.status,
       published_at: editCheck.post.status === "published" ? (editCheck.post.published_at ?? new Date().toISOString()) : null,
       updated_at: mainPayload.updated_at,
@@ -411,7 +415,7 @@ export async function manageOwnPostStatus(_previousState: ManagePostActionState,
     return { ok: true, message: "已重新发布，内容恢复公开显示。", postId, action };
   }
 
-  if (context.status === "banned") {
+  if (context.status === "banned" && post.post_type !== "housing") {
     return { ok: false, message: "账号禁用时不能管理内容。", postId, action };
   }
 

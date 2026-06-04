@@ -1,4 +1,4 @@
-import { PostDetailView } from "@/components/posts/PostDetailView";
+import { HousingDetailLegacyView } from "@/components/housing/HousingDetailLegacyView";
 import { getPublicPostById } from "@/features/posts/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -14,5 +14,5 @@ export default async function HousingDetailPage({ params }: { params: Promise<{ 
   const { id } = await params;
   const post = await getPublicPostById(id, "housing");
 
-  return <PostDetailView post={post.data} />;
+  return <HousingDetailLegacyView post={post.data} />;
 }

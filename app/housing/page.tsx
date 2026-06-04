@@ -1,6 +1,6 @@
-import { ChannelPageShell } from "@/components/posts/ChannelPageShell";
-import { channelConfigs } from "@/components/posts/channelConfigs";
-import { getPublicPosts } from "@/features/posts/queries";
+import { HousingLegacyPage } from "@/components/housing/HousingLegacyPage";
+import { ALL_HOUSING_REGIONS, normalizeHousingMode } from "@/features/housing/legacy";
+import { getPublicHousingPosts } from "@/features/posts/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const metadata = buildPageMetadata({
@@ -11,8 +11,16 @@ export const metadata = buildPageMetadata({
 
 export const dynamic = "force-dynamic";
 
-export default async function HousingPage() {
-  const posts = await getPublicPosts({ type: "housing" });
+export default async function HousingPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ type?: string; mode?: string; q?: string; keyword?: string; region?: string }>;
+}) {
+  const params = (await searchParams) ?? {};
+  const mode = normalizeHousingMode(params.type ?? params.mode);
+  const keyword = params.q ?? params.keyword ?? "";
+  const region = params.region ?? ALL_HOUSING_REGIONS;
+  const posts = await getPublicHousingPosts({ mode, keyword, region });
 
-  return <ChannelPageShell config={{ ...channelConfigs.housing, posts: posts.data, queryState: posts.state, errorMessage: posts.error }} />;
+  return <HousingLegacyPage result={posts} mode={mode} keyword={keyword} region={region} />;
 }
