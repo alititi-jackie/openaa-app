@@ -4,7 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { UserPlus } from "lucide-react";
 import { AuthCard, AuthLink } from "@/components/auth/AuthCard";
-import { validateNickname } from "@/features/auth/nicknameValidation";
+import { validateNicknameForSave } from "@/features/auth/actions";
+import { unavailableNicknameMessage, validateNickname } from "@/features/auth/nicknameValidation";
 import { featureFlags } from "@/lib/config/featureFlags";
 import { appUrl } from "@/lib/seo/siteConfig";
 import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
@@ -30,6 +31,7 @@ export function RegisterForm({ initialAccepted = false }: RegisterFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isConfigured = isSupabaseBrowserConfigured();
   const consentHref = `/legal/consent?returnTo=/register&agreed=${accepted ? "1" : "0"}`;
+  const liveNicknameResult = nickname.trim() ? validateNickname(nickname) : null;
 
   async function handleRegister(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -61,6 +63,13 @@ export function RegisterForm({ initialAccepted = false }: RegisterFormProps) {
     setIsSubmitting(true);
 
     try {
+      const serverNicknameResult = await validateNicknameForSave(nickname);
+
+      if (!serverNicknameResult.ok) {
+        setMessage(serverNicknameResult.message);
+        return;
+      }
+
       const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.auth.signUp({
         email: email.trim(),
@@ -68,7 +77,7 @@ export function RegisterForm({ initialAccepted = false }: RegisterFormProps) {
         options: {
           emailRedirectTo: appUrl("/auth/callback?returnTo=/profile"),
           data: {
-            nickname: nicknameResult.nickname,
+            nickname: serverNicknameResult.nickname,
             consent_version: consentVersion,
             accepted_terms: true,
             accepted_privacy: true,
@@ -134,6 +143,9 @@ export function RegisterForm({ initialAccepted = false }: RegisterFormProps) {
             onChange={(event) => setNickname(event.target.value)}
             className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
           />
+          {liveNicknameResult?.ok === false && liveNicknameResult.message === unavailableNicknameMessage ? (
+            <p className="mt-2 text-sm font-bold text-red-600">{unavailableNicknameMessage}</p>
+          ) : null}
         </label>
         <label className="block">
           <span className="text-sm font-bold text-slate-800">邮箱地址</span>

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Save } from "lucide-react";
-import { validateNickname } from "@/features/auth/nicknameValidation";
+import { validateNicknameForSave } from "@/features/auth/actions";
+import { unavailableNicknameMessage, validateNickname } from "@/features/auth/nicknameValidation";
 import { featureFlags } from "@/lib/config/featureFlags";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { AccountType, BusinessProfile, Profile } from "@/lib/supabase/types";
@@ -35,6 +36,7 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
     business_website: initialBusinessProfile?.website_url ?? "",
     business_address_text: initialBusinessProfile?.service_area ?? "",
   });
+  const liveNicknameResult = profile.nickname.trim() ? validateNickname(profile.nickname) : null;
 
   function updateProfileField(key: keyof typeof profile, value: string) {
     setProfile((current) => ({ ...current, [key]: value }));
@@ -57,11 +59,18 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
     }
 
     try {
+      const serverNicknameResult = await validateNicknameForSave(profile.nickname);
+
+      if (!serverNicknameResult.ok) {
+        setMessage(serverNicknameResult.message);
+        return;
+      }
+
       const supabase = createSupabaseBrowserClient();
       const { error: profileError } = await supabase
         .from("profiles")
         .update({
-          nickname: nicknameResult.nickname,
+          nickname: serverNicknameResult.nickname,
           phone: profile.phone || null,
           wechat_id: profile.wechat_id || null,
           whatsapp: profile.whatsapp || null,
@@ -113,7 +122,12 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
       <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
         <h2 className="text-lg font-black text-slate-950">基础资料</h2>
         <div className="mt-4 space-y-4">
-          <Field label="用户名" value={profile.nickname} onChange={(value) => updateProfileField("nickname", value)} />
+          <Field
+            label="用户名"
+            value={profile.nickname}
+            onChange={(value) => updateProfileField("nickname", value)}
+            error={liveNicknameResult?.ok === false && liveNicknameResult.message === unavailableNicknameMessage ? unavailableNicknameMessage : undefined}
+          />
           <Field label="手机" value={profile.phone} onChange={(value) => updateProfileField("phone", value)} />
           <Field label="微信" value={profile.wechat_id} onChange={(value) => updateProfileField("wechat_id", value)} />
           <Field label="WhatsApp" value={profile.whatsapp} onChange={(value) => updateProfileField("whatsapp", value)} />
@@ -203,10 +217,12 @@ function Field({
   label,
   value,
   onChange,
+  error,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  error?: string;
 }) {
   return (
     <label className="block">
@@ -217,6 +233,7 @@ function Field({
         onChange={(event) => onChange(event.target.value)}
         className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
       />
+      {error ? <p className="mt-2 text-sm font-bold text-red-600">{error}</p> : null}
     </label>
   );
 }

@@ -1,5 +1,6 @@
 "use server";
 
+import { validateNickname } from "@/features/auth/nicknameValidation";
 import { ensureProfileForUser } from "@/lib/supabase/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -7,6 +8,20 @@ type AuthActionResult = {
   ok: boolean;
   message?: string;
 };
+
+type NicknameActionResult =
+  | {
+      ok: true;
+      nickname: string;
+    }
+  | {
+      ok: false;
+      message: string;
+    };
+
+export async function validateNicknameForSave(value: string): Promise<NicknameActionResult> {
+  return validateNickname(value);
+}
 
 export async function ensureCurrentUserProfile(): Promise<AuthActionResult> {
   const supabase = await createSupabaseServerClient();
