@@ -2,7 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
+import { Autoplay, Pagination } from "swiper/modules";
+import { Swiper, SwiperSlide } from "swiper/react";
+import "swiper/css";
+import "swiper/css/pagination";
 
 export type HomeBannerItem = {
   title: string;
@@ -13,251 +17,138 @@ export type HomeBannerItem = {
   slug?: string | null;
 };
 
-const autoPlayMs = 4000;
-const dragThreshold = 45;
+const bannerImageSizes = "(min-width: 1040px) 1040px, 100vw";
 
 export function HomeBanner({ item, items }: { item?: HomeBannerItem; items?: HomeBannerItem[] }) {
-  const slides = useMemo(() => (item ? [item] : (items ?? []).filter((banner) => banner.imageUrl)), [item, items]);
-  const [index, setIndex] = useState(slides.length > 1 ? 1 : 0);
-  const [offset, setOffset] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [transitionEnabled, setTransitionEnabled] = useState(true);
-  const startXRef = useRef<number | null>(null);
-  const startYRef = useRef<number | null>(null);
-  const dragLockedRef = useRef<"x" | "y" | null>(null);
-  const pauseUntilRef = useRef(0);
-  const resetFrameRef = useRef<number | null>(null);
-  const enableFrameRef = useRef<number | null>(null);
-
-  const trackSlides = useMemo(() => {
-    if (slides.length <= 1) return slides;
-    return [slides[slides.length - 1], ...slides, slides[0]];
-  }, [slides]);
-
-  const activeIndex = slides.length <= 1 ? 0 : (index - 1 + slides.length) % slides.length;
-
-  useEffect(() => {
-    setTransitionEnabled(false);
-    setOffset(0);
-    setIndex(slides.length > 1 ? 1 : 0);
-    enableTransitionAfterPaint();
-
-    return () => {
-      cancelScheduledFrames();
-    };
-  }, [slides.length]);
-
-  useEffect(() => {
-    if (slides.length <= 1) return;
-
-    const timer = window.setInterval(() => {
-      if (Date.now() < pauseUntilRef.current) return;
-      setTransitionEnabled(true);
-      setOffset(0);
-      setIndex((current) => current + 1);
-    }, autoPlayMs);
-
-    return () => window.clearInterval(timer);
-  }, [slides.length]);
+  const slides = useMemo(() => (item ? [item] : (items ?? []).filter((banner) => normalizeImageUrl(banner.imageUrl))), [item, items]);
 
   if (slides.length === 0) {
     return null;
   }
 
-  function pauseAutoPlay() {
-    pauseUntilRef.current = Date.now() + autoPlayMs;
-  }
-
-  function cancelScheduledFrames() {
-    if (resetFrameRef.current !== null) {
-      window.cancelAnimationFrame(resetFrameRef.current);
-      resetFrameRef.current = null;
-    }
-
-    if (enableFrameRef.current !== null) {
-      window.cancelAnimationFrame(enableFrameRef.current);
-      enableFrameRef.current = null;
-    }
-  }
-
-  function enableTransitionAfterPaint() {
-    cancelScheduledFrames();
-    resetFrameRef.current = window.requestAnimationFrame(() => {
-      enableFrameRef.current = window.requestAnimationFrame(() => {
-        setTransitionEnabled(true);
-        resetFrameRef.current = null;
-        enableFrameRef.current = null;
-      });
-    });
-  }
-
-  function jumpToRealSlideWithoutAnimation(realTrackIndex: number) {
-    setTransitionEnabled(false);
-    setOffset(0);
-    setIndex(realTrackIndex);
-    enableTransitionAfterPaint();
-  }
-
-  function handleTouchStart(event: React.TouchEvent<HTMLDivElement>) {
-    if (slides.length <= 1) return;
-    const touch = event.touches[0];
-    startXRef.current = touch?.clientX ?? null;
-    startYRef.current = touch?.clientY ?? null;
-    dragLockedRef.current = null;
-    setIsDragging(true);
-    setTransitionEnabled(false);
-    pauseAutoPlay();
-  }
-
-  function handleTouchMove(event: React.TouchEvent<HTMLDivElement>) {
-    const startX = startXRef.current;
-    const startY = startYRef.current;
-    const touch = event.touches[0];
-    if (slides.length <= 1 || startX === null || startY === null || !touch) return;
-
-    const nextOffset = touch.clientX - startX;
-    const deltaY = touch.clientY - startY;
-
-    if (!dragLockedRef.current) {
-      if (Math.abs(nextOffset) < 8 && Math.abs(deltaY) < 8) return;
-      dragLockedRef.current = Math.abs(nextOffset) > Math.abs(deltaY) ? "x" : "y";
-    }
-
-    if (dragLockedRef.current !== "x") return;
-
-    event.preventDefault();
-    setOffset(nextOffset);
-  }
-
-  function handleTouchEnd() {
-    if (slides.length <= 1) return;
-
-    const finalOffset = offset;
-    startXRef.current = null;
-    startYRef.current = null;
-    dragLockedRef.current = null;
-    setIsDragging(false);
-    setTransitionEnabled(true);
-    setOffset(0);
-    pauseAutoPlay();
-
-    if (Math.abs(finalOffset) < dragThreshold) return;
-
-    setIndex((current) => current + (finalOffset < 0 ? 1 : -1));
-  }
-
-  function handleTransitionEnd(event: React.TransitionEvent<HTMLDivElement>) {
-    if (slides.length <= 1) return;
-    if (event.target !== event.currentTarget) return;
-
-    if (index === 0) {
-      jumpToRealSlideWithoutAnimation(slides.length);
-    } else if (index === slides.length + 1) {
-      jumpToRealSlideWithoutAnimation(1);
-    }
-  }
-
-  function goToSlide(slideIndex: number) {
-    if (slides.length <= 1) return;
-    pauseAutoPlay();
-    setTransitionEnabled(true);
-    setOffset(0);
-
-    if (activeIndex === slides.length - 1 && slideIndex === 0) {
-      setIndex(slides.length + 1);
-      return;
-    }
-
-    if (activeIndex === 0 && slideIndex === slides.length - 1) {
-      setIndex(0);
-      return;
-    }
-
-    setIndex(slideIndex + 1);
-  }
-
-  const translate = `calc(${-index * 100}% + ${offset}px)`;
-
   return (
     <section className="relative">
       <div className="overflow-hidden rounded-2xl bg-white shadow-[0_12px_40px_rgba(0,0,0,0.12)] ring-1 ring-black/5">
-        <div
-          className={`flex touch-pan-y select-none ${transitionEnabled && !isDragging ? "transition-transform duration-300 ease-out" : ""}`}
-          style={{ transform: `translate3d(${translate}, 0, 0)` }}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onTouchCancel={handleTouchEnd}
-          onTransitionEnd={handleTransitionEnd}
+        <Swiper
+          modules={[Autoplay, Pagination]}
+          loop={slides.length > 1}
+          autoplay={{ delay: 4000, disableOnInteraction: false }}
+          pagination={{ clickable: true }}
+          touchRatio={1}
+          className="banner-swiper"
         >
-          {trackSlides.map((banner, slideIndex) => (
-            <div key={`${banner.href}-${banner.imageUrl}-${slideIndex}`} className="w-full shrink-0">
-              <BannerLink banner={banner} isFirst={activeIndex === 0 && (slideIndex === 1 || slides.length === 1)} />
-            </div>
+          {slides.map((slide, index) => (
+            <SwiperSlide key={`${slide.href}-${slide.imageUrl}-${index}`}>{renderSlideContent(slide, index)}</SwiperSlide>
           ))}
-        </div>
+        </Swiper>
       </div>
-      {slides.length > 1 ? (
-        <div className="absolute inset-x-0 bottom-2 flex justify-center gap-1.5">
-          {slides.map((slide, slideIndex) => (
-            <button
-              key={`${slide.href}-${slide.imageUrl}-${slideIndex}`}
-              type="button"
-              onClick={() => goToSlide(slideIndex)}
-              className={`h-1.5 rounded-full transition-all ${slideIndex === activeIndex ? "w-5 bg-white" : "w-1.5 bg-white/60"}`}
-              aria-label={`Go to banner ${slideIndex + 1}`}
-            />
-          ))}
-        </div>
-      ) : null}
     </section>
   );
 }
 
-function BannerLink({ banner, isFirst }: { banner: HomeBannerItem; isFirst: boolean }) {
+function renderSlideContent(slide: HomeBannerItem, index: number) {
+  const imageUrl = normalizeImageUrl(slide.imageUrl);
+  const isFirstSlide = index === 0;
+
+  if (!imageUrl) return null;
+
   const image = (
     <div className="relative h-[160px] w-full bg-zinc-100 sm:h-[180px] md:h-[200px]">
-      <Image
-        src={banner.imageUrl}
-        alt={banner.title || ""}
-        fill
-        sizes="(min-width: 1040px) 1040px, 100vw"
-        className="select-none object-cover"
-        draggable={false}
-        priority={isFirst}
-      />
+      {canUseNextImage(imageUrl) ? (
+        <Image
+          src={imageUrl}
+          alt={slide.title || ""}
+          fill
+          sizes={bannerImageSizes}
+          className="select-none object-cover"
+          draggable={false}
+          {...(isFirstSlide ? { priority: true } : { loading: "lazy" as const })}
+        />
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={imageUrl}
+          alt={slide.title || ""}
+          className="h-full w-full select-none object-cover"
+          draggable={false}
+          loading={isFirstSlide ? "eager" : "lazy"}
+        />
+      )}
     </div>
   );
 
-  const className = "block w-full";
-  const href = normalizeHref(banner);
+  const href = normalizeHref(slide);
+  const openMode = normalizeOpenMode(slide);
 
-  if (!href) {
-    return image;
-  }
-
-  if (isExternalHref(href)) {
-    const target = banner.openMode === "same" || banner.openMode === "external_same" ? undefined : "_blank";
+  if (openMode === "internal" && slide.slug) {
     return (
-      <a href={href} target={target} rel={target ? "noopener noreferrer" : undefined} className={className} aria-label={banner.title || "OpenAA banner"}>
+      <Link href={`/ads/${slide.slug}`} className="block w-full" aria-label={slide.title || "OpenAA banner"}>
         {image}
-      </a>
+      </Link>
     );
   }
 
-  return (
-    <Link href={href} className={className} aria-label={banner.title || "OpenAA banner"}>
-      {image}
-    </Link>
-  );
+  if (isExternalHref(href)) {
+    if (openMode === "same") {
+      return (
+        <button
+          type="button"
+          className="block w-full text-left"
+          aria-label={slide.title || "OpenAA banner"}
+          onClick={() => {
+            window.location.href = href;
+          }}
+        >
+          {image}
+        </button>
+      );
+    }
+
+    return (
+      <button type="button" className="block w-full text-left" aria-label={slide.title || "OpenAA banner"} onClick={() => window.open(href, "_blank", "noopener,noreferrer")}>
+        {image}
+      </button>
+    );
+  }
+
+  if (href) {
+    return (
+      <Link href={href} className="block w-full" aria-label={slide.title || "OpenAA banner"}>
+        {image}
+      </Link>
+    );
+  }
+
+  return image;
+}
+
+function normalizeImageUrl(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : "";
 }
 
 function normalizeHref(banner: HomeBannerItem) {
-  if ((banner.openMode === "internal" || banner.openMode === "same") && banner.slug) {
+  if (banner.openMode === "internal" && banner.slug) {
     return `/ads/${banner.slug}`;
   }
 
-  return banner.href || "";
+  return banner.href?.trim() || "";
+}
+
+function normalizeOpenMode(banner: HomeBannerItem) {
+  if (banner.openMode === "external_new") return "new";
+  if (banner.openMode === "external_same") return "same";
+  if (banner.openMode === "internal") return "internal";
+  return banner.openMode === "new" ? "new" : "same";
+}
+
+function canUseNextImage(src: string) {
+  if (src.startsWith("/")) return true;
+
+  try {
+    return new URL(src).hostname === "img.openaa.com";
+  } catch {
+    return false;
+  }
 }
 
 function isExternalHref(href: string) {
