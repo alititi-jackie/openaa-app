@@ -17,11 +17,9 @@ export const config = {
 
 function redirectToPrimaryDomain(request: NextRequest) {
   const host = request.headers.get("host")?.toLowerCase();
-  const forwardedProtocol = request.headers.get("x-forwarded-proto")?.toLowerCase();
   const shouldRedirectHost = host === "www.openaa.app";
-  const shouldRedirectProtocol = host === "openaa.app" && forwardedProtocol === "http";
 
-  if (!shouldRedirectHost && !shouldRedirectProtocol) {
+  if (!shouldRedirectHost) {
     return null;
   }
 
