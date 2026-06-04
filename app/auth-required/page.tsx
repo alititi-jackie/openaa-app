@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { AuthRequiredSessionRedirect } from "@/components/auth/AuthRequiredSessionRedirect";
 import { PageShell } from "@/components/layout/PageShell";
 import { safeReturnTo } from "@/lib/auth/redirects";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -32,6 +34,9 @@ export default async function AuthRequiredPage({ searchParams }: AuthRequiredPag
       description="登录后可以发布信息、管理自己的内容、收藏帖子，并在不同设备继续使用 OpenAA。"
       eyebrow="Account"
     >
+      <Suspense fallback={null}>
+        <AuthRequiredSessionRedirect />
+      </Suspense>
       <section className="space-y-4 rounded-2xl border border-slate-100 bg-white p-4 pb-6 shadow-sm">
         <div className="grid gap-3 sm:grid-cols-2">
           <Link href={`/login?returnTo=${encodedReturnTo}`} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white">

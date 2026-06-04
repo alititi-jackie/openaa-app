@@ -2,7 +2,7 @@ insert into public.site_settings (key, value, description, is_public)
 values
   (
     'domain_strategy',
-    '{"appDomain":"openaa.app","primarySeoDomain":"openaa.com","canonicalBaseUrl":"https://openaa.com","allowedDomains":["openaa.app","openaa.com","openaa.cn"],"redirectDomains":["openaa.cn"]}'::jsonb,
+    '{"appDomain":"openaa.app","primarySeoDomain":"openaa.app","canonicalBaseUrl":"https://openaa.app","allowedDomains":["openaa.app"],"redirectDomains":["www.openaa.app"]}'::jsonb,
     'Canonical and domain strategy for OpenAA.',
     true
   ),

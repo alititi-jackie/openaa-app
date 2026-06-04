@@ -37,8 +37,8 @@ export const siteConfig = {
     process.env.NEXT_PUBLIC_CANONICAL_URL,
     process.env.NEXT_PUBLIC_PRIMARY_SEO_URL || process.env.NEXT_PUBLIC_SITE_URL || fallbackSiteUrl,
   ),
-  allowedDomains: ["openaa.app", "openaa.com", "openaa.cn"],
-  redirectDomains: ["openaa.cn"],
+  allowedDomains: ["openaa.app"],
+  redirectDomains: ["www.openaa.app"],
   locale: "zh_CN",
   defaultCity: {
     id: "ny",

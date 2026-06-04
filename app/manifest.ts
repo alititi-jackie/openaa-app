@@ -6,6 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "OpenAA",
     short_name: "OpenAA",
     description: siteConfig.description,
+    id: "/",
     start_url: "/",
     scope: "/",
     display: "standalone",
