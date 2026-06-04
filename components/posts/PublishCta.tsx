@@ -5,9 +5,9 @@ export function PublishCta({ returnTo, label = "发布信息" }: { returnTo: str
   return (
     <Link
       href={`${returnTo}/publish`}
-      className="inline-flex min-h-10 w-fit items-center justify-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-black text-white shadow-sm transition hover:bg-blue-700"
+      className="inline-flex min-h-9 w-fit shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-black text-blue-600 shadow-sm transition hover:border-blue-300 hover:bg-blue-100 hover:text-blue-700"
     >
-      <PlusCircle size={18} aria-hidden="true" />
+      <PlusCircle size={16} aria-hidden="true" />
       {label}
     </Link>
   );

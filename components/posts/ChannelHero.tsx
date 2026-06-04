@@ -12,5 +12,5 @@ export function ChannelHero({
   icon?: LucideIcon;
   actions?: ReactNode;
 }) {
-  return <PageTitleCard title={title} description={description} actions={actions} />;
+  return <PageTitleCard title={title} description={description} actions={actions} keepActionsInline />;
 }
