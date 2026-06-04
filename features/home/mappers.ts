@@ -99,6 +99,8 @@ export function mapBanner(row: Record<string, unknown>): HomeBannerItem | null {
     description: asString(row.subtitle, asString(row.description, asString(metadata.description))),
     href: normalizeRoute(asString(row.href, "/")),
     imageUrl,
+    openMode: asString(row.open_mode) || null,
+    slug: asString(row.slug) || null,
   };
 }
 

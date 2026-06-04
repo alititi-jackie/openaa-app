@@ -19,6 +19,16 @@ const channelBannerPlacements: Record<ChannelKey, string> = {
   dmv: "dmv_top",
 };
 
+const legacyChannelBannerPlacements: Partial<Record<ChannelKey, string>> = {
+  jobs: "jobs",
+  housing: "housing",
+  marketplace: "secondhand",
+  services: "services",
+  news: "news",
+  navigation: "navigation",
+  dmv: "dmv",
+};
+
 export async function getChannelBanner(channelKey: ChannelKey): Promise<HomeBannerItem | null> {
   const supabase = await createSupabaseServerClient();
   if (!supabase) return null;
@@ -28,7 +38,7 @@ export async function getChannelBanner(channelKey: ChannelKey): Promise<HomeBann
     const { data, error } = await supabase
       .from("ads")
       .select("id,title,href,open_mode,placement,metadata,is_active,sort_order,starts_at,ends_at,image_assets(public_url,external_url)")
-      .eq("placement", channelBannerPlacements[channelKey])
+      .in("placement", [channelBannerPlacements[channelKey], legacyChannelBannerPlacements[channelKey]].filter(Boolean) as string[])
       .eq("is_active", true)
       .or(`starts_at.is.null,starts_at.lte.${now}`)
       .or(`ends_at.is.null,ends_at.gte.${now}`)
