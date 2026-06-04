@@ -15,16 +15,21 @@ function registerFallbackMessage(isConfigured: boolean) {
   return isConfigured ? "注册失败，请重试" : "Supabase 环境变量尚未配置，暂时无法注册。";
 }
 
-export function RegisterForm() {
+type RegisterFormProps = {
+  initialAccepted?: boolean;
+};
+
+export function RegisterForm({ initialAccepted = false }: RegisterFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [nickname, setNickname] = useState("");
-  const [accepted, setAccepted] = useState(false);
+  const [accepted, setAccepted] = useState(initialAccepted);
   const [message, setMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isConfigured = isSupabaseBrowserConfigured();
+  const consentHref = `/legal/consent?returnTo=/register&agreed=${accepted ? "1" : "0"}`;
 
   async function handleRegister(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -176,8 +181,8 @@ export function RegisterForm() {
             className="mt-1 h-4 w-4"
           />
           <span>
-            我同意 <Link className="font-bold text-blue-700" href="/terms">服务条款</Link> 和{" "}
-            <Link className="font-bold text-blue-700" href="/privacy">隐私政策</Link>。
+            我同意 <Link className="font-bold text-blue-700" href={consentHref}>服务条款</Link> 和{" "}
+            <Link className="font-bold text-blue-700" href={consentHref}>隐私政策</Link>。
           </span>
         </label>
         <button

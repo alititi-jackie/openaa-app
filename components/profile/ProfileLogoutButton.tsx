@@ -23,7 +23,7 @@ export function ProfileLogoutButton({ variant = "default" }: { variant?: "defaul
         return;
       }
 
-      router.replace("/login?returnTo=/profile");
+      router.replace("/profile");
       router.refresh();
     } catch {
       setMessage("退出登录失败，请稍后再试。");
