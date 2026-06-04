@@ -62,7 +62,7 @@ export default async function ProfilePage() {
           <h2 className="text-[14px] font-black tracking-tight text-zinc-900">快捷操作</h2>
           <div className="grid grid-cols-2 gap-3 max-[359px]:grid-cols-1">
             <QuickAction
-              href="/offline"
+              href="/app"
               eyebrow="OpenAA"
               title="添加到桌面"
               icon={<PlusSquare size={18} className="text-blue-600" aria-hidden="true" />}
