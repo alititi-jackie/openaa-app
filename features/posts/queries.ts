@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { ALL_JOB_REGIONS, firstJobDetail, inferJobMode, isEffectivePinned, pinnedOrder } from "@/features/jobs/legacy";
 import { DEFAULT_CITY_SLUG, DEFAULT_POST_LIMIT, PUBLIC_POST_TYPES } from "./constants";
 import { mapPostRecordToCard, mapPostRecordToDetail } from "./mappers";
 import type {
@@ -10,6 +11,7 @@ import type {
   PostDetailView,
   PostRecord,
   PostType,
+  PublicJobPostsParams,
   PostsQueryResult,
   PublicPostsParams,
 } from "./types";
@@ -120,6 +122,94 @@ export async function getPublicPosts(params: PublicPostsParams): Promise<PostsQu
   }
 
   const records = (data ?? []) as unknown as PostRecord[];
+  const authors = await fetchAuthors(records.map((post) => post.author_id));
+
+  return { state: "ready", data: records.map((record) => mapPostRecordToCard(record, authors)) };
+}
+
+function normalizeFilter(value?: string) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function includesText(value: string | null | undefined, needle: string) {
+  return Boolean(value?.toLowerCase().includes(needle));
+}
+
+function matchesJobFilters(record: PostRecord, params: PublicJobPostsParams) {
+  const detail = firstJobDetail(record);
+  const mode = params.mode ?? "hiring";
+
+  if (inferJobMode(record) !== mode) return false;
+
+  const jobType = normalizeFilter(params.jobType);
+  if (jobType && detail?.employment_type !== jobType) return false;
+
+  const category = normalizeFilter(params.category);
+  if (category && detail?.job_category !== category && record.category !== category) return false;
+
+  const location = normalizeFilter(params.location);
+  if (location && location !== ALL_JOB_REGIONS && detail?.work_area !== location) return false;
+
+  const search = normalizeFilter(params.search)?.toLowerCase();
+  if (search) {
+    const matched =
+      includesText(record.title, search) ||
+      includesText(record.summary, search) ||
+      includesText(record.body, search) ||
+      includesText(detail?.employer_type, search) ||
+      includesText(detail?.work_area, search);
+
+    if (!matched) return false;
+  }
+
+  return true;
+}
+
+function sortableTime(value: string | null | undefined) {
+  if (!value) return 0;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? 0 : time;
+}
+
+function sortLegacyJobs(a: PostRecord, b: PostRecord) {
+  const aPinned = isEffectivePinned(a.metadata, a.status);
+  const bPinned = isEffectivePinned(b.metadata, b.status);
+  if (aPinned !== bPinned) return aPinned ? -1 : 1;
+
+  if (aPinned && bPinned) {
+    const orderDiff = pinnedOrder(a.metadata) - pinnedOrder(b.metadata);
+    if (orderDiff !== 0) return orderDiff;
+  }
+
+  return sortableTime(b.published_at || b.created_at) - sortableTime(a.published_at || a.created_at);
+}
+
+export async function getPublicJobPosts(params: PublicJobPostsParams = {}): Promise<PostsQueryResult<PostCardView[]>> {
+  const supabase = await createSupabaseServerClient();
+
+  if (!supabase) {
+    return emptyResult([]);
+  }
+
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("posts")
+    .select(publicPostSelect)
+    .eq("status", "published")
+    .eq("visibility", "public")
+    .eq("cities.slug", DEFAULT_CITY_SLUG)
+    .or(`expires_at.is.null,expires_at.gt.${now}`)
+    .eq("post_type", "job")
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false })
+    .limit(params.limit ?? 100);
+
+  if (error) {
+    return { state: "error", data: [], error: error.message };
+  }
+
+  const records = ((data ?? []) as unknown as PostRecord[]).filter((record) => matchesJobFilters(record, params)).sort(sortLegacyJobs);
   const authors = await fetchAuthors(records.map((post) => post.author_id));
 
   return { state: "ready", data: records.map((record) => mapPostRecordToCard(record, authors)) };

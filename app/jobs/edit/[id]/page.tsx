@@ -18,5 +18,5 @@ export default async function JobsEditPage({ params }: { params: Promise<{ id: s
   const post = await getEditablePostById(id, "job");
   if (!post.data) return <PageShell title="无法编辑" description={post.error ?? "内容不存在，或你没有编辑权限。"} eyebrow="Edit" />;
 
-  return <PostForm mode="edit" postType="job" initialValues={formValuesFromDetail(post.data)} />;
+  return <PostForm mode="edit" postType="job" initialValues={formValuesFromDetail(post.data)} legacyParity />;
 }

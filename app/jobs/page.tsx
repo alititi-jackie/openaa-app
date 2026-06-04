@@ -1,6 +1,6 @@
-import { ChannelPageShell } from "@/components/posts/ChannelPageShell";
-import { channelConfigs } from "@/components/posts/channelConfigs";
-import { getPublicPosts } from "@/features/posts/queries";
+import { JobsLegacyPage } from "@/components/jobs/JobsLegacyPage";
+import { ALL_JOB_REGIONS, type JobMode } from "@/features/jobs/legacy";
+import { getPublicJobPosts } from "@/features/posts/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const metadata = buildPageMetadata({
@@ -11,8 +11,28 @@ export const metadata = buildPageMetadata({
 
 export const dynamic = "force-dynamic";
 
-export default async function JobsPage() {
-  const posts = await getPublicPosts({ type: "job" });
+type JobsPageSearchParams = Promise<{
+  type?: string;
+  q?: string;
+  job_type?: string;
+  category?: string;
+  location?: string;
+}>;
 
-  return <ChannelPageShell config={{ ...channelConfigs.jobs, posts: posts.data, queryState: posts.state, errorMessage: posts.error }} />;
+function readJobMode(value?: string): JobMode {
+  return value === "seeking" ? "seeking" : "hiring";
+}
+
+export default async function JobsPage({ searchParams }: { searchParams: JobsPageSearchParams }) {
+  const params = await searchParams;
+  const filters = {
+    mode: readJobMode(params.type),
+    search: params.q?.trim() || undefined,
+    jobType: params.job_type?.trim() || undefined,
+    category: params.category?.trim() || undefined,
+    location: params.location?.trim() || ALL_JOB_REGIONS,
+  };
+  const posts = await getPublicJobPosts(filters);
+
+  return <JobsLegacyPage filters={filters} posts={posts.data} queryState={posts.state} errorMessage={posts.error} />;
 }

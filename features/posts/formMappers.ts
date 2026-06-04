@@ -46,7 +46,7 @@ export function emptyPostFormValues(postType: PostType): PostFormValues {
       job_type: "其它",
       salary_min: "",
       salary_max: "",
-      salary_unit: "hour",
+      salary_unit: "/小时",
       work_area: DEFAULT_LOCATION,
       experience_requirement: "",
       language_requirement: "",
@@ -110,9 +110,14 @@ export function formValuesFromDetail(post: PostDetailView): PostFormValues {
   if (post.type === "job") {
     values.job = {
       ...values.job!,
-      job_category: fieldValue(post, "类型") || values.job!.job_category,
-      job_type: fieldValue(post, "类型") || values.job!.job_type,
-      work_area: fieldValue(post, "区域") || values.location_area,
+      job_mode: post.job?.mode ?? values.job!.job_mode,
+      company_name: post.job?.companyName ?? values.job!.company_name,
+      job_category: post.job?.category || fieldValue(post, "类型") || values.job!.job_category,
+      job_type: post.job?.jobType || fieldValue(post, "类型") || values.job!.job_type,
+      salary_min: post.job?.wageMin ? String(post.job.wageMin) : values.job!.salary_min,
+      salary_max: post.job?.wageMax ? String(post.job.wageMax) : values.job!.salary_max,
+      salary_unit: post.job?.wageUnit ?? values.job!.salary_unit,
+      work_area: post.job?.workArea || fieldValue(post, "区域") || values.location_area,
     };
   }
 

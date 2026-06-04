@@ -22,6 +22,7 @@ type PostFormProps = {
   mode: "create" | "edit";
   postType: PostType;
   initialValues: PostFormValues;
+  legacyParity?: boolean;
 };
 
 const draftVersion = 2;
@@ -98,7 +99,7 @@ function normalizeRestoredValues(values: PostFormValues, postType: PostType, mod
   };
 }
 
-export function PostForm({ mode, postType, initialValues }: PostFormProps) {
+export function PostForm({ mode, postType, initialValues, legacyParity = false }: PostFormProps) {
   const router = useRouter();
   const [values, setValues] = useState<PostFormValues>({ ...initialValues, mode, postType });
   const [errors, setErrors] = useState<PostFormErrors>({});
@@ -208,7 +209,7 @@ export function PostForm({ mode, postType, initialValues }: PostFormProps) {
   return (
     <FormShell title={titleFor(postType, mode)} description={descriptionFor(postType)}>
       <form className="space-y-4 rounded-2xl bg-white p-4 shadow-sm sm:p-6" onSubmit={onSubmit}>
-        <DraftRestoreBanner visible={hasDraft} onRestore={restoreDraft} onClear={clearDraft} />
+        <DraftRestoreBanner visible={!legacyParity && hasDraft} onRestore={restoreDraft} onClear={clearDraft} />
 
         {postType === "job" ? (
           <>
@@ -418,7 +419,7 @@ export function PostForm({ mode, postType, initialValues }: PostFormProps) {
 
         {postType !== "job" ? <ImageUploader images={values.images} onChange={(images) => setValue("images", images)} disabled={isPending} maxImages={3} error={errors.images} /> : null}
 
-        <ContactFields value={values.contact} errors={errors} onChange={(contact) => setValue("contact", contact)} />
+        <ContactFields value={values.contact} errors={errors} onChange={(contact) => setValue("contact", contact)} hideExtendedFields={legacyParity && postType === "job"} />
 
         <div ref={bottomMessageRef}>
           <SubmitBar cancelHref={cancelHref} submitting={isPending} mode={mode} error={message} submitLabel={submitLabelFor(values, mode)} />

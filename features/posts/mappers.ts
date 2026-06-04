@@ -1,4 +1,5 @@
 import { POST_TYPE_LABELS, POST_TYPE_TO_ROUTE } from "./constants";
+import { formatJobSalary, inferJobMode, isEffectivePinned, pinnedOrder } from "@/features/jobs/legacy";
 import type {
   AuthorSummary,
   HousingDetailRecord,
@@ -99,6 +100,7 @@ export function mapPostRecordToCard(record: PostRecord, authors: Record<string, 
     [...(record.post_images ?? [])].sort((a, b) => Number(Boolean(b.is_cover)) - Number(Boolean(a.is_cover)) || (a.sort_order ?? 0) - (b.sort_order ?? 0))[0] ?? null,
   );
   const author = record.author_id ? authors[record.author_id] : null;
+  const jobDetail = record.post_type === "job" ? (firstOrNull(record.post_details_jobs) as JobDetailRecord | null) : null;
 
   return {
     id: record.id,
@@ -115,6 +117,23 @@ export function mapPostRecordToCard(record: PostRecord, authors: Record<string, 
     favoriteCount: postStats.favorite_count ?? 0,
     viewCount: postStats.view_count ?? 0,
     fields: detailFields(record),
+    metadata: record.metadata,
+    createdAt: record.created_at,
+    job: jobDetail
+      ? {
+          mode: inferJobMode(record),
+          companyName: jobDetail.employer_type || undefined,
+          jobType: jobDetail.employment_type || undefined,
+          category: jobDetail.job_category || record.category || undefined,
+          workArea: jobDetail.work_area || undefined,
+          salary: formatJobSalary(jobDetail.wage_min, jobDetail.wage_max, jobDetail.wage_unit),
+          wageMin: jobDetail.wage_min,
+          wageMax: jobDetail.wage_max,
+          wageUnit: jobDetail.wage_unit,
+          isPinned: isEffectivePinned(record.metadata, record.status),
+          pinnedOrder: pinnedOrder(record.metadata),
+        }
+      : undefined,
   };
 }
 

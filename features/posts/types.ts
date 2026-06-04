@@ -127,6 +127,21 @@ export type PostCardView = {
   favoriteCount: number;
   viewCount: number;
   fields: Array<{ label: string; value: string }>;
+  metadata?: Record<string, unknown> | null;
+  createdAt?: string;
+  job?: {
+    mode: "hiring" | "seeking";
+    companyName?: string;
+    jobType?: string;
+    category?: string;
+    workArea?: string;
+    salary: string;
+    wageMin?: number | string | null;
+    wageMax?: number | string | null;
+    wageUnit?: string | null;
+    isPinned: boolean;
+    pinnedOrder: number;
+  };
 };
 
 export type PostDetailView = PostCardView & {
@@ -147,6 +162,15 @@ export type PostsQueryResult<T> = {
 export type PublicPostsParams = {
   type: PostType;
   limit?: number;
+};
+
+export type PublicJobPostsParams = {
+  limit?: number;
+  mode?: "hiring" | "seeking";
+  search?: string;
+  jobType?: string;
+  category?: string;
+  location?: string;
 };
 
 export type ContactReveal = PostContactRecord;

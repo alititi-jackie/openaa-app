@@ -1,4 +1,4 @@
-import { PostDetailView } from "@/components/posts/PostDetailView";
+import { JobDetailLegacyView } from "@/components/jobs/JobDetailLegacyView";
 import { getPublicPostById } from "@/features/posts/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -14,5 +14,5 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
   const { id } = await params;
   const post = await getPublicPostById(id, "job");
 
-  return <PostDetailView post={post.data} />;
+  return <JobDetailLegacyView post={post.data} />;
 }

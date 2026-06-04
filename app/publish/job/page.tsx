@@ -10,11 +10,11 @@ export const dynamic = "force-dynamic";
 export const metadata = buildPageMetadata({
   title: "发布招聘",
   description: "发布纽约华人招聘或求职信息。",
-  path: "/jobs/publish",
+  path: "/publish/job",
   noIndex: true,
 });
 
-type JobsPublishSearchParams = Promise<{ type?: string }>;
+type PublishJobSearchParams = Promise<{ type?: string }>;
 
 function initialJobValues(type?: string) {
   const values = emptyPostFormValues("job");
@@ -25,9 +25,9 @@ function initialJobValues(type?: string) {
   return values;
 }
 
-export default async function JobsPublishPage({ searchParams }: { searchParams: JobsPublishSearchParams }) {
+export default async function PublishJobPage({ searchParams }: { searchParams: PublishJobSearchParams }) {
   const user = await getCurrentUser();
-  if (!user) redirectToAuthRequired("/jobs/publish");
+  if (!user) redirectToAuthRequired("/publish/job");
 
   const params = await searchParams;
 

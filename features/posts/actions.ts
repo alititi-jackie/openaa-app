@@ -145,6 +145,7 @@ function revalidatePostSurfaces(type: PostType, postId: string) {
   revalidatePath(postHref(type, postId));
   revalidatePath("/profile/posts");
   revalidatePath(`/profile/${route.slice(1)}`);
+  if (type === "job") revalidatePath("/profile/my-jobs");
 }
 
 function categoryFor(values: PostFormValues) {
@@ -171,6 +172,7 @@ function titleFor(values: PostFormValues) {
 function mainPostPayload(values: PostFormValues, userId: string, cityId: string | null) {
   const status = shouldReviewPost(values) ? "pending_review" : "published";
   const publishedAt = status === "published" ? new Date().toISOString() : null;
+  const metadata = values.postType === "job" ? { job_mode: values.job?.job_mode ?? "hiring" } : {};
 
   return {
     post_type: values.postType,
@@ -183,6 +185,7 @@ function mainPostPayload(values: PostFormValues, userId: string, cityId: string 
     status,
     visibility: values.visibility,
     price_amount: priceFor(values),
+    metadata,
     published_at: publishedAt,
     updated_at: new Date().toISOString(),
   };
@@ -303,6 +306,7 @@ export async function createPost(values: PostFormValues): Promise<PostFormAction
 
   await syncPostImages(context.supabase, context.user.id, values.postType, post.id, values.images);
   revalidatePath(POST_TYPE_TO_ROUTE[values.postType]);
+  if (values.postType === "job") revalidatePath("/profile/my-jobs");
   return { ok: true, postId: post.id, href: `${postHref(values.postType, post.id)}?created=1` };
 }
 
@@ -312,26 +316,43 @@ export async function updatePost(postId: string, values: PostFormValues): Promis
 
   const context = await getWriteContext();
   if (!context.ok) return { ok: false, message: context.error };
-  if (context.status === "banned") return { ok: false, message: "你的账号当前禁止编辑内容。" };
+  if (context.status === "banned" && values.postType !== "job") return { ok: false, message: "你的账号当前禁止编辑内容。" };
 
   const editCheck = await assertCanEdit(context.supabase, context.user.id, postId);
   if (!editCheck.ok) return { ok: false, message: editCheck.message };
   if (editCheck.post.post_type !== values.postType) return { ok: false, message: "内容类型不匹配，无法保存。" };
 
   const mainPayload = mainPostPayload(values, context.user.id, null);
-  const { error: postError } = await context.supabase
-    .from("posts")
-    .update({
+  const postUpdatePayload: {
+    title: string;
+    summary: string | null;
+    body: string;
+    category: string | null;
+    visibility: "public" | "private";
+    price_amount: number | null;
+    metadata?: Record<string, unknown>;
+    status: PostStatus;
+    published_at: string | null;
+    updated_at: string;
+  } = {
       title: mainPayload.title,
       summary: mainPayload.summary,
       body: mainPayload.body,
       category: mainPayload.category,
       visibility: mainPayload.visibility,
       price_amount: mainPayload.price_amount,
-      status: editCheck.post.status === "published" ? "published" : editCheck.post.status,
+    status: (editCheck.post.status === "published" ? "published" : editCheck.post.status) as PostStatus,
       published_at: editCheck.post.status === "published" ? (editCheck.post.published_at ?? new Date().toISOString()) : null,
       updated_at: mainPayload.updated_at,
-    })
+    };
+
+  if (values.postType === "job") {
+    postUpdatePayload.metadata = mainPayload.metadata;
+  }
+
+  const { error: postError } = await context.supabase
+    .from("posts")
+    .update(postUpdatePayload)
     .eq("id", postId)
     .eq("author_id", context.user.id);
 
@@ -345,6 +366,7 @@ export async function updatePost(postId: string, values: PostFormValues): Promis
 
   await syncPostImages(context.supabase, context.user.id, values.postType, postId, values.images);
   revalidatePath(postHref(values.postType, postId));
+  if (values.postType === "job") revalidatePath("/profile/my-jobs");
   return { ok: true, postId, href: `${postHref(values.postType, postId)}?updated=1` };
 }
 
@@ -411,7 +433,7 @@ export async function manageOwnPostStatus(_previousState: ManagePostActionState,
     return { ok: true, message: "已重新发布，内容恢复公开显示。", postId, action };
   }
 
-  if (context.status === "banned") {
+  if (context.status === "banned" && post.post_type !== "job") {
     return { ok: false, message: "账号禁用时不能管理内容。", postId, action };
   }
 
