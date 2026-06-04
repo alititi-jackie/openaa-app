@@ -1,21 +1,18 @@
-const CACHE_NAME = "openaa-app-shell-v1";
-const OFFLINE_URL = "/offline";
+const CACHE_NAME = "openaa-app-shell-v2";
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches
-      .open(CACHE_NAME)
-      .then((cache) => cache.addAll([OFFLINE_URL]))
-      .then(() => self.skipWaiting()),
-  );
+  event.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches
+      .keys()
+      .then((cacheNames) => Promise.all(cacheNames.filter((cacheName) => cacheName !== CACHE_NAME).map((cacheName) => caches.delete(cacheName))))
+      .then(() => self.clients.claim()),
+  );
 });
 
 self.addEventListener("fetch", (event) => {
-  if (event.request.mode !== "navigate") return;
-
-  event.respondWith(fetch(event.request).catch(() => caches.match(OFFLINE_URL)));
+  return;
 });
