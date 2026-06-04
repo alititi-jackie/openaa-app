@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { User } from "@supabase/supabase-js";
-import { normalizeNickname } from "@/features/auth/nicknameValidation";
+import { normalizeNickname, validateNickname } from "@/features/auth/nicknameValidation";
 import { createSupabaseServerClient } from "./server";
 
 function metadataString(value: unknown) {
@@ -9,12 +9,23 @@ function metadataString(value: unknown) {
 }
 
 function nicknameFromUser(user: User) {
-  const metadataNickname = metadataString(user.user_metadata?.nickname);
-  const metadataName = metadataString(user.user_metadata?.name);
-  const metadataFullName = metadataString(user.user_metadata?.full_name);
-  const emailPrefix = normalizeNickname(user.email?.split("@")[0] ?? "");
+  const candidates = [
+    metadataString(user.user_metadata?.nickname),
+    metadataString(user.user_metadata?.name),
+    metadataString(user.user_metadata?.full_name),
+    normalizeNickname(user.email?.split("@")[0] ?? ""),
+  ];
 
-  return metadataNickname || metadataName || metadataFullName || emailPrefix || null;
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+
+    const result = validateNickname(candidate);
+    if (result.ok) {
+      return result.nickname;
+    }
+  }
+
+  return null;
 }
 
 export async function ensureProfileForUser(user: User) {
