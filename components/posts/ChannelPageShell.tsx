@@ -20,6 +20,7 @@ export type ChannelPageConfig = {
   posts: PostListItem[];
   queryState?: "ready" | "missing_config" | "error";
   errorMessage?: string;
+  publishLabel?: string;
   seoTitle: string;
   seoContent: ReactNode;
 };
@@ -27,10 +28,12 @@ export type ChannelPageConfig = {
 export function ChannelPageShell({ config }: { config: ChannelPageConfig }) {
   return (
     <ChannelPageChrome channelKey={config.channelKey} path={config.path} title={config.title} description={config.description}>
-      <ChannelHero title={config.title} description={config.description} icon={config.icon} />
-      <div className="-mt-1 flex justify-end">
-        <PublishCta returnTo={config.path} label="发布信息" />
-      </div>
+      <ChannelHero
+        title={config.title}
+        description={config.description}
+        icon={config.icon}
+        actions={<PublishCta returnTo={config.path} label={config.publishLabel ?? "发布信息"} />}
+      />
       <ChannelTabs tabs={config.tabs} />
       <ChannelFilterBar placeholder={config.searchPlaceholder} />
       {config.queryState === "error" ? (
