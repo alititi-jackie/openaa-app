@@ -193,9 +193,8 @@ export function DmvHomeClient({ questionCount, guides }: DmvHomeClientProps) {
   return (
     <>
       <PageTitleCard
-        title="OpenAA DMV 工具中心"
-        description="纽约 DMV 笔试、罚单查询、驾照申请与车辆服务入口"
-        secondaryDescription="为美国华人整理常用 DMV 工具、官方入口和中文说明"
+        title="DMV 工具中心"
+        description="DMV 笔试、路考、罚单查询、驾照申请及常用 DMV 工具入口。"
       />
 
       <section>

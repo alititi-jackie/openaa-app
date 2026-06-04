@@ -4,10 +4,11 @@ import type { ChannelPageConfig } from "./ChannelPageShell";
 export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "services", ChannelPageConfig> = {
   jobs: {
     channelKey: "jobs",
-    title: "纽约华人招聘",
-    description: "招聘、求职、兼职、全职等信息入口。第一版先展示频道结构，不接真实招聘数据。",
+    title: "招聘信息",
+    description: "查看招聘、求职、兼职、全职、餐馆、办公室、仓库配送等工作信息。",
     path: "/jobs",
     icon: BriefcaseBusiness,
+    publishLabel: "发布招聘",
     tabs: ["全部", "全职", "兼职", "餐馆", "办公室", "求职"],
     searchPlaceholder: "搜索职位、公司或区域",
     posts: [
@@ -19,10 +20,11 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
   },
   housing: {
     channelKey: "housing",
-    title: "纽约租房与房屋信息",
-    description: "租房、求租、合租、转租和房屋信息入口。当前使用静态壳，后续再接 Supabase。",
+    title: "房屋租售",
+    description: "查看租房、找房、合租、整租、单房、公寓、商铺等房屋信息。",
     path: "/housing",
     icon: Building2,
+    publishLabel: "发布房源",
     tabs: ["全部", "出租", "求租", "合租", "转租", "房屋"],
     searchPlaceholder: "搜索区域、房型或预算",
     posts: [
@@ -30,14 +32,15 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
       { title: "曼哈顿求租占位", description: "这里展示求租信息卡片样式。", href: "/housing", meta: "占位", tag: "求租" },
     ],
     seoTitle: "纽约华人租房信息",
-    seoContent: "OpenAA 房屋频道为纽约华人用户整理租房、求租、合租和转租等居住信息，第一版先建立移动端浏览结构。",
+    seoContent: "OpenAA 房屋频道为纽约华人用户整理租房、求租、合租、整租、单房、公寓、商铺和转租等居住信息，第一版先建立移动端浏览结构。",
   },
   marketplace: {
     channelKey: "marketplace",
     title: "二手市场",
-    description: "出售、求购、闲置转让和跳蚤市场入口。新项目统一使用 /marketplace。",
+    description: "浏览和发布二手商品、闲置物品、求购信息和生活用品交易信息。",
     path: "/marketplace",
     icon: ShoppingBag,
+    publishLabel: "发布二手",
     tabs: ["全部", "出售", "求购", "家具", "电器", "搬家"],
     searchPlaceholder: "搜索二手物品或区域",
     posts: [
@@ -45,14 +48,15 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
       { title: "求购显示器占位", description: "这里展示求购信息卡片样式。", href: "/marketplace", meta: "占位", tag: "求购" },
     ],
     seoTitle: "纽约华人二手市场",
-    seoContent: "OpenAA 二手市场频道用于承载出售、求购、搬家处理和本地自取等信息，后续会接入真实发布与审核流程。",
+    seoContent: "OpenAA 二手市场频道用于承载出售、求购、搬家处理、本地自取和生活用品交易等信息，后续会接入真实发布与审核流程。",
   },
   services: {
     channelKey: "services",
-    title: "纽约本地服务",
-    description: "维修、搬家、装修、报税、清洁等本地服务入口。当前只提供公开页面壳。",
+    title: "本地服务",
+    description: "查找装修、搬家、维修、清洁、接送、会计、法律等本地服务信息。",
     path: "/services",
     icon: Store,
+    publishLabel: "发布服务",
     tabs: ["全部", "搬家", "维修", "装修", "报税", "清洁"],
     searchPlaceholder: "搜索服务、商家或区域",
     posts: [
@@ -60,6 +64,6 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
       { title: "报税服务占位", description: "这里展示服务类信息卡片样式。", href: "/services", meta: "占位", tag: "报税" },
     ],
     seoTitle: "纽约华人本地服务",
-    seoContent: "OpenAA 本地服务频道面向纽约华人日常生活场景，后续会逐步接入商家资料、服务分类和公开展示。",
+    seoContent: "OpenAA 本地服务频道面向纽约华人日常生活场景，后续会逐步接入装修、搬家、维修、清洁、接送、会计、法律等商家资料、服务分类和公开展示。",
   },
 };

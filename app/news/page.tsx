@@ -30,8 +30,17 @@ export default async function NewsPage({
   ]);
 
   return (
-    <ChannelPageChrome channelKey="news" path="/news" title="纽约华人新闻" description={NEWS_DEFAULT_DESCRIPTION}>
-      <ChannelHero title="纽约华人新闻" description={NEWS_DEFAULT_DESCRIPTION} icon={Newspaper} />
+    <ChannelPageChrome
+      channelKey="news"
+      path="/news"
+      title="新闻资讯"
+      description="美国华人生活资讯，关注本地新闻、社区动态、新手资讯、生活指南和平台公告。"
+    >
+      <ChannelHero
+        title="新闻资讯"
+        description="美国华人生活资讯，关注本地新闻、社区动态、新手资讯、生活指南和平台公告。"
+        icon={Newspaper}
+      />
       <NewsCategoryTabs categories={categoriesResult.data} activeSlug={activeCategory} />
       {postsResult.state === "error" ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
@@ -44,7 +53,8 @@ export default async function NewsPage({
       ) : null}
       <NewsList posts={postsResult.data} />
       <ChannelSeoCard title="纽约华人新闻与生活指南">
-        OpenAA 新闻频道整理纽约本地新闻、新手指南、DMV 教程、生活指南和平台公告。新闻详情页只展示已发布内容，并保留分类、发布时间、封面图和 SEO 信息，方便用户在移动端快速阅读。
+        OpenAA 新闻频道整理纽约本地新闻、新手指南、DMV 教程、生活指南和平台公告。新闻详情页只展示已发布内容，并保留分类、发布时间、封面图和 SEO
+        信息，方便用户在移动端快速阅读。
       </ChannelSeoCard>
     </ChannelPageChrome>
   );
