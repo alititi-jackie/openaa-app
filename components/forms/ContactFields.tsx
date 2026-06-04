@@ -9,9 +9,10 @@ type ContactFieldsProps = {
   value: ContactInput;
   errors: PostFormErrors;
   onChange: (value: ContactInput) => void;
+  hideExtendedFields?: boolean;
 };
 
-export function ContactFields({ value, errors, onChange }: ContactFieldsProps) {
+export function ContactFields({ value, errors, onChange, hideExtendedFields = false }: ContactFieldsProps) {
   const set = (key: keyof ContactInput, next: string) => onChange({ ...value, [key]: next });
 
   return (
@@ -29,18 +30,20 @@ export function ContactFields({ value, errors, onChange }: ContactFieldsProps) {
         </FormField>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <FormField label="邮箱（可选）" error={errors.email}>
-          <TextInput value={value.email} onChange={(event) => set("email", event.target.value)} placeholder="email@example.com" inputMode="email" />
-        </FormField>
-        <FormField label="首选联系方式">
-          <SelectInput value={value.preferred_contact_method} onChange={(event) => set("preferred_contact_method", event.target.value)}>
-            <option value="phone">电话</option>
-            <option value="wechat">微信</option>
-            <option value="email">邮箱</option>
-          </SelectInput>
-        </FormField>
-      </div>
+      {!hideExtendedFields ? (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <FormField label="邮箱（可选）" error={errors.email}>
+            <TextInput value={value.email} onChange={(event) => set("email", event.target.value)} placeholder="email@example.com" inputMode="email" />
+          </FormField>
+          <FormField label="首选联系方式">
+            <SelectInput value={value.preferred_contact_method} onChange={(event) => set("preferred_contact_method", event.target.value)}>
+              <option value="phone">电话</option>
+              <option value="wechat">微信</option>
+              <option value="email">邮箱</option>
+            </SelectInput>
+          </FormField>
+        </div>
+      ) : null}
 
       {errors.contact ? (
         <div className="rounded-xl border border-red-100 bg-red-50 p-3 text-sm leading-5 text-red-600">

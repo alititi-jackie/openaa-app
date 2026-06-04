@@ -5,7 +5,7 @@ export const PUBLIC_POST_TYPES: PostType[] = ["job", "housing", "marketplace", "
 export const POST_TYPE_TO_ROUTE: Record<PostType, string> = {
   job: "/jobs",
   housing: "/housing",
-  marketplace: "/marketplace",
+  marketplace: "/secondhand",
   service: "/services",
 };
 

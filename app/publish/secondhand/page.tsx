@@ -10,13 +10,13 @@ export const dynamic = "force-dynamic";
 export const metadata = buildPageMetadata({
   title: "发布二手",
   description: "发布纽约二手出售或求购信息。",
-  path: "/secondhand/publish",
+  path: "/publish/secondhand",
   noIndex: true,
 });
 
-export default async function SecondhandPublishPage({ searchParams }: { searchParams?: Promise<{ type?: string; mode?: string }> }) {
+export default async function PublishSecondhandAliasPage({ searchParams }: { searchParams?: Promise<{ type?: string; mode?: string }> }) {
   const user = await getCurrentUser();
-  if (!user) redirectToAuthRequired("/secondhand/publish");
+  if (!user) redirectToAuthRequired("/publish/secondhand");
 
   const params = (await searchParams) ?? {};
   const initialValues = emptyPostFormValues("marketplace");

@@ -11,13 +11,13 @@ export const dynamic = "force-dynamic";
 export const metadata = buildPageMetadata({
   title: "我的商品",
   description: "管理您发布的二手出售与求购信息。",
-  path: "/profile/marketplace",
+  path: "/profile/my-marketplace",
   noIndex: true,
 });
 
-export default async function ProfileMarketplacePage() {
+export default async function ProfileMyMarketplacePage() {
   const user = await getCurrentUser();
-  if (!user) redirectToAuthRequired("/profile/marketplace");
+  if (!user) redirectToAuthRequired("/profile/my-marketplace");
 
   const posts = await getMyPosts("marketplace");
 

@@ -22,6 +22,7 @@ type PostFormProps = {
   mode: "create" | "edit";
   postType: PostType;
   initialValues: PostFormValues;
+  legacyParity?: boolean;
 };
 
 const draftVersion = 2;
@@ -34,7 +35,11 @@ function draftKey(postType: PostType, mode: "create" | "edit", postId?: string) 
   return `openaa:post-form:${draftVersion}:${postType}:${mode}:${postId ?? "new"}`;
 }
 
-function titleFor(postType: PostType, mode: "create" | "edit") {
+function titleFor(postType: PostType, mode: "create" | "edit", values?: PostFormValues, legacyParity = false) {
+  if (legacyParity && postType === "marketplace") {
+    if (mode === "edit") return "编辑信息";
+    return values?.marketplace?.marketplace_mode === "buying" ? "发布求购信息" : "发布二手商品";
+  }
   return `${mode === "create" ? "发布" : "编辑"}${POST_TYPE_LABELS[postType]}`;
 }
 
@@ -98,7 +103,7 @@ function normalizeRestoredValues(values: PostFormValues, postType: PostType, mod
   };
 }
 
-export function PostForm({ mode, postType, initialValues }: PostFormProps) {
+export function PostForm({ mode, postType, initialValues, legacyParity = false }: PostFormProps) {
   const router = useRouter();
   const [values, setValues] = useState<PostFormValues>({ ...initialValues, mode, postType });
   const [errors, setErrors] = useState<PostFormErrors>({});
@@ -201,14 +206,18 @@ export function PostForm({ mode, postType, initialValues }: PostFormProps) {
       }
 
       window.localStorage.removeItem(storageKey);
+      if (legacyParity && mode === "create" && postType === "marketplace") {
+        router.push("/secondhand");
+        return;
+      }
       router.push(result.href);
     });
   }
 
   return (
-    <FormShell title={titleFor(postType, mode)} description={descriptionFor(postType)}>
+    <FormShell title={titleFor(postType, mode, values, legacyParity)} description={descriptionFor(postType)}>
       <form className="space-y-4 rounded-2xl bg-white p-4 shadow-sm sm:p-6" onSubmit={onSubmit}>
-        <DraftRestoreBanner visible={hasDraft} onRestore={restoreDraft} onClear={clearDraft} />
+        <DraftRestoreBanner visible={!legacyParity && hasDraft} onRestore={restoreDraft} onClear={clearDraft} />
 
         {postType === "job" ? (
           <>
@@ -328,9 +337,10 @@ export function PostForm({ mode, postType, initialValues }: PostFormProps) {
             <ModeSwitch
               label="发布类型"
               locked={typeSwitchLocked}
+              lockedMessage="编辑模式下不支持切换类型（出售/求购）。"
               options={[
-                { value: "selling", label: "我要出售" },
-                { value: "buying", label: "我要求购" },
+                { value: "selling", label: legacyParity ? "出售商品" : "我要出售" },
+                { value: "buying", label: legacyParity ? "求购信息" : "我要求购" },
               ]}
               value={values.marketplace?.marketplace_mode ?? "selling"}
               onChange={(next) => setMarketplace({ marketplace_mode: next as MarketplaceFields["marketplace_mode"] })}
@@ -356,13 +366,15 @@ export function PostForm({ mode, postType, initialValues }: PostFormProps) {
                     {secondhandCategories.map((item) => <option key={item} value={item}>{item}</option>)}
                   </SelectInput>
                 </FormField>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className={legacyParity ? "grid grid-cols-1 gap-4" : "grid grid-cols-1 gap-4 md:grid-cols-2"}>
                   <FormField label="价格（USD）">
                     <TextInput value={values.marketplace?.price} onChange={(event) => setMarketplace({ price: event.target.value })} type="number" min="0" step="0.01" placeholder="0.00" />
                   </FormField>
-                  <FormField label="成色">
-                    <TextInput value={values.marketplace?.condition} onChange={(event) => setMarketplace({ condition: event.target.value })} placeholder="例：九成新 / 全新未拆" />
-                  </FormField>
+                  {!legacyParity ? (
+                    <FormField label="成色">
+                      <TextInput value={values.marketplace?.condition} onChange={(event) => setMarketplace({ condition: event.target.value })} placeholder="例：九成新 / 全新未拆" />
+                    </FormField>
+                  ) : null}
                 </div>
               </>
             ) : (
@@ -418,7 +430,7 @@ export function PostForm({ mode, postType, initialValues }: PostFormProps) {
 
         {postType !== "job" ? <ImageUploader images={values.images} onChange={(images) => setValue("images", images)} disabled={isPending} maxImages={3} error={errors.images} /> : null}
 
-        <ContactFields value={values.contact} errors={errors} onChange={(contact) => setValue("contact", contact)} />
+        <ContactFields value={values.contact} errors={errors} onChange={(contact) => setValue("contact", contact)} hideExtendedFields={legacyParity && postType === "marketplace"} />
 
         <div ref={bottomMessageRef}>
           <SubmitBar cancelHref={cancelHref} submitting={isPending} mode={mode} error={message} submitLabel={submitLabelFor(values, mode)} />
@@ -445,12 +457,14 @@ function ModeSwitch({
   value,
   options,
   locked,
+  lockedMessage = "编辑模式下不支持切换类型。",
   onChange,
 }: {
   label: string;
   value: string;
   options: Array<{ value: string; label: string }>;
   locked?: boolean;
+  lockedMessage?: string;
   onChange: (value: string) => void;
 }) {
   return (
@@ -475,7 +489,7 @@ function ModeSwitch({
           </button>
         ))}
       </div>
-      {locked ? <p className="mt-2 text-xs text-gray-400">编辑模式下不支持切换类型。</p> : null}
+      {locked ? <p className="mt-2 text-xs text-gray-400">{lockedMessage}</p> : null}
     </div>
   );
 }

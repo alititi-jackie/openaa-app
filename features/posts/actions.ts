@@ -107,7 +107,7 @@ async function assertCanEdit(supabase: SupabaseServerClient, userId: string, pos
     return { ok: false as const, message: "你只能编辑自己发布的内容。" };
   }
 
-  if (["hidden", "rejected", "deleted"].includes(data.status)) {
+  if (["rejected", "deleted"].includes(data.status) || (data.status === "hidden" && data.post_type !== "marketplace")) {
     return { ok: false as const, message: "已隐藏、已拒绝或已删除的内容不能由普通用户编辑。" };
   }
 
@@ -145,6 +145,14 @@ function revalidatePostSurfaces(type: PostType, postId: string) {
   revalidatePath(postHref(type, postId));
   revalidatePath("/profile/posts");
   revalidatePath(`/profile/${route.slice(1)}`);
+  if (type === "marketplace") {
+    revalidatePath("/marketplace");
+    revalidatePath(`/marketplace/${postId}`);
+    revalidatePath("/profile/marketplace");
+    revalidatePath("/profile/secondhand");
+    revalidatePath("/profile/my-secondhand");
+    revalidatePath("/profile/my-marketplace");
+  }
 }
 
 function categoryFor(values: PostFormValues) {
@@ -171,6 +179,7 @@ function titleFor(values: PostFormValues) {
 function mainPostPayload(values: PostFormValues, userId: string, cityId: string | null) {
   const status = shouldReviewPost(values) ? "pending_review" : "published";
   const publishedAt = status === "published" ? new Date().toISOString() : null;
+  const metadata = values.postType === "marketplace" ? { marketplace_mode: values.marketplace?.marketplace_mode === "buying" ? "buying" : "selling" } : null;
 
   return {
     post_type: values.postType,
@@ -183,6 +192,7 @@ function mainPostPayload(values: PostFormValues, userId: string, cityId: string 
     status,
     visibility: values.visibility,
     price_amount: priceFor(values),
+    ...(values.postType === "marketplace" ? { metadata } : {}),
     published_at: publishedAt,
     updated_at: new Date().toISOString(),
   };
@@ -302,7 +312,7 @@ export async function createPost(values: PostFormValues): Promise<PostFormAction
   if (contactResult.error) return { ok: false, message: `内容已创建，但联系方式保存失败：${contactResult.error.message}` };
 
   await syncPostImages(context.supabase, context.user.id, values.postType, post.id, values.images);
-  revalidatePath(POST_TYPE_TO_ROUTE[values.postType]);
+  revalidatePostSurfaces(values.postType, post.id);
   return { ok: true, postId: post.id, href: `${postHref(values.postType, post.id)}?created=1` };
 }
 
@@ -312,7 +322,7 @@ export async function updatePost(postId: string, values: PostFormValues): Promis
 
   const context = await getWriteContext();
   if (!context.ok) return { ok: false, message: context.error };
-  if (context.status === "banned") return { ok: false, message: "你的账号当前禁止编辑内容。" };
+  if (context.status === "banned" && values.postType !== "marketplace") return { ok: false, message: "你的账号当前禁止编辑内容。" };
 
   const editCheck = await assertCanEdit(context.supabase, context.user.id, postId);
   if (!editCheck.ok) return { ok: false, message: editCheck.message };
@@ -328,6 +338,7 @@ export async function updatePost(postId: string, values: PostFormValues): Promis
       category: mainPayload.category,
       visibility: mainPayload.visibility,
       price_amount: mainPayload.price_amount,
+      ...(values.postType === "marketplace" ? { metadata: mainPayload.metadata } : {}),
       status: editCheck.post.status === "published" ? "published" : editCheck.post.status,
       published_at: editCheck.post.status === "published" ? (editCheck.post.published_at ?? new Date().toISOString()) : null,
       updated_at: mainPayload.updated_at,
@@ -344,7 +355,7 @@ export async function updatePost(postId: string, values: PostFormValues): Promis
   if (contactResult.error) return { ok: false, message: contactResult.error.message };
 
   await syncPostImages(context.supabase, context.user.id, values.postType, postId, values.images);
-  revalidatePath(postHref(values.postType, postId));
+  revalidatePostSurfaces(values.postType, postId);
   return { ok: true, postId, href: `${postHref(values.postType, postId)}?updated=1` };
 }
 
@@ -411,7 +422,7 @@ export async function manageOwnPostStatus(_previousState: ManagePostActionState,
     return { ok: true, message: "已重新发布，内容恢复公开显示。", postId, action };
   }
 
-  if (context.status === "banned") {
+  if (context.status === "banned" && post.post_type !== "marketplace") {
     return { ok: false, message: "账号禁用时不能管理内容。", postId, action };
   }
 
@@ -461,10 +472,10 @@ async function syncPostImages(supabase: SupabaseServerClient, userId: string, po
 export async function removePostImage(postId: string, imageAssetId: string): Promise<PostFormActionResult> {
   const context = await getWriteContext();
   if (!context.ok) return { ok: false, message: context.error };
-  if (context.status === "banned") return { ok: false, message: "账号禁用时不能编辑内容。" };
 
   const editCheck = await assertCanEdit(context.supabase, context.user.id, postId);
   if (!editCheck.ok) return { ok: false, message: editCheck.message };
+  if (context.status === "banned" && editCheck.post.post_type !== "marketplace") return { ok: false, message: "账号禁用时不能编辑内容。" };
 
   await context.supabase.from("post_images").delete().eq("post_id", postId).eq("image_asset_id", imageAssetId);
   await context.supabase
@@ -483,11 +494,10 @@ export async function uploadPostImage(postId: string, postType: PostType, file: 
 
   const context = await getWriteContext();
   if (!context.ok) return { ok: false, message: context.error };
-  if (context.status === "banned") return { ok: false, message: "账号禁用时不能编辑内容。" };
-
   const editCheck = await assertCanEdit(context.supabase, context.user.id, postId);
   if (!editCheck.ok) return { ok: false, message: editCheck.message };
   if (editCheck.post.post_type !== postType) return { ok: false, message: "图片类型与内容类型不匹配。" };
+  if (context.status === "banned" && editCheck.post.post_type !== "marketplace") return { ok: false, message: "账号禁用时不能编辑内容。" };
 
   const imageId = crypto.randomUUID();
   const path = `${postType}/${context.user.id}/${postId}/${imageId}.webp`;

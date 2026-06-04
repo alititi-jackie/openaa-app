@@ -1,5 +1,6 @@
 import { PostForm } from "@/components/forms/PostForm";
 import { emptyPostFormValues } from "@/features/posts/formMappers";
+import { normalizeSecondhandMode } from "@/features/secondhand/legacy";
 import { redirectToAuthRequired } from "@/lib/auth/redirects";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -13,9 +14,13 @@ export const metadata = buildPageMetadata({
   noIndex: true,
 });
 
-export default async function MarketplacePublishPage() {
+export default async function MarketplacePublishPage({ searchParams }: { searchParams?: Promise<{ type?: string; mode?: string }> }) {
   const user = await getCurrentUser();
   if (!user) redirectToAuthRequired("/marketplace/publish");
 
-  return <PostForm mode="create" postType="marketplace" initialValues={emptyPostFormValues("marketplace")} />;
+  const params = (await searchParams) ?? {};
+  const initialValues = emptyPostFormValues("marketplace");
+  initialValues.marketplace!.marketplace_mode = normalizeSecondhandMode(params.type ?? params.mode);
+
+  return <PostForm mode="create" postType="marketplace" initialValues={initialValues} legacyParity />;
 }

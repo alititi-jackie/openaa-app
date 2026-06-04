@@ -127,6 +127,16 @@ export type PostCardView = {
   favoriteCount: number;
   viewCount: number;
   fields: Array<{ label: string; value: string }>;
+  marketplace?: {
+    mode: "selling" | "buying";
+    price: string;
+    rawPrice: number | string | null;
+    category: string;
+    condition: string;
+    tradeArea: string;
+    isPinned: boolean;
+    pinnedOrder: number;
+  };
 };
 
 export type PostDetailView = PostCardView & {
