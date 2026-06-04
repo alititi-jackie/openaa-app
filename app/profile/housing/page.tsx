@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { PageShell } from "@/components/layout/PageShell";
+import { PublishCta } from "@/components/posts/PublishCta";
 import { UserPostsList } from "@/components/posts/UserPostsList";
 import { getMyPosts } from "@/features/posts/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -29,14 +29,8 @@ export default async function ProfileHousingPage() {
       title="我的房屋"
       description="管理当前账号自己的房屋内容。"
       eyebrow="Profile"
-      actions={
-        <Link
-          href="/housing/publish"
-          className="inline-flex min-h-10 items-center justify-center rounded-full bg-slate-950 px-4 py-2 text-sm font-black text-white shadow-sm"
-        >
-          发布房屋
-        </Link>
-      }
+      actions={<PublishCta returnTo="/housing" label="发布房源" />}
+      keepActionsInline
     >
       <UserPostsList posts={posts.data} />
     </PageShell>
