@@ -8,12 +8,12 @@ import { getCurrentUser } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = buildPageMetadata({ title: "编辑二手", path: "/marketplace/edit", noIndex: true });
+export const metadata = buildPageMetadata({ title: "编辑二手", path: "/secondhand/edit", noIndex: true });
 
-export default async function MarketplaceEditPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function SecondhandEditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const user = await getCurrentUser();
-  if (!user) redirectToAuthRequired(`/marketplace/edit/${id}`);
+  if (!user) redirectToAuthRequired(`/secondhand/edit/${id}`);
 
   const post = await getEditablePostById(id, "marketplace");
   if (!post.data) {

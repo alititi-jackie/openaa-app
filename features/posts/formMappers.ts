@@ -127,9 +127,11 @@ export function formValuesFromDetail(post: PostDetailView): PostFormValues {
   if (post.type === "marketplace") {
     values.marketplace = {
       ...values.marketplace!,
-      price: fieldValue(post, "价格").replace(/[$,]/g, ""),
+      marketplace_mode: post.marketplace?.mode ?? values.marketplace!.marketplace_mode,
+      category: post.marketplace?.category || values.marketplace!.category,
+      price: String(post.marketplace?.rawPrice ?? fieldValue(post, "价格").replace(/[^\d.]/g, "")),
       condition: fieldValue(post, "成色"),
-      trade_area: fieldValue(post, "交易区域") || values.location_area,
+      trade_area: post.marketplace?.tradeArea || fieldValue(post, "交易区域") || values.location_area,
     };
   }
 

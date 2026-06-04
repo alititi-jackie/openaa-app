@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { inferSecondhandMode, isEffectivePinned, matchesSecondhandSearch, pinnedOrder, type SecondhandMode } from "@/features/secondhand/legacy";
 import { DEFAULT_CITY_SLUG, DEFAULT_POST_LIMIT, PUBLIC_POST_TYPES } from "./constants";
 import { mapPostRecordToCard, mapPostRecordToDetail } from "./mappers";
 import type {
@@ -13,6 +14,14 @@ import type {
   PostsQueryResult,
   PublicPostsParams,
 } from "./types";
+
+export type PublicSecondhandPostsParams = {
+  mode?: SecondhandMode;
+  keyword?: string;
+  category?: string;
+  region?: string;
+  limit?: number;
+};
 
 const postSelectFields = `
   id,
@@ -123,6 +132,52 @@ export async function getPublicPosts(params: PublicPostsParams): Promise<PostsQu
   const authors = await fetchAuthors(records.map((post) => post.author_id));
 
   return { state: "ready", data: records.map((record) => mapPostRecordToCard(record, authors)) };
+}
+
+export async function getPublicSecondhandPosts(params: PublicSecondhandPostsParams = {}): Promise<PostsQueryResult<PostCardView[]>> {
+  const supabase = await createSupabaseServerClient();
+
+  if (!supabase) {
+    return emptyResult([]);
+  }
+
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("posts")
+    .select(publicPostSelect)
+    .eq("status", "published")
+    .eq("visibility", "public")
+    .eq("cities.slug", DEFAULT_CITY_SLUG)
+    .or(`expires_at.is.null,expires_at.gt.${now}`)
+    .eq("post_type", "marketplace")
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false })
+    .limit(Math.max(params.limit ?? DEFAULT_POST_LIMIT, 80));
+
+  if (error) {
+    return { state: "error", data: [], error: error.message };
+  }
+
+  const records = ((data ?? []) as unknown as PostRecord[])
+    .filter((record) => inferSecondhandMode(record) === (params.mode ?? "selling"))
+    .filter((record) => matchesSecondhandSearch(record, params.keyword ?? "", params.category ?? "", params.region ?? ""));
+
+  records.sort((a, b) => {
+    const pinnedDelta = Number(isEffectivePinned(b.metadata)) - Number(isEffectivePinned(a.metadata));
+    if (pinnedDelta) return pinnedDelta;
+
+    const orderDelta = pinnedOrder(b.metadata) - pinnedOrder(a.metadata);
+    if (orderDelta) return orderDelta;
+
+    const bTime = new Date(b.published_at || b.created_at).getTime();
+    const aTime = new Date(a.published_at || a.created_at).getTime();
+    return bTime - aTime;
+  });
+
+  const limited = records.slice(0, params.limit ?? DEFAULT_POST_LIMIT);
+  const authors = await fetchAuthors(limited.map((post) => post.author_id));
+
+  return { state: "ready", data: limited.map((record) => mapPostRecordToCard(record, authors)) };
 }
 
 export async function getPublicPostById(id: string, type: PostType): Promise<PostsQueryResult<PostDetailView | null>> {
