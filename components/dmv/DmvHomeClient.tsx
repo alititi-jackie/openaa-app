@@ -19,6 +19,7 @@ import {
   Shuffle,
   X,
 } from "lucide-react";
+import { PageTitleCard } from "@/components/PageTitleCard";
 import { ChannelSeoCard } from "@/components/posts/ChannelSeoCard";
 import { cn } from "@/lib/utils/cn";
 
@@ -191,11 +192,11 @@ export function DmvHomeClient({ questionCount, guides }: DmvHomeClientProps) {
 
   return (
     <>
-      <section className="rounded-2xl border border-blue-100 bg-gradient-to-b from-blue-50 to-white p-4 shadow-sm">
-        <h1 className="text-2xl font-black text-slate-950">OpenAA DMV 工具中心</h1>
-        <p className="mt-2 text-sm font-bold text-blue-700">纽约 DMV 笔试、罚单查询、驾照申请与车辆服务入口</p>
-        <p className="mt-2 text-sm leading-6 text-slate-600">为美国华人整理常用 DMV 工具、官方入口和中文说明</p>
-      </section>
+      <PageTitleCard
+        title="OpenAA DMV 工具中心"
+        description="纽约 DMV 笔试、罚单查询、驾照申请与车辆服务入口"
+        secondaryDescription="为美国华人整理常用 DMV 工具、官方入口和中文说明"
+      />
 
       <section>
         <h2 className="text-base font-black text-slate-950">DMV 快捷工具</h2>
