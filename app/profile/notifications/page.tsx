@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { MessageCircle, UserRound } from "lucide-react";
 import { PageShell } from "@/components/layout/PageShell";
 import { ProfileNotificationsList } from "@/components/profile/ProfileNotificationsList";
@@ -7,6 +6,7 @@ import { getMyNotifications } from "@/features/notifications/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getCurrentUser } from "@/lib/supabase/server";
 
+import { redirectToAuthRequired } from "@/lib/auth/redirects";
 export const dynamic = "force-dynamic";
 
 export const metadata = buildPageMetadata({
@@ -20,7 +20,7 @@ export default async function ProfileNotificationsPage() {
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect("/login?returnTo=/profile/notifications");
+    redirectToAuthRequired("/profile/notifications");
   }
 
   const notifications = await getMyNotifications();

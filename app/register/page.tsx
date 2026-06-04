@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { RegisterForm } from "@/components/auth/RegisterForm";
+import { safeReturnTo } from "@/lib/auth/redirects";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -14,7 +15,7 @@ export const metadata = buildPageMetadata({
 });
 
 type RegisterPageProps = {
-  searchParams: Promise<{ agreed?: string }>;
+  searchParams: Promise<{ agreed?: string; returnTo?: string }>;
 };
 
 export default async function RegisterPage({ searchParams }: RegisterPageProps) {
@@ -27,13 +28,13 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
     } = await supabase.auth.getUser();
 
     if (user) {
-      redirect("/profile");
+      redirect(safeReturnTo(params.returnTo));
     }
   }
 
   return (
     <Suspense>
-      <RegisterForm initialAccepted={params.agreed === "1"} />
+      <RegisterForm authReturnTo={safeReturnTo(params.returnTo)} initialAccepted={params.agreed === "1"} />
     </Suspense>
   );
 }

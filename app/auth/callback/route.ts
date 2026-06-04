@@ -11,6 +11,7 @@ const allowedReturnToPrefixes = [
   "/jobs",
   "/housing",
   "/marketplace",
+  "/secondhand",
   "/services",
   "/navigation/my",
   "/dmv",

@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { BackToTopButton } from "@/components/common/BackToTopButton";
 import { PageShell } from "@/components/layout/PageShell";
+import { safeReturnTo } from "@/lib/auth/redirects";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const metadata = buildPageMetadata({
@@ -11,15 +11,15 @@ export const metadata = buildPageMetadata({
 });
 
 type ConsentPageProps = {
-  searchParams: Promise<{ returnTo?: string; agreed?: string }>;
+  searchParams: Promise<{ agreed?: string; next?: string; returnTo?: string }>;
 };
 
-function safeReturnTo(value: string | undefined) {
+function safeRegisterReturnTo(value: string | undefined) {
   return value === "/register" ? "/register" : "/register";
 }
 
-function registerHref(returnTo: string, agreed: "0" | "1") {
-  return `${returnTo}?agreed=${agreed}`;
+function registerHref(returnTo: string, agreed: "0" | "1", next: string) {
+  return `${returnTo}?agreed=${agreed}&returnTo=${encodeURIComponent(next)}`;
 }
 
 const terms = [
@@ -42,7 +42,8 @@ const privacy = [
 
 export default async function LegalConsentPage({ searchParams }: ConsentPageProps) {
   const params = await searchParams;
-  const returnTo = safeReturnTo(params.returnTo);
+  const returnTo = safeRegisterReturnTo(params.returnTo);
+  const next = safeReturnTo(params.next, "/profile");
   const currentAgreed = params.agreed === "1" ? "1" : "0";
 
   return (
@@ -82,17 +83,16 @@ export default async function LegalConsentPage({ searchParams }: ConsentPageProp
         </section>
 
         <section className="sticky bottom-4 grid gap-3 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur sm:grid-cols-2">
-          <Link href={registerHref(returnTo, "1")} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white">
+          <Link href={registerHref(returnTo, "1", next)} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white">
             同意并返回
           </Link>
           <Link
-            href={registerHref(returnTo, currentAgreed)}
+            href={registerHref(returnTo, currentAgreed, next)}
             className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700"
           >
             退出返回
           </Link>
         </section>
-        <BackToTopButton />
       </div>
     </PageShell>
   );

@@ -1,10 +1,10 @@
-import { redirect } from "next/navigation";
 import { PageShell } from "@/components/layout/PageShell";
 import { ProfileSecurityForm } from "@/components/profile/ProfileSecurityForm";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { ensureProfileForUser } from "@/lib/supabase/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+import { redirectToAuthRequired } from "@/lib/auth/redirects";
 export const dynamic = "force-dynamic";
 
 export const metadata = buildPageMetadata({
@@ -32,7 +32,7 @@ export default async function ProfileSecurityPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login?returnTo=/profile/security");
+    redirectToAuthRequired("/profile/security");
   }
 
   try {
