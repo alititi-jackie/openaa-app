@@ -19,7 +19,7 @@ export const ROUTE_TO_POST_TYPE = {
 export const POST_TYPE_LABELS: Record<PostType, string> = {
   job: "招聘",
   housing: "房屋",
-  marketplace: "二手市场",
+  marketplace: "二手",
   service: "本地服务",
 };
 

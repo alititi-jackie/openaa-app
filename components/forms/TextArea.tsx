@@ -5,8 +5,8 @@ export function TextArea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
     <textarea
       {...props}
       className={[
-        "min-h-28 w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm leading-6 text-slate-950 outline-none transition",
-        "placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-100",
+        "min-h-32 w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm leading-6 text-gray-900 outline-none transition",
+        "placeholder:text-gray-400 focus:border-transparent focus:ring-2 focus:ring-[#1976d2]",
         props.className,
       ]
         .filter(Boolean)

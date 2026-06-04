@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createPost, updatePost, uploadPostImage } from "@/features/posts/actions";
 import { POST_TYPE_LABELS, POST_TYPE_TO_ROUTE } from "@/features/posts/constants";
+import { DEFAULT_LOCATION, LOCATION_OPTIONS } from "@/features/posts/formMappers";
 import type { HousingFields, JobFields, MarketplaceFields, PostFormErrors, PostFormValues, ServiceFields } from "@/features/posts/formTypes";
 import type { PostType } from "@/features/posts/types";
 import { validatePostForm } from "@/features/posts/validators";
@@ -23,7 +24,11 @@ type PostFormProps = {
   initialValues: PostFormValues;
 };
 
-const draftVersion = 1;
+const draftVersion = 2;
+const jobTypes = ["其它", "全职", "兼职", "合同", "远程", "实习"];
+const jobCategories = ["其它职位", "餐饮", "装修维修", "仓储物流", "销售客服", "美容美甲", "司机", "办公室", "家政护理"];
+const secondhandCategories = ["生活用品", "母婴用品", "电子产品", "服饰箱包", "办公用品", "宠物", "家具家电", "其它二手"];
+const serviceCategories = ["装修维修", "搬家运输", "家政清洁", "汽车相关", "专业服务", "电脑手机", "餐饮商业", "其它服务"];
 
 function draftKey(postType: PostType, mode: "create" | "edit", postId?: string) {
   return `openaa:post-form:${draftVersion}:${postType}:${mode}:${postId ?? "new"}`;
@@ -31,6 +36,39 @@ function draftKey(postType: PostType, mode: "create" | "edit", postId?: string) 
 
 function titleFor(postType: PostType, mode: "create" | "edit") {
   return `${mode === "create" ? "发布" : "编辑"}${POST_TYPE_LABELS[postType]}`;
+}
+
+function descriptionFor(postType: PostType) {
+  if (postType === "job") return "填写招聘或求职信息。信息内容和电话/微信是用户联系你的关键。";
+  if (postType === "housing") return "发布房源、求租或求购信息。建议写清地区、价格、入住时间和要求。";
+  if (postType === "marketplace") return "发布二手出售或求购信息。图片最多 3 张，第一张会作为封面。";
+  return "发布本地服务信息。请写清服务内容、地区、价格说明和联系方式。";
+}
+
+function bodyPlaceholder(values: PostFormValues) {
+  if (values.postType === "job") {
+    return values.job?.job_mode === "seeking"
+      ? "简单介绍技能、经历、求职意向等（可只写一段内容）"
+      : "请写清楚：招聘岗位、要求、待遇、联系方式等（可只写一段内容）";
+  }
+  if (values.postType === "housing") {
+    return values.housing?.housing_mode === "seeking"
+      ? "请描述：期望地区、预算、入住时间、人数、需求、联系方式等（可只写一段内容）"
+      : "请描述：地址/区域、租金、房型、入住时间、要求、联系方式等（可只写一段内容）";
+  }
+  if (values.postType === "marketplace") {
+    return values.marketplace?.marketplace_mode === "buying"
+      ? "请描述需求、期望成色、交易方式等"
+      : "请描述商品的品牌、型号、成色、交易方式等";
+  }
+  return "请详细描述您的服务内容、经验、上门范围等信息...";
+}
+
+function submitLabelFor(values: PostFormValues, mode: "create" | "edit") {
+  if (mode === "edit") return "保存修改";
+  if (values.postType === "marketplace") return values.marketplace?.marketplace_mode === "buying" ? "发布求购" : "发布商品";
+  if (values.postType === "service") return "发布服务";
+  return "发布";
 }
 
 function withoutFiles(values: PostFormValues) {
@@ -51,6 +89,15 @@ function withoutFiles(values: PostFormValues) {
   };
 }
 
+function normalizeRestoredValues(values: PostFormValues, postType: PostType, mode: "create" | "edit") {
+  return {
+    ...values,
+    postType,
+    mode,
+    location_area: values.location_area || DEFAULT_LOCATION,
+  };
+}
+
 export function PostForm({ mode, postType, initialValues }: PostFormProps) {
   const router = useRouter();
   const [values, setValues] = useState<PostFormValues>({ ...initialValues, mode, postType });
@@ -59,8 +106,10 @@ export function PostForm({ mode, postType, initialValues }: PostFormProps) {
   const [hasDraft, setHasDraft] = useState(false);
   const [draftPaused, setDraftPaused] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const bottomMessageRef = useRef<HTMLDivElement | null>(null);
   const storageKey = useMemo(() => draftKey(postType, mode, initialValues.postId), [postType, mode, initialValues.postId]);
   const cancelHref = mode === "create" ? POST_TYPE_TO_ROUTE[postType] : values.postId ? `${POST_TYPE_TO_ROUTE[postType]}/${values.postId}` : "/profile/posts";
+  const typeSwitchLocked = mode === "edit";
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -82,6 +131,12 @@ export function PostForm({ mode, postType, initialValues }: PostFormProps) {
     return () => window.clearTimeout(timer);
   }, [draftPaused, storageKey, values]);
 
+  useEffect(() => {
+    if (message) {
+      bottomMessageRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [message]);
+
   const setValue = <K extends keyof PostFormValues>(key: K, value: PostFormValues[K]) => setValues((current) => ({ ...current, [key]: value }));
   const setJob = (patch: Partial<JobFields>) => setValues((current) => ({ ...current, job: { ...current.job!, ...patch } }));
   const setHousing = (patch: Partial<HousingFields>) => setValues((current) => ({ ...current, housing: { ...current.housing!, ...patch } }));
@@ -92,7 +147,7 @@ export function PostForm({ mode, postType, initialValues }: PostFormProps) {
     const raw = window.localStorage.getItem(storageKey);
     if (!raw) return;
     try {
-      setValues(JSON.parse(raw) as PostFormValues);
+      setValues(normalizeRestoredValues(JSON.parse(raw) as PostFormValues, postType, mode));
       setHasDraft(false);
       setDraftPaused(false);
     } catch {
@@ -151,176 +206,276 @@ export function PostForm({ mode, postType, initialValues }: PostFormProps) {
   }
 
   return (
-    <FormShell title={titleFor(postType, mode)} description="填写基础信息和联系方式。本阶段支持发布、编辑和图片上传基础能力。">
-      <form className="space-y-4" onSubmit={onSubmit}>
+    <FormShell title={titleFor(postType, mode)} description={descriptionFor(postType)}>
+      <form className="space-y-4 rounded-2xl bg-white p-4 shadow-sm sm:p-6" onSubmit={onSubmit}>
         <DraftRestoreBanner visible={hasDraft} onRestore={restoreDraft} onClear={clearDraft} />
 
-        <FormField label="标题" required error={errors.title}>
-          <TextInput value={values.title} onChange={(event) => setValue("title", event.target.value)} placeholder="请写清楚主题" maxLength={80} />
-        </FormField>
-
-        <FormField label="摘要">
-          <TextInput value={values.summary} onChange={(event) => setValue("summary", event.target.value)} placeholder="一句话补充说明" maxLength={140} />
-        </FormField>
-
-        <FormField label="正文" required error={errors.body}>
-          <TextArea value={values.body} onChange={(event) => setValue("body", event.target.value)} placeholder="请填写详细说明" />
-        </FormField>
-
-        <FormField label="区域">
-          <TextInput value={values.location_area} onChange={(event) => setValue("location_area", event.target.value)} placeholder="例如 Flushing / Brooklyn" />
-        </FormField>
-
         {postType === "job" ? (
-          <div className="grid grid-cols-1 gap-3">
-            <FormField label="招聘/求职">
-              <SelectInput value={values.job?.job_mode} onChange={(event) => setJob({ job_mode: event.target.value as JobFields["job_mode"] })}>
-                <option value="hiring">招聘</option>
-                <option value="seeking">求职</option>
-              </SelectInput>
-            </FormField>
-            <FormField label="公司/名称">
-              <TextInput value={values.job?.company_name} onChange={(event) => setJob({ company_name: event.target.value })} />
-            </FormField>
-            <FormField label="工作类别">
-              <TextInput value={values.job?.job_category} onChange={(event) => setJob({ job_category: event.target.value })} />
-            </FormField>
-            <FormField label="职位类型">
-              <TextInput value={values.job?.job_type} onChange={(event) => setJob({ job_type: event.target.value })} placeholder="全职 / 兼职" />
-            </FormField>
-            <div className="grid grid-cols-2 gap-3">
-              <FormField label="最低薪资">
-                <TextInput value={values.job?.salary_min} onChange={(event) => setJob({ salary_min: event.target.value })} inputMode="decimal" />
+          <>
+            <ModeSwitch
+              label="发布类型"
+              locked={typeSwitchLocked}
+              options={[
+                { value: "hiring", label: "我要招人" },
+                { value: "seeking", label: "我要求职" },
+              ]}
+              value={values.job?.job_mode ?? "hiring"}
+              onChange={(next) => setJob({ job_mode: next as JobFields["job_mode"] })}
+            />
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <FormField label="职位名称">
+                <TextInput value={values.title} onChange={(event) => setValue("title", event.target.value)} placeholder="不填默认：招聘信息" maxLength={80} />
               </FormField>
-              <FormField label="最高薪资">
-                <TextInput value={values.job?.salary_max} onChange={(event) => setJob({ salary_max: event.target.value })} inputMode="decimal" />
+              <FormField label="公司名称">
+                <TextInput value={values.job?.company_name} onChange={(event) => setJob({ company_name: event.target.value })} placeholder="不填则不显示公司名称" />
               </FormField>
             </div>
-            <FormField label="薪资单位">
-              <SelectInput value={values.job?.salary_unit} onChange={(event) => setJob({ salary_unit: event.target.value })}>
-                <option value="hour">小时</option>
-                <option value="day">天</option>
-                <option value="week">周</option>
-                <option value="month">月</option>
-              </SelectInput>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <FormField label="工作类型" hint="不选默认：其它职位">
+                <SelectInput value={values.job?.job_type} onChange={(event) => setJob({ job_type: event.target.value })}>
+                  {jobTypes.map((item) => <option key={item} value={item}>{item}</option>)}
+                </SelectInput>
+              </FormField>
+              <FormField label="职位分类" hint="不选默认：其它职位">
+                <SelectInput value={values.job?.job_category} onChange={(event) => setJob({ job_category: event.target.value })}>
+                  {jobCategories.map((item) => <option key={item} value={item}>{item}</option>)}
+                </SelectInput>
+              </FormField>
+            </div>
+
+            <FormField label="工作地点" hint="默认：纽约 New York" error={errors.work_area}>
+              <LocationSelect
+                value={values.job?.work_area || values.location_area}
+                onChange={(next) => {
+                  setJob({ work_area: next });
+                  setValue("location_area", next);
+                }}
+              />
             </FormField>
-            <FormField label="工作区域">
-              <TextInput value={values.job?.work_area} onChange={(event) => setJob({ work_area: event.target.value })} />
-            </FormField>
-            <FormField label="经验要求">
-              <TextInput value={values.job?.experience_requirement} onChange={(event) => setJob({ experience_requirement: event.target.value })} />
-            </FormField>
-            <FormField label="语言要求">
-              <TextInput value={values.job?.language_requirement} onChange={(event) => setJob({ language_requirement: event.target.value })} />
-            </FormField>
-            <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
-              <input type="checkbox" checked={values.job?.includes_meals} onChange={(event) => setJob({ includes_meals: event.target.checked })} />
-              包餐
-            </label>
-            <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
-              <input type="checkbox" checked={values.job?.includes_housing} onChange={(event) => setJob({ includes_housing: event.target.checked })} />
-              包住
-            </label>
-          </div>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <FormField label="薪资（USD）">
+                <TextInput value={values.job?.salary_min} onChange={(event) => setJob({ salary_min: event.target.value, salary_max: event.target.value })} type="number" min="0" placeholder="不填则显示：薪资电议" />
+              </FormField>
+              <FormField label="薪资单位">
+                <SelectInput value={values.job?.salary_unit} onChange={(event) => setJob({ salary_unit: event.target.value })}>
+                  <option value="/小时">/小时</option>
+                  <option value="/月薪">/月薪</option>
+                  <option value="/年薪">/年薪</option>
+                </SelectInput>
+              </FormField>
+            </div>
+
+            {values.job?.job_mode === "seeking" ? (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <FormField label="工作经验">
+                  <TextInput value={values.job?.experience_requirement} onChange={(event) => setJob({ experience_requirement: event.target.value })} placeholder="例：3年 / 应届（可不填）" />
+                </FormField>
+                <FormField label="可工作时间">
+                  <TextInput value={values.job?.language_requirement} onChange={(event) => setJob({ language_requirement: event.target.value })} placeholder="例：随时 / 两周后（可不填）" />
+                </FormField>
+              </div>
+            ) : null}
+          </>
         ) : null}
 
         {postType === "housing" ? (
-          <div className="grid grid-cols-1 gap-3">
-            <FormField label="房屋类型">
-              <SelectInput value={values.housing?.housing_mode} onChange={(event) => setHousing({ housing_mode: event.target.value as HousingFields["housing_mode"] })}>
-                <option value="renting">出租</option>
-                <option value="seeking">求租</option>
-                <option value="selling">出售</option>
-                <option value="buying">求购</option>
-              </SelectInput>
+          <>
+            <ModeSwitch
+              label="发布类型"
+              locked={typeSwitchLocked}
+              options={[
+                { value: "renting", label: "发布房源" },
+                { value: "seeking", label: "求租求购" },
+              ]}
+              value={values.housing?.housing_mode === "seeking" || values.housing?.housing_mode === "buying" ? "seeking" : "renting"}
+              onChange={(next) => setHousing({ housing_mode: next === "seeking" ? "seeking" : "renting" })}
+            />
+
+            <FormField label="标题">
+              <TextInput
+                value={values.title}
+                onChange={(event) => setValue("title", event.target.value)}
+                placeholder={values.housing?.housing_mode === "seeking" ? "不填默认：求租" : "不填默认：房屋出租"}
+                maxLength={80}
+              />
             </FormField>
-            <div className="grid grid-cols-2 gap-3">
-              <FormField label="价格">
-                <TextInput value={values.housing?.price} onChange={(event) => setHousing({ price: event.target.value })} inputMode="decimal" />
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <FormField label="地区" hint="默认：纽约 New York">
+                <LocationSelect value={values.location_area} onChange={(next) => setValue("location_area", next)} />
               </FormField>
-              <FormField label="押金">
-                <TextInput value={values.housing?.deposit} onChange={(event) => setHousing({ deposit: event.target.value })} inputMode="decimal" />
+              <FormField label="租金（USD）">
+                <TextInput value={values.housing?.price} onChange={(event) => setHousing({ price: event.target.value })} type="number" min="0" placeholder="不填默认：0（面议）" />
               </FormField>
             </div>
-            <FormField label="房型">
-              <TextInput value={values.housing?.room_type} onChange={(event) => setHousing({ room_type: event.target.value })} />
-            </FormField>
-            <FormField label="租期">
-              <TextInput value={values.housing?.lease_type} onChange={(event) => setHousing({ lease_type: event.target.value })} />
-            </FormField>
-            <FormField label="入住日期">
-              <TextInput value={values.housing?.available_from} onChange={(event) => setHousing({ available_from: event.target.value })} type="date" />
-            </FormField>
-            <FormField label="附近交通">
-              <TextInput value={values.housing?.transit_nearby} onChange={(event) => setHousing({ transit_nearby: event.target.value })} />
-            </FormField>
-            <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
-              <input type="checkbox" checked={values.housing?.allow_pets} onChange={(event) => setHousing({ allow_pets: event.target.checked })} />
-              可宠物
-            </label>
-            <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
-              <input type="checkbox" checked={values.housing?.utilities_included} onChange={(event) => setHousing({ utilities_included: event.target.checked })} />
-              包水电
-            </label>
-          </div>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <FormField label="房型" error={errors.room_type}>
+                <TextInput value={values.housing?.room_type} onChange={(event) => setHousing({ room_type: event.target.value })} placeholder="例：一室一厅 / 主卧 / 次卧（可不填）" />
+              </FormField>
+              <FormField label="入住日期">
+                <TextInput value={values.housing?.available_from} onChange={(event) => setHousing({ available_from: event.target.value })} type="date" />
+              </FormField>
+            </div>
+          </>
         ) : null}
 
         {postType === "marketplace" ? (
-          <div className="grid grid-cols-1 gap-3">
-            <FormField label="出售/求购">
-              <SelectInput value={values.marketplace?.marketplace_mode} onChange={(event) => setMarketplace({ marketplace_mode: event.target.value as MarketplaceFields["marketplace_mode"] })}>
-                <option value="selling">出售</option>
-                <option value="buying">求购</option>
-              </SelectInput>
+          <>
+            <ModeSwitch
+              label="发布类型"
+              locked={typeSwitchLocked}
+              options={[
+                { value: "selling", label: "我要出售" },
+                { value: "buying", label: "我要求购" },
+              ]}
+              value={values.marketplace?.marketplace_mode ?? "selling"}
+              onChange={(next) => setMarketplace({ marketplace_mode: next as MarketplaceFields["marketplace_mode"] })}
+            />
+
+            <FormField label="所在地区">
+              <LocationSelect
+                value={values.marketplace?.trade_area || values.location_area}
+                onChange={(next) => {
+                  setMarketplace({ trade_area: next });
+                  setValue("location_area", next);
+                }}
+              />
             </FormField>
-            <FormField label="类别">
-              <TextInput value={values.marketplace?.category} onChange={(event) => setMarketplace({ category: event.target.value })} />
-            </FormField>
-            <FormField label="成色">
-              <TextInput value={values.marketplace?.condition} onChange={(event) => setMarketplace({ condition: event.target.value })} />
-            </FormField>
-            <FormField label="价格">
-              <TextInput value={values.marketplace?.price} onChange={(event) => setMarketplace({ price: event.target.value })} inputMode="decimal" />
-            </FormField>
-            <FormField label="交易区域">
-              <TextInput value={values.marketplace?.trade_area} onChange={(event) => setMarketplace({ trade_area: event.target.value })} />
-            </FormField>
-            <FormField label="交付方式">
-              <TextInput value={values.marketplace?.delivery_method} onChange={(event) => setMarketplace({ delivery_method: event.target.value })} placeholder="自取 / 面交 / 可配送" />
-            </FormField>
-            <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
-              <input type="checkbox" checked={values.marketplace?.negotiable} onChange={(event) => setMarketplace({ negotiable: event.target.checked })} />
-              可议价
-            </label>
-          </div>
+
+            {values.marketplace?.marketplace_mode === "selling" ? (
+              <>
+                <FormField label="商品标题" required error={errors.title}>
+                  <TextInput value={values.title} onChange={(event) => setValue("title", event.target.value)} placeholder="例：iPad Pro 11 寸" maxLength={80} />
+                </FormField>
+                <FormField label="商品分类" error={errors.category}>
+                  <SelectInput value={values.marketplace?.category} onChange={(event) => setMarketplace({ category: event.target.value })}>
+                    {secondhandCategories.map((item) => <option key={item} value={item}>{item}</option>)}
+                  </SelectInput>
+                </FormField>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <FormField label="价格（USD）">
+                    <TextInput value={values.marketplace?.price} onChange={(event) => setMarketplace({ price: event.target.value })} type="number" min="0" step="0.01" placeholder="0.00" />
+                  </FormField>
+                  <FormField label="成色">
+                    <TextInput value={values.marketplace?.condition} onChange={(event) => setMarketplace({ condition: event.target.value })} placeholder="例：九成新 / 全新未拆" />
+                  </FormField>
+                </div>
+              </>
+            ) : (
+              <>
+                <FormField label="求购物品">
+                  <TextInput value={values.title} onChange={(event) => setValue("title", event.target.value)} placeholder="例：二手自行车" maxLength={80} />
+                </FormField>
+                <FormField label="预算范围">
+                  <TextInput value={values.marketplace?.price} onChange={(event) => setMarketplace({ price: event.target.value })} placeholder="例：$100 - $200" />
+                </FormField>
+              </>
+            )}
+          </>
         ) : null}
 
         {postType === "service" ? (
-          <div className="grid grid-cols-1 gap-3">
-            <FormField label="服务类别" required error={errors.service_category}>
-              <TextInput value={values.service?.service_category} onChange={(event) => setService({ service_category: event.target.value })} />
+          <>
+            <FormField label="服务标题" required error={errors.title}>
+              <TextInput value={values.title} onChange={(event) => setValue("title", event.target.value)} placeholder="例：专业水电维修，上门服务" maxLength={80} />
             </FormField>
-            <FormField label="服务区域">
-              <TextInput value={values.service?.service_area} onChange={(event) => setService({ service_area: event.target.value })} />
-            </FormField>
-            <FormField label="营业时间">
-              <TextInput value={values.service?.business_hours_text} onChange={(event) => setService({ business_hours_text: event.target.value })} />
-            </FormField>
-            <FormField label="价格范围">
-              <TextInput value={values.service?.price_range} onChange={(event) => setService({ price_range: event.target.value })} />
-            </FormField>
-            <FormField label="价格说明">
-              <TextInput value={values.service?.price_note} onChange={(event) => setService({ price_note: event.target.value })} />
-            </FormField>
-          </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <FormField label="服务分类" required error={errors.service_category}>
+                <SelectInput value={values.service?.service_category} onChange={(event) => setService({ service_category: event.target.value })}>
+                  {serviceCategories.map((item) => <option key={item} value={item}>{item}</option>)}
+                </SelectInput>
+              </FormField>
+              <FormField label="服务地区" required error={errors.service_area}>
+                <LocationSelect
+                  value={values.service?.service_area || values.location_area}
+                  onChange={(next) => {
+                    setService({ service_area: next });
+                    setValue("location_area", next);
+                  }}
+                />
+              </FormField>
+            </div>
+          </>
         ) : null}
 
-        {postType !== "job" ? <ImageUploader images={values.images} onChange={(images) => setValue("images", images)} disabled={isPending} /> : null}
+        <FormField
+          label={postType === "job" ? (values.job?.job_mode === "seeking" ? "信息内容 / 个人简介" : "信息内容 / 职位描述") : postType === "service" ? "服务介绍" : "信息内容"}
+          required
+          error={errors.body}
+        >
+          <TextArea value={values.body} onChange={(event) => setValue("body", event.target.value)} rows={postType === "job" || postType === "housing" ? 7 : 5} placeholder={bodyPlaceholder(values)} />
+        </FormField>
+
+        {postType === "service" ? (
+          <FormField label="价格说明（可选）">
+            <TextInput value={values.service?.price_note} onChange={(event) => setService({ price_note: event.target.value, price_range: event.target.value })} placeholder="例：电话咨询 / 时薪 $30 起 / 按项目报价" />
+          </FormField>
+        ) : null}
+
+        {postType !== "job" ? <ImageUploader images={values.images} onChange={(images) => setValue("images", images)} disabled={isPending} maxImages={3} error={errors.images} /> : null}
 
         <ContactFields value={values.contact} errors={errors} onChange={(contact) => setValue("contact", contact)} />
 
-        <SubmitBar cancelHref={cancelHref} submitting={isPending} mode={mode} error={message} />
+        <div ref={bottomMessageRef}>
+          <SubmitBar cancelHref={cancelHref} submitting={isPending} mode={mode} error={message} submitLabel={submitLabelFor(values, mode)} />
+        </div>
       </form>
     </FormShell>
+  );
+}
+
+function LocationSelect({ value, onChange }: { value?: string; onChange: (value: string) => void }) {
+  return (
+    <SelectInput value={value || DEFAULT_LOCATION} onChange={(event) => onChange(event.target.value)}>
+      {LOCATION_OPTIONS.map((location) => (
+        <option key={location} value={location}>
+          {location}
+        </option>
+      ))}
+    </SelectInput>
+  );
+}
+
+function ModeSwitch({
+  label,
+  value,
+  options,
+  locked,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: Array<{ value: string; label: string }>;
+  locked?: boolean;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-medium text-gray-700">{label}</label>
+      <div className="inline-flex rounded-xl bg-gray-100 p-1">
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => {
+              if (!locked) onChange(option.value);
+            }}
+            disabled={locked}
+            className={
+              value === option.value
+                ? "rounded-lg bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm disabled:opacity-50"
+                : "rounded-lg px-4 py-2 text-sm font-semibold text-gray-600 transition hover:text-gray-900 disabled:opacity-50"
+            }
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+      {locked ? <p className="mt-2 text-xs text-gray-400">编辑模式下不支持切换类型。</p> : null}
+    </div>
   );
 }

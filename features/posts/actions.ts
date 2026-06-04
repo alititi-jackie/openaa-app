@@ -28,6 +28,7 @@ type WriteContext =
 
 const allowedPostTypes = new Set<PostType>(["job", "housing", "marketplace", "service"]);
 const manageablePostStatuses = new Set<PostStatus>(["draft", "pending_review", "published", "hidden", "expired", "deleted"]);
+const DEFAULT_DAILY_POST_LIMIT = 10;
 
 function numericOrNull(value: string) {
   const trimmed = value.trim();
@@ -63,6 +64,36 @@ async function getWriteContext(): Promise<WriteContext> {
 async function getDefaultCityId(supabase: SupabaseServerClient) {
   const { data } = await supabase.from("cities").select("id").eq("slug", DEFAULT_CITY_SLUG).maybeSingle();
   return data?.id ?? null;
+}
+
+function normalizeDailyPostLimit(value: unknown) {
+  let candidate: unknown = value;
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    candidate = record.dailyPostLimit ?? record.daily_post_limit ?? record.limit ?? record.value;
+  }
+  const parsed = typeof candidate === "number" ? candidate : Number(candidate);
+  return Number.isFinite(parsed) && parsed >= 1 ? Math.floor(parsed) : DEFAULT_DAILY_POST_LIMIT;
+}
+
+async function assertDailyPostLimit(supabase: SupabaseServerClient, userId: string) {
+  const { data: setting } = await supabase.from("site_settings").select("value").eq("key", "daily_post_limit").maybeSingle();
+  const limit = normalizeDailyPostLimit((setting as { value?: unknown } | null)?.value);
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+
+  const { count, error } = await supabase
+    .from("posts")
+    .select("id", { count: "exact", head: true })
+    .eq("author_id", userId)
+    .gte("created_at", start.toISOString())
+    .neq("status", "deleted");
+
+  if (error) return { ok: false as const, message: "暂时无法验证发帖次数，请稍后再试。" };
+  if ((count ?? 0) >= limit) {
+    return { ok: false as const, message: `今天发布的信息已达到平台限制（${limit} 条）。` };
+  }
+  return { ok: true as const };
 }
 
 async function assertCanEdit(supabase: SupabaseServerClient, userId: string, postId: string) {
@@ -129,6 +160,14 @@ function priceFor(values: PostFormValues) {
   return null;
 }
 
+function titleFor(values: PostFormValues) {
+  if (values.title.trim()) return values.title.trim();
+  if (values.postType === "job") return values.job?.job_mode === "seeking" ? "求职" : "招聘信息";
+  if (values.postType === "housing") return values.housing?.housing_mode === "seeking" ? "求租" : "房屋出租";
+  if (values.postType === "marketplace") return values.marketplace?.marketplace_mode === "buying" ? "求购" : "二手商品";
+  return "本地服务";
+}
+
 function mainPostPayload(values: PostFormValues, userId: string, cityId: string | null) {
   const status = shouldReviewPost(values) ? "pending_review" : "published";
   const publishedAt = status === "published" ? new Date().toISOString() : null;
@@ -137,7 +176,7 @@ function mainPostPayload(values: PostFormValues, userId: string, cityId: string 
     post_type: values.postType,
     city_id: cityId,
     author_id: userId,
-    title: values.title.trim(),
+    title: titleFor(values),
     summary: values.summary.trim() || null,
     body: values.body.trim(),
     category: categoryFor(values),
@@ -247,6 +286,9 @@ export async function createPost(values: PostFormValues): Promise<PostFormAction
   if (!context.ok) return { ok: false, message: context.error };
   if (context.status === "banned") return { ok: false, message: "你的账号当前禁止发布内容。" };
   if (context.status === "restricted") return { ok: false, message: "你的账号当前受限，暂时不能发布新内容。" };
+
+  const limitCheck = await assertDailyPostLimit(context.supabase, context.user.id);
+  if (!limitCheck.ok) return { ok: false, message: limitCheck.message };
 
   const cityId = await getDefaultCityId(context.supabase);
   const { data: post, error: postError } = await context.supabase.from("posts").insert(mainPostPayload(values, context.user.id, cityId)).select("id").single();
