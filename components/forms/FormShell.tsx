@@ -8,13 +8,13 @@ type FormShellProps = {
 
 export function FormShell({ title, description, children }: FormShellProps) {
   return (
-    <div className="space-y-4">
-      <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-        <p className="text-xs font-bold uppercase tracking-wide text-blue-600">Publish</p>
-        <h1 className="mt-1 text-2xl font-black leading-tight text-slate-950">{title}</h1>
-        <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
+    <div className="mx-auto max-w-2xl px-0 py-2 pb-24 sm:px-4 sm:py-6">
+      <section className="mb-5">
+        <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Publish</p>
+        <h1 className="mt-1 text-2xl font-bold leading-tight text-gray-900">{title}</h1>
+        <p className="mt-2 text-sm leading-6 text-gray-500">{description}</p>
       </section>
-      <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">{children}</section>
+      {children}
     </div>
   );
 }

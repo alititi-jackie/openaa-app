@@ -1,9 +1,9 @@
 import { PostForm } from "@/components/forms/PostForm";
 import { emptyPostFormValues } from "@/features/posts/formMappers";
+import { redirectToAuthRequired } from "@/lib/auth/redirects";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getCurrentUser } from "@/lib/supabase/server";
 
-import { redirectToAuthRequired } from "@/lib/auth/redirects";
 export const dynamic = "force-dynamic";
 
 export const metadata = buildPageMetadata({

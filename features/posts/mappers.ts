@@ -47,13 +47,21 @@ function publishedMeta(record: PostRecord) {
   return Number.isNaN(date.getTime()) ? "最新" : date.toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
 }
 
+function wageUnitLabel(unit?: string | null) {
+  if (unit === "hour") return "/小时";
+  if (unit === "day") return "/天";
+  if (unit === "week") return "/周";
+  if (unit === "month") return "/月";
+  return unit ?? "";
+}
+
 function detailFields(record: PostRecord): Array<{ label: string; value: string }> {
   if (record.post_type === "job") {
     const detail = firstOrNull(record.post_details_jobs) as JobDetailRecord | null;
     const salary = [numberText(detail?.wage_min), numberText(detail?.wage_max)].filter(Boolean).join("-");
     return [
       { label: "类型", value: detail?.employment_type || detail?.job_category || "" },
-      { label: "薪资", value: salary ? `${salary}${detail?.wage_unit ? ` / ${detail.wage_unit}` : ""}` : "" },
+      { label: "薪资", value: salary ? `${salary}${wageUnitLabel(detail?.wage_unit)}` : "" },
       { label: "区域", value: detail?.work_area || "" },
     ].filter((field) => field.value);
   }
