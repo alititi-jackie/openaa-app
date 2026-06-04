@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ensureCurrentUserProfile } from "@/features/auth/actions";
 import { featureFlags } from "@/lib/config/featureFlags";
 import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
 
 function safeReturnTo(value: string | null) {
   if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return "/profile";
+  }
+
+  if (value === "/login" || value.startsWith("/login?") || value.startsWith("/auth/callback")) {
     return "/profile";
   }
 
@@ -95,7 +98,6 @@ function authCallbackUrl(returnTo: string) {
 }
 
 export function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = safeReturnTo(searchParams.get("returnTo"));
   const [email, setEmail] = useState("");
@@ -124,25 +126,47 @@ export function LoginForm() {
 
     try {
       const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase.auth.signInWithPassword({
+      const {
+        data: signInData,
+        error,
+      } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
 
       if (error) {
+        console.error("[auth/login] password login failed", {
+          message: error.message,
+          status: error.status,
+        });
         setMessage(loginErrorMessage(error.message));
         return;
       }
 
-      const profileResult = await ensureCurrentUserProfile();
+      console.info("[auth/login] password login success", {
+        hasUser: Boolean(signInData.user),
+        hasSession: Boolean(signInData.session),
+      });
 
-      if (!profileResult.ok) {
-        setMessage("登录成功，但资料初始化失败，请刷新后再试。");
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      console.info("[auth/login] session exists after login", {
+        hasSession: Boolean(session),
+        hasSessionError: Boolean(sessionError),
+      });
+
+      if (sessionError || !session) {
+        setMessage(loginFallbackMessage(isConfigured));
+        return;
       }
 
-      router.replace(returnTo);
-      router.refresh();
-    } catch {
+      console.info("[auth/login] redirect target", { returnTo });
+      window.location.replace(returnTo);
+    } catch (error) {
+      console.error("[auth/login] password login unexpected error", error);
       setMessage(loginFallbackMessage(isConfigured));
     } finally {
       setIsSubmitting(false);
