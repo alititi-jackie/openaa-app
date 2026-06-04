@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { RegisterForm } from "@/components/auth/RegisterForm";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -12,7 +13,12 @@ export const metadata = buildPageMetadata({
   noIndex: true,
 });
 
-export default async function RegisterPage() {
+type RegisterPageProps = {
+  searchParams: Promise<{ agreed?: string }>;
+};
+
+export default async function RegisterPage({ searchParams }: RegisterPageProps) {
+  const params = await searchParams;
   const supabase = await createSupabaseServerClient();
 
   if (supabase) {
@@ -25,5 +31,9 @@ export default async function RegisterPage() {
     }
   }
 
-  return <RegisterForm />;
+  return (
+    <Suspense>
+      <RegisterForm initialAccepted={params.agreed === "1"} />
+    </Suspense>
+  );
 }
