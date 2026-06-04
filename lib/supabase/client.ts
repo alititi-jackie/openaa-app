@@ -14,5 +14,11 @@ export function createSupabaseBrowserClient() {
     throw new Error("Supabase public URL and anon key are not configured.");
   }
 
-  return createBrowserClient(supabaseUrl, supabaseAnonKey);
+  return createBrowserClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  });
 }
