@@ -29,6 +29,12 @@ type WriteContext =
 const allowedPostTypes = new Set<PostType>(["job", "housing", "marketplace", "service"]);
 const manageablePostStatuses = new Set<PostStatus>(["draft", "pending_review", "published", "hidden", "expired", "deleted"]);
 const DEFAULT_DAILY_POST_LIMIT = 10;
+const MAX_POST_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const postImageExtensions: Record<string, "jpg" | "png" | "webp"> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
 
 function numericOrNull(value: string) {
   const trimmed = value.trim();
@@ -481,6 +487,11 @@ export async function uploadPostImage(postId: string, postType: PostType, file: 
     return { ok: false, message: "该类型暂不支持图片上传。" };
   }
 
+  const extension = postImageExtensions[file?.type];
+  if (!file || file.size <= 0 || file.size > MAX_POST_IMAGE_SIZE_BYTES || !extension) {
+    return { ok: false, message: "请上传 5MB 以内的 JPG、PNG 或 WebP 图片。" };
+  }
+
   const context = await getWriteContext();
   if (!context.ok) return { ok: false, message: context.error };
   if (context.status === "banned") return { ok: false, message: "账号禁用时不能编辑内容。" };
@@ -490,9 +501,9 @@ export async function uploadPostImage(postId: string, postType: PostType, file: 
   if (editCheck.post.post_type !== postType) return { ok: false, message: "图片类型与内容类型不匹配。" };
 
   const imageId = crypto.randomUUID();
-  const path = `${postType}/${context.user.id}/${postId}/${imageId}.webp`;
+  const path = `${postType}/${context.user.id}/${postId}/${imageId}.${extension}`;
   const { error: uploadError } = await context.supabase.storage.from("post-images").upload(path, file, {
-    contentType: file.type || "image/webp",
+    contentType: file.type,
     upsert: false,
   });
 
@@ -509,7 +520,7 @@ export async function uploadPostImage(postId: string, postType: PostType, file: 
       owner_id: context.user.id,
       entity_type: "post",
       entity_id: postId,
-      mime_type: file.type || "image/webp",
+      mime_type: file.type,
       size_bytes: file.size,
       status: "active",
       is_public: true,
