@@ -125,6 +125,47 @@ export async function getPublicPosts(params: PublicPostsParams): Promise<PostsQu
   return { state: "ready", data: records.map((record) => mapPostRecordToCard(record, authors)) };
 }
 
+export async function searchPublicPosts(params: { q?: string; type?: PostType; limit?: number } = {}): Promise<PostsQueryResult<PostCardView[]>> {
+  const supabase = await createSupabaseServerClient();
+
+  if (!supabase) {
+    return emptyResult([]);
+  }
+
+  const keyword = sanitizeSearchTerm(params.q ?? "");
+  if (!keyword) {
+    return { state: "ready", data: [] };
+  }
+
+  const now = new Date().toISOString();
+  let query = supabase
+    .from("posts")
+    .select(publicPostSelect)
+    .eq("status", "published")
+    .eq("visibility", "public")
+    .eq("cities.slug", DEFAULT_CITY_SLUG)
+    .or(`expires_at.is.null,expires_at.gt.${now}`)
+    .or(`title.ilike.%${keyword}%,summary.ilike.%${keyword}%,body.ilike.%${keyword}%`)
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false })
+    .limit(normalizeSearchLimit(params.limit));
+
+  if (params.type) {
+    query = query.eq("post_type", params.type);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    return { state: "error", data: [], error: error.message };
+  }
+
+  const records = (data ?? []) as unknown as PostRecord[];
+  const authors = await fetchAuthors(records.map((post) => post.author_id));
+
+  return { state: "ready", data: records.map((record) => mapPostRecordToCard(record, authors)) };
+}
+
 export async function getPublicPostById(id: string, type: PostType): Promise<PostsQueryResult<PostDetailView | null>> {
   const supabase = await createSupabaseServerClient();
 
@@ -242,6 +283,15 @@ function uniqueOrderedPostIds(rows: Array<{ post_id: string | null }>) {
   }
 
   return ids;
+}
+
+function sanitizeSearchTerm(value: string) {
+  return value.trim().replace(/[%,()]/g, " ").replace(/\s+/g, " ").slice(0, 80);
+}
+
+function normalizeSearchLimit(value?: number) {
+  if (!value || !Number.isFinite(value)) return DEFAULT_POST_LIMIT;
+  return Math.min(50, Math.max(1, Math.floor(value)));
 }
 
 async function getPublicCardsByOrderedIds(ids: string[]): Promise<PostsQueryResult<PostCardView[]>> {

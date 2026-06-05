@@ -26,8 +26,10 @@ export function AppInstallClient() {
 
   useEffect(() => {
     const standalone = isStandaloneMode();
-    setIsStandalone(standalone);
-    setShowSuccess(standalone);
+    queueMicrotask(() => {
+      setIsStandalone(standalone);
+      setShowSuccess(standalone);
+    });
 
     function handleBeforeInstallPrompt(event: Event) {
       event.preventDefault();
