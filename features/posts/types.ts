@@ -127,16 +127,6 @@ export type PostCardView = {
   favoriteCount: number;
   viewCount: number;
   fields: Array<{ label: string; value: string }>;
-  listDisplay?: {
-    badge?: string;
-    secondaryBadge?: string;
-    price?: string;
-    salary?: string;
-    area?: string;
-    category?: string;
-    companyName?: string;
-    publishedLabel?: string;
-  };
 };
 
 export type PostDetailView = PostCardView & {
