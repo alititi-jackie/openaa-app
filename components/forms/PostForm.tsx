@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createPost, updatePost, uploadPostImage } from "@/features/posts/actions";
 import { POST_TYPE_LABELS, POST_TYPE_TO_ROUTE } from "@/features/posts/constants";
-import { DEFAULT_LOCATION, LOCATION_OPTIONS } from "@/features/posts/formMappers";
+import { EMPTY_LOCATION } from "@/features/posts/formMappers";
 import type { HousingFields, JobFields, MarketplaceFields, PostFormErrors, PostFormValues, ServiceFields } from "@/features/posts/formTypes";
 import type { PostType } from "@/features/posts/types";
 import { validatePostForm } from "@/features/posts/validators";
@@ -13,6 +13,7 @@ import { DraftRestoreBanner } from "./DraftRestoreBanner";
 import { FormField } from "./FormField";
 import { FormShell } from "./FormShell";
 import { ImageUploader } from "./ImageUploader";
+import { LocationSelect } from "./LocationSelect";
 import { SelectInput } from "./SelectInput";
 import { SubmitBar } from "./SubmitBar";
 import { TextArea } from "./TextArea";
@@ -24,14 +25,14 @@ type PostFormProps = {
   initialValues: PostFormValues;
 };
 
-const draftVersion = 2;
+const draftVersion = 3;
 const jobTypes = ["其它", "全职", "兼职", "合同", "远程", "实习"];
-const jobCategories = ["其它职位", "餐饮", "装修维修", "仓储物流", "销售客服", "美容美甲", "司机", "办公室", "家政护理"];
+const jobCategories = ["餐饮行业", "美容按摩", "装修建筑", "文职运营", "医疗药房", "家政保姆", "司机送货", "门店零售", "仓库工厂", "汽车维修", "酒吧KTV", "教师培训", "技术人才", "其它职位"];
 const secondhandCategories = ["生活用品", "母婴用品", "电子产品", "服饰箱包", "办公用品", "宠物", "家具家电", "其它二手"];
 const serviceCategories = ["装修维修", "搬家运输", "家政清洁", "汽车相关", "专业服务", "电脑手机", "餐饮商业", "其它服务"];
 
-function draftKey(postType: PostType, mode: "create" | "edit", postId?: string) {
-  return `openaa:post-form:${draftVersion}:${postType}:${mode}:${postId ?? "new"}`;
+function draftKey(postType: PostType) {
+  return `openaa:post-form:${draftVersion}:${postType}:create`;
 }
 
 function titleFor(postType: PostType, mode: "create" | "edit") {
@@ -94,7 +95,7 @@ function normalizeRestoredValues(values: PostFormValues, postType: PostType, mod
     ...values,
     postType,
     mode,
-    location_area: values.location_area || DEFAULT_LOCATION,
+    location_area: values.location_area || EMPTY_LOCATION,
   };
 }
 
@@ -104,32 +105,19 @@ export function PostForm({ mode, postType, initialValues }: PostFormProps) {
   const [errors, setErrors] = useState<PostFormErrors>({});
   const [message, setMessage] = useState<string>();
   const [hasDraft, setHasDraft] = useState(false);
-  const [draftPaused, setDraftPaused] = useState(false);
   const [isPending, startTransition] = useTransition();
   const bottomMessageRef = useRef<HTMLDivElement | null>(null);
-  const storageKey = useMemo(() => draftKey(postType, mode, initialValues.postId), [postType, mode, initialValues.postId]);
+  const storageKey = useMemo(() => draftKey(postType), [postType]);
   const cancelHref = mode === "create" ? POST_TYPE_TO_ROUTE[postType] : values.postId ? `${POST_TYPE_TO_ROUTE[postType]}/${values.postId}` : "/profile/posts";
   const typeSwitchLocked = mode === "edit";
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      const stored = Boolean(window.localStorage.getItem(storageKey));
-      setHasDraft(stored);
-      setDraftPaused(stored);
+      setHasDraft(mode === "create" && Boolean(window.localStorage.getItem(storageKey)));
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [storageKey]);
-
-  useEffect(() => {
-    if (draftPaused) return;
-
-    const timer = window.setTimeout(() => {
-      window.localStorage.setItem(storageKey, JSON.stringify(withoutFiles(values)));
-    }, 500);
-
-    return () => window.clearTimeout(timer);
-  }, [draftPaused, storageKey, values]);
+  }, [mode, storageKey]);
 
   useEffect(() => {
     if (message) {
@@ -149,18 +137,20 @@ export function PostForm({ mode, postType, initialValues }: PostFormProps) {
     try {
       setValues(normalizeRestoredValues(JSON.parse(raw) as PostFormValues, postType, mode));
       setHasDraft(false);
-      setDraftPaused(false);
     } catch {
       window.localStorage.removeItem(storageKey);
       setHasDraft(false);
-      setDraftPaused(false);
     }
   }
 
   function clearDraft() {
     window.localStorage.removeItem(storageKey);
     setHasDraft(false);
-    setDraftPaused(false);
+  }
+
+  function saveDraft() {
+    window.localStorage.setItem(storageKey, JSON.stringify(withoutFiles(values)));
+    router.back();
   }
 
   async function uploadPendingImages(postId: string) {
@@ -220,16 +210,23 @@ export function PostForm({ mode, postType, initialValues }: PostFormProps) {
                 { value: "seeking", label: "我要求职" },
               ]}
               value={values.job?.job_mode ?? "hiring"}
-              onChange={(next) => setJob({ job_mode: next as JobFields["job_mode"] })}
+              onChange={(next) => setJob({ job_mode: next as JobFields["job_mode"], company_name: next === "seeking" ? "" : values.job?.company_name ?? "" })}
             />
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className={values.job?.job_mode === "seeking" ? "grid grid-cols-1 gap-4" : "grid grid-cols-1 gap-4 md:grid-cols-2"}>
               <FormField label="职位名称">
-                <TextInput value={values.title} onChange={(event) => setValue("title", event.target.value)} placeholder="不填默认：招聘信息" maxLength={80} />
+                <TextInput
+                  value={values.title}
+                  onChange={(event) => setValue("title", event.target.value)}
+                  placeholder={values.job?.job_mode === "seeking" ? "不填默认：求职信息" : "不填默认：招聘信息"}
+                  maxLength={80}
+                />
               </FormField>
-              <FormField label="公司名称">
-                <TextInput value={values.job?.company_name} onChange={(event) => setJob({ company_name: event.target.value })} placeholder="不填则不显示公司名称" />
-              </FormField>
+              {values.job?.job_mode === "hiring" ? (
+                <FormField label="公司名称">
+                  <TextInput value={values.job?.company_name} onChange={(event) => setJob({ company_name: event.target.value })} placeholder="不填则不显示公司名称" />
+                </FormField>
+              ) : null}
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -238,14 +235,17 @@ export function PostForm({ mode, postType, initialValues }: PostFormProps) {
                   {jobTypes.map((item) => <option key={item} value={item}>{item}</option>)}
                 </SelectInput>
               </FormField>
-              <FormField label="职位分类" hint="不选默认：其它职位">
-                <SelectInput value={values.job?.job_category} onChange={(event) => setJob({ job_category: event.target.value })}>
+              <FormField label="职位分类" required error={errors.job_category}>
+                <SelectInput value={values.job?.job_category} onChange={(event) => setJob({ job_category: event.target.value })} required>
+                  <option value="" disabled>
+                    请选择职位分类
+                  </option>
                   {jobCategories.map((item) => <option key={item} value={item}>{item}</option>)}
                 </SelectInput>
               </FormField>
             </div>
 
-            <FormField label="工作地点" hint="默认：纽约 New York" error={errors.work_area}>
+            <FormField label="工作地点" required error={errors.work_area}>
               <LocationSelect
                 value={values.job?.work_area || values.location_area}
                 onChange={(next) => {
@@ -261,9 +261,11 @@ export function PostForm({ mode, postType, initialValues }: PostFormProps) {
               </FormField>
               <FormField label="薪资单位">
                 <SelectInput value={values.job?.salary_unit} onChange={(event) => setJob({ salary_unit: event.target.value })}>
-                  <option value="/小时">/小时</option>
-                  <option value="/月薪">/月薪</option>
-                  <option value="/年薪">/年薪</option>
+                  <option value="hour">小时</option>
+                  <option value="day">天薪</option>
+                  <option value="week">周薪</option>
+                  <option value="month">月薪</option>
+                  <option value="year">年薪</option>
                 </SelectInput>
               </FormField>
             </div>
@@ -304,11 +306,11 @@ export function PostForm({ mode, postType, initialValues }: PostFormProps) {
             </FormField>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <FormField label="地区" hint="默认：纽约 New York">
+              <FormField label="地区" required error={errors.location_area}>
                 <LocationSelect value={values.location_area} onChange={(next) => setValue("location_area", next)} />
               </FormField>
               <FormField label="租金（USD）">
-                <TextInput value={values.housing?.price} onChange={(event) => setHousing({ price: event.target.value })} type="number" min="0" placeholder="不填默认：0（面议）" />
+                <TextInput value={values.housing?.price} onChange={(event) => setHousing({ price: event.target.value })} type="number" min="0" placeholder="不填则不显示" />
               </FormField>
             </div>
 
@@ -317,7 +319,16 @@ export function PostForm({ mode, postType, initialValues }: PostFormProps) {
                 <TextInput value={values.housing?.room_type} onChange={(event) => setHousing({ room_type: event.target.value })} placeholder="例：一室一厅 / 主卧 / 次卧（可不填）" />
               </FormField>
               <FormField label="入住日期">
-                <TextInput value={values.housing?.available_from} onChange={(event) => setHousing({ available_from: event.target.value })} type="date" />
+                <div className="flex gap-2">
+                  <TextInput value={values.housing?.available_from} onChange={(event) => setHousing({ available_from: event.target.value })} type="date" />
+                  <button
+                    type="button"
+                    onClick={() => setHousing({ available_from: "" })}
+                    className="min-h-11 rounded-lg bg-white px-3 text-sm font-medium text-gray-600 ring-1 ring-gray-300 transition hover:bg-gray-50"
+                  >
+                    清空
+                  </button>
+                </div>
               </FormField>
             </div>
           </>
@@ -336,7 +347,7 @@ export function PostForm({ mode, postType, initialValues }: PostFormProps) {
               onChange={(next) => setMarketplace({ marketplace_mode: next as MarketplaceFields["marketplace_mode"] })}
             />
 
-            <FormField label="所在地区">
+            <FormField label="所在地区" required error={errors.trade_area}>
               <LocationSelect
                 value={values.marketplace?.trade_area || values.location_area}
                 onChange={(next) => {
@@ -346,15 +357,19 @@ export function PostForm({ mode, postType, initialValues }: PostFormProps) {
               />
             </FormField>
 
+            <FormField label="商品分类" required error={errors.category}>
+              <SelectInput value={values.marketplace?.category} onChange={(event) => setMarketplace({ category: event.target.value })} required>
+                <option value="" disabled>
+                  请选择商品分类
+                </option>
+                {secondhandCategories.map((item) => <option key={item} value={item}>{item}</option>)}
+              </SelectInput>
+            </FormField>
+
             {values.marketplace?.marketplace_mode === "selling" ? (
               <>
                 <FormField label="商品标题" required error={errors.title}>
                   <TextInput value={values.title} onChange={(event) => setValue("title", event.target.value)} placeholder="例：iPad Pro 11 寸" maxLength={80} />
-                </FormField>
-                <FormField label="商品分类" error={errors.category}>
-                  <SelectInput value={values.marketplace?.category} onChange={(event) => setMarketplace({ category: event.target.value })}>
-                    {secondhandCategories.map((item) => <option key={item} value={item}>{item}</option>)}
-                  </SelectInput>
                 </FormField>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <FormField label="价格（USD）">
@@ -421,22 +436,17 @@ export function PostForm({ mode, postType, initialValues }: PostFormProps) {
         <ContactFields value={values.contact} errors={errors} onChange={(contact) => setValue("contact", contact)} />
 
         <div ref={bottomMessageRef}>
-          <SubmitBar cancelHref={cancelHref} submitting={isPending} mode={mode} error={message} submitLabel={submitLabelFor(values, mode)} />
+          <SubmitBar
+            cancelHref={cancelHref}
+            submitting={isPending}
+            mode={mode}
+            error={message}
+            submitLabel={submitLabelFor(values, mode)}
+            onSaveDraft={mode === "create" ? saveDraft : undefined}
+          />
         </div>
       </form>
     </FormShell>
-  );
-}
-
-function LocationSelect({ value, onChange }: { value?: string; onChange: (value: string) => void }) {
-  return (
-    <SelectInput value={value || DEFAULT_LOCATION} onChange={(event) => onChange(event.target.value)}>
-      {LOCATION_OPTIONS.map((location) => (
-        <option key={location} value={location}>
-          {location}
-        </option>
-      ))}
-    </SelectInput>
   );
 }
 

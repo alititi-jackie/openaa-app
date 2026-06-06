@@ -1,5 +1,5 @@
 import { POST_TYPE_TO_ROUTE } from "./constants";
-import type { PostFormValues } from "./formTypes";
+import type { PostFormValues, PublishContactDefaults } from "./formTypes";
 import type { PostDetailView, PostType } from "./types";
 
 export const LOCATION_OPTIONS = [
@@ -18,36 +18,67 @@ export const LOCATION_OPTIONS = [
 
 export const DEFAULT_LOCATION = "纽约 New York";
 
+export const EMPTY_LOCATION = "";
+
+type ProfilePublishDefaultsSource = {
+  email?: string | null;
+  phone?: string | null;
+  wechat_id?: string | null;
+  preferred_contact_method?: string | null;
+  default_publish_contact_name?: string | null;
+  publish_email_mode?: string | null;
+  publish_email?: string | null;
+};
+
 function fieldValue(post: PostDetailView, label: string) {
   return post.fields.find((field) => field.label === label)?.value ?? "";
 }
 
-export function emptyPostFormValues(postType: PostType): PostFormValues {
+function defaultPreferredContactMethod(value?: string | null): "phone" | "wechat" | "email" {
+  return value === "wechat" || value === "email" ? value : "phone";
+}
+
+export function publishContactDefaultsFromProfile(profile?: ProfilePublishDefaultsSource | null): PublishContactDefaults {
+  if (!profile) return {};
+
+  const emailMode = profile.publish_email_mode ?? "hidden";
+  const email = emailMode === "account" ? profile.email : emailMode === "custom" ? profile.publish_email : "";
+
+  return {
+    contact_name: profile.default_publish_contact_name ?? "",
+    phone: profile.phone ?? "",
+    wechat: profile.wechat_id ?? "",
+    email: email ?? "",
+    preferred_contact_method: profile.preferred_contact_method ?? "phone",
+  };
+}
+
+export function emptyPostFormValues(postType: PostType, contactDefaults: PublishContactDefaults = {}): PostFormValues {
   return {
     postType,
     mode: "create",
     title: "",
     summary: "",
     body: "",
-    location_area: DEFAULT_LOCATION,
+    location_area: EMPTY_LOCATION,
     visibility: "public",
     contact: {
-      contact_name: "",
-      phone: "",
-      wechat: "",
-      email: "",
-      preferred_contact_method: "phone",
+      contact_name: contactDefaults.contact_name ?? "",
+      phone: contactDefaults.phone ?? "",
+      wechat: contactDefaults.wechat ?? "",
+      email: contactDefaults.email ?? "",
+      preferred_contact_method: defaultPreferredContactMethod(contactDefaults.preferred_contact_method),
     },
     images: [],
     job: {
       job_mode: "hiring",
       company_name: "",
-      job_category: "其它职位",
+      job_category: "",
       job_type: "其它",
       salary_min: "",
       salary_max: "",
       salary_unit: "hour",
-      work_area: DEFAULT_LOCATION,
+      work_area: EMPTY_LOCATION,
       experience_requirement: "",
       language_requirement: "",
       includes_meals: false,
@@ -69,16 +100,16 @@ export function emptyPostFormValues(postType: PostType): PostFormValues {
     },
     marketplace: {
       marketplace_mode: "selling",
-      category: "生活用品",
+      category: "",
       condition: "",
       price: "",
       negotiable: false,
-      trade_area: DEFAULT_LOCATION,
+      trade_area: EMPTY_LOCATION,
       delivery_method: "",
     },
     service: {
       service_category: "其它服务",
-      service_area: DEFAULT_LOCATION,
+      service_area: EMPTY_LOCATION,
       business_hours_text: "",
       price_range: "",
       price_note: "",

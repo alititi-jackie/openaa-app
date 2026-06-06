@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Save } from "lucide-react";
+import { Save, Upload } from "lucide-react";
 import { validateNicknameForSave } from "@/features/auth/actions";
 import { unavailableNicknameMessage, validateNickname } from "@/features/auth/nicknameValidation";
 import { featureFlags } from "@/lib/config/featureFlags";
@@ -14,15 +14,48 @@ type ProfileEditFormProps = {
   initialBusinessProfile: BusinessProfile | null;
 };
 
+async function compressAvatar(file: File) {
+  const objectUrl = URL.createObjectURL(file);
+
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = objectUrl;
+    });
+    const size = 512;
+    const scale = Math.max(size / image.width, size / image.height);
+    const width = Math.round(image.width * scale);
+    const height = Math.round(image.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const context = canvas.getContext("2d");
+    context?.drawImage(image, (size - width) / 2, (size - height) / 2, width, height);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 0.84));
+    return blob ? new File([blob], "avatar.webp", { type: "image/webp" }) : file;
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile }: ProfileEditFormProps) {
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState(initialProfile.avatar_url ?? "");
   const [profile, setProfile] = useState({
     nickname: initialProfile.nickname ?? "",
+    avatar_url: initialProfile.avatar_url ?? "",
     phone: initialProfile.phone ?? "",
     wechat_id: initialProfile.wechat_id ?? "",
-    whatsapp: initialProfile.whatsapp ?? "",
-    preferred_contact_method: initialProfile.preferred_contact_method ?? "email",
+    preferred_contact_method: ["phone", "wechat", "email"].includes(initialProfile.preferred_contact_method ?? "")
+      ? (initialProfile.preferred_contact_method ?? "email")
+      : "email",
+    default_publish_contact_name: initialProfile.default_publish_contact_name ?? "",
+    publish_email_mode: initialProfile.publish_email_mode ?? "hidden",
+    publish_email: initialProfile.publish_email ?? "",
     bio: initialProfile.bio ?? "",
     location_area: initialProfile.location_area ?? "",
     account_type: initialProfile.account_type,
@@ -40,6 +73,17 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
 
   function updateProfileField(key: keyof typeof profile, value: string) {
     setProfile((current) => ({ ...current, [key]: value }));
+  }
+
+  async function onAvatarChange(file: File | null) {
+    if (!file) return;
+    try {
+      const compressed = await compressAvatar(file);
+      setAvatarFile(compressed);
+      setAvatarPreview(URL.createObjectURL(compressed));
+    } catch {
+      setMessage("头像处理失败，请换一张图片再试。");
+    }
   }
 
   function updateBusinessField(key: keyof typeof business, value: string) {
@@ -67,14 +111,34 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
       }
 
       const supabase = createSupabaseBrowserClient();
+      let avatarUrl = profile.avatar_url || null;
+
+      if (avatarFile) {
+        const path = `${userId}/avatar.webp`;
+        const { error: uploadError } = await supabase.storage.from("avatars").upload(path, avatarFile, {
+          contentType: avatarFile.type,
+          upsert: true,
+        });
+
+        if (uploadError) {
+          setMessage(`头像上传失败：${uploadError.message}`);
+          return;
+        }
+
+        avatarUrl = supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl;
+      }
+
       const { error: profileError } = await supabase
         .from("profiles")
         .update({
           nickname: serverNicknameResult.nickname,
+          avatar_url: avatarUrl,
           phone: profile.phone || null,
           wechat_id: profile.wechat_id || null,
-          whatsapp: profile.whatsapp || null,
           preferred_contact_method: profile.preferred_contact_method || null,
+          default_publish_contact_name: profile.default_publish_contact_name || null,
+          publish_email_mode: profile.publish_email_mode || "hidden",
+          publish_email: profile.publish_email_mode === "custom" ? profile.publish_email || null : null,
           bio: profile.bio || null,
           location_area: profile.location_area || null,
           account_type: profile.account_type,
@@ -109,6 +173,9 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
         }
       }
 
+      setProfile((current) => ({ ...current, avatar_url: avatarUrl ?? "" }));
+      setAvatarPreview(avatarUrl ?? "");
+      setAvatarFile(null);
       setMessage("资料已保存。");
     } catch {
       setMessage("Supabase 环境变量尚未配置，暂时无法保存。");
@@ -122,6 +189,23 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
       <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
         <h2 className="text-lg font-black text-slate-950">基础资料</h2>
         <div className="mt-4 space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="relative h-20 w-20 overflow-hidden rounded-full bg-slate-100 ring-1 ring-slate-200">
+              {avatarPreview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarPreview} alt="用户头像" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-xl font-black text-slate-400">
+                  {(profile.nickname || "O").slice(0, 1).toUpperCase()}
+                </div>
+              )}
+            </div>
+            <label className="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-black text-white">
+              <Upload size={16} aria-hidden="true" />
+              更换头像
+              <input type="file" accept="image/*" className="sr-only" onChange={(event) => onAvatarChange(event.target.files?.[0] ?? null)} />
+            </label>
+          </div>
           <Field
             label="用户名"
             value={profile.nickname}
@@ -130,7 +214,6 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
           />
           <Field label="手机" value={profile.phone} onChange={(value) => updateProfileField("phone", value)} />
           <Field label="微信" value={profile.wechat_id} onChange={(value) => updateProfileField("wechat_id", value)} />
-          <Field label="WhatsApp" value={profile.whatsapp} onChange={(value) => updateProfileField("whatsapp", value)} />
           <label className="block">
             <span className="text-sm font-bold text-slate-800">偏好联系方式</span>
             <select
@@ -141,9 +224,24 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
               <option value="email">邮箱</option>
               <option value="phone">手机</option>
               <option value="wechat">微信</option>
-              <option value="whatsapp">WhatsApp</option>
             </select>
           </label>
+          <Field label="发布信息联系人" value={profile.default_publish_contact_name} onChange={(value) => updateProfileField("default_publish_contact_name", value)} />
+          <label className="block">
+            <span className="text-sm font-bold text-slate-800">发布邮箱设置</span>
+            <select
+              value={profile.publish_email_mode}
+              onChange={(event) => updateProfileField("publish_email_mode", event.target.value)}
+              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            >
+              <option value="hidden">不显示邮箱</option>
+              <option value="account">显示账户邮箱</option>
+              <option value="custom">使用其它邮箱</option>
+            </select>
+          </label>
+          {profile.publish_email_mode === "custom" ? (
+            <Field label="发布邮箱" value={profile.publish_email} onChange={(value) => updateProfileField("publish_email", value)} />
+          ) : null}
           <Field label="所在区域" value={profile.location_area} onChange={(value) => updateProfileField("location_area", value)} />
           <TextArea label="简介" value={profile.bio} onChange={(value) => updateProfileField("bio", value)} />
           <label className="block">
