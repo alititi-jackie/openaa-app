@@ -1,6 +1,7 @@
 "use server";
 
 import { validateNickname } from "@/features/auth/nicknameValidation";
+import { getCurrentAdminRole } from "@/lib/permissions/admin";
 import { ensureProfileForUser } from "@/lib/supabase/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -19,8 +20,39 @@ type NicknameActionResult =
       message: string;
     };
 
-export async function validateNicknameForSave(value: string): Promise<NicknameActionResult> {
-  return validateNickname(value);
+function allowedReservedNameEmails() {
+  return new Set(
+    (process.env.OPENAA_RESERVED_NAME_ALLOWED_EMAILS ?? "")
+      .split(/[\s,;]+/)
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean),
+  );
+}
+
+export async function canCurrentUserUseReservedOpenAANickname() {
+  const supabase = await createSupabaseServerClient();
+
+  if (!supabase) return false;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const email = user?.email?.trim().toLowerCase();
+
+  if (!email || !allowedReservedNameEmails().has(email)) return false;
+
+  const adminRole = await getCurrentAdminRole();
+  return Boolean(adminRole);
+}
+
+type NicknameActionOptions = {
+  allowCurrentAdminReservedName?: boolean;
+};
+
+export async function validateNicknameForSave(value: string, options: NicknameActionOptions = {}): Promise<NicknameActionResult> {
+  return validateNickname(value, {
+    allowReservedOpenAANames: options.allowCurrentAdminReservedName ? await canCurrentUserUseReservedOpenAANickname() : false,
+  });
 }
 
 export async function ensureCurrentUserProfile(): Promise<AuthActionResult> {
