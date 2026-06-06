@@ -22,15 +22,15 @@ function normalizeSlug(value: string) {
 
 export function normalizeNavigationUrl(raw: string): ValidationResult<string> {
   const value = raw.trim();
-  if (!value) return { ok: false, message: "链接不能为空。" };
+  if (!value) return { ok: false, message: "请输入网址，例如 google.com" };
 
   const lower = value.toLowerCase();
   if (lower.startsWith("javascript:") || lower.startsWith("data:")) {
-    return { ok: false, message: "不允许使用 javascript: 或 data: 链接。" };
+    return { ok: false, message: "请输入网址，例如 google.com" };
   }
 
   if (value.startsWith("/")) {
-    if (value.startsWith("//")) return { ok: false, message: "站内链接不能以 // 开头。" };
+    if (value.startsWith("//")) return { ok: false, message: "请输入网址，例如 google.com" };
     if (value === "/secondhand" || value.startsWith("/secondhand/")) {
       return { ok: false, message: "当前阶段不开放 /secondhand 路由。" };
     }
@@ -38,11 +38,15 @@ export function normalizeNavigationUrl(raw: string): ValidationResult<string> {
   }
 
   try {
-    const url = new URL(value);
-    if (url.protocol !== "https:") return { ok: false, message: "外部链接必须使用 https。" };
-    return { ok: true, value: url.toString() };
+    const withProtocol = /^[a-z][a-z0-9+.-]*:\/\//i.test(value) ? value : `https://${value}`;
+    const url = new URL(withProtocol);
+    if (url.protocol !== "https:" && url.protocol !== "http:") return { ok: false, message: "请输入网址，例如 google.com" };
+    if (!url.hostname.includes(".") || /\s/.test(url.hostname)) return { ok: false, message: "请输入网址，例如 google.com" };
+    url.protocol = "https:";
+    const normalized = url.pathname === "/" && !url.search && !url.hash ? url.origin : url.toString();
+    return { ok: true, value: normalized };
   } catch {
-    return { ok: false, message: "链接格式不正确。" };
+    return { ok: false, message: "请输入网址，例如 google.com" };
   }
 }
 
@@ -155,10 +159,10 @@ export function validateUserNavigationLinkForm(formData: FormData): ValidationRe
   openMode: NavigationOpenMode;
 }> {
   try {
-    const title = readText(formData, "title");
     const url = normalizeNavigationUrl(readText(formData, "url"));
-    if (!title) return { ok: false, message: "标题不能为空。" };
     if (!url.ok) return url;
+    const title = readText(formData, "title") || titleFromNavigationUrl(url.value);
+    if (!title) return { ok: false, message: "请输入网站名称，或输入有效网址后自动生成。" };
 
     return {
       ok: true,
@@ -174,4 +178,25 @@ export function validateUserNavigationLinkForm(formData: FormData): ValidationRe
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : "我的导航表单格式不正确。" };
   }
+}
+
+function titleFromNavigationUrl(value: string) {
+  try {
+    if (value.startsWith("/")) {
+      const parts = value.split("/").filter(Boolean);
+      return parts[parts.length - 1] ?? "OpenAA";
+    }
+    const url = new URL(value);
+    const hostname = url.hostname.replace(/^www\./, "");
+    const parts = hostname.split(".").filter(Boolean);
+    const nameParts = parts.length > 2 ? parts.slice(0, -1) : parts.slice(0, 1);
+    return nameParts.map(capitalize).join(" ");
+  } catch {
+    return "";
+  }
+}
+
+function capitalize(value: string) {
+  if (!value) return "";
+  return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 }

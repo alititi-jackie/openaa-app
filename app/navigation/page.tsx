@@ -3,7 +3,7 @@ import { ChannelPageChrome } from "@/components/channels/ChannelPageChrome";
 import { NavigationCategorySections } from "@/components/navigation/NavigationCategorySection";
 import { NavigationCategoryTabs } from "@/components/navigation/NavigationCategoryTabs";
 import { NavigationFeaturedSection } from "@/components/navigation/NavigationFeaturedSection";
-import { NavigationMyCard } from "@/components/navigation/NavigationMyCard";
+import { NavigationModeSwitch } from "@/components/navigation/NavigationModeSwitch";
 import { NavigationSearchBox } from "@/components/navigation/NavigationSearchBox";
 import { ChannelHero } from "@/components/posts/ChannelHero";
 import { ChannelSeoCard } from "@/components/posts/ChannelSeoCard";
@@ -38,7 +38,7 @@ export default async function NavigationPage({ searchParams }: NavigationPagePro
     >
       <ChannelHero title="纽约华人常用导航" description="把政府办事、银行金融、购物通讯、AI 工具和本地生活入口整理成清晰的常用网站清单。" icon={Map} />
 
-      <NavigationMyCard />
+      <NavigationModeSwitch active="public" />
       <NavigationCategoryTabs categories={data.categories} activeSlug={activeCategory} q={q} />
       <NavigationSearchBox activeCategory={activeCategory} q={q} />
 

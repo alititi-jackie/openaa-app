@@ -204,12 +204,13 @@ export async function upsertUserNavigationLink(_state: NavigationActionState, fo
   const validation = validateUserNavigationLinkForm(formData);
   if (!validation.ok) return fail(validation.message);
   const value = validation.value;
+  const sortOrder = value.id ? value.sortOrder : await nextUserNavigationSortOrder(context);
   const payload = {
     title: value.title,
     url: value.url,
     icon: value.icon,
-    sort_order: value.sortOrder,
-    open_mode: value.openMode,
+    sort_order: sortOrder,
+    open_mode: "new" as const,
     is_active: true,
     updated_at: new Date().toISOString(),
   };
@@ -220,7 +221,7 @@ export async function upsertUserNavigationLink(_state: NavigationActionState, fo
 
   if (result.error || !result.data) return fail("我的导航保存失败。");
   revalidatePath("/navigation/my");
-  return ok(value.id ? "我的导航已保存。" : "我的导航已添加。");
+  return ok(value.id ? "已更新我的导航。" : "已保存到我的导航。");
 }
 
 export async function deleteUserNavigationLink(_state: NavigationActionState, formData: FormData): Promise<NavigationActionState> {
@@ -240,6 +241,62 @@ export async function deleteUserNavigationLink(_state: NavigationActionState, fo
   if (error || !data) return fail("我的导航删除失败，请确认这条链接属于当前账号。");
   revalidatePath("/navigation/my");
   return ok("我的导航已删除。");
+}
+
+export async function moveUserNavigationLink(_state: NavigationActionState, formData: FormData): Promise<NavigationActionState> {
+  const context = await getUserActionContext();
+  if (!context.ok) return fail(context.message);
+
+  const id = readText(formData, "id");
+  const direction = readText(formData, "direction");
+  if (!id) return fail("缺少导航链接 ID。");
+  if (direction !== "up" && direction !== "down") return fail("不支持的排序方向。");
+
+  const { data, error } = await context.supabase
+    .from("user_navigation_links")
+    .select("id,sort_order,title")
+    .eq("user_id", context.userId)
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true })
+    .order("title", { ascending: true });
+
+  if (error) return fail("我的导航排序读取失败。");
+  const links = data ?? [];
+  const index = links.findIndex((link) => link.id === id);
+  const targetIndex = direction === "up" ? index - 1 : index + 1;
+  if (index < 0 || targetIndex < 0 || targetIndex >= links.length) return ok("排序已是当前状态。");
+
+  const normalized = links.map((link, linkIndex) => ({ id: link.id, sort_order: (linkIndex + 1) * 10 }));
+  const currentOrder = normalized[index].sort_order;
+  normalized[index].sort_order = normalized[targetIndex].sort_order;
+  normalized[targetIndex].sort_order = currentOrder;
+
+  for (const link of normalized) {
+    const { error: updateError } = await context.supabase
+      .from("user_navigation_links")
+      .update({ sort_order: link.sort_order, updated_at: new Date().toISOString() })
+      .eq("id", link.id)
+      .eq("user_id", context.userId);
+
+    if (updateError) return fail("我的导航排序保存失败。");
+  }
+
+  revalidatePath("/navigation/my");
+  return ok("排序已更新。");
+}
+
+async function nextUserNavigationSortOrder(context: Extract<UserActionContext, { ok: true }>) {
+  const { data } = await context.supabase
+    .from("user_navigation_links")
+    .select("sort_order")
+    .eq("user_id", context.userId)
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  const currentFirst = typeof data?.sort_order === "number" ? data.sort_order : 0;
+  return currentFirst - 10;
 }
 
 function readText(formData: FormData, key: string) {
