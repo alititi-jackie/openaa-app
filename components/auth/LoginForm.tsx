@@ -32,7 +32,7 @@ function loginFallbackMessage(isConfigured: boolean) {
   return isConfigured ? "邮箱或密码错误，请重试" : "Supabase 环境变量尚未配置，暂时无法登录。";
 }
 
-const recoveryErrorMessage = "重置链接无效或已过期，请重新申请密码重置邮件。";
+const recoveryErrorMessage = "重置链接已失效，请重新发送重置邮件。";
 const authParamNames = ["error", "error_code", "error_description", "message", "type", "source"];
 
 type AuthParams = Pick<URLSearchParams, "get" | "has">;

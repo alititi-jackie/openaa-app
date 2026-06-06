@@ -11,9 +11,16 @@ type NoticeState = {
 
 type ProfileSecurityFormProps = {
   email: string | null;
+  hasPasswordLogin: boolean;
 };
 
-export function ProfileSecurityForm({ email }: ProfileSecurityFormProps) {
+const passwordChangedMessage = "密码修改成功，请重新登录";
+
+function loginSuccessHref(message: string) {
+  return `/login?source=login&message=${encodeURIComponent(message)}`;
+}
+
+export function ProfileSecurityForm({ email, hasPasswordLogin }: ProfileSecurityFormProps) {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -32,7 +39,7 @@ export function ProfileSecurityForm({ email }: ProfileSecurityFormProps) {
     }
 
     if (!currentPassword) {
-      setNotice({ type: "error", message: "请输入原密码" });
+      setNotice({ type: "error", message: "请输入当前密码" });
       return;
     }
 
@@ -67,7 +74,7 @@ export function ProfileSecurityForm({ email }: ProfileSecurityFormProps) {
 
       if (verifyError) {
         setCurrentPassword("");
-        setNotice({ type: "error", message: "原密码不正确，请重新输入" });
+        setNotice({ type: "error", message: "当前密码错误，请重新输入" });
         return;
       }
 
@@ -80,7 +87,10 @@ export function ProfileSecurityForm({ email }: ProfileSecurityFormProps) {
 
       await supabase.auth.signOut();
       setIsSuccess(true);
-      setNotice({ type: "success", message: "密码修改成功，请使用新密码重新登录。" });
+      setNotice({ type: "success", message: passwordChangedMessage });
+      window.setTimeout(() => {
+        window.location.replace(loginSuccessHref(passwordChangedMessage));
+      }, 900);
     } catch {
       setNotice({ type: "error", message: "修改密码失败，请稍后重试" });
     } finally {
@@ -100,15 +110,21 @@ export function ProfileSecurityForm({ email }: ProfileSecurityFormProps) {
           </div>
         ) : null}
 
-        {!isSuccess ? (
+        {!hasPasswordLogin ? (
+          <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-600">
+            当前账号使用第三方登录，如需设置密码，请使用忘记密码流程。
+          </div>
+        ) : null}
+
+        {hasPasswordLogin && !isSuccess ? (
           <div className="mt-4 space-y-4">
             <label className="block">
-              <span className="text-sm font-bold text-slate-800">原密码</span>
+              <span className="text-sm font-bold text-slate-800">当前密码</span>
               <input
                 type="password"
                 value={currentPassword}
                 onChange={(event) => setCurrentPassword(event.target.value)}
-                placeholder="请输入原密码"
+                placeholder="请输入当前密码"
                 disabled={isFormDisabled}
                 className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-zinc-50"
               />
@@ -139,7 +155,7 @@ export function ProfileSecurityForm({ email }: ProfileSecurityFormProps) {
         ) : null}
       </section>
 
-      {!isSuccess ? (
+      {hasPasswordLogin && !isSuccess ? (
         <button
           type="submit"
           disabled={isSubmitting}

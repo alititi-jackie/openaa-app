@@ -6,6 +6,13 @@ import { KeyRound } from "lucide-react";
 import { AuthCard, AuthLink } from "@/components/auth/AuthCard";
 import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
 
+const resetExpiredMessage = "重置链接已失效，请重新发送重置邮件。";
+const resetSuccessMessage = "密码已重置，请重新登录";
+
+function loginSuccessHref(message: string) {
+  return `/login?source=login&message=${encodeURIComponent(message)}`;
+}
+
 export function ResetPasswordForm() {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [newPassword, setNewPassword] = useState("");
@@ -79,13 +86,17 @@ export function ResetPasswordForm() {
       const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
 
       if (updateError) {
-        setError(updateError.message || "密码重置失败，请重新打开邮件链接或稍后重试");
+        setError(resetExpiredMessage);
         return;
       }
 
+      await supabase.auth.signOut();
       setIsSuccess(true);
+      window.setTimeout(() => {
+        window.location.replace(loginSuccessHref(resetSuccessMessage));
+      }, 900);
     } catch {
-      setError(isConfigured ? "密码重置失败，请重新打开邮件链接或稍后重试" : "Supabase 环境变量尚未配置，暂时无法更新密码。");
+      setError(isConfigured ? resetExpiredMessage : "Supabase 环境变量尚未配置，暂时无法更新密码。");
     } finally {
       setIsSubmitting(false);
     }
@@ -113,7 +124,7 @@ export function ResetPasswordForm() {
         }
       >
         <div className="rounded-lg bg-red-50 p-4 text-sm leading-relaxed text-red-600">
-          重置链接无效或已过期，请重新申请密码重置邮件。
+          {resetExpiredMessage}
         </div>
       </AuthCard>
     );
@@ -123,7 +134,7 @@ export function ResetPasswordForm() {
     <AuthCard title="重置密码" description="请输入您的新密码。" footer={!isSuccess ? <AuthLink href="/login">返回登录</AuthLink> : null}>
       {isSuccess ? (
         <div className="space-y-4">
-          <div className="rounded-lg bg-green-50 p-4 text-sm leading-relaxed text-green-700">密码重置成功，请返回登录页面重新登录。</div>
+          <div className="rounded-lg bg-green-50 p-4 text-sm leading-relaxed text-green-700">{resetSuccessMessage}</div>
           <AuthLink href="/login">返回登录</AuthLink>
         </div>
       ) : (

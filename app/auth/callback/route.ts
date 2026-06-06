@@ -17,7 +17,7 @@ const allowedReturnToPrefixes = [
   "/dmv",
   "/admin",
 ];
-const recoveryErrorMessage = "重置链接无效或已过期，请重新申请密码重置邮件。";
+const recoveryErrorMessage = "重置链接已失效，请重新发送重置邮件。";
 const loginErrorMessage = "登录失败，请重新尝试。";
 
 function redirectUrl(requestUrl: URL, path: string, params?: Record<string, string>) {
