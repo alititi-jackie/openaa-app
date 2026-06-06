@@ -1,11 +1,9 @@
-import { Map } from "lucide-react";
 import { ChannelPageChrome } from "@/components/channels/ChannelPageChrome";
 import { NavigationCategorySections } from "@/components/navigation/NavigationCategorySection";
 import { NavigationCategoryTabs } from "@/components/navigation/NavigationCategoryTabs";
 import { NavigationFeaturedSection } from "@/components/navigation/NavigationFeaturedSection";
 import { NavigationMyCard } from "@/components/navigation/NavigationMyCard";
 import { NavigationSearchBox } from "@/components/navigation/NavigationSearchBox";
-import { ChannelHero } from "@/components/posts/ChannelHero";
 import { ChannelSeoCard } from "@/components/posts/ChannelSeoCard";
 import { getNavigationPageData } from "@/features/navigation/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -36,8 +34,6 @@ export default async function NavigationPage({ searchParams }: NavigationPagePro
       title="纽约华人常用导航"
       description="OpenAA 纽约华人常用网站、政府办事、DMV、交通出行和生活服务导航。"
     >
-      <ChannelHero title="纽约华人常用导航" description="把政府办事、银行金融、购物通讯、AI 工具和本地生活入口整理成清晰的常用网站清单。" icon={Map} />
-
       <NavigationMyCard />
       <NavigationCategoryTabs categories={data.categories} activeSlug={activeCategory} q={q} />
       <NavigationSearchBox activeCategory={activeCategory} q={q} />

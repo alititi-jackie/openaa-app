@@ -8,7 +8,7 @@ export function ChannelHero({
   actions,
 }: {
   title: string;
-  description: string;
+  description?: string;
   icon?: LucideIcon;
   actions?: ReactNode;
 }) {
