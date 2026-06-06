@@ -1,5 +1,5 @@
 import { PostForm } from "@/components/forms/PostForm";
-import { emptyPostFormValues, publishContactDefaultsFromProfile } from "@/features/posts/formMappers";
+import { emptyPostFormValues, profileNeedsPublishDefaultsTip, publishContactDefaultsFromProfile } from "@/features/posts/formMappers";
 import { redirectToAuthRequired } from "@/lib/auth/redirects";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { ensureProfileForUser } from "@/lib/supabase/profile";
@@ -19,5 +19,12 @@ export default async function HousingPublishPage() {
   if (!user) redirectToAuthRequired("/housing/publish");
   const profile = await ensureProfileForUser(user);
 
-  return <PostForm mode="create" postType="housing" initialValues={emptyPostFormValues("housing", publishContactDefaultsFromProfile(profile))} />;
+  return (
+    <PostForm
+      mode="create"
+      postType="housing"
+      initialValues={emptyPostFormValues("housing", publishContactDefaultsFromProfile(profile))}
+      showProfileCompletionHint={profileNeedsPublishDefaultsTip(profile)}
+    />
+  );
 }

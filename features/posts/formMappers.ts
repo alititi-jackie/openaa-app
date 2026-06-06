@@ -24,6 +24,7 @@ type ProfilePublishDefaultsSource = {
   email?: string | null;
   phone?: string | null;
   wechat_id?: string | null;
+  location_area?: string | null;
   preferred_contact_method?: string | null;
   default_publish_contact_name?: string | null;
   publish_email_mode?: string | null;
@@ -49,18 +50,30 @@ export function publishContactDefaultsFromProfile(profile?: ProfilePublishDefaul
     phone: profile.phone ?? "",
     wechat: profile.wechat_id ?? "",
     email: email ?? "",
+    location_area: profile.location_area ?? "",
     preferred_contact_method: profile.preferred_contact_method ?? "phone",
   };
 }
 
+export function profileNeedsPublishDefaultsTip(profile?: ProfilePublishDefaultsSource | null) {
+  return !(
+    profile?.default_publish_contact_name?.trim() &&
+    profile.phone?.trim() &&
+    profile.wechat_id?.trim() &&
+    profile.location_area?.trim()
+  );
+}
+
 export function emptyPostFormValues(postType: PostType, contactDefaults: PublishContactDefaults = {}): PostFormValues {
+  const defaultLocation = contactDefaults.location_area ?? EMPTY_LOCATION;
+
   return {
     postType,
     mode: "create",
     title: "",
     summary: "",
     body: "",
-    location_area: EMPTY_LOCATION,
+    location_area: defaultLocation,
     visibility: "public",
     contact: {
       contact_name: contactDefaults.contact_name ?? "",
@@ -78,7 +91,7 @@ export function emptyPostFormValues(postType: PostType, contactDefaults: Publish
       salary_min: "",
       salary_max: "",
       salary_unit: "hour",
-      work_area: EMPTY_LOCATION,
+      work_area: defaultLocation,
       experience_requirement: "",
       language_requirement: "",
       includes_meals: false,
@@ -104,12 +117,12 @@ export function emptyPostFormValues(postType: PostType, contactDefaults: Publish
       condition: "",
       price: "",
       negotiable: false,
-      trade_area: EMPTY_LOCATION,
+      trade_area: defaultLocation,
       delivery_method: "",
     },
     service: {
       service_category: "其它服务",
-      service_area: EMPTY_LOCATION,
+      service_area: defaultLocation,
       business_hours_text: "",
       price_range: "",
       price_note: "",
