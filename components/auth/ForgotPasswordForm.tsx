@@ -7,6 +7,7 @@ import { appUrl } from "@/lib/seo/siteConfig";
 import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const resetEmailSentMessage = "如果该邮箱已注册，重置密码邮件将发送到该邮箱。";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -41,7 +42,7 @@ export function ForgotPasswordForm() {
       });
 
       if (error) {
-        setMessage(error.message || "发送失败，请稍后重试");
+        setMessage("发送失败，请稍后重试");
         return;
       }
 
@@ -68,7 +69,7 @@ export function ForgotPasswordForm() {
       {isSuccess ? (
         <div className="space-y-4">
           <div className="rounded-lg bg-green-50 p-4 text-sm leading-relaxed text-green-700">
-            如果该邮箱已注册，我们已发送密码重置邮件。请打开邮箱查看来自 Supabase Auth（noreply@mail.app.supabase.io）的邮件，并按邮件提示重置密码。
+            {resetEmailSentMessage}
           </div>
           <p className="text-center text-xs text-zinc-400">如果没有收到邮件，请检查垃圾邮件箱，或稍后重试。</p>
         </div>

@@ -48,9 +48,12 @@ export default async function ProfileSecurityPage() {
     );
   }
 
+  const providers = Array.isArray(user.app_metadata?.providers) ? (user.app_metadata.providers as string[]) : [];
+  const hasPasswordLogin = providers.includes("email") || (user.identities ?? []).some((identity) => identity.provider === "email");
+
   return (
     <PageShell title="修改密码" description="请输入原密码和新密码。修改成功后，请使用新密码重新登录。" eyebrow="Profile">
-      <ProfileSecurityForm email={user.email ?? null} />
+      <ProfileSecurityForm email={user.email ?? null} hasPasswordLogin={hasPasswordLogin} />
     </PageShell>
   );
 }
