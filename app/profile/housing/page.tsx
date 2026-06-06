@@ -28,7 +28,6 @@ export default async function ProfileHousingPage() {
     <PageShell
       title="我的房屋"
       description="管理当前账号自己的房屋内容。"
-      eyebrow="Profile"
       actions={<PublishCta returnTo="/housing" label="发布房源" />}
       keepActionsInline
     >

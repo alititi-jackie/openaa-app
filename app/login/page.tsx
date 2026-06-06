@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { safeReturnTo } from "@/lib/auth/redirects";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -14,19 +15,12 @@ export const metadata = buildPageMetadata({
 });
 
 type LoginPageProps = {
-  searchParams: Promise<{ returnTo?: string }>;
+  searchParams: Promise<{ returnTo?: string; source?: string; message?: string; autoRedirect?: string }>;
 };
-
-function safeReturnTo(value: string | undefined) {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) {
-    return "/profile";
-  }
-
-  return value;
-}
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
+  const shouldShowLoginSuccess = params.source === "login" && params.message === "登录成功";
   const supabase = await createSupabaseServerClient();
 
   if (supabase) {
@@ -34,7 +28,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (user) {
+    if (user && !shouldShowLoginSuccess) {
       redirect(safeReturnTo(params.returnTo));
     }
   }

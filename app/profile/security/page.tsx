@@ -22,7 +22,6 @@ export default async function ProfileSecurityPage() {
       <PageShell
         title="修改密码"
         description="Supabase 环境变量尚未配置。配置新 Supabase 后即可修改密码。"
-        eyebrow="Profile"
       />
     );
   }
@@ -43,7 +42,6 @@ export default async function ProfileSecurityPage() {
       <PageShell
         title="修改密码"
         description="登录成功，资料正在补全中。请稍后刷新再试。"
-        eyebrow="Profile"
       />
     );
   }
@@ -52,7 +50,7 @@ export default async function ProfileSecurityPage() {
   const hasPasswordLogin = providers.includes("email") || (user.identities ?? []).some((identity) => identity.provider === "email");
 
   return (
-    <PageShell title="修改密码" description="请输入原密码和新密码。修改成功后，请使用新密码重新登录。" eyebrow="Profile">
+    <PageShell title="修改密码" description="请输入原密码和新密码。修改成功后，请使用新密码重新登录。">
       <ProfileSecurityForm email={user.email ?? null} hasPasswordLogin={hasPasswordLogin} />
     </PageShell>
   );

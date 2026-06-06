@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Save, Upload } from "lucide-react";
 import { LocationSelect } from "@/components/forms/LocationSelect";
 import { ProfileCompletionHint } from "@/components/forms/ProfileCompletionHint";
@@ -44,8 +46,10 @@ async function compressAvatar(file: File) {
 }
 
 export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile }: ProfileEditFormProps) {
+  const router = useRouter();
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState(initialProfile.avatar_url ?? "");
   const [profile, setProfile] = useState({
@@ -102,6 +106,7 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
   async function handleSave(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+    setIsSaved(false);
     setIsSubmitting(true);
     const nicknameResult = validateNickname(profile.nickname);
 
@@ -130,7 +135,7 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
         });
 
         if (uploadError) {
-          setMessage(`头像上传失败：${uploadError.message}`);
+          setMessage("头像上传失败，请稍后再试。");
           return;
         }
 
@@ -186,6 +191,10 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
       setAvatarPreview(avatarUrl ?? "");
       setAvatarFile(null);
       setMessage("资料已保存。");
+      setIsSaved(true);
+      window.setTimeout(() => {
+        router.push("/profile");
+      }, 1800);
     } catch {
       setMessage("Supabase 环境变量尚未配置，暂时无法保存。");
     } finally {
@@ -195,6 +204,20 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
 
   return (
     <form className="space-y-4" onSubmit={handleSave}>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Link
+          href="/profile/security"
+          className="inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white hover:bg-slate-800"
+        >
+          修改密码
+        </Link>
+        <Link
+          href="/profile"
+          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
+        >
+          返回我的页面
+        </Link>
+      </div>
       <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
         <h2 className="text-lg font-black text-slate-950">基础资料</h2>
         <div className="mt-4 space-y-4">
@@ -316,7 +339,7 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
 
       <button
         type="submit"
-        disabled={isSubmitting}
+        disabled={isSubmitting || isSaved}
         className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-300"
       >
         <Save size={18} aria-hidden="true" />

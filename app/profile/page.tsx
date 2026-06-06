@@ -122,6 +122,7 @@ export default async function ProfilePage() {
 
           <MenuRow href="/feedback" title="📝 反馈与举报" description="提交问题、举报虚假信息或提出建议" />
           <MenuRow href="/profile/edit" title="✏️ 编辑资料" />
+          <MenuRow href="/profile/security" title="账号安全 / 修改密码" />
 
           {profile ? <ProfileLogoutButton variant="legacy" /> : <div className="p-4 text-[12px] text-zinc-400">登录后可使用更多功能</div>}
         </section>

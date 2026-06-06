@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { KeyRound } from "lucide-react";
+import { authErrorMessage } from "@/lib/auth/errorMessages";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type NoticeState = {
@@ -14,11 +16,7 @@ type ProfileSecurityFormProps = {
   hasPasswordLogin: boolean;
 };
 
-const passwordChangedMessage = "密码修改成功，请重新登录";
-
-function loginSuccessHref(message: string) {
-  return `/login?source=login&message=${encodeURIComponent(message)}`;
-}
+const passwordChangedMessage = "密码已修改成功，请重新登录。";
 
 export function ProfileSecurityForm({ email, hasPasswordLogin }: ProfileSecurityFormProps) {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -81,16 +79,16 @@ export function ProfileSecurityForm({ email, hasPasswordLogin }: ProfileSecurity
       const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
 
       if (updateError) {
-        setNotice({ type: "error", message: updateError.message || "修改密码失败，请稍后重试" });
+        setNotice({ type: "error", message: authErrorMessage(updateError, "修改密码失败，请稍后重试") });
         return;
       }
 
-      await supabase.auth.signOut();
       setIsSuccess(true);
       setNotice({ type: "success", message: passwordChangedMessage });
-      window.setTimeout(() => {
-        window.location.replace(loginSuccessHref(passwordChangedMessage));
-      }, 900);
+      window.setTimeout(async () => {
+        await supabase.auth.signOut();
+        window.location.replace("/login");
+      }, 2000);
     } catch {
       setNotice({ type: "error", message: "修改密码失败，请稍后重试" });
     } finally {
@@ -113,6 +111,9 @@ export function ProfileSecurityForm({ email, hasPasswordLogin }: ProfileSecurity
         {!hasPasswordLogin ? (
           <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-600">
             当前账号使用第三方登录，如需设置密码，请使用忘记密码流程。
+            <Link href="/forgot-password" className="ml-2 font-bold text-blue-700 hover:underline">
+              去重置密码
+            </Link>
           </div>
         ) : null}
 
@@ -156,15 +157,30 @@ export function ProfileSecurityForm({ email, hasPasswordLogin }: ProfileSecurity
       </section>
 
       {hasPasswordLogin && !isSuccess ? (
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+        <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+          >
+            <KeyRound size={18} aria-hidden="true" />
+            {isSubmitting ? "正在修改..." : "确认修改"}
+          </button>
+          <Link
+            href="/profile"
+            className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50"
+          >
+            返回我的页面
+          </Link>
+        </div>
+      ) : (
+        <Link
+          href="/profile"
+          className="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50"
         >
-          <KeyRound size={18} aria-hidden="true" />
-          {isSubmitting ? "正在修改..." : "确认修改"}
-        </button>
-      ) : null}
+          返回我的页面
+        </Link>
+      )}
     </form>
   );
 }

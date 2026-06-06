@@ -24,7 +24,7 @@ export default async function ProfilePostsPage() {
   const posts = await getMyPosts();
 
   return (
-    <PageShell title="我的发布" description="管理当前账号自己的招聘、房屋、二手和服务内容。" eyebrow="Profile">
+    <PageShell title="我的发布" description="管理当前账号自己的招聘、房屋、二手和服务内容。">
       <UserPostsList posts={posts.data} note={posts.state === "missing_config" ? "Supabase 环境变量尚未配置，当前显示空列表。" : undefined} />
     </PageShell>
   );

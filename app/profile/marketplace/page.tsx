@@ -28,7 +28,6 @@ export default async function ProfileMarketplacePage() {
     <PageShell
       title="我的二手"
       description="管理当前账号自己的二手市场内容。"
-      eyebrow="Profile"
       actions={<PublishCta returnTo="/secondhand" label="发布二手" />}
       keepActionsInline
     >

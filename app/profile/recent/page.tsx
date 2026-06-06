@@ -27,7 +27,7 @@ export default async function ProfileRecentPage() {
   const posts = await getMyRecentPosts();
 
   return (
-    <PageShell title="最近浏览" description="查看当前账号最近浏览过的公开信息。" eyebrow="Profile">
+    <PageShell title="最近浏览" description="查看当前账号最近浏览过的公开信息。">
       {posts.state === "error" ? <p className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">最近浏览读取失败，请稍后再试。</p> : null}
       {posts.state === "missing_config" ? <p className="rounded-xl bg-slate-50 p-3 text-sm leading-6 text-slate-600">Supabase 环境变量尚未配置，当前显示空列表。</p> : null}
       {posts.data.length > 0 ? (

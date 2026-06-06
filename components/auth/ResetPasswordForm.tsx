@@ -4,14 +4,11 @@ import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { KeyRound } from "lucide-react";
 import { AuthCard, AuthLink } from "@/components/auth/AuthCard";
+import { authErrorMessage } from "@/lib/auth/errorMessages";
 import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
 
 const resetExpiredMessage = "重置链接已失效，请重新发送重置邮件。";
-const resetSuccessMessage = "密码已重置，请重新登录";
-
-function loginSuccessHref(message: string) {
-  return `/login?source=login&message=${encodeURIComponent(message)}`;
-}
+const resetSuccessMessage = "密码已重置，请重新登录。";
 
 export function ResetPasswordForm() {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
@@ -86,15 +83,15 @@ export function ResetPasswordForm() {
       const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
 
       if (updateError) {
-        setError(resetExpiredMessage);
+        setError(authErrorMessage(updateError, resetExpiredMessage));
         return;
       }
 
-      await supabase.auth.signOut();
       setIsSuccess(true);
-      window.setTimeout(() => {
-        window.location.replace(loginSuccessHref(resetSuccessMessage));
-      }, 900);
+      window.setTimeout(async () => {
+        await supabase.auth.signOut();
+        window.location.replace("/login");
+      }, 2000);
     } catch {
       setError(isConfigured ? resetExpiredMessage : "Supabase 环境变量尚未配置，暂时无法更新密码。");
     } finally {
@@ -117,7 +114,7 @@ export function ResetPasswordForm() {
         description=""
         footer={
           <span>
-            <AuthLink href="/forgot-password">重新申请</AuthLink>
+            <AuthLink href="/forgot-password">重新发送重置邮件</AuthLink>
             {" · "}
             <AuthLink href="/login">返回登录</AuthLink>
           </span>

@@ -28,7 +28,6 @@ export default async function ProfileJobsPage() {
     <PageShell
       title="我的招聘"
       description="管理当前账号自己的招聘内容。"
-      eyebrow="Profile"
       actions={<PublishCta returnTo="/jobs" label="发布招聘" />}
       keepActionsInline
     >

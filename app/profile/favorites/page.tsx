@@ -27,7 +27,7 @@ export default async function ProfileFavoritesPage() {
   const posts = await getMyFavoritePosts();
 
   return (
-    <PageShell title="我的收藏" description="查看你收藏的公开招聘、房屋、市场和服务信息。" eyebrow="Profile">
+    <PageShell title="我的收藏" description="查看你收藏的公开招聘、房屋、市场和服务信息。">
       {posts.state === "error" ? <p className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">收藏读取失败，请稍后再试。</p> : null}
       {posts.state === "missing_config" ? <p className="rounded-xl bg-slate-50 p-3 text-sm leading-6 text-slate-600">Supabase 环境变量尚未配置，当前显示空列表。</p> : null}
       {posts.data.length > 0 ? (

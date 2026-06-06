@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { KeyRound } from "lucide-react";
 import { AuthCard, AuthLink } from "@/components/auth/AuthCard";
+import { authErrorMessage } from "@/lib/auth/errorMessages";
 import { appUrl } from "@/lib/seo/siteConfig";
 import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
 
@@ -42,7 +43,7 @@ export function ForgotPasswordForm() {
       });
 
       if (error) {
-        setMessage("发送失败，请稍后重试");
+        setMessage(authErrorMessage(error, "发送失败，请稍后重试"));
         return;
       }
 

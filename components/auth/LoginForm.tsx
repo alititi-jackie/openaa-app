@@ -4,36 +4,17 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { featureFlags } from "@/lib/config/featureFlags";
+import { authErrorMessage } from "@/lib/auth/errorMessages";
+import { safeReturnTo } from "@/lib/auth/redirects";
 import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
 
-function safeReturnTo(value: string | null) {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) {
-    return "/profile";
-  }
-
-  if (value === "/login" || value.startsWith("/login?") || value.startsWith("/auth/callback")) {
-    return "/profile";
-  }
-
-  return value;
-}
-
-function loginErrorMessage(message: string) {
-  const normalized = message.toLowerCase();
-
-  if (normalized.includes("email not confirmed") || normalized.includes("not confirmed")) {
-    return "邮箱尚未验证，请先到邮箱点击验证链接后再登录。";
-  }
-
-  return "邮箱或密码错误，请重试";
-}
-
 function loginFallbackMessage(isConfigured: boolean) {
-  return isConfigured ? "邮箱或密码错误，请重试" : "Supabase 环境变量尚未配置，暂时无法登录。";
+  return isConfigured ? "邮箱或密码不正确。" : "Supabase 环境变量尚未配置，暂时无法登录。";
 }
 
 const recoveryErrorMessage = "重置链接已失效，请重新发送重置邮件。";
-const authParamNames = ["error", "error_code", "error_description", "message", "type", "source"];
+const authParamNames = ["error", "error_code", "error_description", "message", "type", "source", "autoRedirect"];
+const loginSuccessMessage = "登录成功";
 
 type AuthParams = Pick<URLSearchParams, "get" | "has">;
 
@@ -56,7 +37,12 @@ function getInitialLoginMessage(searchParams: AuthParams) {
     return recoveryErrorMessage;
   }
 
-  return isLoginParams(searchParams) ? searchParams.get("message") || searchParams.get("error") || "" : "";
+  if (isLoginParams(searchParams)) {
+    const rawMessage = searchParams.get("message") || searchParams.get("error_description") || searchParams.get("error") || "";
+    return rawMessage === loginSuccessMessage ? rawMessage : authErrorMessage(rawMessage);
+  }
+
+  return "";
 }
 
 function readHashLoginMessage() {
@@ -103,6 +89,7 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState(() => getInitialLoginMessage(searchParams));
+  const [isLoginSuccess, setIsLoginSuccess] = useState(() => message === loginSuccessMessage);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const isConfigured = isSupabaseBrowserConfigured();
@@ -119,9 +106,20 @@ export function LoginForm() {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    if (!isLoginSuccess) return;
+
+    const timer = window.setTimeout(() => {
+      window.location.replace(returnTo);
+    }, 1000);
+
+    return () => window.clearTimeout(timer);
+  }, [isLoginSuccess, returnTo]);
+
   async function handleEmailLogin(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+    setIsLoginSuccess(false);
     setIsSubmitting(true);
 
     try {
@@ -139,7 +137,7 @@ export function LoginForm() {
           message: error.message,
           status: error.status,
         });
-        setMessage(loginErrorMessage(error.message));
+        setMessage(authErrorMessage(error, "邮箱或密码不正确。"));
         return;
       }
 
@@ -164,7 +162,8 @@ export function LoginForm() {
       }
 
       console.info("[auth/login] redirect target", { returnTo });
-      window.location.replace(returnTo);
+      setMessage(loginSuccessMessage);
+      setIsLoginSuccess(true);
     } catch (error) {
       console.error("[auth/login] password login unexpected error", error);
       setMessage(loginFallbackMessage(isConfigured));
@@ -175,6 +174,7 @@ export function LoginForm() {
 
   async function handleGoogleLogin() {
     setMessage("");
+    setIsLoginSuccess(false);
     clearAuthParamsFromUrl();
     setIsGoogleSubmitting(true);
 
@@ -188,7 +188,7 @@ export function LoginForm() {
       });
 
       if (error) {
-        setMessage("Google 登录失败，请重试");
+        setMessage(authErrorMessage(error, "Google 登录失败，请重试"));
         setIsGoogleSubmitting(false);
       }
     } catch {
@@ -203,7 +203,6 @@ export function LoginForm() {
 
       <div className="mb-6 mt-3 text-center">
         <p className="text-[13.5px] leading-relaxed text-zinc-500">登录后即可免费发布二手商品、招聘信息，管理您的内容并享受更多OpenAA服务。</p>
-        <p className="mt-1 text-[12px] text-zinc-400">Login to post listings, jobs and manage your OpenAA account.</p>
       </div>
 
       {!isConfigured ? (
@@ -216,7 +215,7 @@ export function LoginForm() {
         <button
           type="button"
           onClick={handleGoogleLogin}
-          disabled={!isConfigured || isGoogleSubmitting || isSubmitting}
+          disabled={!isConfigured || isGoogleSubmitting || isSubmitting || isLoginSuccess}
           className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 px-4 py-2.5 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <GoogleIcon />
@@ -233,7 +232,11 @@ export function LoginForm() {
       ) : null}
 
       <form className="space-y-4" onSubmit={handleEmailLogin}>
-        {message ? <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{message}</div> : null}
+        {message ? (
+          <div className={`rounded-lg p-3 text-sm ${isLoginSuccess ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
+            {message}
+          </div>
+        ) : null}
 
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-gray-700">邮箱地址</span>
@@ -261,7 +264,7 @@ export function LoginForm() {
         </label>
         <button
           type="submit"
-          disabled={!featureFlags.auth_email || !isConfigured || isSubmitting || isGoogleSubmitting}
+          disabled={!featureFlags.auth_email || !isConfigured || isSubmitting || isGoogleSubmitting || isLoginSuccess}
           className="w-full rounded-lg bg-[#1976d2] py-2.5 font-medium text-white transition hover:bg-[#1565c0] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSubmitting ? "登录中..." : "登录"}

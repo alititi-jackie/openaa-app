@@ -6,6 +6,7 @@ import { UserPlus } from "lucide-react";
 import { AuthCard, AuthLink } from "@/components/auth/AuthCard";
 import { validateNicknameForSave } from "@/features/auth/actions";
 import { unavailableNicknameMessage, validateNickname } from "@/features/auth/nicknameValidation";
+import { authErrorMessage } from "@/lib/auth/errorMessages";
 import { featureFlags } from "@/lib/config/featureFlags";
 import { appUrl } from "@/lib/seo/siteConfig";
 import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
@@ -32,6 +33,7 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isConfigured = isSupabaseBrowserConfigured();
   const consentHref = `/legal/consent?returnTo=/register&agreed=${accepted ? "1" : "0"}&next=${encodeURIComponent(authReturnTo)}`;
+  const loginHref = `/login?returnTo=${encodeURIComponent(authReturnTo)}`;
   const liveNicknameResult = nickname.trim() ? validateNickname(nickname) : null;
 
   async function handleRegister(event: React.FormEvent<HTMLFormElement>) {
@@ -87,7 +89,7 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
       });
 
       if (error) {
-        setMessage(error.message || "注册失败，请重试");
+        setMessage(authErrorMessage(error, "注册失败，请重试"));
         return;
       }
 
@@ -104,9 +106,9 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
 
   if (isSuccess) {
     return (
-      <AuthCard title="注册成功！" description="请打开您的邮箱完成确认。" footer={<AuthLink href="/login">返回登录页面</AuthLink>}>
+      <AuthCard title="注册成功！" description="请打开您的邮箱完成确认。" footer={<AuthLink href={loginHref}>返回登录页面</AuthLink>}>
         <div className="space-y-3 text-sm leading-6 text-slate-700">
-          <p>请打开您的邮箱，查收来自 Supabase Auth（noreply@mail.app.supabase.io）的确认邮件，并点击邮件中的 Confirm your mail / 确认邮箱 链接。</p>
+          <p>请打开您的邮箱，查收确认邮件，并点击邮件中的确认邮箱链接。</p>
           <p>邮箱确认完成后，请回到您刚才注册 OpenAA 的页面重新登录；也可以在确认成功页面点击“前往登录”按钮登录。</p>
           <p className="text-slate-500">如果没有收到确认邮件，请检查垃圾邮件箱，或稍后重新注册/重试。</p>
         </div>
@@ -120,7 +122,7 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
       description=""
       footer={
         <span>
-          已有账号？ <AuthLink href="/login">立即登录</AuthLink>
+          已有账号？ <AuthLink href={loginHref}>立即登录</AuthLink>
         </span>
       }
     >

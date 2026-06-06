@@ -28,7 +28,7 @@ export default async function BusinessProfilePage() {
   }
 
   return (
-    <PageShell title="商家资料" description="第一版先在编辑资料页维护基础商家信息，商家认证后续阶段再做。" eyebrow="Profile">
+    <PageShell title="商家资料" description="第一版先在编辑资料页维护基础商家信息，商家认证后续阶段再做。">
       <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
         <div className="grid h-12 w-12 place-items-center rounded-xl bg-blue-50 text-blue-700">
           <Store size={22} aria-hidden="true" />

@@ -19,6 +19,7 @@ const allowedReturnToPrefixes = [
 ];
 const recoveryErrorMessage = "重置链接已失效，请重新发送重置邮件。";
 const loginErrorMessage = "登录失败，请重新尝试。";
+const loginSuccessMessage = "登录成功";
 
 function redirectUrl(requestUrl: URL, path: string, params?: Record<string, string>) {
   const url = new URL(path, requestUrl.origin);
@@ -115,8 +116,12 @@ export async function GET(request: Request) {
     await ensureProfileForUser(user);
   } catch (profileError) {
     console.error("[auth/callback] ensureProfileForUser failed", profileError);
-    return redirectUrl(requestUrl, returnTo, { warning: "资料稍后补全" });
   }
 
-  return redirectUrl(requestUrl, returnTo);
+  return redirectUrl(requestUrl, "/login", {
+    source: "login",
+    message: loginSuccessMessage,
+    autoRedirect: "1",
+    returnTo,
+  });
 }

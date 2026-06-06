@@ -32,7 +32,6 @@ export default async function AuthRequiredPage({ searchParams }: AuthRequiredPag
     <PageShell
       title="请先登录或注册 OpenAA"
       description="登录后可以发布信息、管理自己的内容、收藏帖子，并在不同设备继续使用 OpenAA。"
-      eyebrow="Account"
     >
       <Suspense fallback={null}>
         <AuthRequiredSessionRedirect />

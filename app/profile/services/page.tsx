@@ -28,7 +28,6 @@ export default async function ProfileServicesPage() {
     <PageShell
       title="我的服务"
       description="管理当前账号自己的本地服务内容。"
-      eyebrow="Profile"
       actions={<PublishCta returnTo="/services" label="发布服务" />}
       keepActionsInline
     >
