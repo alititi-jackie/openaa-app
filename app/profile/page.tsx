@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
@@ -11,6 +10,7 @@ import {
 } from "lucide-react";
 import { ProfileLogoutButton } from "@/components/profile/ProfileLogoutButton";
 import { ProfileShareButton } from "@/components/profile/ProfileShareButton";
+import { ProfileUserCenterCard } from "@/components/profile/ProfileUserCenterCard";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { ensureProfileForUser } from "@/lib/supabase/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -58,19 +58,17 @@ export default async function ProfilePage() {
           </div>
         ) : null}
 
-        {profile ? <ProfileHeader profile={profile} user={user} /> : <GuestHeader />}
-
         {profile ? (
-          <>
-            <ProfileOverviewBar
-              profile={profile}
-              unreadNotifications={profileCounts.unreadNotifications}
-              favorites={profileCounts.favorites}
-              recent={profileCounts.recent}
-            />
-            <ProfileDetailsPanel profile={profile} />
-          </>
-        ) : null}
+          <ProfileUserCenterCard
+            profile={profile}
+            authLines={getAuthLines(user, user?.email ?? profile.email ?? "")}
+            unreadNotifications={profileCounts.unreadNotifications}
+            favorites={profileCounts.favorites}
+            recent={profileCounts.recent}
+          />
+        ) : (
+          <GuestHeader />
+        )}
 
         <section className="px-1 space-y-3">
           <h2 className="text-[14px] font-black tracking-tight text-zinc-900">快捷操作</h2>
@@ -165,38 +163,6 @@ function countUniquePostIds(rows: Array<{ post_id: string | null }> | null) {
   return new Set((rows ?? []).map((row) => row.post_id).filter(Boolean)).size;
 }
 
-function ProfileHeader({ profile, user }: { profile: Profile; user: User | null }) {
-  const email = user?.email ?? profile.email ?? "";
-  const username = profile.nickname || profile.email?.split("@")[0] || email.split("@")[0] || "用户";
-  const authLines = getAuthLines(user, email);
-
-  return (
-    <section className="rounded-2xl border border-zinc-100 bg-white px-4 py-3 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
-      <div className="flex items-center gap-3">
-        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full">
-          {profile.avatar_url ? (
-            <Image src={profile.avatar_url} alt={username} fill className="object-cover" />
-          ) : (
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#1976d2] text-[20px] font-bold text-white">
-              {username[0]?.toUpperCase() ?? "?"}
-            </div>
-          )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <h2 className="truncate text-[17px] font-black leading-tight text-gray-900">{username}</h2>
-          <div className="mt-1 space-y-0.5">
-            {authLines.map((line) => (
-              <p key={line} className="truncate text-[12px] leading-tight text-gray-500">
-                {line}
-              </p>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function getAuthLines(user: User | null, email: string) {
   const providers = new Set((user?.identities ?? []).map((identity) => identity.provider));
   const primaryProvider = typeof user?.app_metadata?.provider === "string" ? user.app_metadata.provider : "";
@@ -211,125 +177,6 @@ function getAuthLines(user: User | null, email: string) {
   }
 
   return lines.length > 0 ? lines : ["账号信息：已登录"];
-}
-
-function ProfileOverviewBar({
-  profile,
-  unreadNotifications,
-  favorites,
-  recent,
-}: {
-  profile: Profile;
-  unreadNotifications: number;
-  favorites: number;
-  recent: number;
-}) {
-  return (
-    <section className="grid grid-cols-4 overflow-hidden rounded-2xl bg-white shadow-[0_2px_14px_rgba(0,0,0,0.06)] ring-1 ring-black/5">
-      <ProfileMetric href="#profile-details" label="我的资料" value={getFilledProfileItems(profile).length} active />
-      <ProfileMetric href="/profile/notifications" label="通知" value={unreadNotifications} />
-      <ProfileMetric href="/profile/favorites" label="收藏" value={favorites} />
-      <ProfileMetric href="/profile/recent" label="最近浏览" value={recent} />
-    </section>
-  );
-}
-
-function ProfileMetric({ href, label, value, active = false }: { href: string; label: string; value: number; active?: boolean }) {
-  return (
-    <Link
-      href={href}
-      className={`min-w-0 border-r border-zinc-100 px-1.5 py-3 text-center last:border-r-0 transition hover:bg-zinc-50 ${active ? "bg-blue-50/60" : "bg-white"}`}
-    >
-      <div className={`text-[18px] font-black leading-none ${active ? "text-[#1976d2]" : "text-zinc-900"}`}>{value}</div>
-      <div className="mt-1 truncate text-[11px] font-bold leading-tight text-zinc-600">{label}</div>
-    </Link>
-  );
-}
-
-function ProfileDetailsPanel({ profile }: { profile: Profile }) {
-  const filledItems = getFilledProfileItems(profile);
-  const complete = isProfileComplete(profile);
-
-  return (
-    <section id="profile-details" className="scroll-mt-20 rounded-2xl bg-white p-4 shadow-[0_2px_14px_rgba(0,0,0,0.06)] ring-1 ring-black/5">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-[14px] font-black tracking-tight text-zinc-900">我的资料</h2>
-        <Link href="/profile/edit" className="shrink-0 text-[12px] font-black text-[#1976d2]">
-          修改资料
-        </Link>
-      </div>
-
-      {filledItems.length > 0 ? (
-        <dl className="mt-3 divide-y divide-zinc-100">
-          {filledItems.map((item) => (
-            <div key={item.label} className="grid grid-cols-[92px_1fr] gap-3 py-2.5 text-[13px] leading-5">
-              <dt className="font-bold text-zinc-500">{item.label}</dt>
-              <dd className="min-w-0 whitespace-pre-wrap break-words text-zinc-900">{item.value}</dd>
-            </div>
-          ))}
-        </dl>
-      ) : (
-        <p className="mt-3 rounded-xl bg-zinc-50 p-3 text-[13px] leading-6 text-zinc-500">还没有填写发布联系资料。</p>
-      )}
-
-      {!complete ? (
-        <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50/70 p-3">
-          <p className="text-[12px] leading-5 text-slate-600">资料还不够完善，完善资料后，发布信息时可自动填写联系人、电话、微信和地区。</p>
-          <Link
-            href="/profile/edit"
-            className="mt-2 inline-flex min-h-9 items-center justify-center rounded-xl border border-blue-200 bg-white px-3 text-[12px] font-black text-[#1976d2] hover:bg-blue-50"
-          >
-            去完善资料
-          </Link>
-        </div>
-      ) : null}
-    </section>
-  );
-}
-
-function getFilledProfileItems(profile: Profile) {
-  const items: Array<{ label: string; value: string }> = [];
-
-  addProfileItem(items, "发布联系人", profile.default_publish_contact_name);
-  addProfileItem(items, "手机", profile.phone);
-  addProfileItem(items, "微信", profile.wechat_id);
-  addProfileItem(items, "发布邮箱", getPublishEmailLabel(profile));
-  addProfileItem(items, "所在区域", profile.location_area);
-  addProfileItem(items, "偏好联系方式", getPreferredContactLabel(profile.preferred_contact_method));
-  addProfileItem(items, "简介", profile.bio);
-
-  return items.slice(0, 7);
-}
-
-function addProfileItem(items: Array<{ label: string; value: string }>, label: string, value: string | null | undefined) {
-  const trimmed = value?.trim();
-  if (trimmed) {
-    items.push({ label, value: trimmed });
-  }
-}
-
-function getPublishEmailLabel(profile: Profile) {
-  if (!profile.publish_email_mode) return "";
-  if (profile.publish_email_mode === "hidden") return "不显示";
-  if (profile.publish_email_mode === "account") return "显示账户邮箱";
-  return profile.publish_email || "";
-}
-
-function getPreferredContactLabel(value: string | null) {
-  if (value === "phone") return "手机";
-  if (value === "wechat") return "微信";
-  if (value === "email") return "邮箱";
-  return "";
-}
-
-function isProfileComplete(profile: Profile) {
-  return Boolean(
-    profile.default_publish_contact_name?.trim() &&
-      (profile.phone?.trim() || profile.wechat_id?.trim()) &&
-      profile.location_area?.trim() &&
-      profile.preferred_contact_method?.trim() &&
-      profile.publish_email_mode?.trim(),
-  );
 }
 
 function GuestHeader() {

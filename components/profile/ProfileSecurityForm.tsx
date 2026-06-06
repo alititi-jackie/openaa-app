@@ -102,12 +102,6 @@ export function ProfileSecurityForm({ email, hasPasswordLogin }: ProfileSecurity
         <h2 className="text-lg font-black text-slate-950">修改密码</h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">请输入原密码和新密码。修改成功后，请使用新密码重新登录。</p>
 
-        {notice ? (
-          <div className={`mt-4 rounded-lg p-3 text-sm ${notice.type === "success" ? "bg-zinc-50 text-zinc-600" : "bg-red-50 text-red-600"}`}>
-            {notice.message}
-          </div>
-        ) : null}
-
         {!hasPasswordLogin ? (
           <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-600">
             当前账号使用第三方登录，如需设置密码，请使用忘记密码流程。
@@ -155,6 +149,12 @@ export function ProfileSecurityForm({ email, hasPasswordLogin }: ProfileSecurity
           </div>
         ) : null}
       </section>
+
+      {notice && hasPasswordLogin ? (
+        <div className={`rounded-xl p-3 text-sm leading-6 ${notice.type === "success" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
+          {notice.message}
+        </div>
+      ) : null}
 
       {hasPasswordLogin && !isSuccess ? (
         <div className="grid gap-3 sm:grid-cols-[1fr_auto]">

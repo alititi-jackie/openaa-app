@@ -129,15 +129,7 @@ export function ResetPasswordForm() {
 
   return (
     <AuthCard title="重置密码" description="请输入您的新密码。" footer={!isSuccess ? <AuthLink href="/login">返回登录</AuthLink> : null}>
-      {isSuccess ? (
-        <div className="space-y-4">
-          <div className="rounded-lg bg-green-50 p-4 text-sm leading-relaxed text-green-700">{resetSuccessMessage}</div>
-          <AuthLink href="/login">返回登录</AuthLink>
-        </div>
-      ) : (
-        <form className="space-y-4" onSubmit={handleSave}>
-          {error ? <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div> : null}
-
+      <form className="space-y-4" onSubmit={handleSave}>
           <label className="block">
             <span className="text-sm font-bold text-slate-800">新密码</span>
             <input
@@ -148,7 +140,8 @@ export function ResetPasswordForm() {
                 if (newPasswordError) setNewPasswordError("");
               }}
               placeholder="至少 6 位"
-              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+              disabled={isSuccess}
+              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-zinc-50"
             />
             {newPasswordError ? <p className="mt-1 text-xs text-red-500">{newPasswordError}</p> : null}
           </label>
@@ -162,20 +155,22 @@ export function ResetPasswordForm() {
                 if (confirmPasswordError) setConfirmPasswordError("");
               }}
               placeholder="再次输入新密码"
-              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+              disabled={isSuccess}
+              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-zinc-50"
             />
             {confirmPasswordError ? <p className="mt-1 text-xs text-red-500">{confirmPasswordError}</p> : null}
           </label>
+          {isSuccess ? <div className="rounded-lg bg-green-50 p-3 text-sm leading-relaxed text-green-700">{resetSuccessMessage}</div> : null}
+          {error ? <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div> : null}
           <button
             type="submit"
-            disabled={!isConfigured || isSubmitting}
+            disabled={!isConfigured || isSubmitting || isSuccess}
             className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#1976d2] px-4 py-3 text-sm font-black text-white hover:bg-[#1565c0] disabled:cursor-not-allowed disabled:bg-slate-300"
           >
             <KeyRound size={18} aria-hidden="true" />
             {isSubmitting ? "提交中..." : "确认修改密码"}
           </button>
         </form>
-      )}
     </AuthCard>
   );
 }

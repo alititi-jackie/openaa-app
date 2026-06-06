@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Clock, FileText, Search } from "lucide-react";
+import { Clock, FileText, Search, UserRound } from "lucide-react";
 import { EmptyState } from "@/components/common/EmptyState";
 import { PageShell } from "@/components/layout/PageShell";
 import { PostCard } from "@/components/posts/PostCard";
@@ -46,6 +46,7 @@ export default async function ProfileRecentPage() {
       <div className="grid gap-3 sm:grid-cols-2">
         <ProfileLink href="/jobs" label="浏览招聘" icon={<Search size={18} aria-hidden="true" />} />
         <ProfileLink href="/profile/posts" label="查看我的发布" icon={<FileText size={18} aria-hidden="true" />} />
+        <ProfileLink href="/profile" label="返回我的" icon={<UserRound size={18} aria-hidden="true" />} />
       </div>
     </PageShell>
   );

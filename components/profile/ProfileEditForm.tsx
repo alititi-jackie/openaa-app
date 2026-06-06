@@ -340,6 +340,12 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
         </section>
       ) : null}
 
+      {message ? (
+        <p className={`rounded-xl p-3 text-sm leading-6 ${isSaved ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
+          {message}
+        </p>
+      ) : null}
+
       <button
         type="submit"
         disabled={isSubmitting || isSaved}
@@ -348,8 +354,6 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
         <Save size={18} aria-hidden="true" />
         {isSubmitting ? "保存中..." : "保存资料"}
       </button>
-
-      {message ? <p className="rounded-xl bg-slate-100 p-3 text-sm leading-6 text-slate-700">{message}</p> : null}
     </form>
   );
 }

@@ -96,24 +96,13 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
       setPassword("");
       setConfirmPassword("");
       setAccepted(false);
+      setMessage("注册成功！请打开您的邮箱完成确认。");
       setIsSuccess(true);
     } catch {
       setMessage(registerFallbackMessage(isConfigured));
     } finally {
       setIsSubmitting(false);
     }
-  }
-
-  if (isSuccess) {
-    return (
-      <AuthCard title="注册成功！" description="请打开您的邮箱完成确认。" footer={<AuthLink href={loginHref}>返回登录页面</AuthLink>}>
-        <div className="space-y-3 text-sm leading-6 text-slate-700">
-          <p>请打开您的邮箱，查收确认邮件，并点击邮件中的确认邮箱链接。</p>
-          <p>邮箱确认完成后，请回到您刚才注册 OpenAA 的页面重新登录；也可以在确认成功页面点击“前往登录”按钮登录。</p>
-          <p className="text-slate-500">如果没有收到确认邮件，请检查垃圾邮件箱，或稍后重新注册/重试。</p>
-        </div>
-      </AuthCard>
-    );
   }
 
   return (
@@ -133,8 +122,6 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
       ) : null}
 
       <form className="space-y-4" onSubmit={handleRegister}>
-        {message ? <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{message}</div> : null}
-
         <label className="block">
           <span className="text-sm font-bold text-slate-800">用户名</span>
           <input
@@ -144,7 +131,8 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
             placeholder="请输入用户名"
             value={nickname}
             onChange={(event) => setNickname(event.target.value)}
-            className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            disabled={isSuccess}
+            className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-zinc-50"
           />
           {liveNicknameResult?.ok === false && liveNicknameResult.message === unavailableNicknameMessage ? (
             <p className="mt-2 text-sm font-bold text-red-600">{unavailableNicknameMessage}</p>
@@ -159,7 +147,8 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
             placeholder="your@email.com"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            disabled={isSuccess}
+            className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-zinc-50"
           />
         </label>
         <label className="block">
@@ -172,7 +161,8 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
             placeholder="至少6个字符"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            disabled={isSuccess}
+            className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-zinc-50"
           />
         </label>
         <label className="block">
@@ -185,7 +175,8 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
             placeholder="再次输入密码"
             value={confirmPassword}
             onChange={(event) => setConfirmPassword(event.target.value)}
-            className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            disabled={isSuccess}
+            className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-zinc-50"
           />
         </label>
         <label className="flex items-start gap-3 rounded-xl border border-slate-200 p-3 text-sm leading-6 text-slate-700">
@@ -193,6 +184,7 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
             type="checkbox"
             checked={accepted}
             onChange={(event) => setAccepted(event.target.checked)}
+            disabled={isSuccess}
             className="mt-1 h-4 w-4"
           />
           <span>
@@ -200,14 +192,21 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
             <Link className="font-bold text-blue-700" href={consentHref}>隐私政策</Link>。
           </span>
         </label>
+        {message ? <div className={`rounded-lg p-3 text-sm ${isSuccess ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>{message}</div> : null}
         <button
           type="submit"
-          disabled={!featureFlags.auth_email || !isConfigured || isSubmitting}
+          disabled={!featureFlags.auth_email || !isConfigured || isSubmitting || isSuccess}
           className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#1976d2] px-4 py-3 text-sm font-black text-white hover:bg-[#1565c0] disabled:cursor-not-allowed disabled:bg-slate-300"
         >
           <UserPlus size={18} aria-hidden="true" />
           {isSubmitting ? "注册中..." : "创建账号"}
         </button>
+        {isSuccess ? (
+          <div className="space-y-2 text-sm leading-6 text-slate-600">
+            <p>请查收确认邮件，并点击邮件中的确认邮箱链接。</p>
+            <p className="text-slate-500">如果没有收到确认邮件，请检查垃圾邮件箱，或稍后重新注册/重试。</p>
+          </div>
+        ) : null}
       </form>
     </AuthCard>
   );

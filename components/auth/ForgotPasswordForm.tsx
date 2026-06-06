@@ -67,37 +67,30 @@ export function ForgotPasswordForm() {
         </p>
       ) : null}
 
-      {isSuccess ? (
-        <div className="space-y-4">
-          <div className="rounded-lg bg-green-50 p-4 text-sm leading-relaxed text-green-700">
-            {resetEmailSentMessage}
-          </div>
-          <p className="text-center text-xs text-zinc-400">如果没有收到邮件，请检查垃圾邮件箱，或稍后重试。</p>
-        </div>
-      ) : (
-        <form className="space-y-4" onSubmit={handleReset}>
-          {message ? <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{message}</div> : null}
-
-          <label className="block">
-            <span className="text-sm font-bold text-slate-800">邮箱地址</span>
-            <input
-              type="text"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="your@email.com"
-              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-            />
-          </label>
-          <button
-            type="submit"
-            disabled={!isConfigured || isSubmitting}
-            className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#1976d2] px-4 py-3 text-sm font-black text-white hover:bg-[#1565c0] disabled:cursor-not-allowed disabled:bg-slate-300"
-          >
-            <KeyRound size={18} aria-hidden="true" />
-            {isSubmitting ? "发送中..." : "发送重置邮件"}
-          </button>
-        </form>
-      )}
+      <form className="space-y-4" onSubmit={handleReset}>
+        <label className="block">
+          <span className="text-sm font-bold text-slate-800">邮箱地址</span>
+          <input
+            type="text"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="your@email.com"
+            disabled={isSuccess}
+            className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-zinc-50"
+          />
+        </label>
+        {isSuccess ? <div className="rounded-lg bg-green-50 p-3 text-sm leading-relaxed text-green-700">{resetEmailSentMessage}</div> : null}
+        {message ? <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{message}</div> : null}
+        <button
+          type="submit"
+          disabled={!isConfigured || isSubmitting || isSuccess}
+          className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#1976d2] px-4 py-3 text-sm font-black text-white hover:bg-[#1565c0] disabled:cursor-not-allowed disabled:bg-slate-300"
+        >
+          <KeyRound size={18} aria-hidden="true" />
+          {isSubmitting ? "发送中..." : "发送重置邮件"}
+        </button>
+        {isSuccess ? <p className="text-center text-xs text-zinc-400">如果没有收到邮件，请检查垃圾邮件箱，或稍后重试。</p> : null}
+      </form>
     </AuthCard>
   );
 }
