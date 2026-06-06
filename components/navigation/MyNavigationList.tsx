@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { ArrowDown, ArrowUp, ExternalLink, Pencil, Plus, Trash2 } from "lucide-react";
+import { ExternalLink, Plus } from "lucide-react";
 import { deleteUserNavigationLink, moveUserNavigationLink, type NavigationActionState } from "@/features/navigation/actions";
 import type { UserNavigationLink } from "@/features/navigation/types";
 import { cn } from "@/lib/utils/cn";
@@ -28,7 +28,10 @@ export function MyNavigationList({ links }: { links: UserNavigationLink[] }) {
               setManaging((value) => !value);
               setEditingId(null);
             }}
-            className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm"
+            className={cn(
+              "inline-flex min-h-10 items-center justify-center rounded-xl px-4 py-2 text-sm font-black shadow-sm",
+              managing ? "bg-blue-600 text-white" : "border border-slate-200 bg-white text-slate-700",
+            )}
           >
             {managing ? "完成" : "管理"}
           </button>
@@ -57,25 +60,16 @@ export function MyNavigationList({ links }: { links: UserNavigationLink[] }) {
         <div className="grid grid-cols-2 gap-2 sm:gap-3">
           {links.map((link, index) => (
             <div key={link.id} className="space-y-2">
-              <MyNavigationCard link={link} managing={managing} />
-              {managing ? (
-                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
-                  <MoveForm id={link.id} direction="up" disabled={index === 0} />
-                  <MoveForm id={link.id} direction="down" disabled={index === links.length - 1} />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingId((value) => (value === link.id ? null : link.id));
-                      setAdding(false);
-                    }}
-                    className="inline-flex min-h-9 items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-2 py-1.5 text-xs font-black text-slate-700"
-                  >
-                    <Pencil size={13} aria-hidden="true" />
-                    编辑
-                  </button>
-                  <DeleteForm id={link.id} />
-                </div>
-              ) : null}
+              <MyNavigationCard
+                link={link}
+                managing={managing}
+                isFirst={index === 0}
+                isLast={index === links.length - 1}
+                onEdit={() => {
+                  setEditingId((value) => (value === link.id ? null : link.id));
+                  setAdding(false);
+                }}
+              />
               {editingId === link.id ? <MyNavigationForm link={link} onSaved={() => setEditingId(null)} onCancel={() => setEditingId(null)} /> : null}
             </div>
           ))}
@@ -85,27 +79,65 @@ export function MyNavigationList({ links }: { links: UserNavigationLink[] }) {
   );
 }
 
-function MyNavigationCard({ link, managing }: { link: UserNavigationLink; managing: boolean }) {
-  return (
-    <a
-      href={link.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={cn(
-        "group relative flex min-h-[94px] flex-col justify-between rounded-2xl border border-slate-100 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md",
-        managing && "pointer-events-none",
-      )}
-    >
+function MyNavigationCard({
+  link,
+  managing,
+  isFirst,
+  isLast,
+  onEdit,
+}: {
+  link: UserNavigationLink;
+  managing: boolean;
+  isFirst: boolean;
+  isLast: boolean;
+  onEdit: () => void;
+}) {
+  const content = (
+    <div className="relative min-h-[82px] rounded-xl bg-slate-50/70 p-3">
       <ExternalLink className="absolute right-3 top-3 text-slate-300 transition group-hover:text-blue-500" size={15} aria-hidden="true" />
       <span className="block pr-6 text-base font-black leading-tight text-slate-950">{link.title}</span>
-      <span className="mt-3 block truncate text-xs font-semibold text-slate-500">{displayHost(link.url)}</span>
-    </a>
+      <span className="mt-3 block truncate text-xs font-semibold text-slate-400">{displayHost(link.url)}</span>
+    </div>
+  );
+
+  if (!managing) {
+    return (
+      <a
+        href={link.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group block rounded-2xl border border-slate-100 bg-white p-2 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
+      >
+        {content}
+      </a>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border border-slate-100 bg-white p-2 shadow-sm">
+      <a href={link.url} target="_blank" rel="noopener noreferrer" className="group pointer-events-none block">
+        {content}
+      </a>
+      <div className="mt-2 grid grid-cols-2 gap-1.5">
+        <MoveForm id={link.id} direction="up" disabled={isFirst} />
+        <MoveForm id={link.id} direction="down" disabled={isLast} />
+      </div>
+      <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+        <button
+          type="button"
+          onClick={onEdit}
+          className="inline-flex min-h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-2 py-1.5 text-xs font-black text-slate-700"
+        >
+          ✎ 编辑
+        </button>
+        <DeleteForm id={link.id} />
+      </div>
+    </div>
   );
 }
 
 function MoveForm({ id, direction, disabled }: { id: string; direction: "up" | "down"; disabled: boolean }) {
   const [, formAction, pending] = useActionState(moveUserNavigationLink, initialState);
-  const Icon = direction === "up" ? ArrowUp : ArrowDown;
 
   return (
     <form action={formAction}>
@@ -116,8 +148,7 @@ function MoveForm({ id, direction, disabled }: { id: string; direction: "up" | "
         disabled={disabled || pending}
         className="inline-flex min-h-9 w-full items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-2 py-1.5 text-xs font-black text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
       >
-        <Icon size={13} aria-hidden="true" />
-        {direction === "up" ? "上移" : "下移"}
+        {direction === "up" ? "↑ 上移" : "↓ 下移"}
       </button>
     </form>
   );
@@ -140,8 +171,7 @@ function DeleteForm({ id }: { id: string }) {
         title={state.message || undefined}
         className="inline-flex min-h-9 w-full items-center justify-center gap-1 rounded-xl border border-red-100 bg-red-50 px-2 py-1.5 text-xs font-black text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <Trash2 size={13} aria-hidden="true" />
-        删除
+        🗑 删除
       </button>
     </form>
   );

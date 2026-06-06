@@ -18,8 +18,10 @@ export function MyNavigationForm({
   const [state, formAction, pending] = useActionState(upsertUserNavigationLink, initialState);
   const [url, setUrl] = useState(link?.url ?? "");
   const [title, setTitle] = useState(link?.title ?? "");
+  const [titleTouched, setTitleTouched] = useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
   const handledMessageRef = useRef("");
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isEdit = Boolean(link);
 
   useEffect(() => {
@@ -30,14 +32,20 @@ export function MyNavigationForm({
       formRef.current?.reset();
       setUrl("");
       setTitle("");
+      setTitleTouched(false);
     }
-    onSaved?.();
+    closeTimeoutRef.current = setTimeout(() => onSaved?.(), 900);
   }, [isEdit, onSaved, state.message, state.ok]);
 
-  function fillTitleFromUrl() {
-    if (title.trim()) return;
-    const generated = titleFromUrl(url);
-    if (generated) setTitle(generated);
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    };
+  }, []);
+
+  function updateUrl(nextUrl: string) {
+    setUrl(nextUrl);
+    if (!titleTouched) setTitle(titleFromUrl(nextUrl));
   }
 
   return (
@@ -46,26 +54,28 @@ export function MyNavigationForm({
       <input type="hidden" name="sort_order" value={link?.sortOrder ?? 0} />
       <input type="hidden" name="open_mode" value="new" />
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="grid gap-1.5 text-sm font-bold text-slate-700">
+        <label className="grid gap-1.5 text-sm font-bold text-slate-600">
           <span>网址</span>
           <input
             name="url"
             value={url}
-            onChange={(event) => setUrl(event.target.value)}
-            onBlur={fillTitleFromUrl}
-            placeholder="google.com"
+            onChange={(event) => updateUrl(event.target.value)}
+            placeholder="例如：openaa.com"
             required
-            className="min-h-12 rounded-xl border border-slate-200 bg-white px-3 py-2 text-base font-semibold text-slate-950 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            className="min-h-12 rounded-xl border border-slate-200 bg-white px-3 py-2 text-base font-semibold text-slate-800 outline-none transition placeholder:text-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
           />
         </label>
-        <label className="grid gap-1.5 text-sm font-bold text-slate-700">
+        <label className="grid gap-1.5 text-sm font-bold text-slate-600">
           <span>网站名称</span>
           <input
             name="title"
             value={title}
-            onChange={(event) => setTitle(event.target.value)}
+            onChange={(event) => {
+              setTitleTouched(true);
+              setTitle(event.target.value);
+            }}
             placeholder="例如：华人OpenAA"
-            className="min-h-12 rounded-xl border border-slate-200 bg-white px-3 py-2 text-base font-semibold text-slate-950 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            className="min-h-12 rounded-xl border border-slate-200 bg-white px-3 py-2 text-base font-semibold text-slate-800 outline-none transition placeholder:text-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
           />
         </label>
       </div>

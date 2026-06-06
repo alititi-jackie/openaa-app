@@ -22,15 +22,15 @@ function normalizeSlug(value: string) {
 
 export function normalizeNavigationUrl(raw: string): ValidationResult<string> {
   const value = raw.trim();
-  if (!value) return { ok: false, message: "请输入网址，例如 google.com" };
+  if (!value) return { ok: false, message: "请输入网址，例如 openaa.com" };
 
   const lower = value.toLowerCase();
   if (lower.startsWith("javascript:") || lower.startsWith("data:")) {
-    return { ok: false, message: "请输入网址，例如 google.com" };
+    return { ok: false, message: "请输入网址，例如 openaa.com" };
   }
 
   if (value.startsWith("/")) {
-    if (value.startsWith("//")) return { ok: false, message: "请输入网址，例如 google.com" };
+    if (value.startsWith("//")) return { ok: false, message: "请输入网址，例如 openaa.com" };
     if (value === "/secondhand" || value.startsWith("/secondhand/")) {
       return { ok: false, message: "当前阶段不开放 /secondhand 路由。" };
     }
@@ -40,13 +40,13 @@ export function normalizeNavigationUrl(raw: string): ValidationResult<string> {
   try {
     const withProtocol = /^[a-z][a-z0-9+.-]*:\/\//i.test(value) ? value : `https://${value}`;
     const url = new URL(withProtocol);
-    if (url.protocol !== "https:" && url.protocol !== "http:") return { ok: false, message: "请输入网址，例如 google.com" };
-    if (!url.hostname.includes(".") || /\s/.test(url.hostname)) return { ok: false, message: "请输入网址，例如 google.com" };
+    if (url.protocol !== "https:" && url.protocol !== "http:") return { ok: false, message: "请输入网址，例如 openaa.com" };
+    if (!url.hostname.includes(".") || /\s/.test(url.hostname)) return { ok: false, message: "请输入网址，例如 openaa.com" };
     url.protocol = "https:";
     const normalized = url.pathname === "/" && !url.search && !url.hash ? url.origin : url.toString();
     return { ok: true, value: normalized };
   } catch {
-    return { ok: false, message: "请输入网址，例如 google.com" };
+    return { ok: false, message: "请输入网址，例如 openaa.com" };
   }
 }
 

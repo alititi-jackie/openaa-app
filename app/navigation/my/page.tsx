@@ -24,7 +24,7 @@ export default async function MyNavigationPage() {
       title="我的导航"
       description="保存自己的常用网站，下次打开 OpenAA 更方便。"
     >
-      <NavigationModeSwitch active="my" />
+      <NavigationModeSwitch />
 
       {data.state === "missing_config" ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
