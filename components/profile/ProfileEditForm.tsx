@@ -207,20 +207,6 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
 
   return (
     <form className="space-y-4" onSubmit={handleSave}>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Link
-          href="/profile/security"
-          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-black text-blue-700 hover:bg-blue-50"
-        >
-          修改密码
-        </Link>
-        <Link
-          href="/profile"
-          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
-        >
-          返回我的页面
-        </Link>
-      </div>
       <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
         <h2 className="text-lg font-black text-slate-950">基础资料</h2>
         <div className="mt-4 space-y-4">
@@ -354,6 +340,13 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
         <Save size={18} aria-hidden="true" />
         {isSubmitting ? "保存中..." : "保存资料"}
       </button>
+
+      <Link
+        href="/profile"
+        className="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50"
+      >
+        返回我的页面
+      </Link>
     </form>
   );
 }
