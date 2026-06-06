@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import type { User } from "@supabase/supabase-js";
 import {
-  Bell,
   Briefcase,
   ChevronDown,
   Home,
@@ -32,10 +32,12 @@ export default async function ProfilePage() {
   } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
   let profile: Profile | null = null;
   let profileWarning = false;
+  let profileCounts = { unreadNotifications: 0, favorites: 0, recent: 0 };
 
   if (user) {
     try {
       profile = (await ensureProfileForUser(user)) as Profile;
+      profileCounts = await getProfileCounts(user.id);
     } catch (error) {
       console.error("[profile] ensureProfileForUser failed", error);
       profileWarning = true;
@@ -56,7 +58,19 @@ export default async function ProfilePage() {
           </div>
         ) : null}
 
-        {profile ? <ProfileHeader profile={profile} email={user?.email ?? ""} /> : <GuestHeader />}
+        {profile ? <ProfileHeader profile={profile} user={user} /> : <GuestHeader />}
+
+        {profile ? (
+          <>
+            <ProfileOverviewBar
+              profile={profile}
+              unreadNotifications={profileCounts.unreadNotifications}
+              favorites={profileCounts.favorites}
+              recent={profileCounts.recent}
+            />
+            <ProfileDetailsPanel profile={profile} />
+          </>
+        ) : null}
 
         <section className="px-1 space-y-3">
           <h2 className="text-[14px] font-black tracking-tight text-zinc-900">快捷操作</h2>
@@ -73,26 +87,6 @@ export default async function ProfilePage() {
         </section>
 
         <section className="overflow-hidden rounded-2xl bg-white shadow-[0_2px_14px_rgba(0,0,0,0.06)] ring-1 ring-black/5">
-          <div className="grid grid-cols-2 border-b border-zinc-100">
-            <MenuCard
-              href="/profile/favorites"
-              title="我的收藏"
-              description="查看你收藏的招聘、房屋、二手、服务和新闻"
-              className="border-r border-zinc-100"
-            />
-            <MenuCard href="/profile/recent" title="最近浏览" description="查看你最近看过的内容" />
-          </div>
-
-          <MenuRow
-            href="/profile/notifications"
-            title="通知中心"
-            description="查看账号、内容和平台相关通知"
-            icon={
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-blue-50">
-                <Bell size={17} className="text-blue-600" aria-hidden="true" />
-              </span>
-            }
-          />
           <MenuRow href="/navigation/my" title="🧭 管理我的导航" description="添加和整理自己的常用网站" />
 
           <details className="group border-b border-zinc-100 open:m-2 open:overflow-hidden open:rounded-2xl open:border open:border-[#1976d2] open:bg-white">
@@ -147,25 +141,194 @@ export default async function ProfilePage() {
   );
 }
 
-function ProfileHeader({ profile, email }: { profile: Profile; email: string }) {
+async function getProfileCounts(userId: string) {
+  const supabase = await createSupabaseServerClient();
+
+  if (!supabase) {
+    return { unreadNotifications: 0, favorites: 0, recent: 0 };
+  }
+
+  const [notifications, favorites, recent] = await Promise.all([
+    supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", userId).is("read_at", null),
+    supabase.from("post_favorites").select("post_id").eq("user_id", userId).limit(200),
+    supabase.from("post_views").select("post_id").eq("user_id", userId).order("created_at", { ascending: false }).limit(200),
+  ]);
+
+  return {
+    unreadNotifications: notifications.count ?? 0,
+    favorites: countUniquePostIds(favorites.data as Array<{ post_id: string | null }> | null),
+    recent: countUniquePostIds(recent.data as Array<{ post_id: string | null }> | null),
+  };
+}
+
+function countUniquePostIds(rows: Array<{ post_id: string | null }> | null) {
+  return new Set((rows ?? []).map((row) => row.post_id).filter(Boolean)).size;
+}
+
+function ProfileHeader({ profile, user }: { profile: Profile; user: User | null }) {
+  const email = user?.email ?? profile.email ?? "";
   const username = profile.nickname || profile.email?.split("@")[0] || email.split("@")[0] || "用户";
+  const authLines = getAuthLines(user, email);
 
   return (
-    <section className="rounded-[24px] border border-zinc-100 bg-white px-5 py-5 text-center shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
-      <div className="relative mx-auto mb-2 h-[76px] w-[76px] overflow-hidden rounded-full">
-        {profile.avatar_url ? (
-          <Image src={profile.avatar_url} alt={username} fill className="object-cover" />
-        ) : (
-          <div className="flex h-[76px] w-[76px] items-center justify-center rounded-full bg-[#1976d2] text-[22px] font-bold text-white">
-            {username[0]?.toUpperCase() ?? "?"}
+    <section className="rounded-2xl border border-zinc-100 bg-white px-4 py-3 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+      <div className="flex items-center gap-3">
+        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full">
+          {profile.avatar_url ? (
+            <Image src={profile.avatar_url} alt={username} fill className="object-cover" />
+          ) : (
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#1976d2] text-[20px] font-bold text-white">
+              {username[0]?.toUpperCase() ?? "?"}
+            </div>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <h2 className="truncate text-[17px] font-black leading-tight text-gray-900">{username}</h2>
+          <div className="mt-1 space-y-0.5">
+            {authLines.map((line) => (
+              <p key={line} className="truncate text-[12px] leading-tight text-gray-500">
+                {line}
+              </p>
+            ))}
           </div>
-        )}
+        </div>
       </div>
-      <h2 className="text-lg font-bold leading-tight text-gray-900">{username}</h2>
-      <p className="mt-1 text-sm leading-tight text-gray-500">{profile.email || email}</p>
-      {profile.bio ? <p className="mt-1.5 text-sm leading-tight text-gray-600">{profile.bio}</p> : null}
-      {profile.phone ? <p className="mt-1.5 text-sm leading-tight text-gray-500">📞 {profile.phone}</p> : null}
     </section>
+  );
+}
+
+function getAuthLines(user: User | null, email: string) {
+  const providers = new Set((user?.identities ?? []).map((identity) => identity.provider));
+  const primaryProvider = typeof user?.app_metadata?.provider === "string" ? user.app_metadata.provider : "";
+  if (primaryProvider) providers.add(primaryProvider);
+
+  const lines: string[] = [];
+  if (email && (providers.has("email") || !providers.has("google"))) {
+    lines.push(`邮箱登录：${email}`);
+  }
+  if (providers.has("google")) {
+    lines.push("Google 登录：已绑定");
+  }
+
+  return lines.length > 0 ? lines : ["账号信息：已登录"];
+}
+
+function ProfileOverviewBar({
+  profile,
+  unreadNotifications,
+  favorites,
+  recent,
+}: {
+  profile: Profile;
+  unreadNotifications: number;
+  favorites: number;
+  recent: number;
+}) {
+  return (
+    <section className="grid grid-cols-4 overflow-hidden rounded-2xl bg-white shadow-[0_2px_14px_rgba(0,0,0,0.06)] ring-1 ring-black/5">
+      <ProfileMetric href="#profile-details" label="我的资料" value={getFilledProfileItems(profile).length} active />
+      <ProfileMetric href="/profile/notifications" label="通知" value={unreadNotifications} />
+      <ProfileMetric href="/profile/favorites" label="收藏" value={favorites} />
+      <ProfileMetric href="/profile/recent" label="最近浏览" value={recent} />
+    </section>
+  );
+}
+
+function ProfileMetric({ href, label, value, active = false }: { href: string; label: string; value: number; active?: boolean }) {
+  return (
+    <Link
+      href={href}
+      className={`min-w-0 border-r border-zinc-100 px-1.5 py-3 text-center last:border-r-0 transition hover:bg-zinc-50 ${active ? "bg-blue-50/60" : "bg-white"}`}
+    >
+      <div className={`text-[18px] font-black leading-none ${active ? "text-[#1976d2]" : "text-zinc-900"}`}>{value}</div>
+      <div className="mt-1 truncate text-[11px] font-bold leading-tight text-zinc-600">{label}</div>
+    </Link>
+  );
+}
+
+function ProfileDetailsPanel({ profile }: { profile: Profile }) {
+  const filledItems = getFilledProfileItems(profile);
+  const complete = isProfileComplete(profile);
+
+  return (
+    <section id="profile-details" className="scroll-mt-20 rounded-2xl bg-white p-4 shadow-[0_2px_14px_rgba(0,0,0,0.06)] ring-1 ring-black/5">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-[14px] font-black tracking-tight text-zinc-900">我的资料</h2>
+        <Link href="/profile/edit" className="shrink-0 text-[12px] font-black text-[#1976d2]">
+          修改资料
+        </Link>
+      </div>
+
+      {filledItems.length > 0 ? (
+        <dl className="mt-3 divide-y divide-zinc-100">
+          {filledItems.map((item) => (
+            <div key={item.label} className="grid grid-cols-[92px_1fr] gap-3 py-2.5 text-[13px] leading-5">
+              <dt className="font-bold text-zinc-500">{item.label}</dt>
+              <dd className="min-w-0 whitespace-pre-wrap break-words text-zinc-900">{item.value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : (
+        <p className="mt-3 rounded-xl bg-zinc-50 p-3 text-[13px] leading-6 text-zinc-500">还没有填写发布联系资料。</p>
+      )}
+
+      {!complete ? (
+        <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50/70 p-3">
+          <p className="text-[12px] leading-5 text-slate-600">资料还不够完善，完善资料后，发布信息时可自动填写联系人、电话、微信和地区。</p>
+          <Link
+            href="/profile/edit"
+            className="mt-2 inline-flex min-h-9 items-center justify-center rounded-xl border border-blue-200 bg-white px-3 text-[12px] font-black text-[#1976d2] hover:bg-blue-50"
+          >
+            去完善资料
+          </Link>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function getFilledProfileItems(profile: Profile) {
+  const items: Array<{ label: string; value: string }> = [];
+
+  addProfileItem(items, "发布联系人", profile.default_publish_contact_name);
+  addProfileItem(items, "手机", profile.phone);
+  addProfileItem(items, "微信", profile.wechat_id);
+  addProfileItem(items, "发布邮箱", getPublishEmailLabel(profile));
+  addProfileItem(items, "所在区域", profile.location_area);
+  addProfileItem(items, "偏好联系方式", getPreferredContactLabel(profile.preferred_contact_method));
+  addProfileItem(items, "简介", profile.bio);
+
+  return items.slice(0, 7);
+}
+
+function addProfileItem(items: Array<{ label: string; value: string }>, label: string, value: string | null | undefined) {
+  const trimmed = value?.trim();
+  if (trimmed) {
+    items.push({ label, value: trimmed });
+  }
+}
+
+function getPublishEmailLabel(profile: Profile) {
+  if (!profile.publish_email_mode) return "";
+  if (profile.publish_email_mode === "hidden") return "不显示";
+  if (profile.publish_email_mode === "account") return "显示账户邮箱";
+  return profile.publish_email || "";
+}
+
+function getPreferredContactLabel(value: string | null) {
+  if (value === "phone") return "手机";
+  if (value === "wechat") return "微信";
+  if (value === "email") return "邮箱";
+  return "";
+}
+
+function isProfileComplete(profile: Profile) {
+  return Boolean(
+    profile.default_publish_contact_name?.trim() &&
+      (profile.phone?.trim() || profile.wechat_id?.trim()) &&
+      profile.location_area?.trim() &&
+      profile.preferred_contact_method?.trim() &&
+      profile.publish_email_mode?.trim(),
   );
 }
 
@@ -214,15 +377,6 @@ function QuickAction({
           <div className="mt-1 text-[13px] font-semibold leading-tight text-slate-900">{title}</div>
         </div>
       </div>
-    </Link>
-  );
-}
-
-function MenuCard({ href, title, description, className = "" }: { href: string; title: string; description: string; className?: string }) {
-  return (
-    <Link href={href} className={`min-w-0 p-4 transition hover:bg-zinc-50 ${className}`}>
-      <p className="text-sm font-medium text-zinc-900">{title}</p>
-      <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-zinc-500">{description}</p>
     </Link>
   );
 }
