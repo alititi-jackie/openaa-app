@@ -12,7 +12,7 @@ import { PublishCta } from "./PublishCta";
 export type ChannelPageConfig = {
   channelKey: ChannelKey;
   title: string;
-  description: string;
+  description?: string;
   path: string;
   icon: LucideIcon;
   tabs: string[];

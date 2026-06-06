@@ -5,7 +5,6 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
   jobs: {
     channelKey: "jobs",
     title: "招聘信息",
-    description: "查看招聘、求职、兼职、全职、餐馆、办公室、仓库配送等工作信息。",
     path: "/jobs",
     icon: BriefcaseBusiness,
     publishLabel: "发布招聘",
@@ -38,7 +37,6 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
   housing: {
     channelKey: "housing",
     title: "房屋租售",
-    description: "查看租房、找房、合租、整租、单房、公寓、商铺等房屋信息。",
     path: "/housing",
     icon: Building2,
     publishLabel: "发布房源",
@@ -71,7 +69,6 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
   marketplace: {
     channelKey: "marketplace",
     title: "二手市场",
-    description: "浏览和发布二手商品、闲置物品、求购信息和生活用品交易信息。",
     path: "/marketplace",
     icon: ShoppingBag,
     publishLabel: "发布二手",
@@ -104,7 +101,7 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
   services: {
     channelKey: "services",
     title: "本地服务",
-    description: "查找装修、搬家、维修、清洁、接送、会计、法律等本地服务信息。",
+    description: "找纽约华人常用服务：装修维修、搬家保洁、汽车驾校、律师会计、电脑手机等。",
     path: "/services",
     icon: Store,
     publishLabel: "发布服务",

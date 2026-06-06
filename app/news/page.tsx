@@ -34,11 +34,11 @@ export default async function NewsPage({
       channelKey="news"
       path="/news"
       title="新闻资讯"
-      description="美国华人生活资讯，关注本地新闻、社区动态、新手资讯、生活指南和平台公告。"
+      description="美国华人生活资讯、平台公告、新手指南与实用教程"
     >
       <ChannelHero
         title="新闻资讯"
-        description="美国华人生活资讯，关注本地新闻、社区动态、新手资讯、生活指南和平台公告。"
+        description="美国华人生活资讯、平台公告、新手指南与实用教程"
         icon={Newspaper}
       />
       <NewsCategoryTabs categories={categoriesResult.data} activeSlug={activeCategory} />
