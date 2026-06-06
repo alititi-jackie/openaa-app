@@ -38,7 +38,7 @@ export default async function BusinessProfilePage() {
         </p>
         <Link
           href="/profile/edit"
-          className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white"
+          className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#1976d2] px-4 py-3 text-sm font-black text-white hover:bg-[#1565c0]"
         >
           去编辑资料
         </Link>

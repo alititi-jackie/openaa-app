@@ -28,7 +28,7 @@ export function ProfileNotificationsList({ notifications }: { notifications: Not
 
       {unreadCount > 0 ? (
         <form action={markAllNotificationsRead}>
-          <button type="submit" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white">
+          <button type="submit" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#1976d2] px-4 py-2 text-sm font-black text-white hover:bg-[#1565c0]">
             <CheckCircle2 size={16} aria-hidden="true" />
             全部标记已读
           </button>

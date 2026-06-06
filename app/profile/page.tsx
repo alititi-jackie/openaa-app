@@ -95,15 +95,15 @@ export default async function ProfilePage() {
           />
           <MenuRow href="/navigation/my" title="🧭 管理我的导航" description="添加和整理自己的常用网站" />
 
-          <details className="border-b border-zinc-100">
-            <summary className="flex cursor-pointer list-none items-center justify-between p-4 transition hover:bg-zinc-50">
+          <details className="group border-b border-zinc-100 open:m-2 open:overflow-hidden open:rounded-2xl open:border open:border-blue-100 open:bg-blue-50/40">
+            <summary className="m-2 flex cursor-pointer list-none items-center justify-between rounded-2xl border border-blue-100 bg-blue-50/70 p-4 transition hover:bg-blue-50 group-open:m-0 group-open:rounded-none group-open:border-0 group-open:bg-transparent group-open:hover:bg-blue-50/40">
               <span className="flex items-center gap-2">
                 <span className="font-medium text-zinc-900">🚀 我要发布</span>
                 <span className="text-[11px] text-zinc-400">招聘 / 房屋 / 二手 / 服务</span>
               </span>
               <ChevronDown size={18} className="text-zinc-400" aria-hidden="true" />
             </summary>
-            <div className="border-t border-zinc-100 px-4 pb-4 pt-2">
+            <div className="border-t border-blue-100 px-4 pb-4 pt-2">
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 <PublishCard href="/jobs/publish" title="发布招聘" subtitle="去发布职位" icon={<Briefcase size={18} className="text-blue-600" />} tone="blue" />
                 <PublishCard href="/housing/publish" title="发布房屋" subtitle="去发布房源" icon={<Home size={18} className="text-emerald-600" />} tone="emerald" />
@@ -177,7 +177,7 @@ function GuestHeader() {
           <div className="text-[13px] font-black text-zinc-900">未登录</div>
           <div className="mt-0.5 text-[11px] text-zinc-500">登录后可管理发布与个人信息</div>
         </div>
-        <Link href="/login?returnTo=/profile" className="rounded-2xl bg-zinc-900 px-4 py-2 text-[13px] font-bold text-white">
+        <Link href="/login?returnTo=/profile" className="rounded-2xl bg-[#1976d2] px-4 py-2 text-[13px] font-bold text-white hover:bg-[#1565c0]">
           登录
         </Link>
       </div>

@@ -111,7 +111,7 @@ export function ProfileSecurityForm({ email, hasPasswordLogin }: ProfileSecurity
         {!hasPasswordLogin ? (
           <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-600">
             当前账号使用第三方登录，如需设置密码，请使用忘记密码流程。
-            <Link href="/forgot-password" className="ml-2 font-bold text-blue-700 hover:underline">
+            <Link href="/forgot-password" className="mt-3 inline-flex min-h-9 items-center justify-center rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm font-black text-blue-700 hover:bg-blue-50 sm:ml-2 sm:mt-0">
               去重置密码
             </Link>
           </div>
@@ -161,7 +161,7 @@ export function ProfileSecurityForm({ email, hasPasswordLogin }: ProfileSecurity
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+            className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#1976d2] px-4 py-3 text-sm font-black text-white hover:bg-[#1565c0] disabled:cursor-not-allowed disabled:bg-slate-300"
           >
             <KeyRound size={18} aria-hidden="true" />
             {isSubmitting ? "正在修改..." : "确认修改"}

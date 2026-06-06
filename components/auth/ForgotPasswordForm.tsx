@@ -91,7 +91,7 @@ export function ForgotPasswordForm() {
           <button
             type="submit"
             disabled={!isConfigured || isSubmitting}
-            className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+            className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#1976d2] px-4 py-3 text-sm font-black text-white hover:bg-[#1565c0] disabled:cursor-not-allowed disabled:bg-slate-300"
           >
             <KeyRound size={18} aria-hidden="true" />
             {isSubmitting ? "发送中..." : "发送重置邮件"}

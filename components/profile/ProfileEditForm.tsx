@@ -207,7 +207,7 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
       <div className="grid gap-3 sm:grid-cols-2">
         <Link
           href="/profile/security"
-          className="inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white hover:bg-slate-800"
+          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-black text-blue-700 hover:bg-blue-50"
         >
           修改密码
         </Link>
@@ -235,7 +235,7 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
                 </div>
               )}
             </div>
-            <label className="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-black text-white">
+            <label className="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-blue-200 bg-white px-4 text-sm font-black text-blue-700 hover:bg-blue-50">
               <Upload size={16} aria-hidden="true" />
               更换头像
               <input type="file" accept="image/*" className="sr-only" onChange={(event) => onAvatarChange(event.target.files?.[0] ?? null)} />
@@ -340,7 +340,7 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
       <button
         type="submit"
         disabled={isSubmitting || isSaved}
-        className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+        className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#1976d2] px-4 py-3 text-sm font-black text-white hover:bg-[#1565c0] disabled:cursor-not-allowed disabled:bg-slate-300"
       >
         <Save size={18} aria-hidden="true" />
         {isSubmitting ? "保存中..." : "保存资料"}
