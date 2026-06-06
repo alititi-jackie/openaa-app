@@ -6,11 +6,12 @@ import { SelectInput } from "./SelectInput";
 type LocationSelectProps = {
   value?: string;
   onChange: (value: string) => void;
+  required?: boolean;
 };
 
-export function LocationSelect({ value, onChange }: LocationSelectProps) {
+export function LocationSelect({ value, onChange, required = true }: LocationSelectProps) {
   return (
-    <SelectInput value={value ?? ""} onChange={(event) => onChange(event.target.value)} required>
+    <SelectInput value={value ?? ""} onChange={(event) => onChange(event.target.value)} required={required}>
       <option value="" disabled>
         请选择地区
       </option>

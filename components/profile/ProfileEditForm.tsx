@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { Save, Upload } from "lucide-react";
+import { LocationSelect } from "@/components/forms/LocationSelect";
+import { ProfileCompletionHint } from "@/components/forms/ProfileCompletionHint";
 import { validateNicknameForSave } from "@/features/auth/actions";
 import { unavailableNicknameMessage, validateNickname } from "@/features/auth/nicknameValidation";
+import { profileNeedsPublishDefaultsTip } from "@/features/posts/formMappers";
 import { featureFlags } from "@/lib/config/featureFlags";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { AccountType, BusinessProfile, Profile } from "@/lib/supabase/types";
@@ -70,6 +73,12 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
     business_address_text: initialBusinessProfile?.service_area ?? "",
   });
   const liveNicknameResult = profile.nickname.trim() ? validateNickname(profile.nickname) : null;
+  const showProfileCompletionHint = profileNeedsPublishDefaultsTip({
+    default_publish_contact_name: profile.default_publish_contact_name,
+    phone: profile.phone,
+    wechat_id: profile.wechat_id,
+    location_area: profile.location_area,
+  });
 
   function updateProfileField(key: keyof typeof profile, value: string) {
     setProfile((current) => ({ ...current, [key]: value }));
@@ -189,6 +198,9 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
       <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
         <h2 className="text-lg font-black text-slate-950">基础资料</h2>
         <div className="mt-4 space-y-4">
+          {showProfileCompletionHint ? (
+            <ProfileCompletionHint message="完善资料后，发布招聘、房屋、二手和本地服务时可自动填写联系方式和地区。" />
+          ) : null}
           <div className="flex items-center gap-4">
             <div className="relative h-20 w-20 overflow-hidden rounded-full bg-slate-100 ring-1 ring-slate-200">
               {avatarPreview ? (
@@ -242,7 +254,12 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
           {profile.publish_email_mode === "custom" ? (
             <Field label="发布邮箱" value={profile.publish_email} onChange={(value) => updateProfileField("publish_email", value)} />
           ) : null}
-          <Field label="所在区域" value={profile.location_area} onChange={(value) => updateProfileField("location_area", value)} />
+          <label className="block">
+            <span className="text-sm font-bold text-slate-800">所在区域</span>
+            <div className="mt-2">
+              <LocationSelect value={profile.location_area} onChange={(value) => updateProfileField("location_area", value)} required={false} />
+            </div>
+          </label>
           <TextArea label="简介" value={profile.bio} onChange={(value) => updateProfileField("bio", value)} />
           <label className="block">
             <span className="text-sm font-bold text-slate-800">账号类型</span>

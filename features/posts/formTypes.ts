@@ -13,6 +13,7 @@ export type PublishContactDefaults = {
   phone?: string | null;
   wechat?: string | null;
   email?: string | null;
+  location_area?: string | null;
   preferred_contact_method?: string | null;
 };
 
