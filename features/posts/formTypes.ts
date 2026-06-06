@@ -8,6 +8,14 @@ export type ContactInput = {
   preferred_contact_method: "phone" | "wechat" | "email";
 };
 
+export type PublishContactDefaults = {
+  contact_name?: string | null;
+  phone?: string | null;
+  wechat?: string | null;
+  email?: string | null;
+  preferred_contact_method?: string | null;
+};
+
 export type UploadedImageInput = {
   imageAssetId?: string;
   url: string;

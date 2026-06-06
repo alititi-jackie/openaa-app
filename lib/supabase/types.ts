@@ -14,6 +14,9 @@ export type Profile = {
   wechat_id: string | null;
   whatsapp: string | null;
   preferred_contact_method: string | null;
+  default_publish_contact_name: string | null;
+  publish_email_mode: "hidden" | "account" | "custom" | null;
+  publish_email: string | null;
   bio: string | null;
   location_area: string | null;
   account_type: AccountType;

@@ -52,6 +52,7 @@ function wageUnitLabel(unit?: string | null) {
   if (unit === "day") return "/天";
   if (unit === "week") return "/周";
   if (unit === "month") return "/月";
+  if (unit === "year") return "/年";
   return unit ?? "";
 }
 

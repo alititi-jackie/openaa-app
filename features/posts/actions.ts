@@ -168,7 +168,7 @@ function priceFor(values: PostFormValues) {
 
 function titleFor(values: PostFormValues) {
   if (values.title.trim()) return values.title.trim();
-  if (values.postType === "job") return values.job?.job_mode === "seeking" ? "求职" : "招聘信息";
+  if (values.postType === "job") return values.job?.job_mode === "seeking" ? "求职信息" : "招聘信息";
   if (values.postType === "housing") return values.housing?.housing_mode === "seeking" ? "求租" : "房屋出租";
   if (values.postType === "marketplace") return values.marketplace?.marketplace_mode === "buying" ? "求购" : "二手商品";
   return "本地服务";
