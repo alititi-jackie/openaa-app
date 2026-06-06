@@ -1,10 +1,7 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import type { LucideIcon } from "lucide-react";
-import { readDefaultMode } from "@/components/navigation/NavigationDefaultToggle";
 import { cn } from "@/lib/utils/cn";
+import { NavigationAwareLink } from "./NavigationAwareLink";
 
 export type QuickGridItem = {
   href: string;
@@ -24,43 +21,36 @@ const quickGridThemes: Record<string, { bg: string; text: string; ring: string; 
 };
 
 export function QuickGrid({ items }: { items: QuickGridItem[] }) {
-  const [navigationHref, setNavigationHref] = useState("/navigation");
-
-  useEffect(() => {
-    function syncNavigationHref() {
-      setNavigationHref(readDefaultMode() === "my" ? "/navigation/my" : "/navigation");
-    }
-
-    syncNavigationHref();
-    window.addEventListener("storage", syncNavigationHref);
-    window.addEventListener("openaa:navigation-default-change", syncNavigationHref);
-    return () => {
-      window.removeEventListener("storage", syncNavigationHref);
-      window.removeEventListener("openaa:navigation-default-change", syncNavigationHref);
-    };
-  }, []);
-
   return (
     <section className="w-full rounded-2xl border border-slate-100 bg-white px-3 py-5 shadow-sm sm:px-4">
       <div className="grid w-full grid-cols-4 gap-x-2 gap-y-4 sm:gap-x-3 sm:gap-y-5">
         {items.map((item) => {
           const Icon = item.icon;
           const theme = quickGridThemes[item.label] ?? quickGridThemes["导航"];
-          const href = item.label === "导航" && item.href === "/navigation" ? navigationHref : item.href;
-
-          return (
-            <Link
-              key={item.href}
-              href={href}
-              className={cn(
-                "flex min-h-[84px] flex-col items-center justify-center gap-2 rounded-2xl px-1 text-center text-[14px] font-medium leading-tight text-slate-800 transition active:scale-95 md:min-h-[106px] lg:min-h-[116px]",
-                theme.hover,
-              )}
-            >
+          const className = cn(
+            "flex min-h-[84px] flex-col items-center justify-center gap-2 rounded-2xl px-1 text-center text-[14px] font-medium leading-tight text-slate-800 transition active:scale-95 md:min-h-[106px] lg:min-h-[116px]",
+            theme.hover,
+          );
+          const content = (
+            <>
               <span className={cn("grid h-[54px] w-[54px] place-items-center rounded-[18px] shadow-sm ring-1 md:h-16 md:w-16 md:rounded-[22px]", theme.bg, theme.text, theme.ring)}>
                 <Icon className="h-[26px] w-[26px] md:h-8 md:w-8" strokeWidth={1.8} aria-hidden="true" />
               </span>
               <span>{item.label}</span>
+            </>
+          );
+
+          if (item.label === "导航" && item.href === "/navigation") {
+            return (
+              <NavigationAwareLink key={item.href} className={className}>
+                {content}
+              </NavigationAwareLink>
+            );
+          }
+
+          return (
+            <Link key={item.href} href={item.href} className={className}>
+              {content}
             </Link>
           );
         })}
