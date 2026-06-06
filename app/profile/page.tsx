@@ -95,15 +95,15 @@ export default async function ProfilePage() {
           />
           <MenuRow href="/navigation/my" title="🧭 管理我的导航" description="添加和整理自己的常用网站" />
 
-          <details className="group border-b border-zinc-100 open:m-2 open:overflow-hidden open:rounded-2xl open:border open:border-blue-100 open:bg-blue-50/40">
-            <summary className="m-2 flex cursor-pointer list-none items-center justify-between rounded-2xl border border-blue-100 bg-blue-50/70 p-4 transition hover:bg-blue-50 group-open:m-0 group-open:rounded-none group-open:border-0 group-open:bg-transparent group-open:hover:bg-blue-50/40">
+          <details className="group border-b border-zinc-100 open:m-2 open:overflow-hidden open:rounded-2xl open:border open:border-[#1976d2] open:bg-white">
+            <summary className="m-2 flex cursor-pointer list-none items-center justify-between rounded-2xl border border-blue-100 bg-blue-50/70 p-4 transition hover:bg-blue-50 group-open:m-0 group-open:rounded-none group-open:border-0 group-open:bg-white group-open:hover:bg-zinc-50">
               <span className="flex items-center gap-2">
                 <span className="font-medium text-zinc-900">🚀 我要发布</span>
                 <span className="text-[11px] text-zinc-400">招聘 / 房屋 / 二手 / 服务</span>
               </span>
               <ChevronDown size={18} className="text-zinc-400" aria-hidden="true" />
             </summary>
-            <div className="border-t border-blue-100 px-4 pb-4 pt-2">
+            <div className="border-t border-zinc-100 px-4 pb-4 pt-2">
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 <PublishCard href="/jobs/publish" title="发布招聘" subtitle="去发布职位" icon={<Briefcase size={18} className="text-blue-600" />} tone="blue" />
                 <PublishCard href="/housing/publish" title="发布房屋" subtitle="去发布房源" icon={<Home size={18} className="text-emerald-600" />} tone="emerald" />
@@ -272,7 +272,7 @@ function PublishCard({
   }[tone];
 
   return (
-    <Link href={href} className="rounded-2xl bg-zinc-50 p-3 text-left ring-1 ring-zinc-100 transition hover:bg-white hover:ring-zinc-200">
+    <Link href={href} className="rounded-2xl bg-white p-3 text-left ring-1 ring-zinc-100 transition hover:bg-zinc-50 hover:ring-zinc-200">
       <div className="flex items-center gap-2">
         <div className={`flex h-9 w-9 items-center justify-center rounded-xl ring-1 ${toneClass}`}>{icon}</div>
         <div>
