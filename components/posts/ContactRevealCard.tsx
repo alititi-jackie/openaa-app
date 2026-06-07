@@ -42,7 +42,7 @@ export function ContactRevealCard({ postId }: { postId: string }) {
   return (
     <section className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
       <h2 className="text-lg font-black text-slate-950">联系方式</h2>
-      <p className="mt-2 text-sm leading-6 text-slate-600">联系方式默认隐藏。点击后通过受控接口读取，列表页不会暴露联系方式。</p>
+      <p className="mt-2 text-sm leading-6 text-slate-600">为保护发布者隐私，联系方式默认隐藏。需要联系时可点击查看，请礼貌沟通并注意甄别信息。</p>
 
       {contact ? (
         <div className="mt-4 space-y-2 text-sm">
