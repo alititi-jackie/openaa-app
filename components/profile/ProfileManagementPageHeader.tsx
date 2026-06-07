@@ -12,17 +12,25 @@ export function ProfileManagementPageHeader({ title, description, actions }: Pro
     <header className="space-y-3">
       <Link
         href="/profile"
-        className="inline-flex min-h-10 items-center rounded-xl border border-blue-200 bg-white px-3.5 text-sm font-bold text-blue-700 shadow-[0_2px_8px_rgba(37,99,235,0.12)] transition hover:border-blue-300 hover:bg-blue-50"
+        className="sticky top-14 z-30 mb-4 inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-2xl border border-blue-100 bg-white px-4 text-sm font-medium text-blue-600 shadow-sm transition active:scale-[0.97]"
       >
         ← 返回
       </Link>
-      <div className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-        <div className="space-y-1">
-          <h1 className="text-xl font-black text-slate-950">{title}</h1>
-          <p className="text-sm text-slate-600">{description}</p>
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+          <p className="mt-1 text-sm text-gray-500">{description}</p>
         </div>
         {actions ? <div className="shrink-0">{actions}</div> : null}
       </div>
     </header>
+  );
+}
+
+export function ProfilePublishLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link href={href} className="flex h-10 items-center rounded-xl border border-blue-100 bg-blue-50 px-4 text-sm text-blue-600 transition hover:bg-blue-100">
+      {label}
+    </Link>
   );
 }

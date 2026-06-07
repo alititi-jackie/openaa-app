@@ -1,5 +1,4 @@
-import { PublishCta } from "@/components/posts/PublishCta";
-import { ProfileManagementPageHeader } from "@/components/profile/ProfileManagementPageHeader";
+import { ProfileManagementPageHeader, ProfilePublishLink } from "@/components/profile/ProfileManagementPageHeader";
 import { ProfileUserPostsList } from "@/components/profile/ProfileUserPostsList";
 import { getMyPosts } from "@/features/posts/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -29,7 +28,7 @@ export default async function ProfileServicesPage() {
       <ProfileManagementPageHeader
         title="我的服务"
         description="管理您发布的本地服务信息"
-        actions={<PublishCta returnTo="/services" label="+ 发布服务" />}
+        actions={<ProfilePublishLink href="/services/publish" label="+ 发布服务" />}
       />
       <ProfileUserPostsList posts={posts.data} />
     </div>

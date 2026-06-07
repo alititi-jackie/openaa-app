@@ -1,5 +1,4 @@
-import { PublishCta } from "@/components/posts/PublishCta";
-import { ProfileManagementPageHeader } from "@/components/profile/ProfileManagementPageHeader";
+import { ProfileManagementPageHeader, ProfilePublishLink } from "@/components/profile/ProfileManagementPageHeader";
 import { ProfileUserPostsList } from "@/components/profile/ProfileUserPostsList";
 import { getMyPosts } from "@/features/posts/queries";
 import { redirectToAuthRequired } from "@/lib/auth/redirects";
@@ -29,7 +28,7 @@ export default async function ProfileSecondhandPage() {
       <ProfileManagementPageHeader
         title="我的商品"
         description="管理您发布的二手出售与求购信息"
-        actions={<PublishCta returnTo="/secondhand" label="+ 发布商品" />}
+        actions={<ProfilePublishLink href="/secondhand/publish" label="+ 发布商品" />}
       />
       <ProfileUserPostsList posts={posts.data} />
     </div>

@@ -1,5 +1,4 @@
-import { PublishCta } from "@/components/posts/PublishCta";
-import { ProfileManagementPageHeader } from "@/components/profile/ProfileManagementPageHeader";
+import { ProfileManagementPageHeader, ProfilePublishLink } from "@/components/profile/ProfileManagementPageHeader";
 import { ProfileUserPostsList } from "@/components/profile/ProfileUserPostsList";
 import { getMyPosts } from "@/features/posts/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -29,7 +28,7 @@ export default async function ProfileJobsPage() {
       <ProfileManagementPageHeader
         title="我的招聘"
         description="管理您发布的招聘岗位与求职信息"
-        actions={<PublishCta returnTo="/jobs" label="+ 发布招聘" />}
+        actions={<ProfilePublishLink href="/jobs/publish" label="+ 发布招聘" />}
       />
       <ProfileUserPostsList posts={posts.data} />
     </div>
