@@ -1,6 +1,6 @@
-import { PageShell } from "@/components/layout/PageShell";
 import { PublishCta } from "@/components/posts/PublishCta";
-import { UserPostsList } from "@/components/posts/UserPostsList";
+import { ProfileManagementPageHeader } from "@/components/profile/ProfileManagementPageHeader";
+import { ProfileUserPostsList } from "@/components/profile/ProfileUserPostsList";
 import { getMyPosts } from "@/features/posts/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -25,13 +25,13 @@ export default async function ProfileServicesPage() {
   const posts = await getMyPosts("service");
 
   return (
-    <PageShell
-      title="我的服务"
-      description="管理当前账号自己的本地服务内容。"
-      actions={<PublishCta returnTo="/services" label="发布服务" />}
-      keepActionsInline
-    >
-      <UserPostsList posts={posts.data} />
-    </PageShell>
+    <div className="space-y-4">
+      <ProfileManagementPageHeader
+        title="我的服务"
+        description="管理您发布的本地服务信息"
+        actions={<PublishCta returnTo="/services" label="+ 发布服务" />}
+      />
+      <ProfileUserPostsList posts={posts.data} />
+    </div>
   );
 }
