@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import { PageTitleCard } from "@/components/PageTitleCard";
 
 export function ChannelHero({
   title,
@@ -12,5 +11,13 @@ export function ChannelHero({
   icon?: LucideIcon;
   actions?: ReactNode;
 }) {
-  return <PageTitleCard title={title} description={description} actions={actions} keepActionsInline />;
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        <h1 className="text-xl font-black leading-tight text-slate-950">{title}</h1>
+        {description ? <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p> : null}
+      </div>
+      {actions ? <div className="shrink-0">{actions}</div> : null}
+    </div>
+  );
 }
