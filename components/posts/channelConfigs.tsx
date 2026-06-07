@@ -69,14 +69,14 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
   marketplace: {
     channelKey: "marketplace",
     title: "二手市场",
-    path: "/marketplace",
+    path: "/secondhand",
     icon: ShoppingBag,
     publishLabel: "发布二手",
     tabs: ["全部", "出售", "求购", "家具", "电器", "搬家"],
     searchPlaceholder: "搜索二手物品或区域",
     posts: [
-      { title: "搬家家具出售占位", description: "后续显示价格、区域和取货方式。", href: "/marketplace", meta: "占位", tag: "出售" },
-      { title: "求购显示器占位", description: "这里展示求购信息卡片样式。", href: "/marketplace", meta: "占位", tag: "求购" },
+      { title: "搬家家具出售占位", description: "后续显示价格、区域和取货方式。", href: "/secondhand", meta: "占位", tag: "出售" },
+      { title: "求购显示器占位", description: "这里展示求购信息卡片样式。", href: "/secondhand", meta: "占位", tag: "求购" },
     ],
     seoTitle: "纽约华人二手交易频道使用说明",
     seoContent: (

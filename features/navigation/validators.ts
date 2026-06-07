@@ -31,8 +31,8 @@ export function normalizeNavigationUrl(raw: string): ValidationResult<string> {
 
   if (value.startsWith("/")) {
     if (value.startsWith("//")) return { ok: false, message: "请输入网址，例如 openaa.com" };
-    if (value === "/secondhand" || value.startsWith("/secondhand/")) {
-      return { ok: false, message: "当前阶段不开放 /secondhand 路由。" };
+    if (value === "/marketplace" || value.startsWith("/marketplace/")) {
+      return { ok: false, message: "请使用 /secondhand 作为二手频道路径。" };
     }
     return { ok: true, value };
   }

@@ -58,7 +58,7 @@
     {
       "legacy_id": "ticker-marketplace",
       "title": "如发现虚假或过期信息，可在详情页举报",
-      "href": "/marketplace",
+      "href": "/secondhand",
       "module": "marketplace",
       "is_enabled": true,
       "sort_order": 40,

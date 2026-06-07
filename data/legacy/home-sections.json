@@ -33,7 +33,7 @@
           },
           {
             "label": "二手",
-            "href": "/marketplace",
+            "href": "/secondhand",
             "icon": "shopping-bag",
             "sort_order": 30,
             "is_visible": true,
@@ -189,7 +189,7 @@
             "title": "最新二手",
             "nav_label": "二手",
             "post_type": "marketplace",
-            "route": "/marketplace",
+            "route": "/secondhand",
             "is_visible": true,
             "sort_order": 30,
             "limit_count": 2,

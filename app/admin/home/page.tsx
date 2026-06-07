@@ -140,7 +140,7 @@ function LatestPostsSectionForm({ section }: { section: AdminHomeSectionRow }) {
         </div>
 
         <p className="rounded-xl bg-white px-3 py-2 text-xs font-semibold leading-5 text-slate-500">
-          最新发布按旧站方式纵向展示招聘、房屋、二手、本地服务和新闻；二手在新站使用 /marketplace，不恢复 /secondhand。
+          最新发布按旧站方式纵向展示招聘、房屋、二手、本地服务和新闻；二手在新站统一使用 /secondhand。
         </p>
       </AdminActionForm>
     </div>

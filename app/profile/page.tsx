@@ -99,7 +99,7 @@ export default async function ProfilePage() {
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 <PublishCard href="/jobs/publish" title="发布招聘" subtitle="去发布职位" icon={<Briefcase size={18} className="text-blue-600" />} tone="blue" />
                 <PublishCard href="/housing/publish" title="发布房屋" subtitle="去发布房源" icon={<Home size={18} className="text-emerald-600" />} tone="emerald" />
-                <PublishCard href="/marketplace/publish" title="发布二手" subtitle="去发布商品" icon={<ShoppingBag size={18} className="text-amber-600" />} tone="amber" />
+                <PublishCard href="/secondhand/publish" title="发布二手" subtitle="去发布商品" icon={<ShoppingBag size={18} className="text-amber-600" />} tone="amber" />
                 <PublishCard href="/services/publish" title="发布服务" subtitle="去发布服务" icon={<span className="text-base leading-none">🛠️</span>} tone="cyan" />
               </div>
             </div>
@@ -108,7 +108,7 @@ export default async function ProfilePage() {
           <div className="grid grid-cols-2 border-b border-zinc-100">
             <MenuTile href="/profile/jobs" label="💼 我的招聘" className="border-r border-zinc-100" />
             <MenuTile href="/profile/housing" label="🏠 我的房屋" />
-            <MenuTile href="/profile/marketplace" label="🛍️ 我的二手" className="border-r border-t border-zinc-100" />
+            <MenuTile href="/profile/secondhand" label="🛍️ 我的二手" className="border-r border-t border-zinc-100" />
             <MenuTile href="/profile/services" label="🛠️ 我的服务" className="border-t border-zinc-100" />
           </div>
 

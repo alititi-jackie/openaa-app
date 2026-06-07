@@ -564,7 +564,7 @@ function readJsonObject(formData: FormData, key: string): { ok: true; value: Rec
 function normalizeLink(raw: string): { ok: true; value: string } | { ok: false; message: string } {
   if (!raw) return { ok: false, message: "URL 不能为空。" };
   if (raw.startsWith("/") && !raw.startsWith("//")) {
-    if (raw.slice(1) === "secondhand") return { ok: false, message: "请使用 /marketplace，不要使用旧的二手路由。" };
+    if (raw.slice(1) === "marketplace") return { ok: false, message: "请使用 /secondhand 作为二手频道路径。" };
     return { ok: true, value: raw };
   }
 
