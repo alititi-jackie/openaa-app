@@ -12,7 +12,7 @@ type ContactPayload = {
   message?: string;
 };
 
-export function ContactRevealCard({ postId }: { postId: string }) {
+export function ContactRevealCard({ postId, compact = false }: { postId: string; compact?: boolean }) {
   const [contact, setContact] = useState<ContactPayload | null>(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -40,9 +40,13 @@ export function ContactRevealCard({ postId }: { postId: string }) {
   }
 
   return (
-    <section className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-      <h2 className="text-lg font-black text-slate-950">联系方式</h2>
-      <p className="mt-2 text-sm leading-6 text-slate-600">为保护发布者隐私，联系方式默认隐藏。需要联系时可点击查看，请礼貌沟通并注意甄别信息。</p>
+    <section className={compact ? "" : "rounded-xl border border-slate-100 bg-white p-4 shadow-sm"}>
+      {compact ? null : (
+        <>
+          <h2 className="text-lg font-black text-slate-950">联系方式</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">为保护发布者隐私，联系方式默认隐藏。需要联系时可点击查看，请礼貌沟通并注意甄别信息。</p>
+        </>
+      )}
 
       {contact ? (
         <div className="mt-4 space-y-2 text-sm">
@@ -58,7 +62,11 @@ export function ContactRevealCard({ postId }: { postId: string }) {
           type="button"
           onClick={revealContact}
           disabled={loading}
-          className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+          className={
+            compact
+              ? "mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-gray-100 bg-white p-4 text-center text-base font-medium text-blue-600 shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+              : "mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+          }
         >
           <Eye size={17} aria-hidden="true" />
           {loading ? "读取中..." : "查看联系方式"}
