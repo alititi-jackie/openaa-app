@@ -37,7 +37,7 @@ export function ChannelTabs({
 function tabClass(isActive: boolean) {
   return [
     "min-h-10 rounded-lg border px-4 py-2 text-center text-sm font-bold shadow-sm transition",
-    isActive ? "border-blue-200 bg-white text-slate-950" : "border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-200 hover:bg-white",
+    isActive ? "border-blue-600 bg-blue-600 text-white" : "border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-200 hover:bg-white",
   ].join(" ");
 }
 
