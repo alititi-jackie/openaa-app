@@ -40,7 +40,7 @@ export function ContactRevealCard({ postId, compact = false }: { postId: string;
   }
 
   return (
-    <section className={compact ? "" : "rounded-xl border border-slate-100 bg-white p-4 shadow-sm"}>
+    <section className={compact ? "rounded-2xl border border-gray-100 bg-white p-4 shadow-sm" : "rounded-xl border border-slate-100 bg-white p-4 shadow-sm"}>
       {compact ? null : (
         <>
           <h2 className="text-lg font-black text-slate-950">联系方式</h2>
@@ -64,7 +64,7 @@ export function ContactRevealCard({ postId, compact = false }: { postId: string;
           disabled={loading}
           className={
             compact
-              ? "mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-gray-100 bg-white p-4 text-center text-base font-medium text-blue-600 shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+              ? "inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-gray-100 bg-white p-4 text-center text-base font-medium text-blue-600 shadow-sm transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
               : "mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:bg-slate-300"
           }
         >

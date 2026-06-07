@@ -62,8 +62,8 @@ function jobInfoItems(post: PostDetailViewData) {
     `👁 ${post.viewCount || 0} 次浏览`,
     published,
     area ? `📍 ${area}` : "",
-    workType,
     category,
+    workType,
     salary,
   ].filter(Boolean);
 }
@@ -113,17 +113,21 @@ export async function PostDetailView({ post }: { post: PostDetailViewData | null
       ) : null}
 
       {post.type === "job" ? (
-        <section className="rounded-2xl bg-white p-6 shadow-sm">
-          <h1 className="text-2xl font-bold text-gray-900">{post.title}</h1>
-          <p className="mt-4 whitespace-pre-wrap text-base leading-relaxed text-gray-600">{post.body}</p>
-          <ContactSourceHint className="text-base" />
-          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl bg-blue-50 px-3 py-2 text-sm text-blue-700">
-            {jobInfoItems(post).map((item) => (
-              <span key={item}>{item}</span>
-            ))}
-          </div>
+        <>
+          <section className="rounded-2xl border border-gray-100 border-t-blue-100 bg-white p-6 pt-7 shadow-[0_8px_24px_rgba(15,23,42,0.08)]">
+            <h1 className="text-2xl font-bold text-gray-900">{post.title}</h1>
+            <p className="mt-4 whitespace-pre-wrap text-base leading-relaxed text-gray-600">{post.body}</p>
+            <ContactSourceHint className="text-base" />
+            <div className="mt-4 flex flex-wrap gap-2 rounded-xl bg-blue-50/80 p-3">
+              {jobInfoItems(post).map((item) => (
+                <span key={item} className="rounded-full border border-blue-100 bg-white/90 px-3 py-1.5 text-sm text-blue-700 shadow-[0_1px_3px_rgba(25,118,210,0.08)]">
+                  {item}
+                </span>
+              ))}
+            </div>
+          </section>
           <ContactRevealCard postId={post.id} compact />
-        </section>
+        </>
       ) : (
         <>
           <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
