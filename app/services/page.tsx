@@ -1,5 +1,6 @@
 import { ChannelPageShell } from "@/components/posts/ChannelPageShell";
 import { channelConfigs } from "@/components/posts/channelConfigs";
+import { normalizePublicPostFilters } from "@/features/posts/filters";
 import { getPublicPosts } from "@/features/posts/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -11,8 +12,14 @@ export const metadata = buildPageMetadata({
 
 export const dynamic = "force-dynamic";
 
-export default async function ServicesPage() {
-  const posts = await getPublicPosts({ type: "service" });
+export default async function ServicesPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const rawFilters = normalizePublicPostFilters(await searchParams);
+  const filters = { ...rawFilters, min: undefined, max: undefined, sort: rawFilters.sort === "oldest" ? ("oldest" as const) : ("latest" as const) };
+  const posts = await getPublicPosts({ type: "service", filters });
 
-  return <ChannelPageShell config={{ ...channelConfigs.services, posts: posts.data, queryState: posts.state, errorMessage: posts.error }} />;
+  return <ChannelPageShell config={{ ...channelConfigs.services, filters, pagination: posts.pagination, showPriceFilters: false, showPriceSort: false, posts: posts.data, queryState: posts.state, errorMessage: posts.error }} />;
 }

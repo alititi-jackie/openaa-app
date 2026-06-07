@@ -2,8 +2,11 @@ import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ChannelPageChrome } from "@/components/channels/ChannelPageChrome";
 import type { ChannelKey } from "@/features/channels/types";
+import { DEFAULT_PAGE_SIZE } from "@/features/posts/filters";
+import type { PublicPostFilters, PostsPagination } from "@/features/posts/types";
 import { ChannelFilterBar } from "./ChannelFilterBar";
 import { ChannelHero } from "./ChannelHero";
+import { ChannelPagination } from "./ChannelPagination";
 import { ChannelSeoCard } from "./ChannelSeoCard";
 import { ChannelTabs } from "./ChannelTabs";
 import { PostList, type PostListItem } from "./PostList";
@@ -17,6 +20,11 @@ export type ChannelPageConfig = {
   icon: LucideIcon;
   tabs: string[];
   searchPlaceholder: string;
+  filters?: PublicPostFilters;
+  pagination?: PostsPagination;
+  priceFilterLabel?: string;
+  showPriceFilters?: boolean;
+  showPriceSort?: boolean;
   posts: PostListItem[];
   queryState?: "ready" | "missing_config" | "error";
   errorMessage?: string;
@@ -26,6 +34,9 @@ export type ChannelPageConfig = {
 };
 
 export function ChannelPageShell({ config }: { config: ChannelPageConfig }) {
+  const filters = config.filters ?? { sort: "latest", page: 1, pageSize: DEFAULT_PAGE_SIZE };
+  const filterKey = [filters.category, filters.q, filters.area, filters.min, filters.max, filters.sort, filters.page, filters.pageSize].join("|");
+
   return (
     <ChannelPageChrome channelKey={config.channelKey} path={config.path} title={config.title} description={config.description}>
       <ChannelHero
@@ -34,8 +45,17 @@ export function ChannelPageShell({ config }: { config: ChannelPageConfig }) {
         icon={config.icon}
         actions={<PublishCta returnTo={config.path} label={config.publishLabel ?? "发布信息"} />}
       />
-      <ChannelTabs tabs={config.tabs} />
-      <ChannelFilterBar placeholder={config.searchPlaceholder} />
+      <ChannelTabs tabs={config.tabs} filters={filters} path={config.path} />
+      <ChannelFilterBar
+        key={filterKey}
+        filters={filters}
+        path={config.path}
+        placeholder={config.searchPlaceholder}
+        tabs={config.tabs}
+        priceFilterLabel={config.priceFilterLabel}
+        showPriceFilters={config.showPriceFilters}
+        showPriceSort={config.showPriceSort}
+      />
       {config.queryState === "error" ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
           内容读取暂时不可用：{config.errorMessage ?? "请稍后再试。"}
@@ -46,6 +66,7 @@ export function ChannelPageShell({ config }: { config: ChannelPageConfig }) {
         </div>
       ) : null}
       <PostList posts={config.posts} />
+      {config.pagination ? <ChannelPagination filters={filters} pagination={config.pagination} path={config.path} /> : null}
       <ChannelSeoCard title={config.seoTitle}>{config.seoContent}</ChannelSeoCard>
     </ChannelPageChrome>
   );

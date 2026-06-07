@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { normalizePublicPostFilters } from "@/features/posts/filters";
 import { getPublicPosts, searchPublicPosts } from "@/features/posts/queries";
 import type { PostType, PostsQueryResult } from "@/features/posts/types";
 
@@ -25,11 +26,12 @@ export function postsJson<T>(result: PostsQueryResult<T>) {
     return NextResponse.json({ state: result.state, data: result.data, error: result.error ?? "query_error" }, { status: 500 });
   }
 
-  return NextResponse.json({ state: result.state, data: result.data });
+  return NextResponse.json({ state: result.state, data: result.data, pagination: result.pagination });
 }
 
 export async function publicPostsResponse(type: PostType, request: Request) {
-  return postsJson(await getPublicPosts({ type, limit: readLimit(request) }));
+  const url = new URL(request.url);
+  return postsJson(await getPublicPosts({ type, filters: normalizePublicPostFilters(url.searchParams) }));
 }
 
 export async function searchPostsResponse(request: Request) {
