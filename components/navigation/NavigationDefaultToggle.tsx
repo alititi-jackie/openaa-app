@@ -1,19 +1,18 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "openaa.navigation.default";
 const SUCCESS_MESSAGE_MS = 1400;
 
 export function NavigationDefaultToggle() {
   const router = useRouter();
-  const [defaultMode, setDefaultMode] = useState<"public" | "my">("public");
+  const defaultMode = useSyncExternalStore(subscribeToDefaultMode, readDefaultMode, () => "public");
   const [message, setMessage] = useState("");
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    setDefaultMode(readDefaultMode());
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
@@ -34,7 +33,6 @@ export function NavigationDefaultToggle() {
     const nextMode = isMyDefault ? "public" : "my";
     window.localStorage.setItem(STORAGE_KEY, nextMode);
     window.dispatchEvent(new Event("openaa:navigation-default-change"));
-    setDefaultMode(nextMode);
     showSuccess(nextMode);
   }
 
@@ -60,4 +58,13 @@ export function NavigationDefaultToggle() {
 export function readDefaultMode() {
   if (typeof window === "undefined") return "public";
   return window.localStorage.getItem(STORAGE_KEY) === "my" ? "my" : "public";
+}
+
+function subscribeToDefaultMode(onChange: () => void) {
+  window.addEventListener("openaa:navigation-default-change", onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    window.removeEventListener("openaa:navigation-default-change", onChange);
+    window.removeEventListener("storage", onChange);
+  };
 }

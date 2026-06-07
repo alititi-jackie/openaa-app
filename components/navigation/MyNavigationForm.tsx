@@ -15,27 +15,28 @@ export function MyNavigationForm({
   onSaved?: () => void;
   onCancel?: () => void;
 }) {
-  const [state, formAction, pending] = useActionState(upsertUserNavigationLink, initialState);
   const [url, setUrl] = useState(link?.url ?? "");
   const [title, setTitle] = useState(link?.title ?? "");
   const [titleTouched, setTitleTouched] = useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
-  const handledMessageRef = useRef("");
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isEdit = Boolean(link);
 
-  useEffect(() => {
-    if (!state.ok || !state.message) return;
-    if (handledMessageRef.current === state.message) return;
-    handledMessageRef.current = state.message;
-    if (!isEdit) {
-      formRef.current?.reset();
-      setUrl("");
-      setTitle("");
-      setTitleTouched(false);
+  async function saveNavigationLink(state: NavigationActionState, formData: FormData) {
+    const result = await upsertUserNavigationLink(state, formData);
+    if (result.ok && result.message) {
+      if (!isEdit) {
+        formRef.current?.reset();
+        setUrl("");
+        setTitle("");
+        setTitleTouched(false);
+      }
+      closeTimeoutRef.current = setTimeout(() => onSaved?.(), 900);
     }
-    closeTimeoutRef.current = setTimeout(() => onSaved?.(), 900);
-  }, [isEdit, onSaved, state.message, state.ok]);
+    return result;
+  }
+
+  const [state, formAction, pending] = useActionState(saveNavigationLink, initialState);
 
   useEffect(() => {
     return () => {
