@@ -20,5 +20,5 @@ export default async function SecondhandPage({
   const filters = normalizePublicPostFilters(await searchParams);
   const posts = await getPublicPosts({ type: "marketplace", filters });
 
-  return <ChannelPageShell config={{ ...channelConfigs.marketplace, filters, pagination: posts.pagination, priceFilterLabel: "价格", posts: posts.data, queryState: posts.state, errorMessage: posts.error }} />;
+  return <ChannelPageShell config={{ ...channelConfigs.marketplace, filters, pagination: posts.pagination, posts: posts.data, queryState: posts.state, errorMessage: posts.error }} />;
 }

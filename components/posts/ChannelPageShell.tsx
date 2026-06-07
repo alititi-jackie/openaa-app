@@ -8,7 +8,7 @@ import { ChannelFilterBar } from "./ChannelFilterBar";
 import { ChannelHero } from "./ChannelHero";
 import { ChannelPagination } from "./ChannelPagination";
 import { ChannelSeoCard } from "./ChannelSeoCard";
-import { ChannelTabs } from "./ChannelTabs";
+import { ChannelTabs, type ChannelModeTab } from "./ChannelTabs";
 import { PostList, type PostListItem } from "./PostList";
 import { PublishCta } from "./PublishCta";
 
@@ -18,13 +18,13 @@ export type ChannelPageConfig = {
   description?: string;
   path: string;
   icon: LucideIcon;
-  tabs: string[];
+  modeTabs?: ChannelModeTab[];
   searchPlaceholder: string;
+  workTypeOptions?: string[];
+  categoryOptions?: string[];
+  areaOptions?: string[];
   filters?: PublicPostFilters;
   pagination?: PostsPagination;
-  priceFilterLabel?: string;
-  showPriceFilters?: boolean;
-  showPriceSort?: boolean;
   posts: PostListItem[];
   queryState?: "ready" | "missing_config" | "error";
   errorMessage?: string;
@@ -35,7 +35,7 @@ export type ChannelPageConfig = {
 
 export function ChannelPageShell({ config }: { config: ChannelPageConfig }) {
   const filters = config.filters ?? { sort: "latest", page: 1, pageSize: DEFAULT_PAGE_SIZE };
-  const filterKey = [filters.category, filters.q, filters.area, filters.min, filters.max, filters.sort, filters.page, filters.pageSize].join("|");
+  const filterKey = [filters.mode, filters.workType, filters.category, filters.q, filters.area, filters.min, filters.max, filters.sort, filters.page, filters.pageSize].join("|");
 
   return (
     <ChannelPageChrome channelKey={config.channelKey} path={config.path} title={config.title} description={config.description}>
@@ -45,16 +45,15 @@ export function ChannelPageShell({ config }: { config: ChannelPageConfig }) {
         icon={config.icon}
         actions={<PublishCta returnTo={config.path} label={config.publishLabel ?? "发布信息"} />}
       />
-      <ChannelTabs tabs={config.tabs} filters={filters} path={config.path} />
+      <ChannelTabs tabs={config.modeTabs} filters={filters} path={config.path} />
       <ChannelFilterBar
         key={filterKey}
         filters={filters}
         path={config.path}
         placeholder={config.searchPlaceholder}
-        tabs={config.tabs}
-        priceFilterLabel={config.priceFilterLabel}
-        showPriceFilters={config.showPriceFilters}
-        showPriceSort={config.showPriceSort}
+        workTypeOptions={config.workTypeOptions}
+        categoryOptions={config.categoryOptions}
+        areaOptions={config.areaOptions}
       />
       {config.queryState === "error" ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">

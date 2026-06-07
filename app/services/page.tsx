@@ -21,5 +21,5 @@ export default async function ServicesPage({
   const filters = { ...rawFilters, min: undefined, max: undefined, sort: rawFilters.sort === "oldest" ? ("oldest" as const) : ("latest" as const) };
   const posts = await getPublicPosts({ type: "service", filters });
 
-  return <ChannelPageShell config={{ ...channelConfigs.services, filters, pagination: posts.pagination, showPriceFilters: false, showPriceSort: false, posts: posts.data, queryState: posts.state, errorMessage: posts.error }} />;
+  return <ChannelPageShell config={{ ...channelConfigs.services, filters, pagination: posts.pagination, posts: posts.data, queryState: posts.state, errorMessage: posts.error }} />;
 }

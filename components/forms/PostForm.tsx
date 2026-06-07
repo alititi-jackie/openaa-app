@@ -31,7 +31,7 @@ const draftVersion = 3;
 const jobTypes = ["全职", "兼职", "合同", "远程", "实习", "其它"];
 const jobCategories = ["餐饮行业", "美容按摩", "装修建筑", "文职运营", "医疗药房", "家政保姆", "司机送货", "门店零售", "仓库工厂", "汽车维修", "酒吧KTV", "教师培训", "技术人才", "其它职位"];
 const secondhandCategories = ["生活用品", "母婴用品", "电子产品", "服饰箱包", "办公用品", "宠物", "家具家电", "其它二手"];
-const serviceCategories = ["装修维修", "搬家运输", "家政清洁", "汽车相关", "专业服务", "电脑手机", "餐饮商业", "其它服务"];
+const serviceCategories = ["装修维修", "搬家运输", "家政清洁", "房地产", "汽车相关", "法律移民", "财税保险", "电脑手机", "餐饮商业", "教育培训", "其它服务"];
 
 function draftKey(postType: PostType) {
   return `openaa:post-form:${draftVersion}:${postType}:create`;

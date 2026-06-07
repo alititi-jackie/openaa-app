@@ -148,6 +148,8 @@ export type PostsQueryResult<T> = {
 export type PostSort = "latest" | "oldest" | "price_asc" | "price_desc";
 
 export type PublicPostFilters = {
+  mode?: string;
+  workType?: string;
   category?: string;
   q?: string;
   area?: string;
