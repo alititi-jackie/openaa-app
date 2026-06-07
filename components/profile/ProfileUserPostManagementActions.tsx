@@ -23,7 +23,7 @@ export function ProfileUserPostManagementActions({ postId, status }: ProfileUser
   return (
     <form
       action={formAction}
-      className="inline-flex flex-wrap items-center gap-3"
+      className="inline-flex flex-wrap items-center gap-2"
       onSubmit={(event) => {
         const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
         if (submitter?.value === "delete" && !window.confirm("确认删除这条内容？删除后前台不会再显示。")) {
@@ -38,7 +38,7 @@ export function ProfileUserPostManagementActions({ postId, status }: ProfileUser
           name="action"
           value="hide"
           disabled={pending}
-          className="text-sm font-black text-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700 ring-1 ring-amber-200 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
         >
           隐藏
         </button>
@@ -49,7 +49,7 @@ export function ProfileUserPostManagementActions({ postId, status }: ProfileUser
           name="action"
           value="delete"
           disabled={pending}
-          className="text-sm font-black text-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 ring-1 ring-red-200 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
         >
           删除
         </button>

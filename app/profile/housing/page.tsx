@@ -1,5 +1,4 @@
-import { PublishCta } from "@/components/posts/PublishCta";
-import { ProfileManagementPageHeader } from "@/components/profile/ProfileManagementPageHeader";
+import { ProfileManagementPageHeader, ProfilePublishLink } from "@/components/profile/ProfileManagementPageHeader";
 import { ProfileUserPostsList } from "@/components/profile/ProfileUserPostsList";
 import { getMyPosts } from "@/features/posts/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -29,7 +28,7 @@ export default async function ProfileHousingPage() {
       <ProfileManagementPageHeader
         title="我的房屋"
         description="管理您发布的房屋出租与求租信息"
-        actions={<PublishCta returnTo="/housing" label="+ 发布房源" />}
+        actions={<ProfilePublishLink href="/housing/publish" label="+ 发布房源" />}
       />
       <ProfileUserPostsList posts={posts.data} />
     </div>
