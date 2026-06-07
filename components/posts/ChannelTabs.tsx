@@ -17,26 +17,28 @@ export function ChannelTabs({
   if (!tabs?.length) return null;
 
   return (
-    <div className="inline-flex max-w-full items-center gap-1 rounded-xl bg-slate-100 p-1 shadow-sm">
+    <div className="flex max-w-full flex-wrap items-center gap-2">
+      <Link href={hrefFor(path, filters)} className={tabClass(!filters.mode)}>
+        全部
+      </Link>
       {tabs.map((tab) => {
         const isActive = filters.mode === tab.value;
 
         return (
-          <Link
-            key={tab.value}
-            href={hrefFor(path, filters, isActive ? undefined : tab.value)}
-            className={
-              isActive
-                ? "min-h-10 rounded-lg bg-white px-4 py-2 text-center text-sm font-bold text-slate-950 shadow-sm"
-                : "min-h-10 rounded-lg px-4 py-2 text-center text-sm font-bold text-slate-700"
-            }
-          >
+          <Link key={tab.value} href={hrefFor(path, filters, tab.value)} className={tabClass(isActive)}>
             {tab.label}
           </Link>
         );
       })}
     </div>
   );
+}
+
+function tabClass(isActive: boolean) {
+  return [
+    "min-h-10 rounded-lg border px-4 py-2 text-center text-sm font-bold shadow-sm transition",
+    isActive ? "border-blue-200 bg-white text-slate-950" : "border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-200 hover:bg-white",
+  ].join(" ");
 }
 
 function hrefFor(path: string, filters: PublicPostFilters, mode?: string) {
