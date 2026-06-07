@@ -241,7 +241,7 @@ function normalizePlacement(value: string) {
 function normalizeOptionalLink(raw: string): { ok: true; value: string | null } | { ok: false; message: string } {
   if (!raw) return { ok: true, value: null };
   if (raw.startsWith("/") && !raw.startsWith("//")) {
-    if (raw.slice(1) === "secondhand") return { ok: false, message: "请使用 /marketplace，不要使用旧的二手路由。" };
+    if (raw.slice(1) === "marketplace") return { ok: false, message: "请使用 /secondhand 作为二手频道路径。" };
     return { ok: true, value: raw };
   }
 
@@ -297,7 +297,7 @@ function revalidateAds() {
   revalidatePath("/");
   revalidatePath("/jobs");
   revalidatePath("/housing");
-  revalidatePath("/marketplace");
+  revalidatePath("/secondhand");
   revalidatePath("/services");
   revalidatePath("/news");
   revalidatePath("/navigation");

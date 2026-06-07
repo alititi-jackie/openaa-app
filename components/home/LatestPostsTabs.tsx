@@ -6,7 +6,7 @@ import { LatestPostsGrid } from "./LatestPostsGrid";
 const latestPostQuickLinks = [
   { key: "jobs", label: "招聘", href: "/jobs" },
   { key: "housing", label: "房屋", href: "/housing" },
-  { key: "marketplace", label: "二手", href: "/marketplace" },
+  { key: "marketplace", label: "二手", href: "/secondhand" },
   { key: "services", label: "本地服务", href: "/services" },
   { key: "news", label: "新闻", href: "/news" },
 ];

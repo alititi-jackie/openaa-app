@@ -79,7 +79,7 @@ function isPlaceholderTickerLabel(value: string) {
 function fallbackTickerLabelForRoute(href: string) {
   if (href.startsWith("/jobs")) return "发布信息请填写真实联系方式，平台会持续优化内容审核";
   if (href.startsWith("/housing")) return "收藏常用内容，登录后可继续管理你的发布信息";
-  if (href.startsWith("/marketplace")) return "如发现虚假或过期信息，可在详情页举报";
+  if (href.startsWith("/secondhand")) return "如发现虚假或过期信息，可在详情页举报";
   if (href.startsWith("/services")) return "DMV 笔试练习、纽约生活导航、新闻资讯正在陆续完善";
   return fallbackTickerItems[0]?.label;
 }
@@ -298,7 +298,7 @@ function normalizeLayout(value: unknown, fallback: HomeLatestPostSectionConfig["
 }
 
 function normalizeRoute(route: string) {
-  return route.startsWith("/") && route.slice(1) === "secondhand" ? "/marketplace" : route;
+  return route.startsWith("/") && route.slice(1) === "marketplace" ? "/secondhand" : route;
 }
 
 function clamp(value: number, min: number, max: number) {

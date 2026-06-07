@@ -1,14 +1,4 @@
-import { ChannelPageShell } from "@/components/posts/ChannelPageShell";
-import { channelConfigs } from "@/components/posts/channelConfigs";
-import { normalizePublicPostFilters } from "@/features/posts/filters";
-import { getPublicPosts } from "@/features/posts/queries";
-import { buildPageMetadata } from "@/lib/seo/metadata";
-
-export const metadata = buildPageMetadata({
-  title: "纽约华人二手市场",
-  description: "纽约二手市场、出售、求购、跳蚤市场信息入口。",
-  path: "/marketplace",
-});
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -17,8 +7,16 @@ export default async function MarketplacePage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const filters = normalizePublicPostFilters(await searchParams);
-  const posts = await getPublicPosts({ type: "marketplace", filters });
+  const params = new URLSearchParams();
+  const resolved = await searchParams;
 
-  return <ChannelPageShell config={{ ...channelConfigs.marketplace, filters, pagination: posts.pagination, priceFilterLabel: "价格", posts: posts.data, queryState: posts.state, errorMessage: posts.error }} />;
+  for (const [key, value] of Object.entries(resolved ?? {})) {
+    if (Array.isArray(value)) {
+      value.forEach((item) => params.append(key, item));
+    } else if (value) {
+      params.set(key, value);
+    }
+  }
+
+  redirect(params.size ? `/secondhand?${params.toString()}` : "/secondhand");
 }
