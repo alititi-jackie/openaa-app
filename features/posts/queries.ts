@@ -2,6 +2,7 @@ import "server-only";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { DEFAULT_CITY_SLUG, DEFAULT_POST_LIMIT, PUBLIC_POST_TYPES } from "./constants";
+import { applyPublicPostFilters, normalizePublicPostFilters } from "./filters";
 import { mapPostRecordToCard, mapPostRecordToDetail } from "./mappers";
 import type {
   AuthorSummary,
@@ -13,6 +14,8 @@ import type {
   PostsQueryResult,
   PublicPostsParams,
 } from "./types";
+
+const MAX_PUBLIC_FILTER_ROWS = 1000;
 
 const postSelectFields = `
   id,
@@ -102,6 +105,10 @@ export async function getPublicPosts(params: PublicPostsParams): Promise<PostsQu
     return emptyResult([]);
   }
 
+  const normalizedFilters = normalizePublicPostFilters(params.filters);
+  const filters = params.type === "service"
+    ? { ...normalizedFilters, min: undefined, max: undefined, sort: normalizedFilters.sort === "oldest" ? ("oldest" as const) : ("latest" as const) }
+    : normalizedFilters;
   const now = new Date().toISOString();
   const { data, error } = await supabase
     .from("posts")
@@ -113,16 +120,33 @@ export async function getPublicPosts(params: PublicPostsParams): Promise<PostsQu
     .eq("post_type", params.type)
     .order("published_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
-    .limit(params.limit ?? DEFAULT_POST_LIMIT);
+    .limit(params.limit ?? MAX_PUBLIC_FILTER_ROWS);
 
   if (error) {
     return { state: "error", data: [], error: error.message };
   }
 
   const records = (data ?? []) as unknown as PostRecord[];
+  const filteredRecords = applyPublicPostFilters(records, params.type, filters);
+  const total = filteredRecords.length;
+  const pageCount = Math.max(1, Math.ceil(total / filters.pageSize));
+  const page = Math.min(filters.page, pageCount);
+  const start = (page - 1) * filters.pageSize;
+  const pageRecords = filteredRecords.slice(start, start + filters.pageSize);
   const authors = await fetchAuthors(records.map((post) => post.author_id));
 
-  return { state: "ready", data: records.map((record) => mapPostRecordToCard(record, authors)) };
+  return {
+    state: "ready",
+    data: pageRecords.map((record) => mapPostRecordToCard(record, authors)),
+    pagination: {
+      page,
+      pageSize: filters.pageSize,
+      total,
+      pageCount,
+      hasPrevious: page > 1,
+      hasNext: page < pageCount,
+    },
+  };
 }
 
 export async function searchPublicPosts(params: { q?: string; type?: PostType; limit?: number } = {}): Promise<PostsQueryResult<PostCardView[]>> {

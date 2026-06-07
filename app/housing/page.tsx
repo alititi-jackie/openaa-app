@@ -1,5 +1,6 @@
 import { ChannelPageShell } from "@/components/posts/ChannelPageShell";
 import { channelConfigs } from "@/components/posts/channelConfigs";
+import { normalizePublicPostFilters } from "@/features/posts/filters";
 import { getPublicPosts } from "@/features/posts/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -11,8 +12,13 @@ export const metadata = buildPageMetadata({
 
 export const dynamic = "force-dynamic";
 
-export default async function HousingPage() {
-  const posts = await getPublicPosts({ type: "housing" });
+export default async function HousingPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const filters = normalizePublicPostFilters(await searchParams);
+  const posts = await getPublicPosts({ type: "housing", filters });
 
-  return <ChannelPageShell config={{ ...channelConfigs.housing, posts: posts.data, queryState: posts.state, errorMessage: posts.error }} />;
+  return <ChannelPageShell config={{ ...channelConfigs.housing, filters, pagination: posts.pagination, priceFilterLabel: "租金", posts: posts.data, queryState: posts.state, errorMessage: posts.error }} />;
 }

@@ -142,11 +142,35 @@ export type PostsQueryResult<T> = {
   state: QueryState;
   data: T;
   error?: string;
+  pagination?: PostsPagination;
+};
+
+export type PostSort = "latest" | "oldest" | "price_asc" | "price_desc";
+
+export type PublicPostFilters = {
+  category?: string;
+  q?: string;
+  area?: string;
+  min?: number;
+  max?: number;
+  sort: PostSort;
+  page: number;
+  pageSize: number;
+};
+
+export type PostsPagination = {
+  page: number;
+  pageSize: number;
+  total: number;
+  pageCount: number;
+  hasPrevious: boolean;
+  hasNext: boolean;
 };
 
 export type PublicPostsParams = {
   type: PostType;
   limit?: number;
+  filters?: Partial<PublicPostFilters>;
 };
 
 export type ContactReveal = PostContactRecord;
