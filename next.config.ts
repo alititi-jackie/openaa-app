@@ -14,6 +14,16 @@ function supabaseImageHostname() {
 const supabaseHostname = supabaseImageHostname();
 
 const nextConfig: NextConfig = {
+  async rewrites() {
+    return {
+      beforeFiles: [
+        {
+          source: "/marketplace",
+          destination: "/secondhand",
+        },
+      ],
+    };
+  },
   images: {
     remotePatterns: [
       {

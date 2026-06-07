@@ -1,5 +1,6 @@
-import { redirect } from "next/navigation";
+import MarketplacePage, { metadata as marketplaceMetadata } from "../marketplace/page";
 
-export default function SecondhandPage() {
-  redirect("/marketplace");
-}
+export const dynamic = "force-dynamic";
+export const metadata = marketplaceMetadata;
+
+export default MarketplacePage;
