@@ -30,6 +30,8 @@ export function ChannelPagination({ filters, pagination, path }: { filters: Publ
 
 function hrefFor(path: string, filters: PublicPostFilters, page: number) {
   const params = new URLSearchParams();
+  if (filters.mode) params.set("mode", filters.mode);
+  if (filters.workType) params.set("workType", filters.workType);
   if (filters.category) params.set("category", filters.category);
   if (filters.q) params.set("q", filters.q);
   if (filters.area) params.set("area", filters.area);

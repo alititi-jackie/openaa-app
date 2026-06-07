@@ -24,6 +24,8 @@ type FilterInput = URLSearchParams | Record<string, string | string[] | number |
 
 export function normalizePublicPostFilters(input?: FilterInput): PublicPostFilters {
   return {
+    mode: cleanText(readParam(input, "mode")),
+    workType: cleanText(readParam(input, "workType")),
     category: cleanText(readParam(input, "category")),
     q: cleanText(readParam(input, "q")),
     area: cleanText(readParam(input, "area")),
@@ -36,12 +38,25 @@ export function normalizePublicPostFilters(input?: FilterInput): PublicPostFilte
 }
 
 export function hasActivePostFilters(filters: PublicPostFilters) {
-  return Boolean(filters.category || filters.q || filters.area || filters.min !== undefined || filters.max !== undefined || filters.sort !== "latest" || filters.page !== 1 || filters.pageSize !== DEFAULT_PAGE_SIZE);
+  return Boolean(
+    filters.mode ||
+      filters.workType ||
+      filters.category ||
+      filters.q ||
+      filters.area ||
+      filters.min !== undefined ||
+      filters.max !== undefined ||
+      filters.sort !== "latest" ||
+      filters.page !== 1 ||
+      filters.pageSize !== DEFAULT_PAGE_SIZE,
+  );
 }
 
 export function applyPublicPostFilters(records: PostRecord[], type: PostType, filters: PublicPostFilters) {
   const filtered = records.filter((record) => {
     if (filters.q && !matchesKeyword(record, filters.q)) return false;
+    if (filters.mode && !matchesMode(record, type, filters.mode)) return false;
+    if (filters.workType && !matchesWorkType(record, filters.workType)) return false;
     if (filters.category && !matchesCategory(record, type, filters.category)) return false;
     if (filters.area && !matchesText(areaText(record), filters.area)) return false;
     if (type !== "service" && !matchesRange(record, filters.min, filters.max)) return false;
@@ -183,49 +198,59 @@ function matchesText(text: string, keyword: string) {
   return text.toLowerCase().includes(keyword.toLowerCase());
 }
 
-function matchesAny(text: string, values: string[]) {
-  const lowered = text.toLowerCase();
-  return values.some((value) => lowered.includes(value.toLowerCase()));
-}
+function recordMode(record: PostRecord, type: PostType) {
+  if (record.subcategory) return record.subcategory;
 
-function matchesCategory(record: PostRecord, type: PostType, category: string) {
-  if (!category || category === "全部") return true;
-  const text = searchableText(record);
-
-  if (type === "job") {
-    const detail = firstDetail(record.post_details_jobs);
-    if (category === "求职") return matchesAny([record.category, detail?.employment_type, record.title].filter(Boolean).join(" "), ["求职", "seeking"]);
-    if (category === "全职") return matchesAny([detail?.employment_type, detail?.job_category, record.category].filter(Boolean).join(" "), ["全职", "full"]);
-    if (category === "兼职") return matchesAny([detail?.employment_type, detail?.job_category, record.category].filter(Boolean).join(" "), ["兼职", "part"]);
-    if (category === "餐馆") return matchesAny(text, ["餐馆", "餐饮"]);
-    if (category === "办公室") return matchesAny(text, ["办公室", "文职", "运营"]);
+  if (record.post_type === "job") {
+    return "";
   }
 
   if (type === "housing") {
     const detail = firstDetail(record.post_details_housing);
-    if (category === "出租") return matchesAny([record.category, detail?.listing_type].filter(Boolean).join(" "), ["出租", "renting"]);
-    if (category === "求租") return matchesAny([record.category, detail?.listing_type].filter(Boolean).join(" "), ["求租", "求购", "seeking", "buying"]);
-    if (category === "合租") return matchesAny(text, ["合租", "室友"]);
-    if (category === "转租") return matchesAny(text, ["转租"]);
-    if (category === "房屋") return matchesAny([record.category, detail?.housing_type, detail?.listing_type].filter(Boolean).join(" "), ["房屋", "整租", "单房", "主卧", "次卧", "一室", "两室"]);
+    return detail?.listing_type ?? "";
   }
 
   if (type === "marketplace") {
     const detail = firstDetail(record.post_details_marketplace);
-    if (category === "出售") return matchesAny([record.category, detail?.listing_type].filter(Boolean).join(" "), ["出售", "selling"]);
-    if (category === "求购") return matchesAny([record.category, detail?.listing_type].filter(Boolean).join(" "), ["求购", "buying"]);
-    if (category === "家具") return matchesAny(text, ["家具", "家电", "桌", "椅", "床", "沙发"]);
-    if (category === "电器") return matchesAny(text, ["电器", "电子", "电脑", "手机", "冰箱", "洗衣机"]);
-    if (category === "搬家") return matchesAny(text, ["搬家", "清仓"]);
+    return detail?.listing_type ?? "";
+  }
+
+  return "";
+}
+
+function matchesMode(record: PostRecord, type: PostType, mode: string) {
+  return recordMode(record, type) === mode;
+}
+
+function matchesWorkType(record: PostRecord, workType: string) {
+  if (record.post_type !== "job") return true;
+
+  const detail = firstDetail(record.post_details_jobs);
+  return detail?.employment_type === workType;
+}
+
+function matchesCategory(record: PostRecord, type: PostType, category: string) {
+  if (!category || category === "全部") return true;
+
+  if (type === "job") {
+    const detail = firstDetail(record.post_details_jobs);
+    return detail?.job_category === category || record.category === category;
+  }
+
+  if (type === "housing") {
+    const detail = firstDetail(record.post_details_housing);
+    return detail?.housing_type === category || record.category === category;
+  }
+
+  if (type === "marketplace") {
+    const detail = firstDetail(record.post_details_marketplace);
+    return detail?.item_category === category || record.category === category;
   }
 
   if (type === "service") {
-    if (category === "搬家") return matchesAny(text, ["搬家", "运输"]);
-    if (category === "维修") return matchesAny(text, ["维修", "修理"]);
-    if (category === "装修") return matchesAny(text, ["装修", "水电"]);
-    if (category === "报税") return matchesAny(text, ["报税", "会计", "税"]);
-    if (category === "清洁") return matchesAny(text, ["清洁", "保洁", "家政"]);
+    const detail = firstDetail(record.post_details_services);
+    return detail?.service_category === category || record.category === category;
   }
 
-  return matchesText(text, category);
+  return false;
 }

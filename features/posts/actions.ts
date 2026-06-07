@@ -154,10 +154,17 @@ function revalidatePostSurfaces(type: PostType, postId: string) {
 }
 
 function categoryFor(values: PostFormValues) {
-  if (values.postType === "job") return values.job?.job_category || values.job?.job_mode || null;
-  if (values.postType === "housing") return values.housing?.room_type || values.housing?.housing_mode || null;
-  if (values.postType === "marketplace") return values.marketplace?.category || values.marketplace?.marketplace_mode || null;
+  if (values.postType === "job") return values.job?.job_category || null;
+  if (values.postType === "housing") return values.housing?.room_type || null;
+  if (values.postType === "marketplace") return values.marketplace?.category || null;
   return values.service?.service_category || null;
+}
+
+function modeFor(values: PostFormValues) {
+  if (values.postType === "job") return values.job?.job_mode || null;
+  if (values.postType === "housing") return values.housing?.housing_mode || null;
+  if (values.postType === "marketplace") return values.marketplace?.marketplace_mode || null;
+  return null;
 }
 
 function priceFor(values: PostFormValues) {
@@ -169,7 +176,7 @@ function priceFor(values: PostFormValues) {
 function titleFor(values: PostFormValues) {
   if (values.title.trim()) return values.title.trim();
   if (values.postType === "job") return values.job?.job_mode === "seeking" ? "求职信息" : "招聘信息";
-  if (values.postType === "housing") return values.housing?.housing_mode === "seeking" ? "求租" : "房屋出租";
+  if (values.postType === "housing") return values.housing?.housing_mode === "demand" ? "求租" : "房屋出租";
   if (values.postType === "marketplace") return values.marketplace?.marketplace_mode === "buying" ? "求购" : "二手商品";
   return "本地服务";
 }
@@ -186,6 +193,7 @@ function mainPostPayload(values: PostFormValues, userId: string, cityId: string 
     summary: values.summary.trim() || null,
     body: values.body.trim(),
     category: categoryFor(values),
+    subcategory: modeFor(values),
     status,
     visibility: values.visibility,
     price_amount: priceFor(values),
@@ -199,7 +207,7 @@ async function upsertDetail(supabase: SupabaseServerClient, postId: string, valu
     return supabase.from("post_details_jobs").upsert(
       {
         post_id: postId,
-        employment_type: values.job?.job_type || values.job?.job_mode || null,
+        employment_type: values.job?.job_type || null,
         wage_min: numericOrNull(values.job?.salary_min ?? ""),
         wage_max: numericOrNull(values.job?.salary_max ?? ""),
         wage_unit: values.job?.salary_unit || null,

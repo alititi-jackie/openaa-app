@@ -1,4 +1,13 @@
 import { BriefcaseBusiness, Building2, ShoppingBag, Store } from "lucide-react";
+import {
+  HOUSING_MODE_OPTIONS,
+  JOB_CATEGORY_OPTIONS,
+  JOB_MODE_OPTIONS,
+  JOB_TYPE_OPTIONS,
+  SECONDHAND_CATEGORY_OPTIONS,
+  SECONDHAND_MODE_OPTIONS,
+  SERVICE_CATEGORY_OPTIONS,
+} from "@/features/posts/options";
 import type { ChannelPageConfig } from "./ChannelPageShell";
 
 export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "services", ChannelPageConfig> = {
@@ -8,8 +17,11 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
     path: "/jobs",
     icon: BriefcaseBusiness,
     publishLabel: "发布招聘",
-    tabs: ["全部", "全职", "兼职", "餐馆", "办公室", "求职"],
-    searchPlaceholder: "搜索职位、公司或区域",
+    modeTabs: JOB_MODE_OPTIONS,
+    searchPlaceholder: "搜索职位、公司、地点...",
+    workTypeOptions: JOB_TYPE_OPTIONS,
+    categoryOptions: JOB_CATEGORY_OPTIONS,
+    categoryPlaceholder: "职位分类",
     posts: [
       { title: "餐馆前台招聘占位", description: "后续接入真实发布后显示薪资、区域和联系方式。", href: "/jobs", meta: "占位", tag: "招聘" },
       { title: "办公室助理求职占位", description: "这里展示求职类信息卡片样式。", href: "/jobs", meta: "占位", tag: "求职" },
@@ -40,8 +52,8 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
     path: "/housing",
     icon: Building2,
     publishLabel: "发布房源",
-    tabs: ["全部", "出租", "求租", "合租", "转租", "房屋"],
-    searchPlaceholder: "搜索区域、房型或预算",
+    modeTabs: HOUSING_MODE_OPTIONS,
+    searchPlaceholder: "搜索房源信息...",
     posts: [
       { title: "法拉盛单房出租占位", description: "后续显示价格、入住时间和交通信息。", href: "/housing", meta: "占位", tag: "出租" },
       { title: "曼哈顿求租占位", description: "这里展示求租信息卡片样式。", href: "/housing", meta: "占位", tag: "求租" },
@@ -72,8 +84,10 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
     path: "/secondhand",
     icon: ShoppingBag,
     publishLabel: "发布二手",
-    tabs: ["全部", "出售", "求购", "家具", "电器", "搬家"],
-    searchPlaceholder: "搜索二手物品或区域",
+    modeTabs: SECONDHAND_MODE_OPTIONS,
+    searchPlaceholder: "搜索商品...",
+    categoryOptions: SECONDHAND_CATEGORY_OPTIONS,
+    categoryPlaceholder: "商品分类",
     posts: [
       { title: "搬家家具出售占位", description: "后续显示价格、区域和取货方式。", href: "/secondhand", meta: "占位", tag: "出售" },
       { title: "求购显示器占位", description: "这里展示求购信息卡片样式。", href: "/secondhand", meta: "占位", tag: "求购" },
@@ -105,8 +119,9 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
     path: "/services",
     icon: Store,
     publishLabel: "发布服务",
-    tabs: ["全部", "搬家", "维修", "装修", "报税", "清洁"],
-    searchPlaceholder: "搜索服务、商家或区域",
+    searchPlaceholder: "搜索服务...",
+    categoryOptions: SERVICE_CATEGORY_OPTIONS,
+    categoryPlaceholder: "全部服务分类",
     posts: [
       { title: "搬家服务占位", description: "后续显示服务范围、联系方式和商家资料。", href: "/services", meta: "占位", tag: "搬家" },
       { title: "报税服务占位", description: "这里展示服务类信息卡片样式。", href: "/services", meta: "占位", tag: "报税" },

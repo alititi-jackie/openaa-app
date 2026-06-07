@@ -1,24 +1,7 @@
 import { POST_TYPE_TO_ROUTE } from "./constants";
 import type { PostFormValues, PublishContactDefaults } from "./formTypes";
+import { DEFAULT_LOCATION, EMPTY_LOCATION, HOUSING_MODE_OPTIONS, JOB_MODE_OPTIONS, SECONDHAND_MODE_OPTIONS, isOptionValue, type HousingMode, type JobMode, type SecondhandMode } from "./options";
 import type { PostDetailView, PostType } from "./types";
-
-export const LOCATION_OPTIONS = [
-  "纽约 New York",
-  "法拉盛 Flushing",
-  "皇后区 Queens",
-  "布鲁克林 Brooklyn",
-  "曼哈顿 Manhattan",
-  "布朗士 Bronx",
-  "史登岛 Staten Island",
-  "长岛 Long Island",
-  "上州纽约 Upstate NY",
-  "新泽西 New Jersey",
-  "其它地区 Other",
-] as const;
-
-export const DEFAULT_LOCATION = "纽约 New York";
-
-export const EMPTY_LOCATION = "";
 
 type ProfilePublishDefaultsSource = {
   email?: string | null;
@@ -100,7 +83,7 @@ export function emptyPostFormValues(postType: PostType, contactDefaults: Publish
       employer_type: "",
     },
     housing: {
-      housing_mode: "renting",
+      housing_mode: "supply",
       price: "",
       price_unit: "month",
       deposit: "",
@@ -154,6 +137,7 @@ export function formValuesFromDetail(post: PostDetailView): PostFormValues {
   if (post.type === "job") {
     values.job = {
       ...values.job!,
+      job_mode: isOptionValue(JOB_MODE_OPTIONS, post.mode) ? (post.mode as JobMode) : values.job!.job_mode,
       job_category: fieldValue(post, "类型") || values.job!.job_category,
       job_type: fieldValue(post, "类型") || values.job!.job_type,
       work_area: fieldValue(post, "区域") || values.location_area,
@@ -163,6 +147,7 @@ export function formValuesFromDetail(post: PostDetailView): PostFormValues {
   if (post.type === "housing") {
     values.housing = {
       ...values.housing!,
+      housing_mode: isOptionValue(HOUSING_MODE_OPTIONS, post.mode) ? (post.mode as HousingMode) : values.housing!.housing_mode,
       room_type: fieldValue(post, "房型"),
       price: fieldValue(post, "价格").replace(/[$,]/g, ""),
     };
@@ -171,6 +156,7 @@ export function formValuesFromDetail(post: PostDetailView): PostFormValues {
   if (post.type === "marketplace") {
     values.marketplace = {
       ...values.marketplace!,
+      marketplace_mode: isOptionValue(SECONDHAND_MODE_OPTIONS, post.mode) ? (post.mode as SecondhandMode) : values.marketplace!.marketplace_mode,
       price: fieldValue(post, "价格").replace(/[$,]/g, ""),
       condition: fieldValue(post, "成色"),
       trade_area: fieldValue(post, "交易区域") || values.location_area,

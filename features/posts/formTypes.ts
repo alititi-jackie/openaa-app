@@ -1,4 +1,5 @@
 import type { PostType } from "./types";
+import type { HousingMode, JobMode, SecondhandMode } from "./options";
 
 export type ContactInput = {
   contact_name: string;
@@ -43,7 +44,7 @@ export type BasePostFormValues = {
 };
 
 export type JobFields = {
-  job_mode: "hiring" | "seeking";
+  job_mode: JobMode;
   company_name: string;
   job_category: string;
   job_type: string;
@@ -60,7 +61,7 @@ export type JobFields = {
 };
 
 export type HousingFields = {
-  housing_mode: "renting" | "seeking" | "selling" | "buying";
+  housing_mode: HousingMode;
   price: string;
   price_unit: string;
   deposit: string;
@@ -73,7 +74,7 @@ export type HousingFields = {
 };
 
 export type MarketplaceFields = {
-  marketplace_mode: "selling" | "buying";
+  marketplace_mode: SecondhandMode;
   category: string;
   condition: string;
   price: string;

@@ -115,6 +115,7 @@ export type AuthorSummary = {
 export type PostCardView = {
   id: string;
   type: PostType;
+  mode?: string | null;
   status?: PostStatus;
   href: string;
   title: string;
@@ -148,6 +149,8 @@ export type PostsQueryResult<T> = {
 export type PostSort = "latest" | "oldest" | "price_asc" | "price_desc";
 
 export type PublicPostFilters = {
+  mode?: string;
+  workType?: string;
   category?: string;
   q?: string;
   area?: string;

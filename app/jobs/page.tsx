@@ -20,5 +20,5 @@ export default async function JobsPage({
   const filters = normalizePublicPostFilters(await searchParams);
   const posts = await getPublicPosts({ type: "job", filters });
 
-  return <ChannelPageShell config={{ ...channelConfigs.jobs, filters, pagination: posts.pagination, priceFilterLabel: "薪资", posts: posts.data, queryState: posts.state, errorMessage: posts.error }} />;
+  return <ChannelPageShell config={{ ...channelConfigs.jobs, filters, pagination: posts.pagination, posts: posts.data, queryState: posts.state, errorMessage: posts.error }} />;
 }

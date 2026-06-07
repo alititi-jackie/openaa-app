@@ -1,6 +1,6 @@
 "use client";
 
-import { LOCATION_OPTIONS } from "@/features/posts/formMappers";
+import { LOCATION_OPTIONS } from "@/features/posts/options";
 import { SelectInput } from "./SelectInput";
 
 type LocationSelectProps = {
@@ -16,8 +16,8 @@ export function LocationSelect({ value, onChange, required = true }: LocationSel
         请选择地区
       </option>
       {LOCATION_OPTIONS.map((location) => (
-        <option key={location} value={location}>
-          {location}
+        <option key={location.value} value={location.value}>
+          {location.label}
         </option>
       ))}
     </SelectInput>

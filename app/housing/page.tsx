@@ -20,5 +20,5 @@ export default async function HousingPage({
   const filters = normalizePublicPostFilters(await searchParams);
   const posts = await getPublicPosts({ type: "housing", filters });
 
-  return <ChannelPageShell config={{ ...channelConfigs.housing, filters, pagination: posts.pagination, priceFilterLabel: "租金", posts: posts.data, queryState: posts.state, errorMessage: posts.error }} />;
+  return <ChannelPageShell config={{ ...channelConfigs.housing, filters, pagination: posts.pagination, posts: posts.data, queryState: posts.state, errorMessage: posts.error }} />;
 }
