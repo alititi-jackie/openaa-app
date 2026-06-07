@@ -12,7 +12,7 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
       { label: "招聘岗位", value: "jobs" },
       { label: "求职人才", value: "talent" },
     ],
-    searchPlaceholder: "搜索职位、公司、地区",
+    searchPlaceholder: "搜索职位、公司、地点...",
     workTypeOptions: ["全职", "兼职", "合同", "远程", "实习", "其它"],
     categoryOptions: ["职位分类", "餐饮行业", "美容按摩", "装修建筑", "文职运营", "医疗药房", "家政保姆", "司机送货", "门店零售", "仓库工厂", "汽车维修", "酒吧KTV", "教师培训", "技术人才", "其它职位"],
     posts: [
@@ -49,7 +49,7 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
       { label: "房源信息", value: "listing" },
       { label: "求租求购", value: "seeking" },
     ],
-    searchPlaceholder: "搜索房源信息",
+    searchPlaceholder: "搜索房源信息...",
     posts: [
       { title: "法拉盛单房出租占位", description: "后续显示价格、入住时间和交通信息。", href: "/housing", meta: "占位", tag: "出租" },
       { title: "曼哈顿求租占位", description: "这里展示求租信息卡片样式。", href: "/housing", meta: "占位", tag: "求租" },
@@ -84,7 +84,7 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
       { label: "出售商品", value: "selling" },
       { label: "求购信息", value: "buying" },
     ],
-    searchPlaceholder: "搜索商品",
+    searchPlaceholder: "搜索商品...",
     categoryOptions: ["商品分类", "生活用品", "母婴用品", "电子产品", "服饰箱包", "办公用品", "宠物", "家具家电", "其它二手"],
     posts: [
       { title: "搬家家具出售占位", description: "后续显示价格、区域和取货方式。", href: "/secondhand", meta: "占位", tag: "出售" },
@@ -117,7 +117,7 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
     path: "/services",
     icon: Store,
     publishLabel: "发布服务",
-    searchPlaceholder: "搜索服务",
+    searchPlaceholder: "搜索服务...",
     categoryOptions: ["全部服务分类", "装修维修", "搬家运输", "家政清洁", "房地产", "汽车相关", "法律移民", "财税保险", "电脑手机", "餐饮商业", "教育培训", "其它服务"],
     posts: [
       { title: "搬家服务占位", description: "后续显示服务范围、联系方式和商家资料。", href: "/services", meta: "占位", tag: "搬家" },

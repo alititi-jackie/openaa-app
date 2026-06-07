@@ -19,7 +19,7 @@ export function ChannelTabs({
   if (!tabs?.length) return null;
 
   return (
-    <div className="grid grid-cols-2 gap-2 rounded-xl border border-slate-100 bg-white p-2 shadow-sm">
+    <div className="inline-flex max-w-full items-center gap-1 rounded-xl bg-slate-100 p-1 shadow-sm">
       {tabs.map((tab) => {
         const isActive = filters.mode === tab.value;
 
@@ -29,8 +29,8 @@ export function ChannelTabs({
             href={hrefFor(path, filters, isActive ? undefined : tab.value)}
             className={
               isActive
-                ? "min-h-10 rounded-lg bg-slate-950 px-3 py-2 text-center text-sm font-bold text-white"
-                : "min-h-10 rounded-lg bg-slate-50 px-3 py-2 text-center text-sm font-bold text-slate-700"
+                ? "min-h-10 rounded-lg bg-white px-4 py-2 text-center text-sm font-bold text-slate-950 shadow-sm"
+                : "min-h-10 rounded-lg px-4 py-2 text-center text-sm font-bold text-slate-700"
             }
           >
             {tab.label}

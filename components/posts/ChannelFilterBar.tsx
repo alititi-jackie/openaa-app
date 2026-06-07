@@ -53,8 +53,8 @@ export function ChannelFilterBar({
 
   return (
     <section className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
-      <form onSubmit={onSearchSubmit} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-        <label className="flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-500 sm:col-span-2 lg:col-span-1">
+      <form onSubmit={onSearchSubmit} className="flex flex-col gap-2 md:flex-row md:items-center">
+        <label className="flex min-h-11 w-full items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-500 md:min-w-72 md:flex-1">
           <Search size={17} aria-hidden="true" />
           <input
             type="search"
@@ -69,7 +69,7 @@ export function ChannelFilterBar({
           <select
             value={filters.workType ?? ""}
             onChange={(event) => updateUrl({ workType: event.target.value || undefined })}
-            className="min-h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-800 outline-none focus:border-blue-500"
+            className="min-h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-800 outline-none focus:border-blue-500 md:w-36"
           >
             <option value="">工作类型</option>
             {workTypeOptions.map((option) => (
@@ -84,7 +84,7 @@ export function ChannelFilterBar({
           <select
             value={filters.category ?? ""}
             onChange={(event) => updateUrl({ category: event.target.value || undefined })}
-            className="min-h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-800 outline-none focus:border-blue-500"
+            className="min-h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-800 outline-none focus:border-blue-500 md:w-48"
           >
             <option value="">{categoryOptions[0] ?? "全部分类"}</option>
             {categoryOptions.slice(1).map((option) => (
@@ -98,7 +98,7 @@ export function ChannelFilterBar({
         <select
           value={filters.area ?? ""}
           onChange={(event) => updateUrl({ area: event.target.value || undefined })}
-          className="min-h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-800 outline-none focus:border-blue-500"
+          className="min-h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-800 outline-none focus:border-blue-500 md:w-40"
         >
           <option value="">全部地区</option>
           {areaOptions.map((option) => (
