@@ -51,6 +51,7 @@ export function validatePostForm(values: PostFormValues) {
   if (values.postType === "job") {
     if (!values.job?.job_mode) errors.job_mode = "请选择招聘/求职类型。";
     if (!values.job?.job_category.trim()) errors.job_category = "请选择职位分类。";
+    if (!values.job?.job_type.trim()) errors.job_type = "请选择工作类型。";
     if (!values.job?.work_area.trim()) errors.work_area = "请选择工作地点。";
   }
 
@@ -68,7 +69,7 @@ export function validatePostForm(values: PostFormValues) {
 
   if (values.postType === "service") {
     if (!values.title.trim()) errors.title = "请填写服务标题。";
-    if (!values.service?.service_category.trim()) errors.service_category = "请选择服务分类。";
+    if (!values.service?.service_category.trim()) errors.service_category = "请选择你的服务分类。";
     if (!values.service?.service_area.trim()) errors.service_area = "请选择服务地区。";
   }
 

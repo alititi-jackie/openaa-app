@@ -232,8 +232,11 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <FormField label="工作类型" hint="不选默认：其它职位">
-                <SelectInput value={values.job?.job_type} onChange={(event) => setJob({ job_type: event.target.value })}>
+              <FormField label="工作类型" required error={errors.job_type}>
+                <SelectInput value={values.job?.job_type ?? ""} onChange={(event) => setJob({ job_type: event.target.value })} required>
+                  <option value="" disabled>
+                    请选择工作类型
+                  </option>
                   {jobTypes.map((item) => <option key={item} value={item}>{item}</option>)}
                 </SelectInput>
               </FormField>
@@ -402,7 +405,10 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
             </FormField>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <FormField label="服务分类" required error={errors.service_category}>
-                <SelectInput value={values.service?.service_category} onChange={(event) => setService({ service_category: event.target.value })}>
+                <SelectInput value={values.service?.service_category ?? ""} onChange={(event) => setService({ service_category: event.target.value })} required>
+                  <option value="" disabled>
+                    请选择你的服务分类
+                  </option>
                   {serviceCategories.map((item) => <option key={item} value={item}>{item}</option>)}
                 </SelectInput>
               </FormField>

@@ -87,7 +87,7 @@ export function emptyPostFormValues(postType: PostType, contactDefaults: Publish
       job_mode: "hiring",
       company_name: "",
       job_category: "",
-      job_type: "其它",
+      job_type: "",
       salary_min: "",
       salary_max: "",
       salary_unit: "hour",
@@ -121,7 +121,7 @@ export function emptyPostFormValues(postType: PostType, contactDefaults: Publish
       delivery_method: "",
     },
     service: {
-      service_category: "其它服务",
+      service_category: "",
       service_area: defaultLocation,
       business_hours_text: "",
       price_range: "",
