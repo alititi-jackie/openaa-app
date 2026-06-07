@@ -3,6 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import { ChannelPageChrome } from "@/components/channels/ChannelPageChrome";
 import type { ChannelKey } from "@/features/channels/types";
 import { DEFAULT_PAGE_SIZE } from "@/features/posts/filters";
+import type { PostOption } from "@/features/posts/options";
 import type { PublicPostFilters, PostsPagination } from "@/features/posts/types";
 import { ChannelFilterBar } from "./ChannelFilterBar";
 import { ChannelHero } from "./ChannelHero";
@@ -18,11 +19,14 @@ export type ChannelPageConfig = {
   description?: string;
   path: string;
   icon: LucideIcon;
-  modeTabs?: ChannelModeTab[];
+  modeTabs?: readonly ChannelModeTab[];
   searchPlaceholder: string;
-  workTypeOptions?: string[];
-  categoryOptions?: string[];
-  areaOptions?: string[];
+  workTypeOptions?: readonly PostOption[];
+  categoryOptions?: readonly PostOption[];
+  areaOptions?: readonly PostOption[];
+  workTypePlaceholder?: string;
+  categoryPlaceholder?: string;
+  areaPlaceholder?: string;
   filters?: PublicPostFilters;
   pagination?: PostsPagination;
   posts: PostListItem[];
@@ -54,6 +58,9 @@ export function ChannelPageShell({ config }: { config: ChannelPageConfig }) {
         workTypeOptions={config.workTypeOptions}
         categoryOptions={config.categoryOptions}
         areaOptions={config.areaOptions}
+        workTypePlaceholder={config.workTypePlaceholder}
+        categoryPlaceholder={config.categoryPlaceholder}
+        areaPlaceholder={config.areaPlaceholder}
       />
       {config.queryState === "error" ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">

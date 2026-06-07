@@ -1,4 +1,15 @@
 import type { PostFormErrors, PostFormValues } from "./formTypes";
+import {
+  HOUSING_MODE_OPTIONS,
+  JOB_CATEGORY_OPTIONS,
+  JOB_MODE_OPTIONS,
+  JOB_TYPE_OPTIONS,
+  LOCATION_OPTIONS,
+  SECONDHAND_CATEGORY_OPTIONS,
+  SECONDHAND_MODE_OPTIONS,
+  SERVICE_CATEGORY_OPTIONS,
+  isOptionValue,
+} from "./options";
 
 const CONTACT_MISSING_MESSAGE = "请至少填写联系电话或微信，方便用户联系你。";
 
@@ -49,28 +60,28 @@ export function validatePostForm(values: PostFormValues) {
   }
 
   if (values.postType === "job") {
-    if (!values.job?.job_mode) errors.job_mode = "请选择招聘/求职类型。";
-    if (!values.job?.job_category.trim()) errors.job_category = "请选择职位分类。";
-    if (!values.job?.job_type.trim()) errors.job_type = "请选择工作类型。";
-    if (!values.job?.work_area.trim()) errors.work_area = "请选择工作地点。";
+    if (!isOptionValue(JOB_MODE_OPTIONS, values.job?.job_mode)) errors.job_mode = "请选择招聘/求职类型。";
+    if (!isOptionValue(JOB_CATEGORY_OPTIONS, values.job?.job_category)) errors.job_category = "请选择职位分类。";
+    if (!isOptionValue(JOB_TYPE_OPTIONS, values.job?.job_type)) errors.job_type = "请选择工作类型。";
+    if (!isOptionValue(LOCATION_OPTIONS, values.job?.work_area)) errors.work_area = "请选择工作地点。";
   }
 
   if (values.postType === "housing") {
-    if (!values.housing?.housing_mode) errors.housing_mode = "请选择房屋信息类型。";
-    if (!values.location_area.trim()) errors.location_area = "请选择地区。";
+    if (!isOptionValue(HOUSING_MODE_OPTIONS, values.housing?.housing_mode)) errors.housing_mode = "请选择房屋信息类型。";
+    if (!isOptionValue(LOCATION_OPTIONS, values.location_area)) errors.location_area = "请选择地区。";
   }
 
   if (values.postType === "marketplace") {
-    if (!values.marketplace?.marketplace_mode) errors.marketplace_mode = "请选择出售或求购。";
-    if (!values.marketplace?.trade_area.trim()) errors.trade_area = "请选择所在地区。";
-    if (!values.marketplace?.category.trim()) errors.category = "请选择商品分类。";
+    if (!isOptionValue(SECONDHAND_MODE_OPTIONS, values.marketplace?.marketplace_mode)) errors.marketplace_mode = "请选择出售或求购。";
+    if (!isOptionValue(LOCATION_OPTIONS, values.marketplace?.trade_area)) errors.trade_area = "请选择所在地区。";
+    if (!isOptionValue(SECONDHAND_CATEGORY_OPTIONS, values.marketplace?.category)) errors.category = "请选择商品分类。";
     if (values.marketplace?.marketplace_mode === "selling" && !values.title.trim()) errors.title = "请填写商品标题。";
   }
 
   if (values.postType === "service") {
     if (!values.title.trim()) errors.title = "请填写服务标题。";
-    if (!values.service?.service_category.trim()) errors.service_category = "请选择你的服务分类。";
-    if (!values.service?.service_area.trim()) errors.service_area = "请选择服务地区。";
+    if (!isOptionValue(SERVICE_CATEGORY_OPTIONS, values.service?.service_category)) errors.service_category = "请选择你的服务分类。";
+    if (!isOptionValue(LOCATION_OPTIONS, values.service?.service_area)) errors.service_area = "请选择服务地区。";
   }
 
   return {

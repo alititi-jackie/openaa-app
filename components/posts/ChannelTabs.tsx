@@ -1,18 +1,16 @@
 import Link from "next/link";
 import { DEFAULT_PAGE_SIZE } from "@/features/posts/filters";
+import type { PostOption } from "@/features/posts/options";
 import type { PublicPostFilters } from "@/features/posts/types";
 
-export type ChannelModeTab = {
-  label: string;
-  value: string;
-};
+export type ChannelModeTab = PostOption;
 
 export function ChannelTabs({
   tabs,
   filters,
   path,
 }: {
-  tabs?: ChannelModeTab[];
+  tabs?: readonly ChannelModeTab[];
   filters: PublicPostFilters;
   path: string;
 }) {

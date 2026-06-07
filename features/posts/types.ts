@@ -115,6 +115,7 @@ export type AuthorSummary = {
 export type PostCardView = {
   id: string;
   type: PostType;
+  mode?: string | null;
   status?: PostStatus;
   href: string;
   title: string;

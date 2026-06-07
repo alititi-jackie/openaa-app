@@ -198,90 +198,59 @@ function matchesText(text: string, keyword: string) {
   return text.toLowerCase().includes(keyword.toLowerCase());
 }
 
-function matchesAny(text: string, values: string[]) {
-  const lowered = text.toLowerCase();
-  return values.some((value) => lowered.includes(value.toLowerCase()));
-}
+function recordMode(record: PostRecord, type: PostType) {
+  if (record.subcategory) return record.subcategory;
 
-function normalizedModeText(record: PostRecord) {
   if (record.post_type === "job") {
-    const detail = firstDetail(record.post_details_jobs);
-    return [record.category, record.subcategory, detail?.employment_type, detail?.job_category, record.title].filter(Boolean).join(" ");
-  }
-
-  if (record.post_type === "housing") {
-    const detail = firstDetail(record.post_details_housing);
-    return [record.category, record.subcategory, detail?.listing_type, detail?.housing_type, record.title].filter(Boolean).join(" ");
-  }
-
-  if (record.post_type === "marketplace") {
-    const detail = firstDetail(record.post_details_marketplace);
-    return [record.category, record.subcategory, detail?.listing_type, detail?.item_category, record.title].filter(Boolean).join(" ");
-  }
-
-  return searchableText(record);
-}
-
-function matchesMode(record: PostRecord, type: PostType, mode: string) {
-  const text = normalizedModeText(record);
-
-  if (type === "job") {
-    if (mode === "jobs") return !matchesAny(text, ["求职", "seeking"]);
-    if (mode === "talent") return matchesAny(text, ["求职", "seeking"]);
+    return "";
   }
 
   if (type === "housing") {
-    if (mode === "listing") return !matchesAny(text, ["求租", "求购", "seeking", "buying"]);
-    if (mode === "seeking") return matchesAny(text, ["求租", "求购", "seeking", "buying"]);
+    const detail = firstDetail(record.post_details_housing);
+    return detail?.listing_type ?? "";
   }
 
   if (type === "marketplace") {
-    if (mode === "selling") return matchesAny(text, ["出售", "selling"]) || !matchesAny(text, ["求购", "buying"]);
-    if (mode === "buying") return matchesAny(text, ["求购", "buying"]);
+    const detail = firstDetail(record.post_details_marketplace);
+    return detail?.listing_type ?? "";
   }
 
-  return true;
+  return "";
+}
+
+function matchesMode(record: PostRecord, type: PostType, mode: string) {
+  return recordMode(record, type) === mode;
 }
 
 function matchesWorkType(record: PostRecord, workType: string) {
   if (record.post_type !== "job") return true;
 
   const detail = firstDetail(record.post_details_jobs);
-  return matchesText([detail?.employment_type, detail?.job_category, record.category, record.subcategory, record.title].filter(Boolean).join(" "), workType);
+  return detail?.employment_type === workType;
 }
 
 function matchesCategory(record: PostRecord, type: PostType, category: string) {
   if (!category || category === "全部") return true;
-  const text = searchableText(record);
 
   if (type === "job") {
     const detail = firstDetail(record.post_details_jobs);
-    return matchesText([detail?.job_category, record.category, record.subcategory, record.title].filter(Boolean).join(" "), category);
+    return detail?.job_category === category || record.category === category;
   }
 
   if (type === "housing") {
     const detail = firstDetail(record.post_details_housing);
-    return matchesText([record.category, record.subcategory, detail?.listing_type, detail?.housing_type, record.title].filter(Boolean).join(" "), category);
+    return detail?.housing_type === category || record.category === category;
   }
 
   if (type === "marketplace") {
     const detail = firstDetail(record.post_details_marketplace);
-    return matchesText([record.category, record.subcategory, detail?.listing_type, detail?.item_category, record.title].filter(Boolean).join(" "), category);
+    return detail?.item_category === category || record.category === category;
   }
 
   if (type === "service") {
-    if (category === "装修维修") return matchesAny(text, ["装修", "维修", "修理", "水电"]);
-    if (category === "搬家运输") return matchesAny(text, ["搬家", "运输", "货运", "接送"]);
-    if (category === "家政清洁") return matchesAny(text, ["家政", "清洁", "保洁", "月嫂", "看护"]);
-    if (category === "房地产") return matchesAny(text, ["房地产", "地产", "买房", "卖房", "租房", "经纪"]);
-    if (category === "汽车相关") return matchesAny(text, ["汽车", "修车", "驾校", "拖车"]);
-    if (category === "法律移民") return matchesAny(text, ["法律", "律师", "移民", "公证", "翻译"]);
-    if (category === "财税保险") return matchesAny(text, ["财税", "报税", "会计", "保险", "税"]);
-    if (category === "电脑手机") return matchesAny(text, ["电脑", "手机", "网络", "数据"]);
-    if (category === "餐饮商业") return matchesAny(text, ["餐饮", "商业", "店铺", "招牌", "设备"]);
-    if (category === "教育培训") return matchesAny(text, ["教育", "培训", "补习", "学校", "课程"]);
-    if (category === "其它服务") return true;
+    const detail = firstDetail(record.post_details_services);
+    return detail?.service_category === category || record.category === category;
   }
 
-  return matchesText(text, category);
+  return false;
 }

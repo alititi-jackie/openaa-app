@@ -4,8 +4,17 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createPost, updatePost, uploadPostImage } from "@/features/posts/actions";
 import { POST_TYPE_LABELS, POST_TYPE_TO_ROUTE } from "@/features/posts/constants";
-import { EMPTY_LOCATION } from "@/features/posts/formMappers";
 import type { HousingFields, JobFields, MarketplaceFields, PostFormErrors, PostFormValues, ServiceFields } from "@/features/posts/formTypes";
+import {
+  EMPTY_LOCATION,
+  HOUSING_MODE_OPTIONS,
+  JOB_CATEGORY_OPTIONS,
+  JOB_MODE_OPTIONS,
+  JOB_TYPE_OPTIONS,
+  SECONDHAND_CATEGORY_OPTIONS,
+  SECONDHAND_MODE_OPTIONS,
+  SERVICE_CATEGORY_OPTIONS,
+} from "@/features/posts/options";
 import type { PostType } from "@/features/posts/types";
 import { validatePostForm } from "@/features/posts/validators";
 import { ContactFields } from "./ContactFields";
@@ -28,10 +37,6 @@ type PostFormProps = {
 };
 
 const draftVersion = 3;
-const jobTypes = ["全职", "兼职", "合同", "远程", "实习", "其它"];
-const jobCategories = ["餐饮行业", "美容按摩", "装修建筑", "文职运营", "医疗药房", "家政保姆", "司机送货", "门店零售", "仓库工厂", "汽车维修", "酒吧KTV", "教师培训", "技术人才", "其它职位"];
-const secondhandCategories = ["生活用品", "母婴用品", "电子产品", "服饰箱包", "办公用品", "宠物", "家具家电", "其它二手"];
-const serviceCategories = ["装修维修", "搬家运输", "家政清洁", "房地产", "汽车相关", "法律移民", "财税保险", "电脑手机", "餐饮商业", "教育培训", "其它服务"];
 
 function draftKey(postType: PostType) {
   return `openaa:post-form:${draftVersion}:${postType}:create`;
@@ -55,7 +60,7 @@ function bodyPlaceholder(values: PostFormValues) {
       : "请写清楚：招聘岗位、要求、待遇、联系方式等（可只写一段内容）";
   }
   if (values.postType === "housing") {
-    return values.housing?.housing_mode === "seeking"
+    return values.housing?.housing_mode === "demand"
       ? "请描述：期望地区、预算、入住时间、人数、需求、联系方式等（可只写一段内容）"
       : "请描述：地址/区域、租金、房型、入住时间、要求、联系方式等（可只写一段内容）";
   }
@@ -207,10 +212,7 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
             <ModeSwitch
               label="发布类型"
               locked={typeSwitchLocked}
-              options={[
-                { value: "hiring", label: "我要招人" },
-                { value: "seeking", label: "我要求职" },
-              ]}
+              options={JOB_MODE_OPTIONS}
               value={values.job?.job_mode ?? "hiring"}
               onChange={(next) => setJob({ job_mode: next as JobFields["job_mode"], company_name: next === "seeking" ? "" : values.job?.company_name ?? "" })}
             />
@@ -237,7 +239,7 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
                   <option value="" disabled>
                     请选择工作类型
                   </option>
-                  {jobTypes.map((item) => <option key={item} value={item}>{item}</option>)}
+                  {JOB_TYPE_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                 </SelectInput>
               </FormField>
               <FormField label="职位分类" required error={errors.job_category}>
@@ -245,7 +247,7 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
                   <option value="" disabled>
                     请选择职位分类
                   </option>
-                  {jobCategories.map((item) => <option key={item} value={item}>{item}</option>)}
+                  {JOB_CATEGORY_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                 </SelectInput>
               </FormField>
             </div>
@@ -293,19 +295,16 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
             <ModeSwitch
               label="发布类型"
               locked={typeSwitchLocked}
-              options={[
-                { value: "renting", label: "发布房源" },
-                { value: "seeking", label: "求租求购" },
-              ]}
-              value={values.housing?.housing_mode === "seeking" || values.housing?.housing_mode === "buying" ? "seeking" : "renting"}
-              onChange={(next) => setHousing({ housing_mode: next === "seeking" ? "seeking" : "renting" })}
+              options={HOUSING_MODE_OPTIONS}
+              value={values.housing?.housing_mode ?? "supply"}
+              onChange={(next) => setHousing({ housing_mode: next as HousingFields["housing_mode"] })}
             />
 
             <FormField label="标题">
               <TextInput
                 value={values.title}
                 onChange={(event) => setValue("title", event.target.value)}
-                placeholder={values.housing?.housing_mode === "seeking" ? "不填默认：求租" : "不填默认：房屋出租"}
+                placeholder={values.housing?.housing_mode === "demand" ? "不填默认：求租" : "不填默认：房屋出租"}
                 maxLength={80}
               />
             </FormField>
@@ -344,10 +343,7 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
             <ModeSwitch
               label="发布类型"
               locked={typeSwitchLocked}
-              options={[
-                { value: "selling", label: "我要出售" },
-                { value: "buying", label: "我要求购" },
-              ]}
+              options={SECONDHAND_MODE_OPTIONS}
               value={values.marketplace?.marketplace_mode ?? "selling"}
               onChange={(next) => setMarketplace({ marketplace_mode: next as MarketplaceFields["marketplace_mode"] })}
             />
@@ -367,7 +363,7 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
                 <option value="" disabled>
                   请选择商品分类
                 </option>
-                {secondhandCategories.map((item) => <option key={item} value={item}>{item}</option>)}
+                {SECONDHAND_CATEGORY_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
               </SelectInput>
             </FormField>
 
@@ -409,7 +405,7 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
                   <option value="" disabled>
                     请选择你的服务分类
                   </option>
-                  {serviceCategories.map((item) => <option key={item} value={item}>{item}</option>)}
+                  {SERVICE_CATEGORY_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                 </SelectInput>
               </FormField>
               <FormField label="服务地区" required error={errors.service_area}>
@@ -471,7 +467,7 @@ function ModeSwitch({
 }: {
   label: string;
   value: string;
-  options: Array<{ value: string; label: string }>;
+  options: ReadonlyArray<{ value: string; label: string }>;
   locked?: boolean;
   onChange: (value: string) => void;
 }) {

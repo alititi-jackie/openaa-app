@@ -104,6 +104,7 @@ export function mapPostRecordToCard(record: PostRecord, authors: Record<string, 
   return {
     id: record.id,
     type: record.post_type,
+    mode: record.subcategory,
     status: record.status,
     href: `${POST_TYPE_TO_ROUTE[record.post_type]}/${record.id}`,
     title: record.title,

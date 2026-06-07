@@ -4,18 +4,20 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { DEFAULT_PAGE_SIZE } from "@/features/posts/filters";
+import { LOCATION_OPTIONS, type PostOption } from "@/features/posts/options";
 import type { PublicPostFilters } from "@/features/posts/types";
 
 type ChannelFilterBarProps = {
   filters: PublicPostFilters;
   path: string;
   placeholder: string;
-  workTypeOptions?: string[];
-  categoryOptions?: string[];
-  areaOptions?: string[];
+  workTypeOptions?: readonly PostOption[];
+  categoryOptions?: readonly PostOption[];
+  areaOptions?: readonly PostOption[];
+  workTypePlaceholder?: string;
+  categoryPlaceholder?: string;
+  areaPlaceholder?: string;
 };
-
-const defaultAreaOptions = ["法拉盛", "皇后区", "布鲁克林", "曼哈顿", "布朗克斯", "史坦顿岛", "长岛", "新泽西", "其它地区"];
 
 export function ChannelFilterBar({
   filters,
@@ -23,7 +25,10 @@ export function ChannelFilterBar({
   placeholder,
   workTypeOptions = [],
   categoryOptions = [],
-  areaOptions = defaultAreaOptions,
+  areaOptions = LOCATION_OPTIONS,
+  workTypePlaceholder = "工作类型",
+  categoryPlaceholder = "全部分类",
+  areaPlaceholder = "全部地区",
 }: ChannelFilterBarProps) {
   const router = useRouter();
   const [draftQ, setDraftQ] = useState(filters.q ?? "");
@@ -69,12 +74,12 @@ export function ChannelFilterBar({
           <select
             value={filters.workType ?? ""}
             onChange={(event) => updateUrl({ workType: event.target.value || undefined })}
-            className="min-h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-800 outline-none focus:border-blue-500 md:w-36"
+            className="min-h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-800 outline-none focus:border-blue-500 md:w-48"
           >
-            <option value="">工作类型</option>
+            <option value="">{workTypePlaceholder}</option>
             {workTypeOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
+              <option key={option.value} value={option.value}>
+                {option.label}
               </option>
             ))}
           </select>
@@ -86,10 +91,10 @@ export function ChannelFilterBar({
             onChange={(event) => updateUrl({ category: event.target.value || undefined })}
             className="min-h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-800 outline-none focus:border-blue-500 md:w-48"
           >
-            <option value="">{categoryOptions[0] ?? "全部分类"}</option>
-            {categoryOptions.slice(1).map((option) => (
-              <option key={option} value={option}>
-                {option}
+            <option value="">{categoryPlaceholder}</option>
+            {categoryOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
               </option>
             ))}
           </select>
@@ -98,12 +103,12 @@ export function ChannelFilterBar({
         <select
           value={filters.area ?? ""}
           onChange={(event) => updateUrl({ area: event.target.value || undefined })}
-          className="min-h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-800 outline-none focus:border-blue-500 md:w-40"
+          className="min-h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-800 outline-none focus:border-blue-500 md:w-48"
         >
-          <option value="">全部地区</option>
+          <option value="">{areaPlaceholder}</option>
           {areaOptions.map((option) => (
-            <option key={option} value={option}>
-              {option}
+            <option key={option.value} value={option.value}>
+              {option.label}
             </option>
           ))}
         </select>
