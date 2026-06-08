@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createPost, updatePost, uploadPostImage } from "@/features/posts/actions";
 import { POST_TYPE_LABELS, POST_TYPE_TO_ROUTE } from "@/features/posts/constants";
 import type { HousingFields, JobFields, MarketplaceFields, PostFormErrors, PostFormValues, ServiceFields } from "@/features/posts/formTypes";
+import { POST_IMAGE_CONFIG } from "@/features/posts/imageConfig";
 import {
   EMPTY_LOCATION,
   HOUSING_MODE_OPTIONS,
@@ -435,7 +436,9 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
           </FormField>
         ) : null}
 
-        {postType !== "job" ? <ImageUploader images={values.images} onChange={(images) => setValue("images", images)} disabled={isPending} maxImages={3} error={errors.images} /> : null}
+        {postType !== "job" ? (
+          <ImageUploader images={values.images} onChange={(images) => setValue("images", images)} disabled={isPending} maxImages={POST_IMAGE_CONFIG.maxImages} error={errors.images} />
+        ) : null}
 
         {showProfileCompletionHint ? (
           <ProfileCompletionHint message="完善个人资料后，下次发布内容可自动填写联系方式和地区。" href="/profile/edit" linkLabel="去完善资料" />

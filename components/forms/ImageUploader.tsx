@@ -3,6 +3,7 @@
 import { ImagePlus, X } from "lucide-react";
 import type { ChangeEvent } from "react";
 import type { UploadedImageInput } from "@/features/posts/formTypes";
+import { POST_IMAGE_CONFIG } from "@/features/posts/imageConfig";
 
 type ImageUploaderProps = {
   images: UploadedImageInput[];
@@ -12,10 +13,7 @@ type ImageUploaderProps = {
   error?: string;
 };
 
-const IMAGE_SIDE_STEPS = [1600, 1280, 1024];
-const TARGET_IMAGE_BYTES = 1250 * 1024;
-const MAX_COMPRESSED_IMAGE_BYTES = 1536 * 1024;
-const WEBP_QUALITY_STEPS = [0.82, 0.74, 0.66, 0.58, 0.5, 0.42];
+const { compression } = POST_IMAGE_CONFIG;
 
 function filePreview(file: File): UploadedImageInput {
   return { file, url: URL.createObjectURL(file), sizeBytes: file.size, mimeType: file.type };
@@ -41,12 +39,12 @@ async function compressFromImage(image: HTMLImageElement, maxSide: number) {
   context.drawImage(image, 0, 0, width, height);
 
   let best: { blob: Blob; width: number; height: number } | null = null;
-  for (const quality of WEBP_QUALITY_STEPS) {
-    const blob = await canvasToBlob(canvas, "image/webp", quality);
+  for (const quality of compression.qualitySteps) {
+    const blob = await canvasToBlob(canvas, compression.mimeType, quality);
     if (!blob) continue;
     best = { blob, width, height };
 
-    if (blob.size <= TARGET_IMAGE_BYTES) {
+    if (blob.size <= compression.targetBytes) {
       break;
     }
   }
@@ -66,21 +64,21 @@ async function compressImage(file: File): Promise<UploadedImageInput> {
     });
 
     let bestOutput: { blob: Blob; width: number; height: number } | null = null;
-    for (const maxSide of IMAGE_SIDE_STEPS) {
+    for (const maxSide of compression.maxSideSteps) {
       const candidate = await compressFromImage(image, maxSide);
       if (!candidate) continue;
       bestOutput = candidate;
 
-      if (candidate.blob.size <= TARGET_IMAGE_BYTES || candidate.blob.size <= MAX_COMPRESSED_IMAGE_BYTES) {
+      if (candidate.blob.size <= compression.targetBytes || candidate.blob.size <= compression.maxCompressedBytes) {
         break;
       }
     }
 
-    if (!bestOutput || bestOutput.blob.size > Math.min(file.size, MAX_COMPRESSED_IMAGE_BYTES)) {
+    if (!bestOutput || bestOutput.blob.size > Math.min(file.size, compression.maxCompressedBytes)) {
       return filePreview(file);
     }
 
-    const output = new File([bestOutput.blob], `${crypto.randomUUID()}.webp`, { type: "image/webp" });
+    const output = new File([bestOutput.blob], `${crypto.randomUUID()}.${compression.extension}`, { type: compression.mimeType });
 
     return { file: output, url: URL.createObjectURL(output), width: bestOutput.width, height: bestOutput.height, sizeBytes: output.size, mimeType: output.type || file.type };
   } catch {
@@ -90,7 +88,7 @@ async function compressImage(file: File): Promise<UploadedImageInput> {
   }
 }
 
-export function ImageUploader({ images, onChange, disabled, maxImages = 3, error }: ImageUploaderProps) {
+export function ImageUploader({ images, onChange, disabled, maxImages = POST_IMAGE_CONFIG.maxImages, error }: ImageUploaderProps) {
   const canAdd = images.length < maxImages && !disabled;
 
   async function onFiles(event: ChangeEvent<HTMLInputElement>) {

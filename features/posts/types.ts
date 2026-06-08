@@ -123,7 +123,12 @@ export type PostCardView = {
   meta: string;
   createdAt?: string;
   tag?: string;
+  categoryValue?: string;
   location?: string;
+  area?: string;
+  priceDisplay?: string;
+  priceValue?: number;
+  secondaryTag?: string;
   authorName?: string;
   imageUrl?: string;
   favoriteCount: number;
@@ -139,6 +144,7 @@ export type PostDetailView = PostCardView & {
   images: Array<{ url: string; caption?: string | null; imageAssetId?: string | null }>;
   detailMetaFields: Array<{ label: string; value: string }>;
   contact?: PostContactRecord | null;
+  sourceRecord?: PostRecord;
 };
 
 export type PostsQueryResult<T> = {

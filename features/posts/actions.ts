@@ -2,8 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { detailPayloadForForm, postCategoryForForm, postModeForForm, postPriceForForm, postTitleForForm } from "./adapters";
 import { DEFAULT_CITY_SLUG, POST_TYPE_TO_ROUTE } from "./constants";
 import { postHref } from "./formMappers";
+import { isPostImageEnabled, POST_IMAGE_CONFIG, postImageExtension } from "./imageConfig";
 import type { PostFormActionResult, PostFormValues, UploadedImageInput } from "./formTypes";
 import type { PostStatus, PostType } from "./types";
 import { shouldReviewPost, validatePostForm } from "./validators";
@@ -29,19 +31,6 @@ type WriteContext =
 const allowedPostTypes = new Set<PostType>(["job", "housing", "marketplace", "service"]);
 const manageablePostStatuses = new Set<PostStatus>(["draft", "pending_review", "published", "hidden", "expired", "deleted"]);
 const DEFAULT_DAILY_POST_LIMIT = 10;
-const MAX_POST_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
-const postImageExtensions: Record<string, "jpg" | "png" | "webp"> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-};
-
-function numericOrNull(value: string) {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) ? parsed : null;
-}
 
 async function getWriteContext(): Promise<WriteContext> {
   const supabase = await createSupabaseServerClient();
@@ -153,34 +142,6 @@ function revalidatePostSurfaces(type: PostType, postId: string) {
   revalidatePath(`/profile/${route.slice(1)}`);
 }
 
-function categoryFor(values: PostFormValues) {
-  if (values.postType === "job") return values.job?.job_category || null;
-  if (values.postType === "housing") return values.housing?.room_type || null;
-  if (values.postType === "marketplace") return values.marketplace?.category || null;
-  return values.service?.service_category || null;
-}
-
-function modeFor(values: PostFormValues) {
-  if (values.postType === "job") return values.job?.job_mode || null;
-  if (values.postType === "housing") return values.housing?.housing_mode || null;
-  if (values.postType === "marketplace") return values.marketplace?.marketplace_mode || null;
-  return null;
-}
-
-function priceFor(values: PostFormValues) {
-  if (values.postType === "housing") return numericOrNull(values.housing?.price ?? "");
-  if (values.postType === "marketplace") return numericOrNull(values.marketplace?.price ?? "");
-  return null;
-}
-
-function titleFor(values: PostFormValues) {
-  if (values.title.trim()) return values.title.trim();
-  if (values.postType === "job") return values.job?.job_mode === "seeking" ? "求职信息" : "招聘信息";
-  if (values.postType === "housing") return values.housing?.housing_mode === "demand" ? "求租" : "房屋出租";
-  if (values.postType === "marketplace") return values.marketplace?.marketplace_mode === "buying" ? "求购" : "二手商品";
-  return "本地服务";
-}
-
 function mainPostPayload(values: PostFormValues, userId: string, cityId: string | null) {
   const status = shouldReviewPost(values) ? "pending_review" : "published";
   const publishedAt = status === "published" ? new Date().toISOString() : null;
@@ -189,91 +150,31 @@ function mainPostPayload(values: PostFormValues, userId: string, cityId: string 
     post_type: values.postType,
     city_id: cityId,
     author_id: userId,
-    title: titleFor(values),
+    title: postTitleForForm(values),
     summary: values.summary.trim() || null,
     body: values.body.trim(),
-    category: categoryFor(values),
-    subcategory: modeFor(values),
+    category: postCategoryForForm(values),
+    subcategory: postModeForForm(values),
     status,
     visibility: values.visibility,
-    price_amount: priceFor(values),
+    price_amount: postPriceForForm(values),
     published_at: publishedAt,
     updated_at: new Date().toISOString(),
   };
 }
 
 async function upsertDetail(supabase: SupabaseServerClient, postId: string, values: PostFormValues) {
-  if (values.postType === "job") {
-    return supabase.from("post_details_jobs").upsert(
-      {
-        post_id: postId,
-        employment_type: values.job?.job_type || null,
-        wage_min: numericOrNull(values.job?.salary_min ?? ""),
-        wage_max: numericOrNull(values.job?.salary_max ?? ""),
-        wage_unit: values.job?.salary_unit || null,
-        job_category: values.job?.job_category || null,
-        work_area: values.job?.work_area || values.location_area || null,
-        experience_requirement: values.job?.experience_requirement || null,
-        language_requirement: values.job?.language_requirement || null,
-        includes_meals: Boolean(values.job?.includes_meals),
-        includes_housing: Boolean(values.job?.includes_housing),
-        requires_work_authorization: values.job?.identity_requirement ? values.job.identity_requirement !== "none" : null,
-        employer_type: values.job?.employer_type || values.job?.company_name || null,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "post_id" },
-    );
+  const detail = detailPayloadForForm(postId, values);
+  if (detail.table === "post_details_jobs") {
+    return supabase.from("post_details_jobs").upsert(detail.payload, { onConflict: "post_id" });
   }
-
-  if (values.postType === "housing") {
-    return supabase.from("post_details_housing").upsert(
-      {
-        post_id: postId,
-        listing_type: values.housing?.housing_mode || null,
-        housing_type: values.housing?.room_type || null,
-        rent_amount: numericOrNull(values.housing?.price ?? ""),
-        deposit_amount: numericOrNull(values.housing?.deposit ?? ""),
-        available_date: values.housing?.available_from || null,
-        lease_term: values.housing?.lease_type || values.housing?.price_unit || null,
-        pets_allowed: Boolean(values.housing?.allow_pets),
-        utilities_included: Boolean(values.housing?.utilities_included),
-        transit_nearby: values.housing?.transit_nearby || null,
-        address_area: values.location_area || null,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "post_id" },
-    );
+  if (detail.table === "post_details_housing") {
+    return supabase.from("post_details_housing").upsert(detail.payload, { onConflict: "post_id" });
   }
-
-  if (values.postType === "marketplace") {
-    return supabase.from("post_details_marketplace").upsert(
-      {
-        post_id: postId,
-        listing_type: values.marketplace?.marketplace_mode || null,
-        item_category: values.marketplace?.category || null,
-        condition: values.marketplace?.condition || null,
-        price_amount: numericOrNull(values.marketplace?.price ?? ""),
-        negotiable: Boolean(values.marketplace?.negotiable),
-        trade_area: values.marketplace?.trade_area || values.location_area || null,
-        delivery_options: values.marketplace?.delivery_method ? [values.marketplace.delivery_method] : [],
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "post_id" },
-    );
+  if (detail.table === "post_details_marketplace") {
+    return supabase.from("post_details_marketplace").upsert(detail.payload, { onConflict: "post_id" });
   }
-
-  return supabase.from("post_details_services").upsert(
-    {
-      post_id: postId,
-      service_category: values.service?.service_category || null,
-      service_area: values.service?.service_area || values.location_area || null,
-      business_hours: values.service?.business_hours_text ? { text: values.service.business_hours_text } : {},
-      price_range: values.service?.price_range || values.service?.price_note || null,
-      service_status: "active",
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "post_id" },
-  );
+  return supabase.from("post_details_services").upsert(detail.payload, { onConflict: "post_id" });
 }
 
 async function upsertContact(supabase: SupabaseServerClient, postId: string, values: PostFormValues) {
@@ -451,7 +352,7 @@ export async function manageOwnPostStatus(_previousState: ManagePostActionState,
 }
 
 async function syncPostImages(supabase: SupabaseServerClient, userId: string, postType: PostType, postId: string, images: UploadedImageInput[]) {
-  if (postType === "job") return;
+  if (!isPostImageEnabled(postType)) return;
 
   const keptIds = images.map((image) => image.imageAssetId).filter((id): id is string => Boolean(id));
   const { data: existing } = await supabase.from("post_images").select("image_asset_id").eq("post_id", postId);
@@ -497,12 +398,12 @@ export async function removePostImage(postId: string, imageAssetId: string): Pro
 }
 
 export async function uploadPostImage(postId: string, postType: PostType, file: File, sortOrder = 0): Promise<PostFormActionResult> {
-  if (!allowedPostTypes.has(postType) || postType === "job") {
+  if (!allowedPostTypes.has(postType) || !isPostImageEnabled(postType)) {
     return { ok: false, message: "该类型暂不支持图片上传。" };
   }
 
-  const extension = postImageExtensions[file?.type];
-  if (!file || file.size <= 0 || file.size > MAX_POST_IMAGE_SIZE_BYTES || !extension) {
+  const extension = postImageExtension(file?.type);
+  if (!file || file.size <= 0 || file.size > POST_IMAGE_CONFIG.maxUploadBytes || !extension) {
     return { ok: false, message: "请上传 5MB 以内的 JPG、PNG 或 WebP 图片。" };
   }
 

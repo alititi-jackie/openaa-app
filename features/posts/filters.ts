@@ -1,13 +1,18 @@
 import type {
-  HousingDetailRecord,
-  JobDetailRecord,
-  MarketplaceDetailRecord,
   PostRecord,
   PostSort,
   PostType,
   PublicPostFilters,
-  ServiceDetailRecord,
 } from "./types";
+import {
+  getJobDetail,
+  getPostArea,
+  getPostCategory,
+  getPostMode,
+  getPostPriceValue,
+  getPostSearchText,
+  getPostWorkType,
+} from "./accessors";
 
 export const DEFAULT_PAGE_SIZE = 12;
 export const PAGE_SIZE_OPTIONS = [12, 24, 48] as const;
@@ -67,22 +72,7 @@ export function applyPublicPostFilters(records: PostRecord[], type: PostType, fi
 }
 
 export function priceValue(record: PostRecord) {
-  if (record.post_type === "job") {
-    const detail = firstDetail(record.post_details_jobs);
-    return numeric(detail?.wage_min) ?? numeric(detail?.wage_max);
-  }
-
-  if (record.post_type === "housing") {
-    const detail = firstDetail(record.post_details_housing);
-    return numeric(detail?.rent_amount) ?? numeric(record.price_amount);
-  }
-
-  if (record.post_type === "marketplace") {
-    const detail = firstDetail(record.post_details_marketplace);
-    return numeric(detail?.price_amount) ?? numeric(record.price_amount);
-  }
-
-  return undefined;
+  return getPostPriceValue(record);
 }
 
 function readParam(input: FilterInput, key: string) {
@@ -116,11 +106,6 @@ function readSort(input: FilterInput): PostSort {
   return raw && sortValues.has(raw as PostSort) ? (raw as PostSort) : "latest";
 }
 
-function firstDetail<T>(value: T[] | T | null | undefined): T | null {
-  if (!value) return null;
-  return Array.isArray(value) ? value[0] ?? null : value;
-}
-
 function numeric(value: number | string | null | undefined) {
   if (value === null || value === undefined || value === "") return undefined;
   const parsed = Number(value);
@@ -151,7 +136,7 @@ function matchesRange(record: PostRecord, min?: number, max?: number) {
   if (min === undefined && max === undefined) return true;
 
   if (record.post_type === "job") {
-    const detail = firstDetail(record.post_details_jobs);
+    const detail = getJobDetail(record);
     const low = numeric(detail?.wage_min) ?? numeric(detail?.wage_max);
     const high = numeric(detail?.wage_max) ?? numeric(detail?.wage_min);
     if (low === undefined || high === undefined) return false;
@@ -163,35 +148,12 @@ function matchesRange(record: PostRecord, min?: number, max?: number) {
   return (min === undefined || value >= min) && (max === undefined || value <= max);
 }
 
-function searchableText(record: PostRecord) {
-  const parts: Array<string | null | undefined> = [record.title, record.summary, record.body, record.category, record.subcategory, areaText(record)];
-
-  if (record.post_type === "job") {
-    const detail = firstDetail(record.post_details_jobs);
-    parts.push(detail?.employment_type, detail?.job_category, detail?.work_area, detail?.employer_type);
-  } else if (record.post_type === "housing") {
-    const detail = firstDetail(record.post_details_housing);
-    parts.push(detail?.listing_type, detail?.housing_type, detail?.address_area);
-  } else if (record.post_type === "marketplace") {
-    const detail = firstDetail(record.post_details_marketplace);
-    parts.push(detail?.listing_type, detail?.item_category, detail?.trade_area, detail?.condition);
-  } else {
-    const detail = firstDetail(record.post_details_services);
-    parts.push(detail?.service_category, detail?.service_area, detail?.price_range, detail?.service_status);
-  }
-
-  return parts.filter(Boolean).join(" ");
-}
-
 function areaText(record: PostRecord) {
-  if (record.post_type === "job") return firstDetail(record.post_details_jobs as JobDetailRecord[] | JobDetailRecord | null)?.work_area ?? "";
-  if (record.post_type === "housing") return firstDetail(record.post_details_housing as HousingDetailRecord[] | HousingDetailRecord | null)?.address_area ?? "";
-  if (record.post_type === "marketplace") return firstDetail(record.post_details_marketplace as MarketplaceDetailRecord[] | MarketplaceDetailRecord | null)?.trade_area ?? "";
-  return firstDetail(record.post_details_services as ServiceDetailRecord[] | ServiceDetailRecord | null)?.service_area ?? "";
+  return getPostArea(record);
 }
 
 function matchesKeyword(record: PostRecord, keyword: string) {
-  return matchesText(searchableText(record), keyword);
+  return matchesText(getPostSearchText(record), keyword);
 }
 
 function matchesText(text: string, keyword: string) {
@@ -199,23 +161,7 @@ function matchesText(text: string, keyword: string) {
 }
 
 function recordMode(record: PostRecord, type: PostType) {
-  if (record.subcategory) return record.subcategory;
-
-  if (record.post_type === "job") {
-    return "";
-  }
-
-  if (type === "housing") {
-    const detail = firstDetail(record.post_details_housing);
-    return detail?.listing_type ?? "";
-  }
-
-  if (type === "marketplace") {
-    const detail = firstDetail(record.post_details_marketplace);
-    return detail?.listing_type ?? "";
-  }
-
-  return "";
+  return type === record.post_type ? getPostMode(record) : "";
 }
 
 function matchesMode(record: PostRecord, type: PostType, mode: string) {
@@ -224,33 +170,10 @@ function matchesMode(record: PostRecord, type: PostType, mode: string) {
 
 function matchesWorkType(record: PostRecord, workType: string) {
   if (record.post_type !== "job") return true;
-
-  const detail = firstDetail(record.post_details_jobs);
-  return detail?.employment_type === workType;
+  return getPostWorkType(record) === workType;
 }
 
 function matchesCategory(record: PostRecord, type: PostType, category: string) {
   if (!category || category === "全部") return true;
-
-  if (type === "job") {
-    const detail = firstDetail(record.post_details_jobs);
-    return detail?.job_category === category || record.category === category;
-  }
-
-  if (type === "housing") {
-    const detail = firstDetail(record.post_details_housing);
-    return detail?.housing_type === category || record.category === category;
-  }
-
-  if (type === "marketplace") {
-    const detail = firstDetail(record.post_details_marketplace);
-    return detail?.item_category === category || record.category === category;
-  }
-
-  if (type === "service") {
-    const detail = firstDetail(record.post_details_services);
-    return detail?.service_category === category || record.category === category;
-  }
-
-  return false;
+  return type === record.post_type && getPostCategory(record) === category;
 }

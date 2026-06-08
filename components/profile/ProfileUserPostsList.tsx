@@ -5,34 +5,11 @@ import Link from "next/link";
 import { EmptyState } from "@/components/common/EmptyState";
 import { ProfileUserPostManagementActions } from "@/components/profile/ProfileUserPostManagementActions";
 import { POST_TYPE_TO_ROUTE } from "@/features/posts/constants";
+import { postModeLabel, postModeTone, postStatusLabel, postStatusTone } from "@/features/posts/display";
+import { getPostSecondaryTag } from "@/features/posts/accessors";
 import type { PostCardView, PostStatus } from "@/features/posts/types";
 
-const statusStyles: Record<PostStatus, string> = {
-  draft: "bg-zinc-50 text-zinc-500 ring-1 ring-zinc-100",
-  pending_review: "bg-amber-50 text-amber-700 ring-1 ring-amber-100",
-  published: "bg-blue-50 text-blue-700 ring-1 ring-blue-100",
-  hidden: "bg-zinc-50 text-zinc-500 ring-1 ring-zinc-100",
-  rejected: "bg-red-50 text-red-600 ring-1 ring-red-100",
-  expired: "bg-zinc-50 text-zinc-500 ring-1 ring-zinc-100",
-  deleted: "bg-red-50 text-red-600 ring-1 ring-red-100",
-};
-
 const editableStatuses = new Set<PostStatus>(["draft", "pending_review", "published", "expired"]);
-
-function statusLabel(status?: PostStatus) {
-  if (status === "published") return "显示中";
-  if (status === "hidden") return "已隐藏";
-  if (status === "deleted") return "已删除";
-  if (status === "pending_review") return "待审核";
-  if (status === "draft") return "草稿";
-  if (status === "rejected") return "已拒绝";
-  if (status === "expired") return "已过期";
-  return "";
-}
-
-function fieldValue(post: PostCardView, label: string) {
-  return post.fields.find((field) => field.label === label)?.value ?? "";
-}
 
 function formatDate(value?: string) {
   if (!value) return "";
@@ -41,40 +18,12 @@ function formatDate(value?: string) {
   return date.toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" });
 }
 
-function modeLabel(post: PostCardView) {
-  if (post.type === "job") return post.mode === "seeking" ? "求职" : "招聘";
-  if (post.type === "housing") return post.mode === "demand" ? "求租" : "出租";
-  if (post.type === "marketplace") return post.mode === "buying" ? "求购" : "出售";
-  return "";
-}
-
-function modeBadgeClass(post: PostCardView) {
-  if (post.type === "job") return post.mode === "seeking" ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100" : "bg-blue-50 text-blue-700 ring-1 ring-blue-100";
-  if (post.type === "housing") return post.mode === "demand" ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100" : "bg-blue-50 text-blue-700 ring-1 ring-blue-100";
-  if (post.type === "marketplace") return post.mode === "buying" ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100" : "bg-amber-50 text-amber-700 ring-1 ring-amber-100";
-  return "bg-zinc-50 text-zinc-600 ring-1 ring-zinc-100";
-}
-
-function secondaryTag(post: PostCardView) {
-  if (post.type === "job") return fieldValue(post, "类型");
-  if (post.type === "housing") return fieldValue(post, "房型");
-  if (post.type === "marketplace") return post.tag;
-  if (post.type === "service") return post.tag;
-  return "";
-}
-
 function priceText(post: PostCardView) {
-  if (post.type === "job") return fieldValue(post, "薪资") || "薪资电议";
-  if (post.type === "marketplace") return fieldValue(post, "价格") || "价格面议";
-  return fieldValue(post, "价格");
+  return post.priceDisplay || "";
 }
 
 function areaText(post: PostCardView) {
-  if (post.type === "job") return fieldValue(post, "区域") || post.location || "";
-  if (post.type === "housing") return fieldValue(post, "区域") || post.location || "";
-  if (post.type === "marketplace") return fieldValue(post, "交易区域") || post.location || "";
-  if (post.type === "service") return fieldValue(post, "区域") || post.location || "";
-  return post.location || "";
+  return post.area || post.location || "";
 }
 
 function metaItems(post: PostCardView) {
@@ -107,9 +56,9 @@ export function ProfileUserPostsList({ posts }: { posts: PostCardView[] }) {
 function ProfileUserPostCard({ post }: { post: PostCardView }) {
   const [status, setStatus] = useState<PostStatus | undefined>(post.status);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
-  const mode = modeLabel(post);
-  const tag = secondaryTag(post);
-  const statusText = statusLabel(status);
+  const mode = postModeLabel(post.type, post.mode, "short");
+  const tag = getPostSecondaryTag(post);
+  const statusText = postStatusLabel(status);
 
   return (
     <article className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
@@ -117,8 +66,8 @@ function ProfileUserPostCard({ post }: { post: PostCardView }) {
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="max-w-[260px] truncate text-base font-semibold text-gray-900 sm:max-w-[520px]">{post.title}</h2>
-            {status && statusText ? <span className={`rounded-full px-2 py-0.5 text-xs ${statusStyles[status]}`}>{statusText}</span> : null}
-            {mode ? <span className={`rounded-full px-2 py-0.5 text-xs ${modeBadgeClass(post)}`}>{mode}</span> : null}
+            {status && statusText ? <span className={`rounded-full px-2 py-0.5 text-xs ${postStatusTone(status)}`}>{statusText}</span> : null}
+            {mode ? <span className={`rounded-full px-2 py-0.5 text-xs ${postModeTone(post.type, post.mode)}`}>{mode}</span> : null}
             {tag ? <span className="rounded-full bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600 ring-1 ring-zinc-100">{tag}</span> : null}
           </div>
 

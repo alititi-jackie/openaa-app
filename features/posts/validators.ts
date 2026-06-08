@@ -1,4 +1,5 @@
 import type { PostFormErrors, PostFormValues } from "./formTypes";
+import { POST_IMAGE_CONFIG } from "./imageConfig";
 import {
   HOUSING_MODE_OPTIONS,
   JOB_CATEGORY_OPTIONS,
@@ -55,8 +56,8 @@ export function validatePostForm(values: PostFormValues) {
     errors.contact = CONTACT_MISSING_MESSAGE;
   }
 
-  if (values.postType !== "job" && values.images.length > 3) {
-    errors.images = "最多只能上传 3 张图片。";
+  if (values.postType !== "job" && values.images.length > POST_IMAGE_CONFIG.maxImages) {
+    errors.images = `最多只能上传 ${POST_IMAGE_CONFIG.maxImages} 张图片。`;
   }
 
   if (values.postType === "job") {

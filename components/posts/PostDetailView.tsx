@@ -1,12 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { EmptyState } from "@/components/common/EmptyState";
-import { POST_TYPE_LABELS } from "@/features/posts/constants";
 import { getPostEngagementState } from "@/features/posts/engagementQueries";
 import type { PostDetailView as PostDetailViewData } from "@/features/posts/types";
 import { ContactSourceHint } from "./ContactSourceHint";
 import { DetailImageCarousel } from "./DetailImageCarousel";
-import { DetailMetaPills, type DetailMetaPill } from "./DetailMetaPills";
+import { DetailMetaPills } from "./DetailMetaPills";
 import { ContactRevealCard } from "./ContactRevealCard";
 import { DetailActionBar } from "./DetailActionBar";
 import { DetailSafetyNotice } from "./DetailSafetyNotice";
@@ -18,28 +17,6 @@ function listHref(post: PostDetailViewData) {
 
 function shareText(post: PostDetailViewData) {
   return [post.tag, post.location, post.description].filter(Boolean).join(" · ");
-}
-
-function fieldValue(post: PostDetailViewData, label: string) {
-  return post.fields.find((field) => field.label === label)?.value?.trim() ?? "";
-}
-
-function jobInfoItems(post: PostDetailViewData): DetailMetaPill[] {
-  const salary = fieldValue(post, "薪资") || "薪资电议";
-  const area = fieldValue(post, "区域") || post.location || "";
-  const workType = fieldValue(post, "类型");
-  const category = post.tag && post.tag !== POST_TYPE_LABELS[post.type] ? post.tag : "";
-  const published = post.publishedAt || post.createdAt;
-
-  return [
-    { label: "发布者", value: post.authorName || "匿名用户" },
-    { label: "浏览次数", value: String(post.viewCount || 0) },
-    { label: "相对时间", value: published },
-    { label: "地区", value: area ? `📍 ${area}` : "" },
-    { label: "职位分类", value: category },
-    { label: "类型", value: workType },
-    { label: "薪资", value: salary },
-  ].filter((item) => item.value);
 }
 
 export async function PostDetailView({ post }: { post: PostDetailViewData | null }) {
@@ -80,7 +57,7 @@ export async function PostDetailView({ post }: { post: PostDetailViewData | null
             <h1 className="text-2xl font-bold text-gray-900">{post.title}</h1>
             <p className="mt-4 whitespace-pre-wrap text-base leading-relaxed text-gray-600">{post.body}</p>
             <ContactSourceHint className="text-base" />
-            <DetailMetaPills items={jobInfoItems(post)} postId={post.id} initialViewCount={post.viewCount || 0} />
+            <DetailMetaPills items={post.detailMetaFields} postId={post.id} initialViewCount={post.viewCount || 0} />
           </section>
           <ContactRevealCard postId={post.id} compact />
         </>

@@ -2,7 +2,8 @@ import "server-only";
 
 import { hasAdminPermission } from "@/lib/permissions/admin";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { POST_STATUS_LABELS, POST_TYPE_LABELS, POST_TYPE_TO_ROUTE } from "@/features/posts/constants";
+import { POST_TYPE_LABELS, POST_TYPE_TO_ROUTE } from "@/features/posts/constants";
+import { postStatusLabel } from "@/features/posts/display";
 import type { PostStatus, PostType, QueryState } from "@/features/posts/types";
 
 export type ReportStatus = "open" | "in_review" | "resolved" | "rejected";
@@ -242,7 +243,7 @@ function mapReport(record: RawReport, profileMap: Map<string, ProfileSummary>): 
     postType,
     postTypeLabel: POST_TYPE_LABELS[postType],
     postStatus,
-    postStatusLabel: POST_STATUS_LABELS[postStatus],
+    postStatusLabel: postStatusLabel(postStatus),
     postTitle: post?.title ?? "帖子已不存在",
     postHref: `${POST_TYPE_TO_ROUTE[postType]}/${record.post_id}`,
     authorId: post?.author_id ?? null,

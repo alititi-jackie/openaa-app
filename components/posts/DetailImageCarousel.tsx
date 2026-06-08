@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Navigation, Pagination } from "swiper/modules";
+import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
@@ -28,8 +28,9 @@ export function DetailImageCarousel({ images, title }: DetailImageCarouselProps)
   return (
     <section className="relative overflow-hidden rounded-2xl border border-slate-100 bg-slate-100 shadow-sm">
       <Swiper
-        modules={[Navigation, Pagination]}
+        modules={[Autoplay, Navigation, Pagination]}
         loop={visibleImages.length > 1}
+        autoplay={visibleImages.length > 1 ? { delay: 3500, disableOnInteraction: false, pauseOnMouseEnter: true } : false}
         navigation={{
           prevEl: ".detail-image-prev",
           nextEl: ".detail-image-next",

@@ -1,14 +1,8 @@
 import { BriefcaseBusiness, Building2, ShoppingBag, Store } from "lucide-react";
-import {
-  HOUSING_MODE_OPTIONS,
-  JOB_CATEGORY_OPTIONS,
-  JOB_MODE_OPTIONS,
-  JOB_TYPE_OPTIONS,
-  SECONDHAND_CATEGORY_OPTIONS,
-  SECONDHAND_MODE_OPTIONS,
-  SERVICE_CATEGORY_OPTIONS,
-} from "@/features/posts/options";
+import { POST_CHANNEL_CONFIGS } from "@/features/posts/channelConfig";
 import type { ChannelPageConfig } from "./ChannelPageShell";
+
+const postConfig = POST_CHANNEL_CONFIGS;
 
 export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "services", ChannelPageConfig> = {
   jobs: {
@@ -17,10 +11,11 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
     path: "/jobs",
     icon: BriefcaseBusiness,
     publishLabel: "发布招聘",
-    modeTabs: JOB_MODE_OPTIONS,
+    modeTabs: postConfig.job.modeOptions,
+    areaOptions: postConfig.job.areaOptions,
     searchPlaceholder: "搜索职位、公司、地点...",
-    workTypeOptions: JOB_TYPE_OPTIONS,
-    categoryOptions: JOB_CATEGORY_OPTIONS,
+    workTypeOptions: postConfig.job.workTypeOptions,
+    categoryOptions: postConfig.job.categoryOptions,
     categoryPlaceholder: "职位分类",
     posts: [
       { title: "餐馆前台招聘占位", description: "后续接入真实发布后显示薪资、区域和联系方式。", href: "/jobs", meta: "占位", tag: "招聘" },
@@ -52,7 +47,8 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
     path: "/housing",
     icon: Building2,
     publishLabel: "发布房源",
-    modeTabs: HOUSING_MODE_OPTIONS,
+    modeTabs: postConfig.housing.modeOptions,
+    areaOptions: postConfig.housing.areaOptions,
     searchPlaceholder: "搜索房源信息...",
     posts: [
       { title: "法拉盛单房出租占位", description: "后续显示价格、入住时间和交通信息。", href: "/housing", meta: "占位", tag: "出租" },
@@ -84,9 +80,10 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
     path: "/secondhand",
     icon: ShoppingBag,
     publishLabel: "发布二手",
-    modeTabs: SECONDHAND_MODE_OPTIONS,
+    modeTabs: postConfig.marketplace.modeOptions,
+    areaOptions: postConfig.marketplace.areaOptions,
     searchPlaceholder: "搜索商品...",
-    categoryOptions: SECONDHAND_CATEGORY_OPTIONS,
+    categoryOptions: postConfig.marketplace.categoryOptions,
     categoryPlaceholder: "商品分类",
     posts: [
       { title: "搬家家具出售占位", description: "后续显示价格、区域和取货方式。", href: "/secondhand", meta: "占位", tag: "出售" },
@@ -120,7 +117,8 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
     icon: Store,
     publishLabel: "发布服务",
     searchPlaceholder: "搜索服务...",
-    categoryOptions: SERVICE_CATEGORY_OPTIONS,
+    categoryOptions: postConfig.service.categoryOptions,
+    areaOptions: postConfig.service.areaOptions,
     categoryPlaceholder: "全部服务分类",
     posts: [
       { title: "搬家服务占位", description: "后续显示服务范围、联系方式和商家资料。", href: "/services", meta: "占位", tag: "搬家" },
