@@ -134,12 +134,15 @@ async function getOwnPostForManagement(supabase: SupabaseServerClient, userId: s
   };
 }
 
-function revalidatePostSurfaces(type: PostType, postId: string) {
+function revalidatePostSurfaces(type: PostType, postId: string, options: { includeProfile?: boolean } = {}) {
+  const includeProfile = options.includeProfile ?? true;
   const route = POST_TYPE_TO_ROUTE[type];
   revalidatePath(route);
   revalidatePath(postHref(type, postId));
-  revalidatePath("/profile/posts");
-  revalidatePath(`/profile/${route.slice(1)}`);
+  if (includeProfile) {
+    revalidatePath("/profile/posts");
+    revalidatePath(`/profile/${route.slice(1)}`);
+  }
 }
 
 function mainPostPayload(values: PostFormValues, userId: string, cityId: string | null) {
@@ -298,7 +301,7 @@ export async function manageOwnPostStatus(_previousState: ManagePostActionState,
       .single();
 
     if (error) return { ok: false, message: "下架失败，请稍后再试。", postId, action };
-    revalidatePostSurfaces(post.post_type, postId);
+    revalidatePostSurfaces(post.post_type, postId, { includeProfile: false });
     return { ok: true, message: "已下架，其他用户暂时看不到。", postId, action };
   }
 
@@ -326,7 +329,7 @@ export async function manageOwnPostStatus(_previousState: ManagePostActionState,
       .single();
 
     if (error) return { ok: false, message: "重新发布失败，请稍后再试。", postId, action };
-    revalidatePostSurfaces(post.post_type, postId);
+    revalidatePostSurfaces(post.post_type, postId, { includeProfile: false });
     return { ok: true, message: "已重新发布，内容恢复公开显示。", postId, action };
   }
 
