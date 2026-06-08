@@ -1,6 +1,20 @@
 import { POST_TYPE_TO_ROUTE } from "./constants";
 import type { PostFormValues, PublishContactDefaults } from "./formTypes";
-import { DEFAULT_LOCATION, EMPTY_LOCATION, HOUSING_MODE_OPTIONS, JOB_MODE_OPTIONS, SECONDHAND_MODE_OPTIONS, isOptionValue, type HousingMode, type JobMode, type SecondhandMode } from "./options";
+import {
+  DEFAULT_LOCATION,
+  EMPTY_LOCATION,
+  HOUSING_MODE_OPTIONS,
+  JOB_CATEGORY_OPTIONS,
+  JOB_MODE_OPTIONS,
+  JOB_TYPE_OPTIONS,
+  SECONDHAND_CATEGORY_OPTIONS,
+  SECONDHAND_MODE_OPTIONS,
+  isOptionValue,
+  type HousingMode,
+  type JobMode,
+  type PostOption,
+  type SecondhandMode,
+} from "./options";
 import type { PostDetailView, PostType } from "./types";
 
 type ProfilePublishDefaultsSource = {
@@ -20,6 +34,10 @@ function fieldValue(post: PostDetailView, label: string) {
 
 function defaultPreferredContactMethod(value?: string | null): "phone" | "wechat" | "email" {
   return value === "wechat" || value === "email" ? value : "phone";
+}
+
+function optionValueOrEmpty(options: readonly PostOption[], value?: string | null) {
+  return isOptionValue(options, value) ? value ?? "" : "";
 }
 
 export function publishContactDefaultsFromProfile(profile?: ProfilePublishDefaultsSource | null): PublishContactDefaults {
@@ -135,11 +153,14 @@ export function formValuesFromDetail(post: PostDetailView): PostFormValues {
   };
 
   if (post.type === "job") {
+    const category = optionValueOrEmpty(JOB_CATEGORY_OPTIONS, fieldValue(post, "职位分类")) || optionValueOrEmpty(JOB_CATEGORY_OPTIONS, post.tag);
+    const jobType = optionValueOrEmpty(JOB_TYPE_OPTIONS, fieldValue(post, "类型"));
+
     values.job = {
       ...values.job!,
       job_mode: isOptionValue(JOB_MODE_OPTIONS, post.mode) ? (post.mode as JobMode) : values.job!.job_mode,
-      job_category: fieldValue(post, "类型") || values.job!.job_category,
-      job_type: fieldValue(post, "类型") || values.job!.job_type,
+      job_category: category || values.job!.job_category,
+      job_type: jobType || values.job!.job_type,
       work_area: fieldValue(post, "区域") || values.location_area,
     };
   }
@@ -157,6 +178,7 @@ export function formValuesFromDetail(post: PostDetailView): PostFormValues {
     values.marketplace = {
       ...values.marketplace!,
       marketplace_mode: isOptionValue(SECONDHAND_MODE_OPTIONS, post.mode) ? (post.mode as SecondhandMode) : values.marketplace!.marketplace_mode,
+      category: optionValueOrEmpty(SECONDHAND_CATEGORY_OPTIONS, post.tag) || values.marketplace!.category,
       price: fieldValue(post, "价格").replace(/[$,]/g, ""),
       condition: fieldValue(post, "成色"),
       trade_area: fieldValue(post, "交易区域") || values.location_area,

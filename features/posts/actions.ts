@@ -293,7 +293,7 @@ async function upsertContact(supabase: SupabaseServerClient, postId: string, val
 
 export async function createPost(values: PostFormValues): Promise<PostFormActionResult> {
   const validation = validatePostForm(values);
-  if (!validation.valid) return { ok: false, message: "请检查表单内容。", fieldErrors: validation.errors };
+  if (!validation.valid) return { ok: false, message: "表单内容未填写完善，请检查后再发布。", fieldErrors: validation.errors };
   if (!allowedPostTypes.has(values.postType)) return { ok: false, message: "暂不支持该发布类型。" };
 
   const context = await getWriteContext();
@@ -322,7 +322,7 @@ export async function createPost(values: PostFormValues): Promise<PostFormAction
 
 export async function updatePost(postId: string, values: PostFormValues): Promise<PostFormActionResult> {
   const validation = validatePostForm(values);
-  if (!validation.valid) return { ok: false, message: "请检查表单内容。", fieldErrors: validation.errors };
+  if (!validation.valid) return { ok: false, message: "表单内容未填写完善，请检查后再保存。", fieldErrors: validation.errors };
 
   const context = await getWriteContext();
   if (!context.ok) return { ok: false, message: context.error };
