@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Fragment } from "react";
 import { EmptyState } from "@/components/common/EmptyState";
 import { POST_TYPE_LABELS } from "@/features/posts/constants";
 import { getPostEngagementState } from "@/features/posts/engagementQueries";
@@ -117,20 +118,23 @@ export async function PostDetailView({ post }: { post: PostDetailViewData | null
             <p className="mt-4 whitespace-pre-wrap text-base leading-relaxed text-gray-600">{post.body}</p>
             <ContactSourceHint className="text-base" />
             <div className="mt-4 flex flex-wrap gap-1.5 sm:gap-2">
-              <PostViewTracker
-                postId={post.id}
-                initialViewCount={post.viewCount || 0}
-                className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-500 shadow-[0_1px_3px_rgba(15,23,42,0.05)] sm:px-3 sm:text-sm"
-              />
               {jobInfoItems(post).map((item, index) => (
-                <span
-                  key={item}
-                  className={`rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium shadow-[0_1px_3px_rgba(15,23,42,0.05)] sm:px-3 sm:text-sm ${
-                    index >= 2 ? "text-slate-800" : "text-slate-500"
-                  }`}
-                >
-                  {item}
-                </span>
+                <Fragment key={item}>
+                  <span
+                    className={`rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium shadow-[0_1px_3px_rgba(15,23,42,0.05)] sm:px-3 sm:text-sm ${
+                      index >= 2 ? "text-slate-800" : "text-slate-500"
+                    }`}
+                  >
+                    {item}
+                  </span>
+                  {index === 0 ? (
+                    <PostViewTracker
+                      postId={post.id}
+                      initialViewCount={post.viewCount || 0}
+                      className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-500 shadow-[0_1px_3px_rgba(15,23,42,0.05)] sm:px-3 sm:text-sm"
+                    />
+                  ) : null}
+                </Fragment>
               ))}
             </div>
           </section>
