@@ -32,6 +32,8 @@ export type ViewActionResult = {
   viewCount?: number;
 };
 
+type RecordPostViewRpcResult = number | { view_count?: number | null } | Array<{ view_count?: number | null }>;
+
 const reportReasons = new Set(["false_information", "expired", "scam", "invalid_contact", "illegal", "other"]);
 
 function loginHref(returnTo: string) {
@@ -65,6 +67,12 @@ async function getFavoriteCount(supabase: SupabaseServerClient, postId: string) 
 async function getViewCount(supabase: SupabaseServerClient, postId: string) {
   const { data } = await supabase.from("post_stats").select("view_count").eq("post_id", postId).maybeSingle();
   return Number(data?.view_count ?? 0);
+}
+
+function viewCountFromRpcResult(data: RecordPostViewRpcResult | null) {
+  const value = Array.isArray(data) ? data[0]?.view_count : typeof data === "number" ? data : data?.view_count;
+  const count = Number(value);
+  return Number.isFinite(count) ? count : null;
 }
 
 function revalidatePost(type: PostType, postId: string) {
@@ -209,6 +217,21 @@ export async function recordPostView(postId: string, visitorId: string | null): 
   const headerStore = await headers();
   const userAgent = headerStore.get("user-agent")?.slice(0, 500) ?? null;
 
+  const { data: rpcData, error: rpcError } = await supabase.rpc("record_post_view", {
+    p_post_id: postId,
+    p_visitor_id: user ? null : safeVisitorId,
+    p_user_agent: userAgent,
+  });
+
+  if (!rpcError) {
+    return { ok: true, viewCount: viewCountFromRpcResult(rpcData as RecordPostViewRpcResult | null) ?? (await getViewCount(supabase, postId)) };
+  }
+
+  if (rpcError.code !== "PGRST202" && rpcError.code !== "42883") {
+    console.error("[posts] record post view rpc failed", { postId, visitorId: safeVisitorId, error: rpcError });
+    return { ok: false, message: "view_failed" };
+  }
+
   const { error } = await supabase.from("post_views").insert({
     post_id: postId,
     user_id: user?.id ?? null,
@@ -217,7 +240,25 @@ export async function recordPostView(postId: string, visitorId: string | null): 
   });
 
   if (error) {
+    console.error("[posts] record post view insert failed", { postId, visitorId: safeVisitorId, error });
     return { ok: false, message: "view_failed" };
+  }
+
+  await supabase.rpc("refresh_post_stats", { p_post_id: postId });
+
+  return { ok: true, viewCount: await getViewCount(supabase, postId) };
+}
+
+export async function getPostViewCount(postId: string): Promise<ViewActionResult> {
+  const supabase = await createSupabaseServerClient();
+
+  if (!supabase) {
+    return { ok: false, message: "missing_config" };
+  }
+
+  const post = await getPublicPost(supabase, postId);
+  if (!post) {
+    return { ok: false, message: "not_public" };
   }
 
   return { ok: true, viewCount: await getViewCount(supabase, postId) };

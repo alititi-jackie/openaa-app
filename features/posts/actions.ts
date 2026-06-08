@@ -384,7 +384,9 @@ export async function manageOwnPostStatus(_previousState: ManagePostActionState,
       .from("posts")
       .update({ status: "hidden", hidden_at: now, updated_at: now })
       .eq("id", postId)
-      .eq("author_id", context.user.id);
+      .eq("author_id", context.user.id)
+      .select("id")
+      .single();
 
     if (error) return { ok: false, message: "下架失败，请稍后再试。", postId, action };
     revalidatePostSurfaces(post.post_type, postId);
@@ -410,7 +412,9 @@ export async function manageOwnPostStatus(_previousState: ManagePostActionState,
         updated_at: now,
       })
       .eq("id", postId)
-      .eq("author_id", context.user.id);
+      .eq("author_id", context.user.id)
+      .select("id")
+      .single();
 
     if (error) return { ok: false, message: "重新发布失败，请稍后再试。", postId, action };
     revalidatePostSurfaces(post.post_type, postId);
@@ -429,7 +433,9 @@ export async function manageOwnPostStatus(_previousState: ManagePostActionState,
     .from("posts")
     .update({ status: "deleted", deleted_at: now, updated_at: now })
     .eq("id", postId)
-    .eq("author_id", context.user.id);
+    .eq("author_id", context.user.id)
+    .select("id")
+    .single();
 
   if (error) return { ok: false, message: "删除失败，请稍后再试。", postId, action };
   revalidatePostSurfaces(post.post_type, postId);
