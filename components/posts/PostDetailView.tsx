@@ -59,7 +59,6 @@ function jobInfoItems(post: PostDetailViewData) {
 
   return [
     post.authorName || "匿名用户",
-    `👁 ${post.viewCount || 0} 次浏览`,
     published,
     area ? `📍 ${area}` : "",
     category,
@@ -79,8 +78,6 @@ export async function PostDetailView({ post }: { post: PostDetailViewData | null
 
   return (
     <article className="space-y-4">
-      <PostViewTracker postId={post.id} />
-
       <DetailActionBar
         backHref={backHref}
         postId={post.id}
@@ -98,6 +95,7 @@ export async function PostDetailView({ post }: { post: PostDetailViewData | null
             <span className="rounded-full bg-slate-100 px-2.5 py-1">{post.meta}</span>
             {post.location ? <span className="rounded-full bg-slate-100 px-2.5 py-1">{post.location}</span> : null}
             {post.authorName ? <span className="rounded-full bg-slate-100 px-2.5 py-1">{post.authorName}</span> : null}
+            <PostViewTracker postId={post.id} initialViewCount={post.viewCount || 0} className="rounded-full bg-slate-100 px-2.5 py-1" />
           </div>
         </section>
       )}
@@ -119,11 +117,16 @@ export async function PostDetailView({ post }: { post: PostDetailViewData | null
             <p className="mt-4 whitespace-pre-wrap text-base leading-relaxed text-gray-600">{post.body}</p>
             <ContactSourceHint className="text-base" />
             <div className="mt-4 flex flex-wrap gap-1.5 sm:gap-2">
+              <PostViewTracker
+                postId={post.id}
+                initialViewCount={post.viewCount || 0}
+                className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-500 shadow-[0_1px_3px_rgba(15,23,42,0.05)] sm:px-3 sm:text-sm"
+              />
               {jobInfoItems(post).map((item, index) => (
                 <span
                   key={item}
                   className={`rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium shadow-[0_1px_3px_rgba(15,23,42,0.05)] sm:px-3 sm:text-sm ${
-                    index >= 3 ? "text-slate-800" : "text-slate-500"
+                    index >= 2 ? "text-slate-800" : "text-slate-500"
                   }`}
                 >
                   {item}
