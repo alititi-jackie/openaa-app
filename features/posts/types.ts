@@ -137,6 +137,7 @@ export type PostDetailView = PostCardView & {
   publishedAt: string | null;
   createdAt: string;
   images: Array<{ url: string; caption?: string | null; imageAssetId?: string | null }>;
+  detailMetaFields: Array<{ label: string; value: string }>;
   contact?: PostContactRecord | null;
 };
 

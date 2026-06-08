@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type ContactPayload = {
   contact_name: string | null;
@@ -10,13 +10,23 @@ type ContactPayload = {
   message?: string;
 };
 
-export function ContactRevealCard({ postId, compact = false }: { postId: string; compact?: boolean }) {
+type ContactRevealCardProps = {
+  postId: string;
+  compact?: boolean;
+  defaultRevealed?: boolean;
+  alwaysVisible?: boolean;
+  heading?: string;
+};
+
+export function ContactRevealCard({ postId, compact = false, defaultRevealed = false, alwaysVisible = false, heading }: ContactRevealCardProps) {
   const [contact, setContact] = useState<ContactPayload | null>(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState("");
 
   async function revealContact() {
+    if (loading || contact) return;
+
     setLoading(true);
     setMessage("");
 
@@ -37,6 +47,13 @@ export function ContactRevealCard({ postId, compact = false }: { postId: string;
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (defaultRevealed || alwaysVisible) {
+      void revealContact();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultRevealed, alwaysVisible, postId]);
 
   async function copyText(value: string, label: string) {
     try {
@@ -59,14 +76,14 @@ export function ContactRevealCard({ postId, compact = false }: { postId: string;
     <section className={compact ? "rounded-2xl border border-gray-100 bg-white p-4 shadow-sm" : "rounded-xl border border-slate-100 bg-white p-4 shadow-sm"}>
       {compact ? null : (
         <>
-          <h2 className="text-lg font-black text-slate-950">联系方式</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">为保护发布者隐私，联系方式默认隐藏。需要联系时可点击查看，请礼貌沟通并注意甄别信息。</p>
+          <h2 className="text-lg font-black text-slate-950">{heading || "联系方式"}</h2>
+          {alwaysVisible ? null : <p className="mt-2 text-sm leading-6 text-slate-600">为保护发布者隐私，联系方式默认隐藏。需要联系时可点击查看，请礼貌沟通并注意甄别信息。</p>}
         </>
       )}
 
       {contact ? (
         <div className="space-y-3">
-          {compact ? <h2 className="text-sm font-semibold text-gray-700">联系招聘方</h2> : null}
+          {compact ? <h2 className="text-sm font-semibold text-gray-700">{heading || "联系招聘方"}</h2> : null}
           {hasContact ? (
             <>
               <div className="space-y-1.5 text-sm text-gray-700">
@@ -107,6 +124,8 @@ export function ContactRevealCard({ postId, compact = false }: { postId: string;
           {copied ? <p className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">{copied}</p> : null}
           {message ? <p className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">{message}</p> : null}
         </div>
+      ) : alwaysVisible ? (
+        <div className="mt-3 rounded-lg bg-slate-50 p-3 text-sm leading-6 text-slate-600">{loading ? "读取中..." : message || "发布者暂未填写联系方式。"}</div>
       ) : (
         <button
           type="button"

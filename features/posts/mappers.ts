@@ -95,6 +95,48 @@ function detailFields(record: PostRecord): Array<{ label: string; value: string 
   ].filter((field) => field.value);
 }
 
+function detailMetaFields(record: PostRecord, card: PostCardView): Array<{ label: string; value: string }> {
+  const published = record.published_at || record.created_at;
+  const base = [
+    { label: "发布者", value: card.authorName || "匿名用户" },
+    { label: "浏览次数", value: `${card.viewCount || 0} 次浏览` },
+    { label: "相对时间", value: published },
+  ];
+
+  if (record.post_type === "housing") {
+    const detail = firstOrNull(record.post_details_housing) as HousingDetailRecord | null;
+    return [
+      ...base,
+      { label: "地区", value: detail?.address_area || card.location || "" },
+      { label: "出租/求租", value: detail?.listing_type || card.mode || "" },
+      { label: "房型", value: detail?.housing_type || "" },
+      { label: "价格", value: detail?.rent_amount ? `$${numberText(detail.rent_amount)}` : "" },
+    ].filter((field) => field.value);
+  }
+
+  if (record.post_type === "marketplace") {
+    const detail = firstOrNull(record.post_details_marketplace) as MarketplaceDetailRecord | null;
+    return [
+      ...base,
+      { label: "出售/求购", value: detail?.listing_type || card.mode || "" },
+      { label: "分类", value: detail?.item_category || card.tag || "" },
+      { label: "价格", value: detail?.price_amount ? `$${numberText(detail.price_amount)}` : record.price_amount ? `$${numberText(record.price_amount)}` : "" },
+      { label: "地区", value: detail?.trade_area || "" },
+    ].filter((field) => field.value);
+  }
+
+  if (record.post_type === "service") {
+    const detail = firstOrNull(record.post_details_services) as ServiceDetailRecord | null;
+    return [
+      ...base,
+      { label: "地区", value: detail?.service_area || card.location || "" },
+      { label: "服务分类", value: detail?.service_category || card.tag || "" },
+    ].filter((field) => field.value);
+  }
+
+  return base.filter((field) => field.value);
+}
+
 export function mapPostRecordToCard(record: PostRecord, authors: Record<string, AuthorSummary> = {}): PostCardView {
   const postStats = stats(record);
   const cover = imageUrl(
@@ -137,6 +179,7 @@ export function mapPostRecordToDetail(record: PostRecord, authors: Record<string
     publishedAt: record.published_at,
     createdAt: record.created_at,
     images,
+    detailMetaFields: detailMetaFields(record, card),
     contact,
   };
 }
