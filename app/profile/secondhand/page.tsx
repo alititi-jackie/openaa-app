@@ -37,7 +37,7 @@ export default async function ProfileSecondhandPage({ searchParams }: { searchPa
         actions={<ProfilePublishLink href="/secondhand/publish" label="+ 发布商品" />}
       />
       <ProfilePostFilterTabs postType="marketplace" activeTab={activeTab} path="/profile/secondhand" />
-      <ProfileUserPostsList posts={visiblePosts} />
+      <ProfileUserPostsList key={activeTab} posts={visiblePosts} listKey={activeTab} />
     </div>
   );
 }

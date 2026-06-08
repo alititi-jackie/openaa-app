@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { EmptyState } from "@/components/common/EmptyState";
 import { ProfileUserPostManagementActions } from "@/components/profile/ProfileUserPostManagementActions";
@@ -39,25 +39,35 @@ function metaItems(post: PostCardView) {
   return items;
 }
 
-export function ProfileUserPostsList({ posts }: { posts: PostCardView[] }) {
-  if (posts.length === 0) {
+export function ProfileUserPostsList({ posts, listKey }: { posts: PostCardView[]; listKey: string }) {
+  const [visibleItems, setVisibleItems] = useState(posts);
+
+  useEffect(() => {
+    setVisibleItems(posts);
+  }, [listKey]);
+
+  function patchStatus(postId: string, status: PostStatus) {
+    setVisibleItems((current) => current.map((post) => (post.id === postId ? { ...post, status } : post)));
+  }
+
+  if (visibleItems.length === 0) {
     return <EmptyState title="暂无发布" description="这里会显示你自己的草稿、待审核、显示中和其它状态信息。" />;
   }
 
   return (
     <section className="space-y-4">
-      {posts.map((post) => (
-        <ProfileUserPostCard key={post.id} post={post} />
+      {visibleItems.map((post) => (
+        <ProfileUserPostCard key={post.id} post={post} onStatusChange={(status) => patchStatus(post.id, status)} />
       ))}
     </section>
   );
 }
 
-function ProfileUserPostCard({ post }: { post: PostCardView }) {
-  const [status, setStatus] = useState<PostStatus | undefined>(post.status);
+function ProfileUserPostCard({ post, onStatusChange }: { post: PostCardView; onStatusChange: (status: PostStatus) => void }) {
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const mode = postModeLabel(post.type, post.mode, "short");
   const tag = getPostSecondaryTag(post);
+  const status = post.status;
   const statusText = postStatusLabel(status);
 
   return (
@@ -92,7 +102,7 @@ function ProfileUserPostCard({ post }: { post: PostCardView }) {
           postId={post.id}
           postType={post.type}
           status={status}
-          onStatusChange={setStatus}
+          onStatusChange={onStatusChange}
           onMessage={(nextMessage) => setMessage({ ok: nextMessage.ok, text: nextMessage.message })}
         />
       </div>

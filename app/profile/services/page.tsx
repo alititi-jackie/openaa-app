@@ -37,7 +37,7 @@ export default async function ProfileServicesPage({ searchParams }: { searchPara
         actions={<ProfilePublishLink href="/services/publish" label="+ 发布服务" />}
       />
       <ProfilePostFilterTabs postType="service" activeTab={activeTab} path="/profile/services" />
-      <ProfileUserPostsList posts={visiblePosts} />
+      <ProfileUserPostsList key={activeTab} posts={visiblePosts} listKey={activeTab} />
     </div>
   );
 }

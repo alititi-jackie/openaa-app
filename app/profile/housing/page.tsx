@@ -37,7 +37,7 @@ export default async function ProfileHousingPage({ searchParams }: { searchParam
         actions={<ProfilePublishLink href="/housing/publish" label="+ 发布房源" />}
       />
       <ProfilePostFilterTabs postType="housing" activeTab={activeTab} path="/profile/housing" />
-      <ProfileUserPostsList posts={visiblePosts} />
+      <ProfileUserPostsList key={activeTab} posts={visiblePosts} listKey={activeTab} />
     </div>
   );
 }
