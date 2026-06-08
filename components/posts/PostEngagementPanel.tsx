@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition, type FormEvent } from "react";
 import { Eye, Flag, Heart, Share2 } from "lucide-react";
-import { recordPostView, submitPostReport, togglePostFavorite } from "@/features/posts/engagementActions";
+import { getPostViewCount, recordPostView, submitPostReport, togglePostFavorite } from "@/features/posts/engagementActions";
 
 type PostEngagementPanelProps = {
   postId: string;
@@ -46,7 +46,18 @@ export function PostEngagementPanel({
 
   useEffect(() => {
     const viewedKey = `openaa:viewed:${postId}`;
-    if (window.localStorage.getItem(viewedKey)) return;
+    if (window.localStorage.getItem(viewedKey)) {
+      getPostViewCount(postId)
+        .then((result) => {
+          if (result.ok && typeof result.viewCount === "number") {
+            setViewCount(result.viewCount);
+          }
+        })
+        .catch(() => {
+          // View count refresh should never block the detail page.
+        });
+      return;
+    }
 
     const visitorKey = "openaa:visitor_id";
     let visitorId = window.localStorage.getItem(visitorKey);
