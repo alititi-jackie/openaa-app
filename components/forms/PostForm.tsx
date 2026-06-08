@@ -177,7 +177,7 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
     const validation = validatePostForm(values);
     setErrors(validation.errors);
     if (!validation.valid) {
-      setMessage("请检查表单内容。");
+      setMessage(mode === "edit" ? "表单内容未填写完善，请检查后再保存。" : "表单内容未填写完善，请检查后再发布。");
       return;
     }
 
