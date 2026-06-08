@@ -1,11 +1,11 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
-import { manageOwnPostStatus, type ManagePostActionState } from "@/features/posts/actions";
+import { useState } from "react";
+import { manageOwnPostStatus } from "@/features/posts/actions";
 import type { PostStatus, PostType } from "@/features/posts/types";
 import { ProfilePostConfirmDialog } from "./ProfilePostConfirmDialog";
 
-const initialState: ManagePostActionState = { ok: true, message: "" };
+const initialState = { ok: true, message: "" };
 
 const typeNouns: Record<PostType, string> = {
   job: "招聘信息",
@@ -25,29 +25,10 @@ type ProfilePostVisibilityButtonProps = {
 };
 
 export function ProfilePostVisibilityButton({ postId, postType, status, onStatusChange, onMessage }: ProfilePostVisibilityButtonProps) {
-  const formRef = useRef<HTMLFormElement>(null);
-  const handledStateRef = useRef<ManagePostActionState | null>(null);
-  const [state, formAction, pending] = useActionState(manageOwnPostStatus, initialState);
   const [confirmAction, setConfirmAction] = useState<VisibilityAction | null>(null);
+  const [pending, setPending] = useState(false);
 
   const action = status === "published" ? "hide" : status === "hidden" ? "publish" : null;
-
-  useEffect(() => {
-    if (!state.message || state.postId !== postId) return;
-    if (handledStateRef.current === state) return;
-    handledStateRef.current = state;
-
-    onMessage({ ok: state.ok, message: state.message });
-    if (!state.ok) return;
-
-    if (state.action === "hide") {
-      onStatusChange("hidden", state.message);
-    }
-
-    if (state.action === "publish") {
-      onStatusChange("published", state.message);
-    }
-  }, [onMessage, onStatusChange, postId, state]);
 
   if (!action) return null;
 
@@ -59,28 +40,49 @@ export function ProfilePostVisibilityButton({ postId, postType, status, onStatus
     ? "text-amber-700 ring-amber-200 bg-amber-50 hover:bg-amber-100"
     : "text-emerald-700 ring-emerald-200 bg-emerald-50 hover:bg-emerald-100";
 
+  async function runVisibilityAction(nextAction: VisibilityAction) {
+    setPending(true);
+    const formData = new FormData();
+    formData.set("postId", postId);
+    formData.set("action", nextAction);
+
+    try {
+      const result = await manageOwnPostStatus(initialState, formData);
+      onMessage({ ok: result.ok, message: result.message });
+      if (!result.ok) return;
+
+      if (result.action === "hide") {
+        onStatusChange("hidden", result.message);
+      }
+
+      if (result.action === "publish") {
+        onStatusChange("published", result.message);
+      }
+    } finally {
+      setPending(false);
+    }
+  }
+
   return (
     <>
-      <form ref={formRef} action={formAction} className="contents">
-        <input type="hidden" name="postId" value={postId} />
-        <input type="hidden" name="action" value={action} />
-        <button
-          type="button"
-          onClick={() => setConfirmAction(action)}
-          disabled={pending}
-          className={`px-3 py-2 rounded-lg text-sm ring-1 transition disabled:cursor-not-allowed disabled:opacity-60 ${buttonClass}`}
-        >
-          {buttonLabel}
-        </button>
-      </form>
+      <button
+        type="button"
+        onClick={() => setConfirmAction(action)}
+        disabled={pending}
+        className={`px-3 py-2 rounded-lg text-sm ring-1 transition disabled:cursor-not-allowed disabled:opacity-60 ${buttonClass}`}
+      >
+        {buttonLabel}
+      </button>
       <ProfilePostConfirmDialog
         open={confirmAction === action}
         title={title}
         pending={pending}
         onCancel={() => setConfirmAction(null)}
         onConfirm={() => {
+          if (!confirmAction) return;
+          const nextAction = confirmAction;
           setConfirmAction(null);
-          formRef.current?.requestSubmit();
+          void runVisibilityAction(nextAction);
         }}
       />
     </>
