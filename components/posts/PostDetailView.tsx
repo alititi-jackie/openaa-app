@@ -118,9 +118,9 @@ export async function PostDetailView({ post }: { post: PostDetailViewData | null
             <h1 className="text-2xl font-bold text-gray-900">{post.title}</h1>
             <p className="mt-4 whitespace-pre-wrap text-base leading-relaxed text-gray-600">{post.body}</p>
             <ContactSourceHint className="text-base" />
-            <div className="mt-4 flex flex-wrap gap-2 rounded-xl bg-blue-50/80 p-3">
+            <div className="mt-4 flex flex-wrap gap-2">
               {jobInfoItems(post).map((item) => (
-                <span key={item} className="rounded-full border border-blue-100 bg-white/90 px-3 py-1.5 text-sm text-blue-700 shadow-[0_1px_3px_rgba(25,118,210,0.08)]">
+                <span key={item} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-[0_1px_4px_rgba(15,23,42,0.06)]">
                   {item}
                 </span>
               ))}
