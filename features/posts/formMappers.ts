@@ -1,14 +1,15 @@
 import { POST_TYPE_TO_ROUTE } from "./constants";
 import type { PostFormValues, PublishContactDefaults } from "./formTypes";
 import {
-  DEFAULT_LOCATION,
   EMPTY_LOCATION,
   HOUSING_MODE_OPTIONS,
   JOB_CATEGORY_OPTIONS,
   JOB_MODE_OPTIONS,
   JOB_TYPE_OPTIONS,
+  LOCATION_OPTIONS,
   SECONDHAND_CATEGORY_OPTIONS,
   SECONDHAND_MODE_OPTIONS,
+  SERVICE_CATEGORY_OPTIONS,
   isOptionValue,
   type HousingMode,
   type JobMode,
@@ -30,6 +31,10 @@ type ProfilePublishDefaultsSource = {
 
 function fieldValue(post: PostDetailView, label: string) {
   return post.fields.find((field) => field.label === label)?.value ?? "";
+}
+
+function metaValue(post: PostDetailView, label: string) {
+  return post.detailMetaFields.find((field) => field.label === label)?.value ?? "";
 }
 
 function defaultPreferredContactMethod(value?: string | null): "phone" | "wechat" | "email" {
@@ -133,6 +138,10 @@ export function emptyPostFormValues(postType: PostType, contactDefaults: Publish
 }
 
 export function formValuesFromDetail(post: PostDetailView): PostFormValues {
+  const housingArea = optionValueOrEmpty(LOCATION_OPTIONS, fieldValue(post, "区域")) || optionValueOrEmpty(LOCATION_OPTIONS, metaValue(post, "地区"));
+  const marketplaceArea = optionValueOrEmpty(LOCATION_OPTIONS, fieldValue(post, "交易区域")) || optionValueOrEmpty(LOCATION_OPTIONS, metaValue(post, "地区"));
+  const serviceArea = optionValueOrEmpty(LOCATION_OPTIONS, fieldValue(post, "区域")) || optionValueOrEmpty(LOCATION_OPTIONS, metaValue(post, "地区"));
+  const locationArea = housingArea || marketplaceArea || serviceArea || optionValueOrEmpty(LOCATION_OPTIONS, post.location) || EMPTY_LOCATION;
   const values: PostFormValues = {
     ...emptyPostFormValues(post.type),
     mode: "edit" as const,
@@ -140,7 +149,7 @@ export function formValuesFromDetail(post: PostDetailView): PostFormValues {
     title: post.title,
     summary: post.description,
     body: post.body,
-    location_area: post.location ?? DEFAULT_LOCATION,
+    location_area: locationArea,
     contact: {
       contact_name: post.contact?.contact_name ?? "",
       phone: post.contact?.phone ?? "",
@@ -175,22 +184,26 @@ export function formValuesFromDetail(post: PostDetailView): PostFormValues {
   }
 
   if (post.type === "marketplace") {
+    const category = optionValueOrEmpty(SECONDHAND_CATEGORY_OPTIONS, metaValue(post, "分类")) || optionValueOrEmpty(SECONDHAND_CATEGORY_OPTIONS, post.tag);
     values.marketplace = {
       ...values.marketplace!,
       marketplace_mode: isOptionValue(SECONDHAND_MODE_OPTIONS, post.mode) ? (post.mode as SecondhandMode) : values.marketplace!.marketplace_mode,
-      category: optionValueOrEmpty(SECONDHAND_CATEGORY_OPTIONS, post.tag) || values.marketplace!.category,
+      category: category || values.marketplace!.category,
       price: fieldValue(post, "价格").replace(/[$,]/g, ""),
       condition: fieldValue(post, "成色"),
-      trade_area: fieldValue(post, "交易区域") || values.location_area,
+      trade_area: marketplaceArea || values.location_area,
     };
   }
 
   if (post.type === "service") {
+    const serviceCategory = optionValueOrEmpty(SERVICE_CATEGORY_OPTIONS, metaValue(post, "服务分类")) || optionValueOrEmpty(SERVICE_CATEGORY_OPTIONS, fieldValue(post, "服务"));
+    const price = fieldValue(post, "价格");
     values.service = {
       ...values.service!,
-      service_category: fieldValue(post, "服务") || values.service!.service_category,
-      service_area: fieldValue(post, "区域") || values.location_area,
-      price_range: fieldValue(post, "价格"),
+      service_category: serviceCategory || values.service!.service_category,
+      service_area: serviceArea || values.location_area,
+      price_range: price,
+      price_note: price,
     };
   }
 
