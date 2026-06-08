@@ -118,9 +118,14 @@ export async function PostDetailView({ post }: { post: PostDetailViewData | null
             <h1 className="text-2xl font-bold text-gray-900">{post.title}</h1>
             <p className="mt-4 whitespace-pre-wrap text-base leading-relaxed text-gray-600">{post.body}</p>
             <ContactSourceHint className="text-base" />
-            <div className="mt-4 flex flex-wrap gap-2">
-              {jobInfoItems(post).map((item) => (
-                <span key={item} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-[0_1px_4px_rgba(15,23,42,0.06)]">
+            <div className="mt-4 flex flex-wrap gap-1.5 sm:gap-2">
+              {jobInfoItems(post).map((item, index) => (
+                <span
+                  key={item}
+                  className={`rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium shadow-[0_1px_3px_rgba(15,23,42,0.05)] sm:px-3 sm:text-sm ${
+                    index >= 3 ? "text-slate-800" : "text-slate-500"
+                  }`}
+                >
                   {item}
                 </span>
               ))}
