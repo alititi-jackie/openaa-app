@@ -12,6 +12,48 @@ type ImageUploaderProps = {
   error?: string;
 };
 
+const IMAGE_SIDE_STEPS = [1600, 1280, 1024];
+const TARGET_IMAGE_BYTES = 1250 * 1024;
+const MAX_COMPRESSED_IMAGE_BYTES = 1536 * 1024;
+const WEBP_QUALITY_STEPS = [0.82, 0.74, 0.66, 0.58, 0.5, 0.42];
+
+function filePreview(file: File): UploadedImageInput {
+  return { file, url: URL.createObjectURL(file), sizeBytes: file.size, mimeType: file.type };
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number) {
+  return new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, quality));
+}
+
+async function compressFromImage(image: HTMLImageElement, maxSide: number) {
+  const ratio = Math.min(1, maxSide / Math.max(image.width, image.height));
+  const width = Math.max(1, Math.round(image.width * ratio));
+  const height = Math.max(1, Math.round(image.height * ratio));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    return null;
+  }
+
+  context.drawImage(image, 0, 0, width, height);
+
+  let best: { blob: Blob; width: number; height: number } | null = null;
+  for (const quality of WEBP_QUALITY_STEPS) {
+    const blob = await canvasToBlob(canvas, "image/webp", quality);
+    if (!blob) continue;
+    best = { blob, width, height };
+
+    if (blob.size <= TARGET_IMAGE_BYTES) {
+      break;
+    }
+  }
+
+  return best;
+}
+
 async function compressImage(file: File): Promise<UploadedImageInput> {
   const objectUrl = URL.createObjectURL(file);
 
@@ -22,18 +64,27 @@ async function compressImage(file: File): Promise<UploadedImageInput> {
       img.onerror = reject;
       img.src = objectUrl;
     });
-    const maxSide = 1600;
-    const ratio = Math.min(1, maxSide / Math.max(image.width, image.height));
-    const width = Math.max(1, Math.round(image.width * ratio));
-    const height = Math.max(1, Math.round(image.height * ratio));
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    canvas.getContext("2d")?.drawImage(image, 0, 0, width, height);
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 0.82));
-    const output = blob ? new File([blob], `${crypto.randomUUID()}.webp`, { type: "image/webp" }) : file;
 
-    return { file: output, url: URL.createObjectURL(output), width, height, sizeBytes: output.size, mimeType: output.type || file.type };
+    let bestOutput: { blob: Blob; width: number; height: number } | null = null;
+    for (const maxSide of IMAGE_SIDE_STEPS) {
+      const candidate = await compressFromImage(image, maxSide);
+      if (!candidate) continue;
+      bestOutput = candidate;
+
+      if (candidate.blob.size <= TARGET_IMAGE_BYTES || candidate.blob.size <= MAX_COMPRESSED_IMAGE_BYTES) {
+        break;
+      }
+    }
+
+    if (!bestOutput || bestOutput.blob.size > Math.min(file.size, MAX_COMPRESSED_IMAGE_BYTES)) {
+      return filePreview(file);
+    }
+
+    const output = new File([bestOutput.blob], `${crypto.randomUUID()}.webp`, { type: "image/webp" });
+
+    return { file: output, url: URL.createObjectURL(output), width: bestOutput.width, height: bestOutput.height, sizeBytes: output.size, mimeType: output.type || file.type };
+  } catch {
+    return filePreview(file);
   } finally {
     URL.revokeObjectURL(objectUrl);
   }

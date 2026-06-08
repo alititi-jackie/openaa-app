@@ -93,7 +93,7 @@ export async function PostDetailView({ post }: { post: PostDetailViewData | null
             <DetailMetaPills items={post.detailMetaFields} postId={post.id} initialViewCount={post.viewCount || 0} />
           </section>
 
-          <ContactRevealCard postId={post.id} defaultRevealed={post.type === "service"} alwaysVisible={post.type === "service"} />
+          <ContactRevealCard postId={post.id} compact={post.type !== "service"} defaultRevealed={post.type === "service"} alwaysVisible={post.type === "service"} />
         </>
       )}
 
