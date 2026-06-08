@@ -1,12 +1,37 @@
 "use client";
 
-import { useEffect } from "react";
-import { recordPostView } from "@/features/posts/engagementActions";
+import { useEffect, useState } from "react";
+import { getPostViewCount, recordPostView } from "@/features/posts/engagementActions";
 
-export function PostViewTracker({ postId }: { postId: string }) {
+const VIEW_DEDUPE_MS = 30 * 60 * 1000;
+
+type PostViewTrackerProps = {
+  postId: string;
+  initialViewCount: number;
+  className?: string;
+};
+
+function recentViewExists(value: string | null) {
+  if (!value) return false;
+  const viewedAt = new Date(value).getTime();
+  return Number.isFinite(viewedAt) && Date.now() - viewedAt < VIEW_DEDUPE_MS;
+}
+
+export function PostViewTracker({ postId, initialViewCount, className }: PostViewTrackerProps) {
+  const [viewCount, setViewCount] = useState(initialViewCount);
+
   useEffect(() => {
     const viewedKey = `openaa:viewed:${postId}`;
-    if (window.localStorage.getItem(viewedKey)) return;
+    if (recentViewExists(window.localStorage.getItem(viewedKey))) {
+      getPostViewCount(postId)
+        .then((result) => {
+          if (result.ok && typeof result.viewCount === "number") {
+            setViewCount(result.viewCount);
+          }
+        })
+        .catch(() => undefined);
+      return;
+    }
 
     const visitorKey = "openaa:visitor_id";
     let visitorId = window.localStorage.getItem(visitorKey);
@@ -19,10 +44,15 @@ export function PostViewTracker({ postId }: { postId: string }) {
       .then((result) => {
         if (result.ok) {
           window.localStorage.setItem(viewedKey, new Date().toISOString());
+          if (typeof result.viewCount === "number") {
+            setViewCount(result.viewCount);
+          }
         }
       })
       .catch(() => undefined);
   }, [postId]);
 
-  return null;
+  if (!className) return null;
+
+  return <span className={className}>👁 {viewCount} 次浏览</span>;
 }
