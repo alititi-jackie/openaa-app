@@ -50,6 +50,10 @@ export function ProfileUserPostsList({ posts, listKey }: { posts: PostCardView[]
     setVisibleItems((current) => current.map((post) => (post.id === postId ? { ...post, status } : post)));
   }
 
+  function removePost(postId: string) {
+    setVisibleItems((current) => current.filter((post) => post.id !== postId));
+  }
+
   if (visibleItems.length === 0) {
     return <EmptyState title="暂无发布" description="这里会显示你自己的草稿、待审核、显示中和其它状态信息。" />;
   }
@@ -57,13 +61,13 @@ export function ProfileUserPostsList({ posts, listKey }: { posts: PostCardView[]
   return (
     <section className="space-y-4">
       {visibleItems.map((post) => (
-        <ProfileUserPostCard key={post.id} post={post} onStatusChange={(status) => patchStatus(post.id, status)} />
+        <ProfileUserPostCard key={post.id} post={post} onStatusChange={(status) => patchStatus(post.id, status)} onDeleted={() => removePost(post.id)} />
       ))}
     </section>
   );
 }
 
-function ProfileUserPostCard({ post, onStatusChange }: { post: PostCardView; onStatusChange: (status: PostStatus) => void }) {
+function ProfileUserPostCard({ post, onStatusChange, onDeleted }: { post: PostCardView; onStatusChange: (status: PostStatus) => void; onDeleted: () => void }) {
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const mode = postModeLabel(post.type, post.mode, "short");
   const tag = getPostSecondaryTag(post);
@@ -103,6 +107,7 @@ function ProfileUserPostCard({ post, onStatusChange }: { post: PostCardView; onS
           postType={post.type}
           status={status}
           onStatusChange={onStatusChange}
+          onDeleted={onDeleted}
           onMessage={(nextMessage) => setMessage({ ok: nextMessage.ok, text: nextMessage.message })}
         />
       </div>

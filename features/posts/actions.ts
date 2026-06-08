@@ -19,6 +19,11 @@ export type ManagePostActionState = {
   postId?: string;
   action?: ManagePostAction;
 };
+export type DeletePostActionResult = {
+  ok: boolean;
+  message: string;
+  postId?: string;
+};
 type WriteContext =
   | { ok: false; error: string }
   | {
@@ -143,6 +148,58 @@ function revalidatePostSurfaces(type: PostType, postId: string, options: { inclu
     revalidatePath("/profile/posts");
     revalidatePath(`/profile/${route.slice(1)}`);
   }
+}
+
+function imageAssetFromRelation(value: unknown) {
+  if (!value) return null;
+  if (Array.isArray(value)) return (value[0] as Record<string, unknown> | undefined) ?? null;
+  return value as Record<string, unknown>;
+}
+
+async function deletePostImagesPermanently(supabase: SupabaseServerClient, userId: string, postId: string) {
+  const { data, error } = await supabase
+    .from("post_images")
+    .select("image_asset_id,image_assets(id,source_type,bucket,path,owner_id)")
+    .eq("post_id", postId);
+
+  if (error) {
+    return { ok: false as const, message: "读取帖子图片失败，请稍后再试。" };
+  }
+
+  const imageRows = (data ?? []) as Array<{ image_asset_id: string | null; image_assets?: unknown }>;
+  const assetIds = imageRows.map((row) => row.image_asset_id).filter((id): id is string => Boolean(id));
+  const assets = imageRows
+    .map((row) => imageAssetFromRelation(row.image_assets))
+    .filter((asset): asset is Record<string, unknown> => Boolean(asset));
+  const hasUnownedAsset = assets.some((asset) => asset.owner_id !== userId);
+
+  if (hasUnownedAsset) {
+    return { ok: false as const, message: "部分图片记录无法确认归属，请稍后再试。" };
+  }
+
+  const storagePaths = assets
+    .filter((asset) => asset.source_type === "storage" && asset.bucket === "post-images" && typeof asset.path === "string" && asset.path.length > 0)
+    .map((asset) => asset.path as string);
+
+  if (storagePaths.length > 0) {
+    const { error: storageError } = await supabase.storage.from("post-images").remove(storagePaths);
+    if (storageError) {
+      return { ok: false as const, message: `图片文件删除失败：${storageError.message}` };
+    }
+  }
+
+  if (assetIds.length > 0) {
+    const { data: deletedAssets, error: assetError } = await supabase.from("image_assets").delete().eq("owner_id", userId).in("id", assetIds).select("id");
+    if (assetError) {
+      return { ok: false as const, message: `图片记录删除失败：${assetError.message}` };
+    }
+
+    if ((deletedAssets ?? []).length !== assetIds.length) {
+      return { ok: false as const, message: "部分图片记录无法删除，请稍后再试。" };
+    }
+  }
+
+  return { ok: true as const };
 }
 
 function mainPostPayload(values: PostFormValues, userId: string, cityId: string | null) {
@@ -352,6 +409,39 @@ export async function manageOwnPostStatus(_previousState: ManagePostActionState,
   if (error) return { ok: false, message: "删除失败，请稍后再试。", postId, action };
   revalidatePostSurfaces(post.post_type, postId);
   return { ok: true, message: "已删除，前台不会再显示。", postId, action };
+}
+
+export async function deleteOwnPostPermanently(postId: string): Promise<DeletePostActionResult> {
+  const safePostId = postId.trim();
+  if (!safePostId) {
+    return { ok: false, message: "操作参数无效。" };
+  }
+
+  const context = await getWriteContext();
+  if (!context.ok) return { ok: false, message: context.error, postId: safePostId };
+  if (context.status === "banned") {
+    return { ok: false, message: "账号禁用时不能管理内容。", postId: safePostId };
+  }
+
+  const postCheck = await getOwnPostForManagement(context.supabase, context.user.id, safePostId);
+  if (!postCheck.ok) return { ok: false, message: postCheck.message, postId: safePostId };
+
+  if (postCheck.post.status === "deleted") {
+    return { ok: false, message: "内容已删除。", postId: safePostId };
+  }
+
+  const imageDelete = await deletePostImagesPermanently(context.supabase, context.user.id, safePostId);
+  if (!imageDelete.ok) {
+    return { ok: false, message: imageDelete.message, postId: safePostId };
+  }
+
+  const { error } = await context.supabase.from("posts").delete().eq("id", safePostId).eq("author_id", context.user.id);
+  if (error) {
+    return { ok: false, message: "删除失败，请稍后再试。", postId: safePostId };
+  }
+
+  revalidatePostSurfaces(postCheck.post.post_type, safePostId);
+  return { ok: true, message: "已删除。", postId: safePostId };
 }
 
 async function syncPostImages(supabase: SupabaseServerClient, userId: string, postType: PostType, postId: string, images: UploadedImageInput[]) {

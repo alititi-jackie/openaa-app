@@ -1,22 +1,23 @@
 "use client";
 
-import { useActionState } from "react";
+import { useState } from "react";
 import { ProfilePostVisibilityButton } from "@/components/posts/ProfilePostVisibilityButton";
-import { manageOwnPostStatus, type ManagePostActionState } from "@/features/posts/actions";
+import { ProfilePostConfirmDialog } from "@/components/posts/ProfilePostConfirmDialog";
+import { deleteOwnPostPermanently } from "@/features/posts/actions";
 import type { PostStatus, PostType } from "@/features/posts/types";
-
-const initialState: ManagePostActionState = { ok: true, message: "" };
 
 type ProfileUserPostManagementActionsProps = {
   postId: string;
   postType: PostType;
   status?: PostStatus;
   onStatusChange: (status: PostStatus) => void;
+  onDeleted: () => void;
   onMessage: (state: { ok: boolean; message: string }) => void;
 };
 
-export function ProfileUserPostManagementActions({ postId, postType, status, onStatusChange, onMessage }: ProfileUserPostManagementActionsProps) {
-  const [state, formAction, pending] = useActionState(manageOwnPostStatus, initialState);
+export function ProfileUserPostManagementActions({ postId, postType, status, onStatusChange, onDeleted, onMessage }: ProfileUserPostManagementActionsProps) {
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletePending, setDeletePending] = useState(false);
   const canToggleVisibility = status === "published" || status === "hidden";
   const canDelete = status !== "deleted";
 
@@ -30,28 +31,46 @@ export function ProfileUserPostManagementActions({ postId, postType, status, onS
         <ProfilePostVisibilityButton postId={postId} postType={postType} status={status} onStatusChange={onStatusChange} onMessage={onMessage} />
       ) : null}
       {canDelete ? (
-        <form
-          action={formAction}
-          onSubmit={(event) => {
-            const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
-            if (submitter?.value === "delete" && !window.confirm("确认删除这条内容？删除后前台不会再显示。")) {
-              event.preventDefault();
-            }
-          }}
-        >
-          <input type="hidden" name="postId" value={postId} />
+        <>
           <button
-            type="submit"
-            name="action"
-            value="delete"
-            disabled={pending}
+            type="button"
+            onClick={() => setDeleteOpen(true)}
+            disabled={deletePending}
             className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 ring-1 ring-red-200 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
             删除
           </button>
-        </form>
+          <ProfilePostConfirmDialog
+            open={deleteOpen}
+            title="确认删除此信息？"
+            description="删除后将无法恢复，请谨慎操作。"
+            confirmLabel="删除"
+            confirmTone="danger"
+            pending={deletePending}
+            onCancel={() => setDeleteOpen(false)}
+            onConfirm={() => {
+              void deletePost();
+            }}
+          />
+        </>
       ) : null}
-      {state.message ? <span className={state.ok ? "text-xs font-bold text-emerald-700" : "text-xs font-bold text-red-600"}>{state.message}</span> : null}
     </div>
   );
+
+  async function deletePost() {
+    setDeletePending(true);
+    try {
+      const result = await deleteOwnPostPermanently(postId);
+      onMessage({ ok: result.ok, message: result.message });
+      if (result.ok) {
+        setDeleteOpen(false);
+        setDeletePending(false);
+        onDeleted();
+        return;
+      }
+    } catch {
+      onMessage({ ok: false, message: "删除失败，请稍后再试。" });
+    }
+    setDeletePending(false);
+  }
 }
