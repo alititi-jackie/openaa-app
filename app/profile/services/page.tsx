@@ -1,5 +1,7 @@
 import { ProfileManagementPageHeader, ProfilePublishLink } from "@/components/profile/ProfileManagementPageHeader";
+import { ProfilePostFilterTabs } from "@/components/profile/ProfilePostFilterTabs";
 import { ProfileUserPostsList } from "@/components/profile/ProfileUserPostsList";
+import { filterAndSortProfilePosts, normalizeProfilePostTab } from "@/features/posts/profileTabs";
 import { getMyPosts } from "@/features/posts/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -14,7 +16,10 @@ export const metadata = buildPageMetadata({
   noIndex: true,
 });
 
-export default async function ProfileServicesPage() {
+export default async function ProfileServicesPage({ searchParams }: { searchParams?: Promise<{ tab?: string | string[] }> }) {
+  const params = await searchParams;
+  const rawTab = Array.isArray(params?.tab) ? params?.tab[0] : params?.tab;
+  const activeTab = normalizeProfilePostTab("service", rawTab);
   const user = await getCurrentUser();
 
   if (!user) {
@@ -22,6 +27,7 @@ export default async function ProfileServicesPage() {
   }
 
   const posts = await getMyPosts("service");
+  const visiblePosts = filterAndSortProfilePosts(posts.data, activeTab);
 
   return (
     <div className="space-y-4">
@@ -30,7 +36,8 @@ export default async function ProfileServicesPage() {
         description="管理您发布的本地服务信息"
         actions={<ProfilePublishLink href="/services/publish" label="+ 发布服务" />}
       />
-      <ProfileUserPostsList posts={posts.data} />
+      <ProfilePostFilterTabs postType="service" activeTab={activeTab} path="/profile/services" />
+      <ProfileUserPostsList posts={visiblePosts} />
     </div>
   );
 }

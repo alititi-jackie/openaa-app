@@ -122,6 +122,7 @@ export type PostCardView = {
   description: string;
   meta: string;
   createdAt?: string;
+  publishedAt?: string | null;
   tag?: string;
   categoryValue?: string;
   location?: string;

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { HorizontalPillTabs } from "@/components/common/HorizontalPillTabs";
 import { DmvLoginPrompt } from "@/components/dmv/DmvLoginPrompt";
 import { dmvBackLinkClassName } from "@/components/dmv/DmvBackLink";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
@@ -228,22 +229,15 @@ export function DmvWrongQuestionsClient({ questions }: { questions: DmvQuestion[
       ) : (
         <>
           <section className="space-y-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              <button
-                type="button"
-                onClick={() => setFilter("all")}
-                className={`shrink-0 rounded-full px-3 py-2 text-xs font-black ${filter === "all" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`}
-              >
-                全部错题
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilter("signs")}
-                className={`shrink-0 rounded-full px-3 py-2 text-xs font-black ${filter === "signs" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`}
-              >
-                只看交通标志错题
-              </button>
-            </div>
+            <HorizontalPillTabs
+              tabs={[
+                { value: "all", label: "全部错题" },
+                { value: "signs", label: "只看交通标志错题" },
+              ]}
+              activeValue={filter}
+              ariaLabel="错题筛选"
+              onChange={(value) => setFilter(value as WrongFilter)}
+            />
             <div className="grid gap-3 sm:grid-cols-2">
               <button
                 type="button"

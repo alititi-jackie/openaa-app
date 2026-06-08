@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { HorizontalPillTabs } from "@/components/common/HorizontalPillTabs";
 import { DmvLoginPrompt } from "@/components/dmv/DmvLoginPrompt";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
 import { addWrongQuestion, removeWrongQuestion } from "@/components/dmv/dmvStorage";
@@ -65,20 +66,12 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
             placeholder="搜索题目、选项或答案"
             className="min-h-11 rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
           />
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {categories.map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => setCategory(item)}
-                className={`shrink-0 rounded-full px-3 py-2 text-xs font-black ${
-                  category === item ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"
-                }`}
-              >
-                {item === "all" ? "全部" : getDmvCategoryLabel(item)}
-              </button>
-            ))}
-          </div>
+          <HorizontalPillTabs
+            tabs={categories.map((item) => ({ value: item, label: item === "all" ? "全部" : getDmvCategoryLabel(item) }))}
+            activeValue={category}
+            ariaLabel="DMV 题目分类"
+            onChange={setCategory}
+          />
           <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
             <input type="checkbox" checked={revealAnswer} onChange={(event) => setRevealAnswer(event.target.checked)} />
             显示全部答案
