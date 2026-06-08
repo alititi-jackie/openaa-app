@@ -26,6 +26,7 @@ type ProfilePostVisibilityButtonProps = {
 
 export function ProfilePostVisibilityButton({ postId, postType, status, onStatusChange, onMessage }: ProfilePostVisibilityButtonProps) {
   const formRef = useRef<HTMLFormElement>(null);
+  const handledStateRef = useRef<ManagePostActionState | null>(null);
   const [state, formAction, pending] = useActionState(manageOwnPostStatus, initialState);
   const [confirmAction, setConfirmAction] = useState<VisibilityAction | null>(null);
 
@@ -33,6 +34,8 @@ export function ProfilePostVisibilityButton({ postId, postType, status, onStatus
 
   useEffect(() => {
     if (!state.message || state.postId !== postId) return;
+    if (handledStateRef.current === state) return;
+    handledStateRef.current = state;
 
     onMessage({ ok: state.ok, message: state.message });
     if (!state.ok) return;
