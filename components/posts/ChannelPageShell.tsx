@@ -71,7 +71,7 @@ export function ChannelPageShell({ config }: { config: ChannelPageConfig }) {
           Supabase 环境变量尚未配置，当前显示空列表；配置新 Supabase 后会读取公开发布内容。
         </div>
       ) : null}
-      <PostList posts={config.posts} />
+      <PostList posts={config.posts} cardVariant={config.channelKey === "jobs" || config.channelKey === "housing" ? "detail-list" : "default"} />
       {config.pagination ? <ChannelPagination filters={filters} pagination={config.pagination} path={config.path} /> : null}
       <ChannelSeoCard title={config.seoTitle}>{config.seoContent}</ChannelSeoCard>
     </ChannelPageChrome>
