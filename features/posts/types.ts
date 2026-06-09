@@ -135,6 +135,7 @@ export type PostCardView = {
   favoriteCount: number;
   viewCount: number;
   fields: Array<{ label: string; value: string }>;
+  detailMetaFields?: Array<{ label: string; value: string }>;
 };
 
 export type PostDetailView = PostCardView & {

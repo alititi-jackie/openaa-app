@@ -3,9 +3,9 @@ import Link from "next/link";
 import { EmptyState } from "@/components/common/EmptyState";
 import { getPostEngagementState } from "@/features/posts/engagementQueries";
 import type { PostDetailView as PostDetailViewData } from "@/features/posts/types";
-import { ContactSourceHint } from "./ContactSourceHint";
 import { DetailImageCarousel } from "./DetailImageCarousel";
 import { DetailMetaPills } from "./DetailMetaPills";
+import { DetailBodyContent } from "./DetailBodyContent";
 import { ContactRevealCard } from "./ContactRevealCard";
 import { DetailActionBar } from "./DetailActionBar";
 import { DetailSafetyNotice } from "./DetailSafetyNotice";
@@ -55,8 +55,7 @@ export async function PostDetailView({ post }: { post: PostDetailViewData | null
         <>
           <section className="rounded-2xl border border-gray-100 border-t-blue-100 bg-white p-6 pt-7 shadow-[0_8px_24px_rgba(15,23,42,0.08)]">
             <h1 className="text-2xl font-bold text-gray-900">{post.title}</h1>
-            <p className="mt-4 whitespace-pre-wrap text-base leading-relaxed text-gray-600">{post.body}</p>
-            <ContactSourceHint className="text-base" />
+            <DetailBodyContent body={post.body} />
             <DetailMetaPills items={post.detailMetaFields} postId={post.id} initialViewCount={post.viewCount || 0} />
           </section>
           <ContactRevealCard postId={post.id} compact />
@@ -65,8 +64,7 @@ export async function PostDetailView({ post }: { post: PostDetailViewData | null
         <>
           <section className="rounded-2xl border border-gray-100 border-t-blue-100 bg-white p-6 pt-7 shadow-[0_8px_24px_rgba(15,23,42,0.08)]">
             <h1 className="text-2xl font-bold text-gray-900">{post.title}</h1>
-            <p className="mt-4 whitespace-pre-wrap text-base leading-relaxed text-gray-600">{post.body}</p>
-            <ContactSourceHint className="text-base" />
+            <DetailBodyContent body={post.body} />
             <DetailMetaPills items={post.detailMetaFields} postId={post.id} initialViewCount={post.viewCount || 0} />
           </section>
 

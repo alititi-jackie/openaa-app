@@ -3,7 +3,11 @@ import { getPostArea, getPostCategory, getPostModeDisplay, getPostPriceDisplay, 
 import { postChannelConfig } from "./channelConfig";
 import type { AuthorSummary, PostRecord } from "./types";
 
-export function buildDetailMetaPills(record: PostRecord, author?: AuthorSummary | null, viewCount = 0): DetailMetaPill[] {
+type BuildDetailMetaPillsOptions = {
+  includeImageIcon?: boolean;
+};
+
+export function buildDetailMetaPills(record: PostRecord, author?: AuthorSummary | null, viewCount = 0, options: BuildDetailMetaPillsOptions = {}): DetailMetaPill[] {
   const config = postChannelConfig(record.post_type);
   const published = record.published_at || record.created_at;
   const mode = record.post_type === "job" ? getPostWorkType(record) : getPostModeDisplay(record, "short");
@@ -16,6 +20,10 @@ export function buildDetailMetaPills(record: PostRecord, author?: AuthorSummary 
     { label: "浏览次数", value: String(viewCount) },
     { label: "相对时间", value: published },
   ];
+
+  if (options.includeImageIcon) {
+    items.push({ label: "图片", value: "🖼️" });
+  }
 
   if (record.post_type === "marketplace") {
     if (config.detailLabels.mode && mode) items.push({ label: config.detailLabels.mode, value: mode });

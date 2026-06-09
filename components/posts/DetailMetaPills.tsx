@@ -10,9 +10,15 @@ type DetailMetaPillsProps = {
   items: DetailMetaPill[];
   postId: string;
   initialViewCount: number;
+  trackViews?: boolean;
+  className?: string;
 };
 
 function displayValue(item: DetailMetaPill) {
+  if (item.label === "浏览次数") {
+    return `👁 ${item.value || "0"} 次浏览`;
+  }
+
   if (item.label === "相对时间") {
     return relativeTime(item.value);
   }
@@ -26,7 +32,7 @@ function pillClass(index: number) {
   }`;
 }
 
-export function DetailMetaPills({ items, postId, initialViewCount }: DetailMetaPillsProps) {
+export function DetailMetaPills({ items, postId, initialViewCount, trackViews = true, className }: DetailMetaPillsProps) {
   const visibleItems = items.filter((item) => item.value.trim());
 
   if (visibleItems.length === 0) {
@@ -34,9 +40,9 @@ export function DetailMetaPills({ items, postId, initialViewCount }: DetailMetaP
   }
 
   return (
-    <div className="mt-4 flex flex-wrap gap-1.5 sm:gap-2">
+    <div className={["mt-4 flex flex-wrap gap-1.5 sm:gap-2", className].filter(Boolean).join(" ")}>
       {visibleItems.map((item, index) =>
-        item.label === "浏览次数" ? (
+        item.label === "浏览次数" && trackViews ? (
           <PostViewTracker key={item.label} postId={postId} initialViewCount={initialViewCount} className={pillClass(index)} />
         ) : (
           <span key={`${item.label}-${item.value}`} className={pillClass(index)}>

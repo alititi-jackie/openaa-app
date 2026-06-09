@@ -43,6 +43,7 @@ export function mapPostRecordToCard(record: PostRecord, authors: Record<string, 
   const stats = postStats(record);
   const cover = getPostCoverUrl(record);
   const author = record.author_id ? authors[record.author_id] : null;
+  const viewCount = stats.view_count ?? 0;
   const area = getPostArea(record);
   const category = getPostCategory(record);
   const priceValue = getPostPriceValue(record);
@@ -72,8 +73,9 @@ export function mapPostRecordToCard(record: PostRecord, authors: Record<string, 
     authorName: author?.nickname || undefined,
     imageUrl: cover,
     favoriteCount: stats.favorite_count ?? 0,
-    viewCount: stats.view_count ?? 0,
+    viewCount,
     fields: detailFields(record),
+    detailMetaFields: buildDetailMetaPills(record, author, viewCount, { includeImageIcon: Boolean(cover) }),
     secondaryTag,
   };
   return card;
