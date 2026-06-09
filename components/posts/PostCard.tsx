@@ -95,7 +95,7 @@ function DetailListPostCard({ post }: { post: PostCardData }) {
           postId={post.id ?? post.href}
           initialViewCount={post.viewCount ?? 0}
           trackViews={false}
-          className="max-h-[72px] overflow-hidden md:max-h-9 md:flex-nowrap"
+          className="max-h-[62px] overflow-hidden [&>span]:inline-flex [&>span]:h-7 [&>span]:items-center [&>span]:overflow-hidden [&>span]:whitespace-nowrap sm:max-h-[64px] md:max-h-9 md:flex-nowrap md:[&>span]:h-auto"
         />
       </div>
     </Link>
