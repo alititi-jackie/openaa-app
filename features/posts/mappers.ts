@@ -42,7 +42,7 @@ function detailFields(record: PostRecord): Array<{ label: string; value: string 
 }
 
 function cardDetailMetaFields(record: PostRecord, author?: AuthorSummary | null, viewCount = 0, includeImageIcon = false) {
-  const fields = buildDetailMetaPills(record, author, viewCount, { includeImageIcon });
+  const fields = buildDetailMetaPills(record, author, viewCount, { includeImageIcon, surface: "card" });
   const housingAmountTime = record.post_type === "housing" ? buildHousingAmountTimeMetaPill(record) : null;
   return housingAmountTime ? [...fields, housingAmountTime] : fields;
 }
