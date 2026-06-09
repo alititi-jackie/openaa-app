@@ -70,8 +70,10 @@ function cardMeta(post: PostCardData, kind: ListingGridKind) {
 }
 
 function ListingImage({ post, kind }: { post: PostCardData; kind: ListingGridKind }) {
+  const aspectClass = kind === "service" ? "aspect-video" : "aspect-[3/2]";
+
   return (
-    <div className="relative aspect-[3/2] overflow-hidden bg-slate-100">
+    <div className={["relative overflow-hidden bg-slate-100", aspectClass].join(" ")}>
       {post.imageUrl ? (
         <Image
           src={post.imageUrl}
