@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { EmptyState } from "@/components/common/EmptyState";
 import { ProfileUserPostManagementActions } from "@/components/profile/ProfileUserPostManagementActions";
@@ -41,12 +41,8 @@ function metaItems(post: PostCardView) {
   return items;
 }
 
-export function ProfileUserPostsList({ posts, listKey }: { posts: PostCardView[]; listKey: string }) {
+export function ProfileUserPostsList({ posts }: { posts: PostCardView[] }) {
   const [visibleItems, setVisibleItems] = useState(posts);
-
-  useEffect(() => {
-    setVisibleItems(posts);
-  }, [listKey]);
 
   function patchStatus(postId: string, status: PostStatus) {
     setVisibleItems((current) => current.map((post) => (post.id === postId ? { ...post, status } : post)));

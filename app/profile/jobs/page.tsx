@@ -37,7 +37,7 @@ export default async function ProfileJobsPage({ searchParams }: { searchParams?:
         actions={<ProfilePublishLink href="/jobs/publish" label="+ 发布招聘" />}
       />
       <ProfilePostFilterTabs postType="job" activeTab={activeTab} path="/profile/jobs" />
-      <ProfileUserPostsList key={activeTab} posts={visiblePosts} listKey={activeTab} />
+      <ProfileUserPostsList key={activeTab} posts={visiblePosts} />
     </div>
   );
 }
