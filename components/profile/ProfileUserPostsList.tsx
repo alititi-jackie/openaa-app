@@ -30,10 +30,12 @@ function metaItems(post: PostCardView) {
   const date = formatDate(post.createdAt) || post.meta;
   const price = priceText(post);
   const area = areaText(post);
+  const viewCount = Number.isFinite(post.viewCount) ? post.viewCount : 0;
   const items: string[] = [];
 
   if (price) items.push(`💵 ${price}`);
   if (area) items.push(`📍 ${area}`);
+  items.push(`👁 ${viewCount}`);
   if (date) items.push(`🕒 ${date}`);
 
   return items;
@@ -82,6 +84,7 @@ function ProfileUserPostCard({ post, onStatusChange, onDeleted }: { post: PostCa
             <h2 className="max-w-[260px] truncate text-base font-semibold text-gray-900 sm:max-w-[520px]">{post.title}</h2>
             {status && statusText ? <span className={`rounded-full px-2 py-0.5 text-xs ${postStatusTone(status)}`}>{statusText}</span> : null}
             {mode ? <span className={`rounded-full px-2 py-0.5 text-xs ${postModeTone(post.type, post.mode)}`}>{mode}</span> : null}
+            {post.imageUrl ? <span aria-label="有图片">🖼️</span> : null}
             {tag ? <span className="rounded-full bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600 ring-1 ring-zinc-100">{tag}</span> : null}
           </div>
 
