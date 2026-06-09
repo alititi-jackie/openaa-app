@@ -54,7 +54,7 @@ export function PostCard({ post, compact = false, variant = "default" }: { post:
             </div>
             <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">{post.meta}</span>
           </div>
-          {!compact ? <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">{post.description}</p> : null}
+          {!compact ? <p className="mt-2 line-clamp-2 break-words text-sm leading-6 text-slate-600 [overflow-wrap:anywhere]">{post.description}</p> : null}
           {post.fields?.length ? (
             <div className="mt-3 flex flex-wrap gap-2">
               {post.fields.slice(0, compact ? 2 : 4).map((field) => (

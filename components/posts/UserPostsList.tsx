@@ -33,7 +33,7 @@ function UserPostListItem({ post }: { post: PostCardView }) {
     <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
       <p className="text-xs font-bold text-blue-700">{POST_TYPE_LABELS[post.type]}</p>
       <h2 className="mt-1 font-black text-slate-950">{post.title}</h2>
-      <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">{post.description}</p>
+      <p className="mt-2 line-clamp-2 break-words text-sm leading-6 text-slate-600 [overflow-wrap:anywhere]">{post.description}</p>
       <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold text-slate-600">
         {post.fields.slice(0, 3).map((field) => (
           <span key={`${post.id}-${field.label}`} className="rounded-full bg-slate-100 px-2.5 py-1">

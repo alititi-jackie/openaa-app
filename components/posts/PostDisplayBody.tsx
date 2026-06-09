@@ -13,7 +13,7 @@ export function PostDisplayBody({ body, clampLines, bodyClassName, hintClassName
       <p
         className={[
           "mt-4 whitespace-pre-line text-base leading-relaxed text-gray-600",
-          "line-clamp-2 overflow-hidden",
+          "line-clamp-2 overflow-hidden break-words [overflow-wrap:anywhere]",
           bodyClassName,
         ]
           .filter(Boolean)
@@ -26,7 +26,7 @@ export function PostDisplayBody({ body, clampLines, bodyClassName, hintClassName
 
   return (
     <>
-      <p className={["mt-4 whitespace-pre-wrap text-base leading-relaxed text-gray-600", bodyClassName].filter(Boolean).join(" ")}>{body}</p>
+      <p className={["mt-4 whitespace-pre-wrap break-words text-base leading-relaxed text-gray-600 [overflow-wrap:anywhere]", bodyClassName].filter(Boolean).join(" ")}>{body}</p>
       <ContactSourceHint className={["text-base", hintClassName].filter(Boolean).join(" ")} />
     </>
   );
