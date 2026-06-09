@@ -112,6 +112,14 @@ export type AuthorSummary = {
   avatar_url: string | null;
 };
 
+export type PostListingMetaField = {
+  key?: string;
+  group?: "common" | "business";
+  label: string;
+  tone?: "blue" | "orange" | "gray" | "service";
+  value: string;
+};
+
 export type PostCardView = {
   id: string;
   type: PostType;
@@ -138,6 +146,7 @@ export type PostCardView = {
   viewCount: number;
   fields: Array<{ label: string; value: string }>;
   detailMetaFields?: Array<{ label: string; value: string }>;
+  listingMetaFields?: PostListingMetaField[];
 };
 
 export type PostDetailView = PostCardView & {

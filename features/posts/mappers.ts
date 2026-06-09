@@ -47,6 +47,11 @@ function cardDetailMetaFields(record: PostRecord, author?: AuthorSummary | null,
   return housingAmountTime ? [...fields, housingAmountTime] : fields;
 }
 
+function listingMetaFields(record: PostRecord, author?: AuthorSummary | null, viewCount = 0) {
+  if (record.post_type !== "marketplace" && record.post_type !== "service") return undefined;
+  return buildDetailMetaPills(record, author, viewCount);
+}
+
 export function mapPostRecordToCard(record: PostRecord, authors: Record<string, AuthorSummary> = {}): PostCardView {
   const stats = postStats(record);
   const cover = getPostCoverUrl(record);
@@ -87,6 +92,7 @@ export function mapPostRecordToCard(record: PostRecord, authors: Record<string, 
     viewCount,
     fields: detailFields(record),
     detailMetaFields: cardDetailMetaFields(record, author, viewCount, Boolean(cover)),
+    listingMetaFields: listingMetaFields(record, author, viewCount),
     secondaryTag,
   };
   return card;

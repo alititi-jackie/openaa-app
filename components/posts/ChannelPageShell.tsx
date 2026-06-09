@@ -11,6 +11,7 @@ import { ChannelPagination } from "./ChannelPagination";
 import { ChannelSeoCard } from "./ChannelSeoCard";
 import { ChannelTabs, type ChannelModeTab } from "./ChannelTabs";
 import { PostList, type PostListItem } from "./PostList";
+import type { PostCardVariant } from "./PostCard";
 import { PublishCta } from "./PublishCta";
 
 export type ChannelPageConfig = {
@@ -36,6 +37,13 @@ export type ChannelPageConfig = {
   seoTitle: string;
   seoContent: ReactNode;
 };
+
+function cardVariantForChannel(channelKey: ChannelKey): PostCardVariant {
+  if (channelKey === "jobs" || channelKey === "housing") return "detail-list";
+  if (channelKey === "marketplace") return "marketplace-grid";
+  if (channelKey === "services") return "service-grid";
+  return "default";
+}
 
 export function ChannelPageShell({ config }: { config: ChannelPageConfig }) {
   const filters = config.filters ?? { sort: "latest", page: 1, pageSize: DEFAULT_PAGE_SIZE };
@@ -71,7 +79,7 @@ export function ChannelPageShell({ config }: { config: ChannelPageConfig }) {
           Supabase 环境变量尚未配置，当前显示空列表；配置新 Supabase 后会读取公开发布内容。
         </div>
       ) : null}
-      <PostList posts={config.posts} cardVariant={config.channelKey === "jobs" || config.channelKey === "housing" ? "detail-list" : "default"} />
+      <PostList posts={config.posts} cardVariant={cardVariantForChannel(config.channelKey)} />
       {config.pagination ? <ChannelPagination filters={filters} pagination={config.pagination} path={config.path} /> : null}
       <ChannelSeoCard title={config.seoTitle}>{config.seoContent}</ChannelSeoCard>
     </ChannelPageChrome>

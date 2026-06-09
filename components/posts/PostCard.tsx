@@ -7,8 +7,9 @@ import type { DetailMetaPill } from "./DetailMetaPills";
 import { PostDisplayBody } from "./PostDisplayBody";
 import { DetailMetaPills } from "./DetailMetaPills";
 import { HousingListBody } from "./HousingListBody";
+import { ListingGridCard } from "./ListingGridCard";
 
-export type PostCardVariant = "default" | "detail-list";
+export type PostCardVariant = "default" | "detail-list" | "marketplace-grid" | "service-grid";
 
 export type PostCardData = {
   id?: string;
@@ -34,11 +35,18 @@ export type PostCardData = {
   viewCount?: number;
   fields?: Array<{ label: string; value: string }>;
   detailMetaFields?: DetailMetaPill[];
+  listingMetaFields?: DetailMetaPill[];
 };
 
 export function PostCard({ post, compact = false, variant = "default" }: { post: PostCardData; compact?: boolean; variant?: PostCardVariant }) {
   if (variant === "detail-list") {
     return <DetailListPostCard post={post} />;
+  }
+  if (variant === "marketplace-grid") {
+    return <ListingGridCard post={post} kind="marketplace" />;
+  }
+  if (variant === "service-grid") {
+    return <ListingGridCard post={post} kind="service" />;
   }
 
   return (

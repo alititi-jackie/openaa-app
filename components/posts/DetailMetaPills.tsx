@@ -1,3 +1,5 @@
+"use client";
+
 import { PostViewTracker } from "./PostViewTracker";
 import { relativeTime } from "@/features/posts/display";
 
@@ -14,6 +16,7 @@ type DetailMetaPillsProps = {
   postId: string;
   initialViewCount: number;
   trackViews?: boolean;
+  oneLine?: boolean;
   className?: string;
 };
 
@@ -54,7 +57,7 @@ function pillClass(item: DetailMetaPill, index: number) {
   return `${base} border-slate-200 bg-white ${index >= 3 ? "text-slate-800" : "text-slate-500"}`;
 }
 
-export function DetailMetaPills({ items, postId, initialViewCount, trackViews = true, className }: DetailMetaPillsProps) {
+export function DetailMetaPills({ items, postId, initialViewCount, trackViews = true, oneLine = false, className }: DetailMetaPillsProps) {
   const visibleItems = items.filter((item) => item.value.trim());
   const indexedItems = visibleItems.map((item, index) => ({ item, index }));
   const groupedItems = indexedItems.filter(({ item }) => item.group);
@@ -77,14 +80,20 @@ export function DetailMetaPills({ items, postId, initialViewCount, trackViews = 
     const commonItems = indexedItems.filter(({ item }) => item.group === "common");
     const businessItems = indexedItems.filter(({ item }) => item.group === "business");
     const remainingItems = indexedItems.filter(({ item }) => !item.group);
-    const groupClass =
-      "flex flex-nowrap gap-1.5 overflow-x-auto pb-0.5 sm:max-w-full sm:flex-none sm:gap-2 sm:overflow-visible sm:pb-0 [&>span]:shrink-0 [&>span]:whitespace-nowrap";
+    const groupClass = [
+      "flex flex-nowrap gap-1.5 sm:max-w-full sm:flex-none sm:gap-2 [&>span]:shrink-0 [&>span]:whitespace-nowrap",
+      oneLine ? "max-w-full overflow-hidden pb-0" : "overflow-x-auto pb-0.5 sm:overflow-visible sm:pb-0",
+    ].join(" ");
+    const businessGroupClass = oneLine ? groupClass : `${groupClass} sm:flex-wrap`;
+    const containerClass = oneLine
+      ? "mt-4 flex max-w-full overflow-hidden gap-1.5 sm:gap-2"
+      : "mt-4 flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2";
 
     return (
-      <div className={["mt-4 flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2", className].filter(Boolean).join(" ")}>
+      <div className={[containerClass, className].filter(Boolean).join(" ")}>
         {commonItems.length ? <div className={groupClass}>{commonItems.map(({ item, index }) => renderPill(item, index))}</div> : null}
         {businessItems.length ? (
-          <div className={`${groupClass} sm:flex-wrap`}>{businessItems.map(({ item, index }) => renderPill(item, index))}</div>
+          <div className={businessGroupClass}>{businessItems.map(({ item, index }) => renderPill(item, index))}</div>
         ) : null}
         {remainingItems.length ? <div className={groupClass}>{remainingItems.map(({ item, index }) => renderPill(item, index))}</div> : null}
       </div>
@@ -92,7 +101,7 @@ export function DetailMetaPills({ items, postId, initialViewCount, trackViews = 
   }
 
   return (
-    <div className={["mt-4 flex flex-wrap gap-1.5 sm:gap-2", className].filter(Boolean).join(" ")}>
+    <div className={[oneLine ? "mt-4 flex max-w-full flex-nowrap gap-1.5 overflow-hidden sm:gap-2 [&>span]:shrink-0 [&>span]:whitespace-nowrap" : "mt-4 flex flex-wrap gap-1.5 sm:gap-2", className].filter(Boolean).join(" ")}>
       {indexedItems.map(({ item, index }) => renderPill(item, index))}
     </div>
   );
