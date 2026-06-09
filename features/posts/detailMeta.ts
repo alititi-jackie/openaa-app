@@ -1,12 +1,12 @@
 import type { DetailMetaPill } from "@/components/posts/DetailMetaPills";
-import { getPostArea, getPostCategory, getPostMode, getPostPriceDisplay, getPostWorkType } from "./accessors";
+import { getPostArea, getPostCategory, getPostModeDisplay, getPostPriceDisplay, getPostWorkType } from "./accessors";
 import { postChannelConfig } from "./channelConfig";
 import type { AuthorSummary, PostRecord } from "./types";
 
 export function buildDetailMetaPills(record: PostRecord, author?: AuthorSummary | null, viewCount = 0): DetailMetaPill[] {
   const config = postChannelConfig(record.post_type);
   const published = record.published_at || record.created_at;
-  const mode = record.post_type === "job" ? getPostWorkType(record) : getPostMode(record);
+  const mode = record.post_type === "job" ? getPostWorkType(record) : getPostModeDisplay(record, "short");
   const category = getPostCategory(record);
   const area = getPostArea(record);
   const price = getPostPriceDisplay(record, record.post_type === "job");

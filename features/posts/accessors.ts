@@ -58,6 +58,24 @@ export function getServiceDetail(record: PostRecord) {
   return firstOrNull(record.post_details_services) as ServiceDetailRecord | null;
 }
 
+const MODE_VALUES_BY_TYPE: Partial<Record<PostType, Set<string>>> = {
+  job: new Set(["hiring", "seeking"]),
+  housing: new Set(["supply", "demand"]),
+  marketplace: new Set(["selling", "buying"]),
+};
+
+function modeValueFromCategory(record: PostRecord) {
+  const category = record.category?.trim();
+  if (!category) return "";
+  return MODE_VALUES_BY_TYPE[record.post_type]?.has(category) ? category : "";
+}
+
+function categoryValue(record: PostRecord, value?: string | null) {
+  const category = value?.trim();
+  if (!category) return "";
+  return MODE_VALUES_BY_TYPE[record.post_type]?.has(category) ? "" : category;
+}
+
 export function getPostArea(record: PostRecord) {
   if (record.post_type === "job") return getJobDetail(record)?.work_area ?? "";
   if (record.post_type === "housing") return getHousingDetail(record)?.address_area ?? "";
@@ -67,16 +85,20 @@ export function getPostArea(record: PostRecord) {
 
 export function getPostMode(record: PostRecord) {
   if (record.subcategory) return record.subcategory;
-  if (record.post_type === "housing") return getHousingDetail(record)?.listing_type ?? "";
-  if (record.post_type === "marketplace") return getMarketplaceDetail(record)?.listing_type ?? "";
-  if (record.post_type === "job") return "";
+  if (record.post_type === "housing") return getHousingDetail(record)?.listing_type ?? modeValueFromCategory(record);
+  if (record.post_type === "marketplace") return getMarketplaceDetail(record)?.listing_type ?? modeValueFromCategory(record);
+  if (record.post_type === "job") return modeValueFromCategory(record);
   return "";
 }
 
+export function getPostModeDisplay(record: PostRecord, variant: "full" | "short" = "full") {
+  return postModeLabel(record.post_type, getPostMode(record), variant);
+}
+
 export function getPostCategory(record: PostRecord) {
-  if (record.post_type === "job") return getJobDetail(record)?.job_category || record.category || "";
-  if (record.post_type === "housing") return getHousingDetail(record)?.housing_type || record.category || "";
-  if (record.post_type === "marketplace") return getMarketplaceDetail(record)?.item_category || record.category || "";
+  if (record.post_type === "job") return getJobDetail(record)?.job_category || categoryValue(record, record.category);
+  if (record.post_type === "housing") return getHousingDetail(record)?.housing_type || categoryValue(record, record.category);
+  if (record.post_type === "marketplace") return getMarketplaceDetail(record)?.item_category || categoryValue(record, record.category);
   return getServiceDetail(record)?.service_category || record.category || "";
 }
 
@@ -143,10 +165,6 @@ export function getPostTag(record: PostRecord) {
 
 export function getPostHref(type: PostType, id: string) {
   return `${POST_TYPE_TO_ROUTE[type]}/${id}`;
-}
-
-export function getPostModeDisplay(record: PostRecord, variant: "full" | "short" = "full") {
-  return postModeLabel(record.post_type, getPostMode(record), variant);
 }
 
 export function getPostSearchText(record: PostRecord) {
