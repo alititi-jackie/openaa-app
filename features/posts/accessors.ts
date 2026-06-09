@@ -116,13 +116,13 @@ export function getPostPriceDisplay(record: PostRecord, fallback = false) {
   if (record.post_type === "housing") {
     const detail = getHousingDetail(record);
     const price = numberText(detail?.rent_amount ?? record.price_amount);
-    return price ? `$${price}` : fallback ? "价格面议" : "";
+    return price ? `$${price}` : fallback ? "价格电议" : "";
   }
 
   if (record.post_type === "marketplace") {
     const detail = getMarketplaceDetail(record);
     const price = numberText(detail?.price_amount ?? record.price_amount);
-    return price ? `$${price}` : fallback ? "价格面议" : "";
+    return price ? `$${price}` : fallback ? "价格电议" : "";
   }
 
   return getServiceDetail(record)?.price_range || "";
