@@ -72,47 +72,47 @@ function buildDetailSurfaceMetaPills(record: PostRecord, author?: AuthorSummary 
   const price = getPostPriceDisplay(record, record.post_type === "job");
   const workType = getPostWorkType(record);
   const common = commonDetailPills(author, published, viewCount);
-  const image: DetailMetaPill | null = options.includeImageIcon ? { key: "image", label: "图片", value: "🖼️" } : null;
+  const image: DetailMetaPill | null = options.includeImageIcon ? { key: "image", group: "common", label: "图片", value: "🖼️" } : null;
 
   if (record.post_type === "job") {
     return compactPills([
       ...common,
+      image,
       businessPill("mode", "招聘/求职", mode, modeTone(record)),
       businessPill("area", "地区", area),
       businessPill("category", "职位分类", category),
       businessPill("workType", "工作类型", workType),
       businessPill("price", "薪资", price),
-      image,
     ]);
   }
 
   if (record.post_type === "housing") {
     return compactPills([
       ...common,
+      image,
       businessPill("mode", "房屋类型", mode, modeTone(record)),
       businessPill("area", "地区", area),
       businessPill("category", "房型", category),
-      image,
     ]);
   }
 
   if (record.post_type === "marketplace") {
     return compactPills([
       ...common,
+      image,
       businessPill("mode", "出售/求购", mode, modeTone(record)),
       businessPill("area", "地区", area),
       businessPill("category", "商品分类", category),
       businessPill("price", "价格", price),
-      image,
     ]);
   }
 
   return compactPills([
     ...common,
+    image,
     businessPill("category", "服务分类", category, "service"),
     businessPill("area", "地区", area),
     businessPill("price", "价格", price),
-    image,
   ]);
 }
 

@@ -90,7 +90,7 @@ export function mapPostRecordToCard(record: PostRecord, authors: Record<string, 
     favoriteCount: stats.favorite_count ?? 0,
     viewCount,
     fields: detailFields(record),
-    detailMetaFields: cardDetailMetaFields(record, author, viewCount, Boolean(cover)),
+    detailMetaFields: cardDetailMetaFields(record, author, viewCount, record.post_type === "housing" && Boolean(cover)),
     listingMetaFields: listingMetaFields(record, author, viewCount),
     secondaryTag,
   };

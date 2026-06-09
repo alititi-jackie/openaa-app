@@ -42,10 +42,7 @@ function safeReturnTo(value: string | null, requestOrigin: string) {
       return fallbackReturnTo;
     }
 
-    const pathname =
-      parsed.pathname === "/marketplace" || parsed.pathname.startsWith("/marketplace/")
-        ? parsed.pathname.replace(/^\/marketplace/, "/secondhand")
-        : parsed.pathname;
+    const pathname = parsed.pathname;
     const pathWithSearch = `${pathname}${parsed.search}${parsed.hash}`;
     const isAllowed = allowedReturnToPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 

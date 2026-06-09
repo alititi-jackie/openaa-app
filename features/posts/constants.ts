@@ -13,7 +13,6 @@ export const ROUTE_TO_POST_TYPE = {
   jobs: "job",
   housing: "housing",
   secondhand: "marketplace",
-  marketplace: "marketplace",
   services: "service",
 } as const;
 
