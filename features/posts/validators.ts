@@ -1,7 +1,6 @@
 import type { PostFormErrors, PostFormValues } from "./formTypes";
 import { POST_IMAGE_CONFIG } from "./imageConfig";
 import {
-  HOUSING_MODE_OPTIONS,
   JOB_CATEGORY_OPTIONS,
   JOB_MODE_OPTIONS,
   JOB_TYPE_OPTIONS,
@@ -9,6 +8,7 @@ import {
   SECONDHAND_CATEGORY_OPTIONS,
   SECONDHAND_MODE_OPTIONS,
   SERVICE_CATEGORY_OPTIONS,
+  housingTypeFromValue,
   isOptionValue,
 } from "./options";
 
@@ -68,7 +68,8 @@ export function validatePostForm(values: PostFormValues) {
   }
 
   if (values.postType === "housing") {
-    if (!isOptionValue(HOUSING_MODE_OPTIONS, values.housing?.housing_mode)) errors.housing_mode = "请选择房屋信息类型。";
+    if (!values.title.trim()) errors.title = "请填写标题。";
+    if (!housingTypeFromValue(values.housing?.housing_mode)) errors.housing_mode = "请选择房源类型。";
     if (!isOptionValue(LOCATION_OPTIONS, values.location_area)) errors.location_area = "请选择地区。";
   }
 

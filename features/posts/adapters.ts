@@ -2,6 +2,7 @@ import { getHousingDetail, getJobDetail, getMarketplaceDetail, getPostArea, getP
 import { postChannelConfig } from "./channelConfig";
 import { numericOrNull } from "./display";
 import type { HousingFields, JobFields, MarketplaceFields, PostFormValues, ServiceFields } from "./formTypes";
+import { housingTypeOption, normalizeHousingType } from "./options";
 import type { PostRecord, PostType } from "./types";
 
 export function postCategoryForForm(values: PostFormValues) {
@@ -13,7 +14,7 @@ export function postCategoryForForm(values: PostFormValues) {
 
 export function postModeForForm(values: PostFormValues) {
   if (values.postType === "job") return values.job?.job_mode || null;
-  if (values.postType === "housing") return values.housing?.housing_mode || null;
+  if (values.postType === "housing") return values.housing?.housing_mode ? normalizeHousingType(values.housing.housing_mode) : null;
   if (values.postType === "marketplace") return values.marketplace?.marketplace_mode || null;
   return null;
 }
@@ -27,7 +28,7 @@ export function postPriceForForm(values: PostFormValues) {
 export function postTitleForForm(values: PostFormValues) {
   if (values.title.trim()) return values.title.trim();
   if (values.postType === "job") return values.job?.job_mode === "seeking" ? "求职信息" : "招聘信息";
-  if (values.postType === "housing") return values.housing?.housing_mode === "demand" ? "求租" : "房屋出租";
+  if (values.postType === "housing") return housingTypeOption(values.housing?.housing_mode).label;
   if (values.postType === "marketplace") return values.marketplace?.marketplace_mode === "buying" ? "求购" : "二手商品";
   return "本地服务";
 }
@@ -53,11 +54,10 @@ export function defaultJobFields(location: string): JobFields {
 }
 
 export function defaultHousingFields(): HousingFields {
-  const config = postChannelConfig("housing");
   return {
-    housing_mode: config.form.defaultMode as HousingFields["housing_mode"],
+    housing_mode: "",
     price: "",
-    price_unit: config.form.defaultPriceUnit ?? "month",
+    price_unit: "month",
     deposit: "",
     room_type: "",
     lease_type: "",
@@ -117,16 +117,22 @@ export function jobFieldsFromRecord(record: PostRecord, fallback: JobFields): Jo
   };
 }
 
+function housingTimeFromDetail(detail: ReturnType<typeof getHousingDetail>) {
+  const leaseTerm = detail?.lease_term?.trim();
+  if (leaseTerm && !["hour", "day", "week", "month", "year"].includes(leaseTerm)) return leaseTerm;
+  return detail?.available_date ?? "";
+}
+
 export function housingFieldsFromRecord(record: PostRecord, fallback: HousingFields): HousingFields {
   const detail = getHousingDetail(record);
   return {
     ...fallback,
-    housing_mode: (detail?.listing_type || record.subcategory || fallback.housing_mode) as HousingFields["housing_mode"],
+    housing_mode: normalizeHousingType(detail?.listing_type || record.subcategory || fallback.housing_mode),
     price: detail?.rent_amount === null || detail?.rent_amount === undefined ? "" : String(detail.rent_amount),
     deposit: detail?.deposit_amount === null || detail?.deposit_amount === undefined ? "" : String(detail.deposit_amount),
     room_type: detail?.housing_type ?? "",
-    lease_type: detail?.lease_term ?? "",
-    available_from: detail?.available_date ?? "",
+    lease_type: "",
+    available_from: housingTimeFromDetail(detail),
     allow_pets: Boolean(detail?.pets_allowed),
     utilities_included: Boolean(detail?.utilities_included),
     transit_nearby: detail?.transit_nearby ?? "",
@@ -189,12 +195,12 @@ export function detailPayloadForForm(postId: string, values: PostFormValues) {
       table: "post_details_housing" as const,
       payload: {
         post_id: postId,
-        listing_type: values.housing?.housing_mode || null,
+        listing_type: values.housing?.housing_mode ? normalizeHousingType(values.housing.housing_mode) : null,
         housing_type: values.housing?.room_type || null,
         rent_amount: numericOrNull(values.housing?.price ?? ""),
         deposit_amount: numericOrNull(values.housing?.deposit ?? ""),
-        available_date: values.housing?.available_from || null,
-        lease_term: values.housing?.lease_type || values.housing?.price_unit || null,
+        available_date: null,
+        lease_term: values.housing?.available_from?.trim() || null,
         pets_allowed: Boolean(values.housing?.allow_pets),
         utilities_included: Boolean(values.housing?.utilities_included),
         transit_nearby: values.housing?.transit_nearby || null,

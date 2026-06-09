@@ -22,6 +22,7 @@ export type PostCardData = {
   location?: string;
   area?: string;
   priceDisplay?: string;
+  footerLine?: string;
   secondaryTag?: string;
   createdAt?: string;
   publishedAt?: string | null;
@@ -55,6 +56,7 @@ export function PostCard({ post, compact = false, variant = "default" }: { post:
             <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">{post.meta}</span>
           </div>
           {!compact ? <p className="mt-2 line-clamp-2 break-words text-sm leading-6 text-slate-600 [overflow-wrap:anywhere]">{post.description}</p> : null}
+          {!compact && post.footerLine ? <p className="mt-2 text-sm leading-6 text-zinc-500">{post.footerLine}</p> : null}
           {post.fields?.length ? (
             <div className="mt-3 flex flex-wrap gap-2">
               {post.fields.slice(0, compact ? 2 : 4).map((field) => (
@@ -89,7 +91,7 @@ function DetailListPostCard({ post }: { post: PostCardData }) {
     <Link href={post.href} className="block rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
       <div className="flex min-h-[148px] min-w-0 flex-col">
         <h3 className="line-clamp-1 font-black leading-snug text-slate-950">{post.title}</h3>
-        <PostDisplayBody body={post.displayBody || post.description} clampLines={2} bodyClassName="mt-2 text-sm leading-6" />
+        <PostDisplayBody body={post.displayBody || post.description} footerLine={post.footerLine} clampLines={2} bodyClassName="mt-2 text-sm leading-6" />
         <DetailMetaPills
           items={metaItems}
           postId={post.id ?? post.href}

@@ -13,6 +13,7 @@ import {
   getPostSearchText,
   getPostWorkType,
 } from "./accessors";
+import { housingTypeFromValue } from "./options";
 
 export const DEFAULT_PAGE_SIZE = 12;
 export const PAGE_SIZE_OPTIONS = [12, 24, 48] as const;
@@ -165,6 +166,10 @@ function recordMode(record: PostRecord, type: PostType) {
 }
 
 function matchesMode(record: PostRecord, type: PostType, mode: string) {
+  if (type === "housing") {
+    const normalized = housingTypeFromValue(mode);
+    return Boolean(normalized && recordMode(record, type) === normalized);
+  }
   return recordMode(record, type) === mode;
 }
 

@@ -11,6 +11,7 @@ import {
   getPostStatusText,
   getPostTag,
   getPostWorkType,
+  getHousingAmountTimeDisplay,
   postStats,
 } from "./accessors";
 import { postChannelConfig } from "./channelConfig";
@@ -34,7 +35,7 @@ function detailFields(record: PostRecord): Array<{ label: string; value: string 
   return [
     { label: config.detailLabels.secondary ?? "分类", value: record.post_type === "job" ? getPostWorkType(record) : getPostCategory(record) },
     { label: config.detailLabels.category ?? "分类", value: record.post_type === "job" ? getPostCategory(record) : "" },
-    { label: config.detailLabels.price ?? "价格", value: getPostPriceDisplay(record) },
+    { label: config.detailLabels.price ?? "价格", value: record.post_type === "housing" ? "" : getPostPriceDisplay(record) },
     { label: record.post_type === "marketplace" ? "交易区域" : "区域", value: getPostArea(record) },
     { label: config.detailLabels.status ?? "状态", value: getPostStatusText(record) },
   ].filter((field) => field.value);
@@ -60,6 +61,7 @@ export function mapPostRecordToCard(record: PostRecord, authors: Record<string, 
     area,
     priceDisplay: getPostPriceDisplay(record, record.post_type === "job" || record.post_type === "marketplace"),
     priceValue,
+    footerLine: getHousingAmountTimeDisplay(record),
   };
 
   const secondaryTag =

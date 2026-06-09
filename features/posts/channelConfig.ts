@@ -3,7 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import { POST_TYPE_TO_ROUTE } from "./constants";
 import { POST_IMAGE_CONFIG } from "./imageConfig";
 import {
-  HOUSING_MODE_OPTIONS,
+  HOUSING_TYPE_OPTIONS,
   JOB_CATEGORY_OPTIONS,
   JOB_MODE_OPTIONS,
   JOB_TYPE_OPTIONS,
@@ -67,11 +67,11 @@ export const POST_CHANNEL_CONFIGS: Record<PostType, PostChannelConfig> = {
     manageRoute: "/profile/housing",
     displayLabel: "房屋",
     icon: Building2,
-    modeOptions: HOUSING_MODE_OPTIONS,
+    modeOptions: HOUSING_TYPE_OPTIONS,
     areaOptions: LOCATION_OPTIONS,
     imageConfig: POST_IMAGE_CONFIG,
-    detailLabels: { area: "地区", mode: "出租/求租", category: "房型", price: "价格", secondary: "房型" },
-    form: { defaultMode: "supply", defaultPriceUnit: "month" },
+    detailLabels: { area: "地区", mode: "类型", category: "房型", price: "金额", secondary: "房型" },
+    form: { defaultMode: "", defaultPriceUnit: "month" },
   },
   marketplace: {
     type: "marketplace",

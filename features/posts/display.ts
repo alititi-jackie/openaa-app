@@ -1,4 +1,5 @@
 import { POST_TYPE_LABELS } from "./constants";
+import { HOUSING_TYPE_OPTIONS, housingTypeOption } from "./options";
 import type { PostStatus, PostType } from "./types";
 
 export const POST_STATUS_DISPLAY: Record<PostStatus, { label: string; tone: string }> = {
@@ -16,10 +17,9 @@ export const POST_MODE_DISPLAY: Partial<Record<PostType, Record<string, { label:
     hiring: { label: "招聘岗位", shortLabel: "招聘", tone: "bg-blue-50 text-blue-700 ring-1 ring-blue-100" },
     seeking: { label: "求职人才", shortLabel: "求职", tone: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100" },
   },
-  housing: {
-    supply: { label: "房源信息", shortLabel: "出租", tone: "bg-blue-50 text-blue-700 ring-1 ring-blue-100" },
-    demand: { label: "求租求购", shortLabel: "求租", tone: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100" },
-  },
+  housing: Object.fromEntries(
+    HOUSING_TYPE_OPTIONS.map((option) => [option.value, { label: option.label, shortLabel: option.label, tone: option.tone }]),
+  ),
   marketplace: {
     selling: { label: "出售商品", shortLabel: "出售", tone: "bg-amber-50 text-amber-700 ring-1 ring-amber-100" },
     buying: { label: "求购信息", shortLabel: "求购", tone: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100" },
@@ -36,11 +36,13 @@ export function postStatusTone(status?: PostStatus) {
 
 export function postModeLabel(postType: PostType, mode?: string | null, variant: "full" | "short" = "full") {
   if (!mode) return "";
+  if (postType === "housing") return housingTypeOption(mode).label;
   const display = POST_MODE_DISPLAY[postType]?.[mode];
   return variant === "short" ? display?.shortLabel ?? "" : display?.label ?? "";
 }
 
 export function postModeTone(postType: PostType, mode?: string | null) {
+  if (postType === "housing") return mode ? housingTypeOption(mode).tone : "";
   return mode ? POST_MODE_DISPLAY[postType]?.[mode]?.tone ?? "bg-zinc-50 text-zinc-600 ring-1 ring-zinc-100" : "";
 }
 

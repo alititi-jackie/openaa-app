@@ -1,7 +1,20 @@
 import { postModeLabel } from "./display";
+import { housingTypeFromValue } from "./options";
 import type { PostCardView, PostStatus, PostType } from "./types";
 
-export type ProfilePostTabValue = "all" | "hiring" | "seeking" | "supply" | "demand" | "selling" | "buying" | "published" | "hidden";
+export type ProfilePostTabValue =
+  | "all"
+  | "hiring"
+  | "seeking"
+  | "rent"
+  | "sale"
+  | "rent_request"
+  | "buy_request"
+  | "other"
+  | "selling"
+  | "buying"
+  | "published"
+  | "hidden";
 
 type ProfilePostTab = {
   value: ProfilePostTabValue;
@@ -11,20 +24,23 @@ type ProfilePostTab = {
 
 const profileTabsByType: Record<PostType, ProfilePostTabValue[]> = {
   job: ["all", "hiring", "seeking", "published", "hidden"],
-  housing: ["all", "supply", "demand", "published", "hidden"],
+  housing: ["all", "rent", "sale", "rent_request", "buy_request", "other", "published", "hidden"],
   marketplace: ["all", "selling", "buying", "published", "hidden"],
   service: ["all", "published", "hidden"],
 };
 
 const shortLabels: Partial<Record<ProfilePostTabValue, string>> = {
   all: "全部",
-  supply: "供",
-  demand: "需",
   published: "显示",
   hidden: "隐藏",
 };
 
 export function normalizeProfilePostTab(postType: PostType, value?: string | null): ProfilePostTabValue {
+  if (postType === "housing" && value) {
+    const housingType = housingTypeFromValue(value);
+    if (housingType) return housingType;
+  }
+
   const tabs = profileTabsByType[postType];
   return tabs.includes(value as ProfilePostTabValue) ? (value as ProfilePostTabValue) : "all";
 }

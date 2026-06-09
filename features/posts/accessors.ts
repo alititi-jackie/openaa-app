@@ -1,5 +1,6 @@
 import { POST_TYPE_TO_ROUTE } from "./constants";
 import { numberText, numericOrUndefined, postModeLabel, postTypeFallbackLabel, wageUnitLabel } from "./display";
+import { HOUSING_TYPE_OPTIONS, housingTypeOption, normalizeHousingType } from "./options";
 import type {
   HousingDetailRecord,
   JobDetailRecord,
@@ -58,9 +59,11 @@ export function getServiceDetail(record: PostRecord) {
   return firstOrNull(record.post_details_services) as ServiceDetailRecord | null;
 }
 
+const HOUSING_MODE_VALUES = HOUSING_TYPE_OPTIONS.flatMap((option) => [option.value, option.label, ...option.aliases]);
+
 const MODE_VALUES_BY_TYPE: Partial<Record<PostType, Set<string>>> = {
   job: new Set(["hiring", "seeking"]),
-  housing: new Set(["supply", "demand"]),
+  housing: new Set<string>(HOUSING_MODE_VALUES),
   marketplace: new Set(["selling", "buying"]),
 };
 
@@ -84,8 +87,10 @@ export function getPostArea(record: PostRecord) {
 }
 
 export function getPostMode(record: PostRecord) {
+  if (record.post_type === "housing") {
+    return normalizeHousingType(getHousingDetail(record)?.listing_type || record.subcategory || modeValueFromCategory(record));
+  }
   if (record.subcategory) return record.subcategory;
-  if (record.post_type === "housing") return getHousingDetail(record)?.listing_type ?? modeValueFromCategory(record);
   if (record.post_type === "marketplace") return getMarketplaceDetail(record)?.listing_type ?? modeValueFromCategory(record);
   if (record.post_type === "job") return modeValueFromCategory(record);
   return "";
@@ -148,6 +153,28 @@ export function getPostPriceDisplay(record: PostRecord, fallback = false) {
   }
 
   return getServiceDetail(record)?.price_range || "";
+}
+
+function housingTimeText(record: PostRecord) {
+  const detail = getHousingDetail(record);
+  const leaseTerm = detail?.lease_term?.trim();
+  if (leaseTerm && !["hour", "day", "week", "month", "year"].includes(leaseTerm)) return leaseTerm;
+  return detail?.available_date?.trim() ?? "";
+}
+
+export function getHousingAmountTimeDisplay(record: PostRecord) {
+  if (record.post_type !== "housing") return "";
+
+  const detail = getHousingDetail(record);
+  const type = housingTypeOption(getPostMode(record));
+  const price = numberText(detail?.rent_amount ?? record.price_amount);
+  const time = housingTimeText(record);
+  const parts: string[] = [];
+
+  if (price) parts.push(`${type.amountLabel}：$${price}${type.amountSuffix}`);
+  if (time) parts.push(`时间：${time}`);
+
+  return parts.join("　");
 }
 
 export function getPostStatusText(record: PostRecord) {

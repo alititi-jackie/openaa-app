@@ -61,7 +61,7 @@ export type JobFields = {
 };
 
 export type HousingFields = {
-  housing_mode: HousingMode;
+  housing_mode: HousingMode | "";
   price: string;
   price_unit: string;
   deposit: string;

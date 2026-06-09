@@ -301,6 +301,7 @@ export async function updatePost(postId: string, values: PostFormValues): Promis
       summary: mainPayload.summary,
       body: mainPayload.body,
       category: mainPayload.category,
+      ...(values.postType === "housing" ? { subcategory: mainPayload.subcategory } : {}),
       visibility: mainPayload.visibility,
       price_amount: mainPayload.price_amount,
       status: editCheck.post.status === "published" ? "published" : editCheck.post.status,

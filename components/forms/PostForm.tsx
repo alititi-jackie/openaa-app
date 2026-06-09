@@ -8,13 +8,15 @@ import type { HousingFields, JobFields, MarketplaceFields, PostFormErrors, PostF
 import { POST_IMAGE_CONFIG } from "@/features/posts/imageConfig";
 import {
   EMPTY_LOCATION,
-  HOUSING_MODE_OPTIONS,
+  HOUSING_TYPE_OPTIONS,
   JOB_CATEGORY_OPTIONS,
   JOB_MODE_OPTIONS,
   JOB_TYPE_OPTIONS,
   SECONDHAND_CATEGORY_OPTIONS,
   SECONDHAND_MODE_OPTIONS,
   SERVICE_CATEGORY_OPTIONS,
+  housingTypeOption,
+  normalizeHousingType,
 } from "@/features/posts/options";
 import type { PostType } from "@/features/posts/types";
 import { validatePostForm } from "@/features/posts/validators";
@@ -61,9 +63,7 @@ function bodyPlaceholder(values: PostFormValues) {
       : "请写清楚：招聘岗位、要求、待遇、联系方式等（可只写一段内容）";
   }
   if (values.postType === "housing") {
-    return values.housing?.housing_mode === "demand"
-      ? "请描述：期望地区、预算、入住时间、人数、需求、联系方式等（可只写一段内容）"
-      : "请描述：地址/区域、租金、房型、入住时间、要求、联系方式等（可只写一段内容）";
+    return "请描述：地区、金额、时间、房屋情况、需求、联系方式等（可只写一段内容）";
   }
   if (values.postType === "marketplace") {
     return values.marketplace?.marketplace_mode === "buying"
@@ -71,6 +71,10 @@ function bodyPlaceholder(values: PostFormValues) {
       : "请描述商品的品牌、型号、成色、交易方式等";
   }
   return "请详细描述您的服务内容、经验、上门范围等信息...";
+}
+
+function housingTypeDetails(value?: string | null) {
+  return housingTypeOption(value || "other");
 }
 
 function submitLabelFor(values: PostFormValues, mode: "create" | "edit") {
@@ -99,12 +103,21 @@ function withoutFiles(values: PostFormValues) {
 }
 
 function normalizeRestoredValues(values: PostFormValues, postType: PostType, mode: "create" | "edit") {
-  return {
+  const normalizedValues = {
     ...values,
     postType,
     mode,
     location_area: values.location_area || EMPTY_LOCATION,
   };
+
+  if (postType === "housing" && normalizedValues.housing?.housing_mode) {
+    normalizedValues.housing = {
+      ...normalizedValues.housing,
+      housing_mode: normalizeHousingType(normalizedValues.housing.housing_mode),
+    };
+  }
+
+  return normalizedValues;
 }
 
 export function PostForm({ mode, postType, initialValues, showProfileCompletionHint = false }: PostFormProps) {
@@ -293,19 +306,32 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
 
         {postType === "housing" ? (
           <>
-            <ModeSwitch
-              label="发布类型"
-              locked={typeSwitchLocked}
-              options={HOUSING_MODE_OPTIONS}
-              value={values.housing?.housing_mode ?? "supply"}
-              onChange={(next) => setHousing({ housing_mode: next as HousingFields["housing_mode"] })}
-            />
+            <FormField label="发布类型" required error={errors.housing_mode}>
+              <SelectInput
+                value={values.housing?.housing_mode ?? ""}
+                onChange={(event) => setHousing({ housing_mode: event.target.value as HousingFields["housing_mode"] })}
+                required
+                disabled={typeSwitchLocked}
+                className="!w-auto min-w-[9.75rem] pr-9"
+              >
+                <option value="" disabled>
+                  选择房源类型
+                </option>
+                {HOUSING_TYPE_OPTIONS.map((item) => (
+                  <option key={item.value} value={item.value}>
+                    {item.label}
+                  </option>
+                ))}
+              </SelectInput>
+              {typeSwitchLocked ? <p className="mt-2 text-xs text-gray-400">编辑模式下不支持切换类型。</p> : null}
+            </FormField>
 
-            <FormField label="标题">
+            <FormField label="标题" required error={errors.title}>
               <TextInput
                 value={values.title}
                 onChange={(event) => setValue("title", event.target.value)}
-                placeholder={values.housing?.housing_mode === "demand" ? "不填默认：求租" : "不填默认：房屋出租"}
+                placeholder="请填写你的标题内容"
+                required
                 maxLength={80}
               />
             </FormField>
@@ -314,8 +340,14 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
               <FormField label="地区" required error={errors.location_area}>
                 <LocationSelect value={values.location_area} onChange={(next) => setValue("location_area", next)} />
               </FormField>
-              <FormField label="租金（USD）">
-                <TextInput value={values.housing?.price} onChange={(event) => setHousing({ price: event.target.value })} type="number" min="0" placeholder="不填则不显示" />
+              <FormField label="金额（USD）">
+                <TextInput
+                  value={values.housing?.price}
+                  onChange={(event) => setHousing({ price: event.target.value })}
+                  type="number"
+                  min="0"
+                  placeholder={housingTypeDetails(values.housing?.housing_mode).amountPlaceholder}
+                />
               </FormField>
             </div>
 
@@ -323,17 +355,12 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
               <FormField label="房型" error={errors.room_type}>
                 <TextInput value={values.housing?.room_type} onChange={(event) => setHousing({ room_type: event.target.value })} placeholder="例：一室一厅 / 主卧 / 次卧（可不填）" />
               </FormField>
-              <FormField label="入住日期">
-                <div className="flex gap-2">
-                  <TextInput value={values.housing?.available_from} onChange={(event) => setHousing({ available_from: event.target.value })} type="date" />
-                  <button
-                    type="button"
-                    onClick={() => setHousing({ available_from: "" })}
-                    className="min-h-11 rounded-lg bg-white px-3 text-sm font-medium text-gray-600 ring-1 ring-gray-300 transition hover:bg-gray-50"
-                  >
-                    清空
-                  </button>
-                </div>
+              <FormField label="时间">
+                <TextInput
+                  value={values.housing?.available_from}
+                  onChange={(event) => setHousing({ available_from: event.target.value })}
+                  placeholder={housingTypeDetails(values.housing?.housing_mode).timePlaceholder}
+                />
               </FormField>
             </div>
           </>

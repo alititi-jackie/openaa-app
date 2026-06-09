@@ -14,7 +14,6 @@ import type { PostFormValues, PublishContactDefaults } from "./formTypes";
 import {
   DEFAULT_LOCATION,
   EMPTY_LOCATION,
-  HOUSING_MODE_OPTIONS,
   JOB_CATEGORY_OPTIONS,
   JOB_MODE_OPTIONS,
   JOB_TYPE_OPTIONS,
@@ -22,8 +21,8 @@ import {
   SECONDHAND_CATEGORY_OPTIONS,
   SECONDHAND_MODE_OPTIONS,
   SERVICE_CATEGORY_OPTIONS,
+  normalizeHousingType,
   isOptionValue,
-  type HousingMode,
   type JobMode,
   type PostOption,
   type SecondhandMode,
@@ -169,7 +168,7 @@ export function formValuesFromDetail(post: PostDetailView): PostFormValues {
   if (post.type === "housing") {
     values.housing = {
       ...values.housing!,
-      housing_mode: isOptionValue(HOUSING_MODE_OPTIONS, post.mode) ? (post.mode as HousingMode) : values.housing!.housing_mode,
+      housing_mode: normalizeHousingType(post.mode || values.housing!.housing_mode),
       room_type: legacyFieldValue(post, "房型"),
       price: legacyFieldValue(post, "价格").replace(/[$,]/g, ""),
     };

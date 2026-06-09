@@ -41,7 +41,7 @@ export function buildDetailMetaPills(record: PostRecord, author?: AuthorSummary 
     items.push({ label: config.detailLabels.mode, value: mode });
   }
   if (record.post_type !== "job" && config.detailLabels.category && category) items.push({ label: config.detailLabels.category, value: category });
-  if (config.detailLabels.price && price) items.push({ label: config.detailLabels.price, value: price });
+  if (record.post_type !== "housing" && config.detailLabels.price && price) items.push({ label: config.detailLabels.price, value: price });
 
   return items.filter((item) => item.value.trim());
 }

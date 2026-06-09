@@ -130,6 +130,7 @@ export type PostCardView = {
   area?: string;
   priceDisplay?: string;
   priceValue?: number;
+  footerLine?: string;
   secondaryTag?: string;
   authorName?: string;
   imageUrl?: string;
