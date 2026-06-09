@@ -1,11 +1,18 @@
 import type { DetailMetaPill } from "@/components/posts/DetailMetaPills";
-import { getPostArea, getPostCategory, getPostModeDisplay, getPostPriceDisplay, getPostWorkType } from "./accessors";
+import { getHousingAmountTimeDisplay, getPostArea, getPostCategory, getPostModeDisplay, getPostPriceDisplay, getPostWorkType } from "./accessors";
 import { postChannelConfig } from "./channelConfig";
 import type { AuthorSummary, PostRecord } from "./types";
+
+export const HOUSING_AMOUNT_TIME_META_LABEL = "房屋金额时间";
 
 type BuildDetailMetaPillsOptions = {
   includeImageIcon?: boolean;
 };
+
+export function buildHousingAmountTimeMetaPill(record: PostRecord): DetailMetaPill | null {
+  const value = getHousingAmountTimeDisplay(record);
+  return value ? { label: HOUSING_AMOUNT_TIME_META_LABEL, value } : null;
+}
 
 export function buildDetailMetaPills(record: PostRecord, author?: AuthorSummary | null, viewCount = 0, options: BuildDetailMetaPillsOptions = {}): DetailMetaPill[] {
   const config = postChannelConfig(record.post_type);

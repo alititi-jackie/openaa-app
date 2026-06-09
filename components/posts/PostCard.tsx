@@ -1,10 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Eye, Heart } from "lucide-react";
+import { HOUSING_AMOUNT_TIME_META_LABEL } from "@/features/posts/detailMeta";
 import type { PostType } from "@/features/posts/types";
 import type { DetailMetaPill } from "./DetailMetaPills";
 import { PostDisplayBody } from "./PostDisplayBody";
 import { DetailMetaPills } from "./DetailMetaPills";
+import { HousingListBody } from "./HousingListBody";
 
 export type PostCardVariant = "default" | "detail-list";
 
@@ -86,14 +88,22 @@ export function PostCard({ post, compact = false, variant = "default" }: { post:
 
 function DetailListPostCard({ post }: { post: PostCardData }) {
   const metaItems = post.detailMetaFields ?? [];
+  const isHousing = post.type === "housing";
+  const housingMetaLine = isHousing ? metaItems.find((item) => item.label === HOUSING_AMOUNT_TIME_META_LABEL)?.value : undefined;
+  const pillItems = isHousing ? metaItems.filter((item) => item.label !== HOUSING_AMOUNT_TIME_META_LABEL) : metaItems;
+  const body = post.displayBody || post.description;
 
   return (
     <Link href={post.href} className="block rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
       <div className="flex min-h-[148px] min-w-0 flex-col">
         <h3 className="line-clamp-1 font-black leading-snug text-slate-950">{post.title}</h3>
-        <PostDisplayBody body={post.displayBody || post.description} footerLine={post.footerLine} clampLines={2} bodyClassName="mt-2 text-sm leading-6" />
+        {isHousing ? (
+          <HousingListBody body={body} metaLine={pillItems.length ? housingMetaLine : undefined} />
+        ) : (
+          <PostDisplayBody body={body} footerLine={post.footerLine} clampLines={2} bodyClassName="mt-2 text-sm leading-6" />
+        )}
         <DetailMetaPills
-          items={metaItems}
+          items={pillItems}
           postId={post.id ?? post.href}
           initialViewCount={post.viewCount ?? 0}
           trackViews={false}

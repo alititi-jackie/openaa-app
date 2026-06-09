@@ -15,7 +15,7 @@ import {
   postStats,
 } from "./accessors";
 import { postChannelConfig } from "./channelConfig";
-import { buildDetailMetaPills } from "./detailMeta";
+import { buildDetailMetaPills, buildHousingAmountTimeMetaPill } from "./detailMeta";
 import { buildPostDisplayBody } from "./display";
 import type {
   AuthorSummary,
@@ -39,6 +39,12 @@ function detailFields(record: PostRecord): Array<{ label: string; value: string 
     { label: record.post_type === "marketplace" ? "交易区域" : "区域", value: getPostArea(record) },
     { label: config.detailLabels.status ?? "状态", value: getPostStatusText(record) },
   ].filter((field) => field.value);
+}
+
+function cardDetailMetaFields(record: PostRecord, author?: AuthorSummary | null, viewCount = 0, includeImageIcon = false) {
+  const fields = buildDetailMetaPills(record, author, viewCount, { includeImageIcon });
+  const housingAmountTime = record.post_type === "housing" ? buildHousingAmountTimeMetaPill(record) : null;
+  return housingAmountTime ? [...fields, housingAmountTime] : fields;
 }
 
 export function mapPostRecordToCard(record: PostRecord, authors: Record<string, AuthorSummary> = {}): PostCardView {
@@ -80,7 +86,7 @@ export function mapPostRecordToCard(record: PostRecord, authors: Record<string, 
     favoriteCount: stats.favorite_count ?? 0,
     viewCount,
     fields: detailFields(record),
-    detailMetaFields: buildDetailMetaPills(record, author, viewCount, { includeImageIcon: Boolean(cover) }),
+    detailMetaFields: cardDetailMetaFields(record, author, viewCount, Boolean(cover)),
     secondaryTag,
   };
   return card;
