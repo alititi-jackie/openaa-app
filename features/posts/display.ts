@@ -101,3 +101,7 @@ export function relativeTime(value?: string | null) {
 
   return `${Math.max(1, Math.floor(diffDays / 365))}年前`;
 }
+
+export function buildPostDisplayBody(source: { body?: string | null; summary?: string | null }) {
+  return source.body || source.summary || "暂无正文。";
+}

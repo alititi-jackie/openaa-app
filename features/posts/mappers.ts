@@ -15,6 +15,7 @@ import {
 } from "./accessors";
 import { postChannelConfig } from "./channelConfig";
 import { buildDetailMetaPills } from "./detailMeta";
+import { buildPostDisplayBody } from "./display";
 import type {
   AuthorSummary,
   PostCardView,
@@ -44,6 +45,7 @@ export function mapPostRecordToCard(record: PostRecord, authors: Record<string, 
   const cover = getPostCoverUrl(record);
   const author = record.author_id ? authors[record.author_id] : null;
   const viewCount = stats.view_count ?? 0;
+  const displayBody = buildPostDisplayBody(record);
   const area = getPostArea(record);
   const category = getPostCategory(record);
   const priceValue = getPostPriceValue(record);
@@ -67,6 +69,7 @@ export function mapPostRecordToCard(record: PostRecord, authors: Record<string, 
     ...baseCard,
     title: record.title,
     description: record.summary || record.body || "暂无摘要。",
+    displayBody,
     meta: publishedMeta(record),
     createdAt: record.created_at,
     publishedAt: record.published_at,
@@ -88,7 +91,7 @@ export function mapPostRecordToDetail(record: PostRecord, authors: Record<string
 
   return {
     ...card,
-    body: record.body || record.summary || "暂无正文。",
+    body: card.displayBody || buildPostDisplayBody(record),
     status: record.status,
     publishedAt: record.published_at,
     createdAt: record.created_at,

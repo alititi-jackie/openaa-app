@@ -3,7 +3,7 @@ import Image from "next/image";
 import { Eye, Heart } from "lucide-react";
 import type { PostType } from "@/features/posts/types";
 import type { DetailMetaPill } from "./DetailMetaPills";
-import { DetailBodyContent } from "./DetailBodyContent";
+import { PostDisplayBody } from "./PostDisplayBody";
 import { DetailMetaPills } from "./DetailMetaPills";
 
 export type PostCardVariant = "default" | "detail-list";
@@ -14,6 +14,7 @@ export type PostCardData = {
   mode?: string | null;
   title: string;
   description: string;
+  displayBody?: string;
   href: string;
   meta: string;
   tag?: string;
@@ -87,10 +88,8 @@ function DetailListPostCard({ post }: { post: PostCardData }) {
   return (
     <Link href={post.href} className="block rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
       <div className="flex min-h-[148px] min-w-0 flex-col">
-        <h3 className="truncate font-black leading-snug text-slate-950">{post.title}</h3>
-        <div className="mt-2 overflow-hidden text-sm leading-6">
-          <DetailBodyContent body={post.description} bodyClassName="mt-0 truncate text-sm leading-6" hintClassName="mt-0 truncate text-sm leading-6" />
-        </div>
+        <h3 className="line-clamp-1 font-black leading-snug text-slate-950">{post.title}</h3>
+        <PostDisplayBody body={post.displayBody || post.description} clampLines={2} bodyClassName="mt-2 text-sm leading-6" />
         <DetailMetaPills
           items={metaItems}
           postId={post.id ?? post.href}

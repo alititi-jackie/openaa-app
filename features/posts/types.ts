@@ -120,6 +120,7 @@ export type PostCardView = {
   href: string;
   title: string;
   description: string;
+  displayBody?: string;
   meta: string;
   createdAt?: string;
   publishedAt?: string | null;

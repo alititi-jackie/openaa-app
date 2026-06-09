@@ -5,7 +5,7 @@ import { getPostEngagementState } from "@/features/posts/engagementQueries";
 import type { PostDetailView as PostDetailViewData } from "@/features/posts/types";
 import { DetailImageCarousel } from "./DetailImageCarousel";
 import { DetailMetaPills } from "./DetailMetaPills";
-import { DetailBodyContent } from "./DetailBodyContent";
+import { PostDisplayBody } from "./PostDisplayBody";
 import { ContactRevealCard } from "./ContactRevealCard";
 import { DetailActionBar } from "./DetailActionBar";
 import { DetailSafetyNotice } from "./DetailSafetyNotice";
@@ -55,7 +55,7 @@ export async function PostDetailView({ post }: { post: PostDetailViewData | null
         <>
           <section className="rounded-2xl border border-gray-100 border-t-blue-100 bg-white p-6 pt-7 shadow-[0_8px_24px_rgba(15,23,42,0.08)]">
             <h1 className="text-2xl font-bold text-gray-900">{post.title}</h1>
-            <DetailBodyContent body={post.body} />
+            <PostDisplayBody body={post.body} />
             <DetailMetaPills items={post.detailMetaFields} postId={post.id} initialViewCount={post.viewCount || 0} />
           </section>
           <ContactRevealCard postId={post.id} compact />
@@ -64,7 +64,7 @@ export async function PostDetailView({ post }: { post: PostDetailViewData | null
         <>
           <section className="rounded-2xl border border-gray-100 border-t-blue-100 bg-white p-6 pt-7 shadow-[0_8px_24px_rgba(15,23,42,0.08)]">
             <h1 className="text-2xl font-bold text-gray-900">{post.title}</h1>
-            <DetailBodyContent body={post.body} />
+            <PostDisplayBody body={post.body} />
             <DetailMetaPills items={post.detailMetaFields} postId={post.id} initialViewCount={post.viewCount || 0} />
           </section>
 
