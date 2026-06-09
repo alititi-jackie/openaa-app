@@ -42,13 +42,12 @@ function detailFields(record: PostRecord): Array<{ label: string; value: string 
 }
 
 function cardDetailMetaFields(record: PostRecord, author?: AuthorSummary | null, viewCount = 0, includeImageIcon = false) {
-  const fields = buildDetailMetaPills(record, author, viewCount, { includeImageIcon, surface: "card" });
+  const fields = buildDetailMetaPills(record, author, viewCount, { includeImageIcon });
   const housingAmountTime = record.post_type === "housing" ? buildHousingAmountTimeMetaPill(record) : null;
   return housingAmountTime ? [...fields, housingAmountTime] : fields;
 }
 
 function listingMetaFields(record: PostRecord, author?: AuthorSummary | null, viewCount = 0) {
-  if (record.post_type !== "marketplace" && record.post_type !== "service") return undefined;
   return buildDetailMetaPills(record, author, viewCount);
 }
 

@@ -8,14 +8,12 @@ import {
   getPostPriceDisplay,
   getPostWorkType,
 } from "./accessors";
-import { postChannelConfig } from "./channelConfig";
 import type { AuthorSummary, PostRecord } from "./types";
 
 export const HOUSING_AMOUNT_TIME_META_LABEL = "房屋金额时间";
 
 type BuildDetailMetaPillsOptions = {
   includeImageIcon?: boolean;
-  surface?: "detail" | "card";
 };
 
 export function buildHousingAmountTimeMetaPill(record: PostRecord): DetailMetaPill | null {
@@ -31,9 +29,13 @@ function businessPill(key: string, label: string, value: string, tone?: DetailMe
   return value ? { key, group: "business", label, value, tone } : null;
 }
 
-function commonDetailPills(published: string, viewCount: number): DetailMetaPill[] {
+function authorName(author?: AuthorSummary | null) {
+  return author?.nickname?.trim() || "匿名用户";
+}
+
+function commonDetailPills(author: AuthorSummary | null | undefined, published: string, viewCount: number): DetailMetaPill[] {
   return [
-    { key: "source", group: "common", label: "来源", value: "华人Open" },
+    { key: "author", group: "common", label: "发布者", value: authorName(author) },
     { key: "views", group: "common", label: "浏览次数", value: String(viewCount) },
     { key: "publishedAt", group: "common", label: "发布时间", value: published },
   ];
@@ -62,53 +64,15 @@ function modeTone(record: PostRecord): DetailMetaPill["tone"] | undefined {
   return undefined;
 }
 
-function buildCardMetaPills(record: PostRecord, author?: AuthorSummary | null, viewCount = 0, options: BuildDetailMetaPillsOptions = {}): DetailMetaPill[] {
-  const config = postChannelConfig(record.post_type);
-  const published = record.published_at || record.created_at;
-  const mode = record.post_type === "job" ? getPostWorkType(record) : getPostModeDisplay(record, "short");
-  const category = getPostCategory(record);
-  const area = getPostArea(record);
-  const price = getPostPriceDisplay(record, record.post_type === "job");
-
-  const items: DetailMetaPill[] = [
-    { key: "author", label: "发布者", value: author?.nickname || "匿名用户" },
-    { key: "views", label: "浏览次数", value: String(viewCount) },
-    { key: "publishedAt", label: "相对时间", value: published },
-  ];
-
-  if (options.includeImageIcon) {
-    items.push({ key: "image", label: "图片", value: "🖼️" });
-  }
-
-  if (record.post_type === "marketplace") {
-    if (config.detailLabels.mode && mode) items.push({ label: config.detailLabels.mode, value: mode });
-    if (config.detailLabels.category && category) items.push({ label: config.detailLabels.category, value: category });
-    if (config.detailLabels.price && price) items.push({ label: config.detailLabels.price, value: price });
-    if (area) items.push({ label: config.detailLabels.area, value: area });
-    return items.filter((item) => item.value.trim());
-  }
-
-  if (area) items.push({ label: config.detailLabels.area, value: record.post_type === "job" ? `📍 ${area}` : area });
-  if (record.post_type === "job") {
-    if (config.detailLabels.category && category) items.push({ label: config.detailLabels.category, value: category });
-    if (config.detailLabels.mode && mode) items.push({ label: config.detailLabels.mode, value: mode });
-  } else if (config.detailLabels.mode && mode) {
-    items.push({ label: config.detailLabels.mode, value: mode });
-  }
-  if (record.post_type !== "job" && config.detailLabels.category && category) items.push({ label: config.detailLabels.category, value: category });
-  if (record.post_type !== "housing" && config.detailLabels.price && price) items.push({ label: config.detailLabels.price, value: price });
-
-  return items.filter((item) => item.value.trim());
-}
-
-function buildDetailSurfaceMetaPills(record: PostRecord, viewCount = 0): DetailMetaPill[] {
+function buildDetailSurfaceMetaPills(record: PostRecord, author?: AuthorSummary | null, viewCount = 0, options: BuildDetailMetaPillsOptions = {}): DetailMetaPill[] {
   const published = record.published_at || record.created_at;
   const mode = getPostModeDisplay(record, "short");
   const category = getPostCategory(record);
   const area = getPostArea(record);
   const price = getPostPriceDisplay(record, record.post_type === "job");
   const workType = getPostWorkType(record);
-  const common = commonDetailPills(published, viewCount);
+  const common = commonDetailPills(author, published, viewCount);
+  const image: DetailMetaPill | null = options.includeImageIcon ? { key: "image", label: "图片", value: "🖼️" } : null;
 
   if (record.post_type === "job") {
     return compactPills([
@@ -118,6 +82,7 @@ function buildDetailSurfaceMetaPills(record: PostRecord, viewCount = 0): DetailM
       businessPill("category", "职位分类", category),
       businessPill("workType", "工作类型", workType),
       businessPill("price", "薪资", price),
+      image,
     ]);
   }
 
@@ -127,6 +92,7 @@ function buildDetailSurfaceMetaPills(record: PostRecord, viewCount = 0): DetailM
       businessPill("mode", "房屋类型", mode, modeTone(record)),
       businessPill("area", "地区", area),
       businessPill("category", "房型", category),
+      image,
     ]);
   }
 
@@ -137,6 +103,7 @@ function buildDetailSurfaceMetaPills(record: PostRecord, viewCount = 0): DetailM
       businessPill("area", "地区", area),
       businessPill("category", "商品分类", category),
       businessPill("price", "价格", price),
+      image,
     ]);
   }
 
@@ -145,13 +112,10 @@ function buildDetailSurfaceMetaPills(record: PostRecord, viewCount = 0): DetailM
     businessPill("category", "服务分类", category, "service"),
     businessPill("area", "地区", area),
     businessPill("price", "价格", price),
+    image,
   ]);
 }
 
 export function buildDetailMetaPills(record: PostRecord, author?: AuthorSummary | null, viewCount = 0, options: BuildDetailMetaPillsOptions = {}): DetailMetaPill[] {
-  if (options.surface === "card") {
-    return buildCardMetaPills(record, author, viewCount, options);
-  }
-
-  return buildDetailSurfaceMetaPills(record, viewCount);
+  return buildDetailSurfaceMetaPills(record, author, viewCount, options);
 }
