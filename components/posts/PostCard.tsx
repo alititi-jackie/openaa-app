@@ -92,10 +92,13 @@ function DetailListPostCard({ post }: { post: PostCardData }) {
   const housingMetaLine = isHousing ? metaItems.find((item) => item.label === HOUSING_AMOUNT_TIME_META_LABEL)?.value : undefined;
   const pillItems = isHousing ? metaItems.filter((item) => item.label !== HOUSING_AMOUNT_TIME_META_LABEL) : metaItems;
   const body = post.displayBody || post.description;
+  const pillClassName = isHousing
+    ? "mt-3"
+    : "max-h-[62px] overflow-hidden [&>span]:inline-flex [&>span]:h-7 [&>span]:items-center [&>span]:overflow-hidden [&>span]:whitespace-nowrap sm:max-h-[64px] md:max-h-9 md:flex-nowrap md:[&>span]:h-auto";
 
   return (
     <Link href={post.href} className="block rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-      <div className="flex min-h-[148px] min-w-0 flex-col">
+      <div className={["flex min-w-0 flex-col", isHousing ? "" : "min-h-[148px]"].filter(Boolean).join(" ")}>
         <h3 className="line-clamp-1 font-black leading-snug text-slate-950">{post.title}</h3>
         {isHousing ? (
           <HousingListBody body={body} metaLine={pillItems.length ? housingMetaLine : undefined} />
@@ -107,7 +110,7 @@ function DetailListPostCard({ post }: { post: PostCardData }) {
           postId={post.id ?? post.href}
           initialViewCount={post.viewCount ?? 0}
           trackViews={false}
-          className="max-h-[62px] overflow-hidden [&>span]:inline-flex [&>span]:h-7 [&>span]:items-center [&>span]:overflow-hidden [&>span]:whitespace-nowrap sm:max-h-[64px] md:max-h-9 md:flex-nowrap md:[&>span]:h-auto"
+          className={pillClassName}
         />
       </div>
     </Link>

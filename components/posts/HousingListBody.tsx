@@ -17,7 +17,7 @@ function visibleLineCount(element: HTMLElement) {
 export function HousingListBody({ body, metaLine }: HousingListBodyProps) {
   const bodyRef = useRef<HTMLParagraphElement | null>(null);
   const [bodyLines, setBodyLines] = useState(2);
-  const showHint = bodyLines <= 1;
+  const showHint = Boolean(metaLine && bodyLines <= 1);
 
   useEffect(() => {
     const element = bodyRef.current;
@@ -34,7 +34,7 @@ export function HousingListBody({ body, metaLine }: HousingListBodyProps) {
   }, [body]);
 
   return (
-    <div className="mt-2 h-[4.5rem] overflow-hidden text-sm leading-6 text-slate-600">
+    <div className="mt-2 text-sm leading-6 text-slate-600">
       <p ref={bodyRef} className="line-clamp-2 whitespace-pre-line break-words [overflow-wrap:anywhere]">
         {body}
       </p>
