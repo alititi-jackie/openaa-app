@@ -110,8 +110,6 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
         <DmvMockIntroHeader />
         <MockIntroInstructions onStartExam={startExam} />
         <MockStudyGuide />
-        <MockFaq />
-        <MockCompletionCard onStartExam={startExam} />
         <MockDisclaimer />
       </div>
     );
@@ -331,19 +329,35 @@ function DmvMockLegacyHeader() {
 
 function MockIntroInstructions({ onStartExam }: { onStartExam: () => void }) {
   return (
-    <section className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-900 shadow-sm">
-      <h2 className="text-lg font-black text-blue-950">模拟考试说明</h2>
-      <p className="mt-2">
+    <section className="rounded-2xl border border-blue-100 bg-gradient-to-b from-blue-50 to-white p-5 shadow-sm">
+      <div className="mb-3 text-4xl">📝</div>
+      <h2 className="text-xl font-black text-zinc-900">模拟考试说明</h2>
+      <p className="mt-2 text-sm leading-relaxed text-zinc-600">
         这是接近真实 NY DMV Permit 的 Practice Test 场景：20 题考试、14 题及格、交通标志至少答对 2 题。适合纽约华人、新移民、留学生考前冲刺。
       </p>
-      <ul className="mt-4 space-y-2 font-bold">
-        <li>📋 总共 20 道题目</li>
-        <li>🚦 包含 4 道交通标志题</li>
-        <li>✅ 答对 14 题以上才能通过</li>
-        <li>⚠️ 交通标志题至少答对 2 道</li>
-        <li>🔇 作答时不显示正确答案</li>
-      </ul>
-      <button type="button" onClick={onStartExam} className="mt-4 min-h-12 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-black text-white">
+      <div className="mt-4 space-y-2">
+        <div className="flex items-center gap-2 text-sm text-zinc-700">
+          <span>📋</span>
+          <span>总共 20 道题目</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-zinc-700">
+          <span>🚦</span>
+          <span>包含 4 道交通标志题</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-zinc-700">
+          <span>✅</span>
+          <span>答对 14 题以上才能通过</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-zinc-700">
+          <span>⚠️</span>
+          <span>交通标志题至少答对 2 道</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-zinc-700">
+          <span>🔇</span>
+          <span>作答时不显示正确答案</span>
+        </div>
+      </div>
+      <button type="button" onClick={onStartExam} className="mt-5 w-full rounded-2xl bg-blue-600 py-4 text-base font-bold text-white shadow-sm active:scale-[0.98]">
         开始考试
       </button>
     </section>
@@ -352,68 +366,23 @@ function MockIntroInstructions({ onStartExam }: { onStartExam: () => void }) {
 
 function MockStudyGuide() {
   return (
-    <section className="rounded-2xl border border-slate-100 bg-white p-4 text-sm leading-6 text-slate-700 shadow-sm">
-      <h2 className="text-base font-black text-slate-950">如何使用模拟考试提升通过率？</h2>
-      <ul className="mt-3 space-y-2">
-        <li>• 先做 Practice Test 巩固 Permit 基础</li>
-        <li>• 再做本页模拟考试检验速度与正确率</li>
-        <li>• 最后回到错题和 Road Signs 专项复习</li>
+    <section className="mt-4 rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm">
+      <h2 className="text-base font-bold text-zinc-900">如何使用模拟考试提升通过率？</h2>
+      <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-zinc-700">
+        <li>先做 Practice Test 巩固 Permit 基础</li>
+        <li>再做本页模拟考试检验速度与正确率</li>
+        <li>最后回到错题和 Road Signs 专项复习</li>
       </ul>
-      <div className="mt-4 grid gap-2 sm:grid-cols-3">
-        <Link href="/dmv/practice" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700">
+      <div className="mt-3 flex flex-wrap gap-2 text-xs">
+        <Link href="/dmv/practice" className="rounded-full bg-blue-50 px-3 py-1.5 font-medium text-blue-700">
           返回练习页
         </Link>
-        <Link href="/dmv/questions" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700">
+        <Link href="/dmv/questions" className="rounded-full bg-zinc-100 px-3 py-1.5 font-medium text-zinc-700">
           查看题库
         </Link>
-        <Link href="/dmv/sign-test" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700">
+        <Link href="/dmv/sign-test" className="rounded-full bg-orange-50 px-3 py-1.5 font-medium text-orange-700">
           交通标志专项
         </Link>
-      </div>
-    </section>
-  );
-}
-
-function MockFaq() {
-  return (
-    <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-      <h2 className="text-base font-black text-slate-950">常见问题 FAQ</h2>
-      <div className="mt-3 space-y-3">
-        <MockFaqItem question="模拟考试和正式考试一样吗？" answer="本模拟考试参考纽约 DMV Permit 考试规则整理，仅用于学习练习。" />
-        <MockFaqItem question="多少分算通过？" answer="20 题中至少答对 14 题，交通标志题至少答对 2 题。" />
-        <MockFaqItem question="考试过程中显示答案吗？" answer="不会，提交后统一查看结果。" />
-      </div>
-    </section>
-  );
-}
-
-function MockFaqItem({ question, answer }: { question: string; answer: string }) {
-  return (
-    <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-      <h3 className="text-sm font-bold text-slate-950">{question}</h3>
-      <p className="mt-1 text-sm leading-6 text-slate-600">{answer}</p>
-    </div>
-  );
-}
-
-function MockCompletionCard({ onStartExam }: { onStartExam: () => void }) {
-  return (
-    <section className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-900">
-      <p className="text-base font-black">🎉 已准备好开始考试？</p>
-      <p className="mt-1 text-blue-800">登录 OpenAA 后，可同步学习进度和错题记录，也可以直接开始考试或返回其它学习模块。</p>
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <Link href="/login?returnTo=/dmv/mock-test" className="inline-flex min-h-10 items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-center text-sm font-black leading-5 text-white">
-          登录 / 注册，解锁更多功能
-        </Link>
-        <Link href="/dmv/questions" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-black text-blue-700">
-          返回题库
-        </Link>
-        <Link href="/dmv/practice" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-black text-blue-700">
-          返回练习页
-        </Link>
-        <button type="button" onClick={onStartExam} className="inline-flex min-h-10 items-center justify-center rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-black text-blue-700">
-          开始考试
-        </button>
       </div>
     </section>
   );
