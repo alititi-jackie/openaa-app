@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { HorizontalPillTabs } from "@/components/common/HorizontalPillTabs";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
@@ -17,8 +17,8 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");
   const [revealAnswer, setRevealAnswer] = useState(false);
-  const [showCompletionPrompt, setShowCompletionPrompt] = useState(true);
   const [selectedById, setSelectedById] = useState<Record<string, number>>({});
+  const questionBrowserRef = useRef<HTMLElement | null>(null);
   const categories = useMemo(() => ["all", ...Array.from(new Set(questions.map((question) => question.category)))], [questions]);
 
   const filtered = useMemo(() => {
@@ -47,9 +47,25 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
     }
   }
 
+  function scrollToQuestionBrowser() {
+    const target = questionBrowserRef.current;
+    if (!target) return;
+
+    const targetTop = target.getBoundingClientRect().top + window.scrollY - 132;
+    window.history.replaceState(null, "", "#dmv-question-browser");
+    window.scrollTo({ top: targetTop, behavior: "smooth" });
+    window.setTimeout(() => {
+      if (Math.abs(target.getBoundingClientRect().top - 132) > 12) {
+        const scrollingElement = document.scrollingElement ?? document.documentElement;
+        scrollingElement.scrollTop = targetTop;
+        document.body.scrollTop = targetTop;
+      }
+    }, 300);
+  }
+
   return (
     <div className="space-y-4">
-      <section className="space-y-3">
+      <section id="dmv-question-browser" ref={questionBrowserRef} className="scroll-mt-32 space-y-3 md:scroll-mt-28">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-base font-black text-slate-950">查看题库</h2>
           <button
@@ -105,24 +121,24 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
         </section>
       )}
 
-      {showCompletionPrompt ? (
-        <section className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-900">
-          <p className="text-base font-black">🎉 已浏览完题库！</p>
-          <p className="mt-1 text-blue-800">登录 OpenAA 后，未来可同步错题和学习进度，支持多设备继续学习。</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Link href="/login?returnTo=/dmv/questions" className="inline-flex h-10 items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-black text-white">
-              登录 / 注册
-            </Link>
-            <button type="button" onClick={() => setShowCompletionPrompt(false)} className="inline-flex h-10 items-center justify-center rounded-xl border border-blue-200 bg-white px-4 text-sm font-black text-blue-700">
-              稍后
-            </button>
-          </div>
-        </section>
-      ) : null}
-
-      <Link href="/dmv" className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 shadow-sm">
-        退出题库
-      </Link>
+      <section className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-900">
+        <p className="text-base font-black">🎉 已浏览完题库！</p>
+        <p className="mt-1 text-blue-800">登录 OpenAA 后，可同步错题和学习进度；也可以继续回到题库巩固，或进入随机练习检验掌握情况。</p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <Link href="/login?returnTo=/dmv/questions" className="inline-flex min-h-10 items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-center text-sm font-black leading-5 text-white">
+            登录 / 注册，解锁更多功能
+          </Link>
+          <button type="button" onClick={scrollToQuestionBrowser} className="inline-flex min-h-10 items-center justify-center rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-black text-blue-700">
+            继续查看题库
+          </button>
+          <Link href="/dmv/practice" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-black text-blue-700">
+            下一步：随机练习
+          </Link>
+          <Link href="/dmv" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-black text-blue-700">
+            退出题库
+          </Link>
+        </div>
+      </section>
 
       <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
         <h2 className="text-base font-black text-slate-950">常见问题 FAQ</h2>
