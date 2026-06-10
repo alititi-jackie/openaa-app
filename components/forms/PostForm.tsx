@@ -11,6 +11,7 @@ import {
   HOUSING_TYPE_OPTIONS,
   JOB_CATEGORY_OPTIONS,
   JOB_MODE_OPTIONS,
+  JOB_SALARY_UNIT_OPTIONS,
   JOB_TYPE_OPTIONS,
   SECONDHAND_CATEGORY_OPTIONS,
   SECONDHAND_MODE_OPTIONS,
@@ -282,11 +283,11 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
               </FormField>
               <FormField label="薪资单位">
                 <SelectInput value={values.job?.salary_unit} onChange={(event) => setJob({ salary_unit: event.target.value })}>
-                  <option value="hour">小时</option>
-                  <option value="day">天薪</option>
-                  <option value="week">周薪</option>
-                  <option value="month">月薪</option>
-                  <option value="year">年薪</option>
+                  {JOB_SALARY_UNIT_OPTIONS.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
+                    </option>
+                  ))}
                 </SelectInput>
               </FormField>
             </div>

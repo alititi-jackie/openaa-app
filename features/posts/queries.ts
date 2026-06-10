@@ -71,6 +71,11 @@ function emptyResult<T>(data: T): PostsQueryResult<T> {
   return { state: "missing_config", data };
 }
 
+function queryError<T>(scope: string, error: { message?: string } | null | undefined, data: T): PostsQueryResult<T> {
+  console.error(`[posts] ${scope}`, error);
+  return { state: "error", data, error: "内容读取失败，请稍后再试。" };
+}
+
 async function fetchAuthors(authorIds: Array<string | null | undefined>): Promise<Record<string, AuthorSummary>> {
   const ids = [...new Set(authorIds.filter((id): id is string => Boolean(id)))];
 
@@ -122,9 +127,7 @@ export async function getPublicPosts(params: PublicPostsParams): Promise<PostsQu
     .order("created_at", { ascending: false })
     .limit(params.limit ?? MAX_PUBLIC_FILTER_ROWS);
 
-  if (error) {
-    return { state: "error", data: [], error: error.message };
-  }
+  if (error) return queryError("get public posts failed", error, []);
 
   const records = (data ?? []) as unknown as PostRecord[];
   const filteredRecords = applyPublicPostFilters(records, params.type, filters);
@@ -137,7 +140,7 @@ export async function getPublicPosts(params: PublicPostsParams): Promise<PostsQu
 
   return {
     state: "ready",
-    data: pageRecords.map((record) => mapPostRecordToCard(record, authors)),
+    data: pageRecords.map((record) => mapPostRecordToCard(record, authors, { showImageIndicator: params.showImageIndicator })),
     pagination: {
       page,
       pageSize: filters.pageSize,
@@ -180,9 +183,7 @@ export async function searchPublicPosts(params: { q?: string; type?: PostType; l
 
   const { data, error } = await query;
 
-  if (error) {
-    return { state: "error", data: [], error: error.message };
-  }
+  if (error) return queryError("search public posts failed", error, []);
 
   const records = (data ?? []) as unknown as PostRecord[];
   const authors = await fetchAuthors(records.map((post) => post.author_id));
@@ -209,9 +210,7 @@ export async function getPublicPostById(id: string, type: PostType): Promise<Pos
     .eq("post_type", type)
     .maybeSingle();
 
-  if (error) {
-    return { state: "error", data: null, error: error.message };
-  }
+  if (error) return queryError("get public post by id failed", error, null);
 
   if (!data) {
     return { state: "ready", data: null };
@@ -268,9 +267,7 @@ export async function getUserPosts(userId: string, type?: PostType): Promise<Pos
 
   const { data, error } = await query;
 
-  if (error) {
-    return { state: "error", data: [], error: error.message };
-  }
+  if (error) return queryError("get user posts failed", error, []);
 
   const records = (data ?? []) as unknown as PostRecord[];
   const authors = await fetchAuthors([userId]);
@@ -339,9 +336,7 @@ async function getPublicCardsByOrderedIds(ids: string[]): Promise<PostsQueryResu
     .eq("cities.slug", DEFAULT_CITY_SLUG)
     .or(`expires_at.is.null,expires_at.gt.${now}`);
 
-  if (error) {
-    return { state: "error", data: [], error: error.message };
-  }
+  if (error) return queryError("get public cards by ordered ids failed", error, []);
 
   const records = (data ?? []) as unknown as PostRecord[];
   const authors = await fetchAuthors(records.map((post) => post.author_id));
@@ -372,9 +367,7 @@ export async function getMyFavoritePosts(): Promise<PostsQueryResult<PostCardVie
     .order("created_at", { ascending: false })
     .limit(50);
 
-  if (error) {
-    return { state: "error", data: [], error: error.message };
-  }
+  if (error) return queryError("get favorite post ids failed", error, []);
 
   return getPublicCardsByOrderedIds(uniqueOrderedPostIds((data ?? []) as Array<{ post_id: string | null }>));
 }
@@ -401,9 +394,7 @@ export async function getMyRecentPosts(): Promise<PostsQueryResult<PostCardView[
     .order("created_at", { ascending: false })
     .limit(80);
 
-  if (error) {
-    return { state: "error", data: [], error: error.message };
-  }
+  if (error) return queryError("get recent post ids failed", error, []);
 
   return getPublicCardsByOrderedIds(uniqueOrderedPostIds((data ?? []) as Array<{ post_id: string | null }>));
 }
@@ -436,9 +427,7 @@ export async function getEditablePostById(id: string, type: PostType): Promise<P
     .eq("author_id", user.id)
     .maybeSingle();
 
-  if (error) {
-    return { state: "error", data: null, error: error.message };
-  }
+  if (error) return queryError("get editable post by id failed", error, null);
 
   if (!data) {
     return { state: "ready", data: null };
@@ -468,9 +457,7 @@ export async function getPostContact(id: string): Promise<PostsQueryResult<Conta
     .eq("id", id)
     .maybeSingle();
 
-  if (postError) {
-    return { state: "error", data: null, error: postError.message };
-  }
+  if (postError) return queryError("get contact post visibility failed", postError, null);
 
   if (!post) {
     return { state: "ready", data: null, error: "该信息不存在或暂不可公开查看。" };
@@ -487,7 +474,7 @@ export async function getPostContact(id: string): Promise<PostsQueryResult<Conta
       return { state: "ready", data: null, error: "联系方式暂不可公开查看。" };
     }
 
-    return { state: "error", data: null, error: error.message };
+    return queryError("get post contact failed", error, null);
   }
 
   return { state: "ready", data: (data as ContactReveal | null) ?? null };

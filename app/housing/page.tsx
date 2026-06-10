@@ -18,7 +18,7 @@ export default async function HousingPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const filters = normalizePublicPostFilters(await searchParams);
-  const posts = await getPublicPosts({ type: "housing", filters });
+  const posts = await getPublicPosts({ type: "housing", filters, showImageIndicator: true });
 
   return <ChannelPageShell config={{ ...channelConfigs.housing, filters, pagination: posts.pagination, posts: posts.data, queryState: posts.state, errorMessage: posts.error }} />;
 }

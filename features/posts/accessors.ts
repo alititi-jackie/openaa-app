@@ -1,5 +1,14 @@
 import { POST_TYPE_TO_ROUTE } from "./constants";
-import { numberText, numericOrUndefined, postModeLabel, postTypeFallbackLabel, wageUnitLabel } from "./display";
+import {
+  formatLocationLabel,
+  formatJobWorkTypeLabel,
+  formatPostCategoryLabel,
+  formatPostModeLabel,
+  numberText,
+  numericOrUndefined,
+  postTypeFallbackLabel,
+  wageUnitLabel,
+} from "./display";
 import { HOUSING_TYPE_OPTIONS, housingTypeOption, normalizeHousingType } from "./options";
 import type {
   HousingDetailRecord,
@@ -97,7 +106,7 @@ export function getPostMode(record: PostRecord) {
 }
 
 export function getPostModeDisplay(record: PostRecord, variant: "full" | "short" = "full") {
-  return postModeLabel(record.post_type, getPostMode(record), variant);
+  return formatPostModeLabel(record.post_type, getPostMode(record), variant);
 }
 
 export function getPostCategory(record: PostRecord) {
@@ -108,7 +117,7 @@ export function getPostCategory(record: PostRecord) {
 }
 
 export function getPostWorkType(record: PostRecord) {
-  return record.post_type === "job" ? getJobDetail(record)?.employment_type ?? "" : "";
+  return record.post_type === "job" ? formatJobWorkTypeLabel(getJobDetail(record)?.employment_type) : "";
 }
 
 export function getPostSecondaryTag(record: PostCardView) {
@@ -183,11 +192,11 @@ export function getPostStatusText(record: PostRecord) {
 }
 
 export function getPostLocationDisplay(record: PostRecord) {
-  return getPostArea(record) || record.cities?.name || "";
+  return formatLocationLabel(getPostArea(record) || record.cities?.name);
 }
 
 export function getPostTag(record: PostRecord) {
-  return getPostCategory(record) || postTypeFallbackLabel(record.post_type);
+  return formatPostCategoryLabel(record.post_type, getPostCategory(record)) || postTypeFallbackLabel(record.post_type);
 }
 
 export function getPostHref(type: PostType, id: string) {

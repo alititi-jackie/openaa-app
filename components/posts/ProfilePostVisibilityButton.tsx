@@ -58,6 +58,9 @@ export function ProfilePostVisibilityButton({ postId, postType, status, onStatus
       if (result.action === "publish") {
         onStatusChange("published", result.message);
       }
+    } catch (error) {
+      console.error("[posts] update post visibility failed", { postId, postType, action: nextAction, error });
+      onMessage({ ok: false, message: nextAction === "hide" ? "隐藏失败，请稍后再试。" : "恢复显示失败，请稍后再试。" });
     } finally {
       setPending(false);
     }

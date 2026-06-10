@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getPostViewCount, recordPostView } from "@/features/posts/engagementActions";
+import { formatViewCount } from "@/features/posts/display";
 
 const VIEW_DEDUPE_MS = 30 * 60 * 1000;
 
@@ -54,5 +55,5 @@ export function PostViewTracker({ postId, initialViewCount, className }: PostVie
 
   if (!className) return null;
 
-  return <span className={className}>👁 {viewCount} 次浏览</span>;
+  return <span className={className}>{formatViewCount(viewCount, { icon: true, unit: true })}</span>;
 }

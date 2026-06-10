@@ -1,6 +1,21 @@
 import { POST_TYPE_LABELS } from "./constants";
-import { HOUSING_TYPE_OPTIONS, housingTypeOption } from "./options";
+import {
+  HOUSING_TYPE_OPTIONS,
+  JOB_MODE_OPTIONS,
+  JOB_CATEGORY_OPTIONS,
+  JOB_TYPE_OPTIONS,
+  JOB_SALARY_UNIT_OPTIONS,
+  LOCATION_OPTIONS,
+  SECONDHAND_MODE_OPTIONS,
+  SECONDHAND_CATEGORY_OPTIONS,
+  SERVICE_CATEGORY_OPTIONS,
+  housingTypeOption,
+  type PostOption,
+} from "./options";
 import type { PostStatus, PostType } from "./types";
+
+type ModeDisplay = { label: string; shortLabel: string; tone: string };
+type MetaTone = "blue" | "orange" | "gray" | "service";
 
 export const POST_STATUS_DISPLAY: Record<PostStatus, { label: string; tone: string }> = {
   draft: { label: "草稿", tone: "bg-zinc-50 text-zinc-500 ring-1 ring-zinc-100" },
@@ -12,38 +27,90 @@ export const POST_STATUS_DISPLAY: Record<PostStatus, { label: string; tone: stri
   deleted: { label: "已删除", tone: "bg-red-50 text-red-600 ring-1 ring-red-100" },
 };
 
-export const POST_MODE_DISPLAY: Partial<Record<PostType, Record<string, { label: string; shortLabel: string; tone: string }>>> = {
-  job: {
-    hiring: { label: "招聘岗位", shortLabel: "招聘", tone: "bg-blue-50 text-blue-700 ring-1 ring-blue-100" },
-    seeking: { label: "求职人才", shortLabel: "求职", tone: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100" },
-  },
-  housing: Object.fromEntries(
-    HOUSING_TYPE_OPTIONS.map((option) => [option.value, { label: option.label, shortLabel: option.label, tone: option.tone }]),
-  ),
-  marketplace: {
-    selling: { label: "出售商品", shortLabel: "出售", tone: "bg-amber-50 text-amber-700 ring-1 ring-amber-100" },
-    buying: { label: "求购信息", shortLabel: "求购", tone: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100" },
-  },
+const DEFAULT_MODE_TONE = "bg-zinc-50 text-zinc-600 ring-1 ring-zinc-100";
+const SUPPLY_MODE_TONE = "bg-blue-50 text-blue-700 ring-1 ring-blue-100";
+const DEMAND_MODE_TONE = "bg-orange-50 text-orange-700 ring-1 ring-orange-100";
+
+function modeCssTone(value: string) {
+  if (["hiring", "rent", "sale", "selling"].includes(value)) return SUPPLY_MODE_TONE;
+  if (["seeking", "rent_request", "buy_request", "buying"].includes(value)) return DEMAND_MODE_TONE;
+  return DEFAULT_MODE_TONE;
+}
+
+function shortModeLabel(label: string) {
+  return label.replace("岗位", "").replace("人才", "").replace("商品", "").replace("信息", "");
+}
+
+function displayFromOptions(options: readonly PostOption[], toneForValue: (value: string) => string): Record<string, ModeDisplay> {
+  return Object.fromEntries(
+    options.map((option) => [
+      option.value,
+      {
+        label: option.label,
+        shortLabel: shortModeLabel(option.label),
+        tone: toneForValue(option.value),
+      },
+    ]),
+  );
+}
+
+export const POST_MODE_DISPLAY: Partial<Record<PostType, Record<string, ModeDisplay>>> = {
+  job: displayFromOptions(JOB_MODE_OPTIONS, modeCssTone),
+  housing: displayFromOptions(HOUSING_TYPE_OPTIONS, modeCssTone),
+  marketplace: displayFromOptions(SECONDHAND_MODE_OPTIONS, modeCssTone),
 };
 
-export function postStatusLabel(status?: PostStatus) {
+function normalizePostModeForDisplay(postType: PostType, mode: string) {
+  const normalized = mode.trim().toLowerCase();
+
+  if (postType === "housing") return housingTypeOption(mode).value;
+  if (postType === "job") {
+    if (normalized === "supply") return "hiring";
+    if (normalized === "demand") return "seeking";
+  }
+  if (postType === "marketplace") {
+    if (normalized === "supply" || normalized === "sell" || normalized === "sale") return "selling";
+    if (normalized === "demand" || normalized === "buy") return "buying";
+  }
+
+  return mode;
+}
+
+export function formatPostStatusLabel(status?: PostStatus) {
   return status ? POST_STATUS_DISPLAY[status]?.label ?? "" : "";
 }
+
+export const postStatusLabel = formatPostStatusLabel;
 
 export function postStatusTone(status?: PostStatus) {
   return status ? POST_STATUS_DISPLAY[status]?.tone ?? "" : "";
 }
 
-export function postModeLabel(postType: PostType, mode?: string | null, variant: "full" | "short" = "full") {
+export function formatPostModeLabel(postType: PostType, mode?: string | null, variant: "full" | "short" = "full") {
   if (!mode) return "";
-  if (postType === "housing") return housingTypeOption(mode).label;
-  const display = POST_MODE_DISPLAY[postType]?.[mode];
-  return variant === "short" ? display?.shortLabel ?? "" : display?.label ?? "";
+  const normalizedMode = normalizePostModeForDisplay(postType, mode);
+  if (postType === "housing") return housingTypeOption(normalizedMode).label;
+  const display = POST_MODE_DISPLAY[postType]?.[normalizedMode];
+  if (!display) return "其它";
+  return variant === "short" ? display.shortLabel : display.label;
 }
 
+export const postModeLabel = formatPostModeLabel;
+
 export function postModeTone(postType: PostType, mode?: string | null) {
-  if (postType === "housing") return mode ? housingTypeOption(mode).tone : "";
-  return mode ? POST_MODE_DISPLAY[postType]?.[mode]?.tone ?? "bg-zinc-50 text-zinc-600 ring-1 ring-zinc-100" : "";
+  if (!mode) return "";
+  const normalizedMode = normalizePostModeForDisplay(postType, mode);
+  return POST_MODE_DISPLAY[postType]?.[normalizedMode]?.tone ?? DEFAULT_MODE_TONE;
+}
+
+export function postModeMetaTone(postType: PostType, mode?: string | null): MetaTone {
+  if (!mode) return "gray";
+  if (postType === "service") return "service";
+
+  const normalizedMode = normalizePostModeForDisplay(postType, mode);
+  if (["hiring", "rent", "sale", "selling"].includes(normalizedMode)) return "blue";
+  if (["seeking", "rent_request", "buy_request", "buying"].includes(normalizedMode)) return "orange";
+  return "gray";
 }
 
 export function numberText(value: number | string | null | undefined) {
@@ -66,12 +133,7 @@ export function numericOrUndefined(value: string | number | null | undefined) {
 }
 
 export function wageUnitLabel(unit?: string | null) {
-  if (unit === "hour") return "/小时";
-  if (unit === "day") return "/天";
-  if (unit === "week") return "/周";
-  if (unit === "month") return "/月";
-  if (unit === "year") return "/年";
-  return unit ?? "";
+  return JOB_SALARY_UNIT_OPTIONS.find((option) => option.value === unit)?.suffix ?? "";
 }
 
 export function postTypeFallbackLabel(postType: PostType) {
@@ -102,6 +164,67 @@ export function relativeTime(value?: string | null) {
   if (diffMonths < 12) return `${Math.max(1, diffMonths)}个月前`;
 
   return `${Math.max(1, Math.floor(diffDays / 365))}年前`;
+}
+
+export function formatPostAuthorName(author?: { nickname?: string | null } | null) {
+  return author?.nickname?.trim() || "匿名用户";
+}
+
+export function formatViewCount(value: number | string | null | undefined, options: { icon?: boolean; unit?: boolean } = {}) {
+  const count = numberText(value) || "0";
+  return `${options.icon ? "👁 " : ""}${count}${options.unit ? " 次浏览" : ""}`;
+}
+
+export function formatPostTime(value?: string | null, variant: "relative" | "shortDate" | "date" = "relative") {
+  if (!value) return variant === "relative" ? "刚刚" : "时间未知";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return variant === "relative" ? "刚刚" : "时间未知";
+
+  if (variant === "relative") return relativeTime(value) || "刚刚";
+  if (variant === "shortDate") return date.toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
+  return date.toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" });
+}
+
+export function formatLocationLabel(value?: string | null, fallback = "不限") {
+  const normalized = value?.trim();
+  if (!normalized) return fallback;
+  if (normalized === "不限" || normalized === "其它地区") return normalized;
+  const option = LOCATION_OPTIONS.find((item) => item.value === normalized || item.label === normalized);
+  return option?.label ?? "其它地区";
+}
+
+function optionLabel(options: readonly PostOption[], value?: string | null, fallback = "其它") {
+  const normalized = value?.trim();
+  if (!normalized) return "";
+  return options.find((option) => option.value === normalized || option.label === normalized)?.label ?? fallback;
+}
+
+export function formatPostCategoryLabel(postType: PostType, value?: string | null) {
+  if (postType === "job") return optionLabel(JOB_CATEGORY_OPTIONS, value, "其它职位");
+  if (postType === "marketplace") return optionLabel(SECONDHAND_CATEGORY_OPTIONS, value, "其它二手");
+  if (postType === "service") return optionLabel(SERVICE_CATEGORY_OPTIONS, value, "其它服务");
+  return value?.trim() || "";
+}
+
+export function formatJobWorkTypeLabel(value?: string | null) {
+  const normalized = value?.trim();
+  if (!normalized) return "";
+
+  const legacyLabels: Record<string, string> = {
+    fulltime: "全职",
+    full_time: "全职",
+    "full-time": "全职",
+    parttime: "兼职",
+    part_time: "兼职",
+    "part-time": "兼职",
+    contract: "合同",
+    remote: "远程",
+    internship: "实习",
+    intern: "实习",
+    other: "其它",
+  };
+
+  return optionLabel(JOB_TYPE_OPTIONS, normalized, legacyLabels[normalized.toLowerCase()] ?? "其它");
 }
 
 export function buildPostDisplayBody(source: { body?: string | null; summary?: string | null }) {

@@ -37,6 +37,10 @@ const allowedPostTypes = new Set<PostType>(["job", "housing", "marketplace", "se
 const manageablePostStatuses = new Set<PostStatus>(["draft", "pending_review", "published", "hidden", "expired", "deleted"]);
 const DEFAULT_DAILY_POST_LIMIT = 10;
 
+function logPostActionError(scope: string, error: unknown, context?: Record<string, unknown>) {
+  console.error(`[posts] ${scope}`, { ...context, error });
+}
+
 async function getWriteContext(): Promise<WriteContext> {
   const supabase = await createSupabaseServerClient();
 
@@ -184,14 +188,16 @@ async function deletePostImagesPermanently(supabase: SupabaseServerClient, userI
   if (storagePaths.length > 0) {
     const { error: storageError } = await supabase.storage.from("post-images").remove(storagePaths);
     if (storageError) {
-      return { ok: false as const, message: `图片文件删除失败：${storageError.message}` };
+      logPostActionError("delete storage images failed", storageError, { postId });
+      return { ok: false as const, message: "图片文件删除失败，请稍后再试。" };
     }
   }
 
   if (assetIds.length > 0) {
     const { data: deletedAssets, error: assetError } = await supabase.from("image_assets").delete().eq("owner_id", userId).in("id", assetIds).select("id");
     if (assetError) {
-      return { ok: false as const, message: `图片记录删除失败：${assetError.message}` };
+      logPostActionError("delete image asset rows failed", assetError, { postId });
+      return { ok: false as const, message: "图片记录删除失败，请稍后再试。" };
     }
 
     if ((deletedAssets ?? []).length !== assetIds.length) {
@@ -268,13 +274,22 @@ export async function createPost(values: PostFormValues): Promise<PostFormAction
   const cityId = await getDefaultCityId(context.supabase);
   const { data: post, error: postError } = await context.supabase.from("posts").insert(mainPostPayload(values, context.user.id, cityId)).select("id").single();
 
-  if (postError || !post) return { ok: false, message: postError?.message || "创建内容失败，请稍后再试。" };
+  if (postError || !post) {
+    logPostActionError("create post failed", postError, { postType: values.postType });
+    return { ok: false, message: "创建内容失败，请稍后再试。" };
+  }
 
   const detailResult = await upsertDetail(context.supabase, post.id, values);
-  if (detailResult.error) return { ok: false, message: `内容已创建，但详情保存失败：${detailResult.error.message}` };
+  if (detailResult.error) {
+    logPostActionError("create post detail failed", detailResult.error, { postId: post.id, postType: values.postType });
+    return { ok: false, message: "内容已创建，但详情保存失败，请稍后编辑补充。" };
+  }
 
   const contactResult = await upsertContact(context.supabase, post.id, values);
-  if (contactResult.error) return { ok: false, message: `内容已创建，但联系方式保存失败：${contactResult.error.message}` };
+  if (contactResult.error) {
+    logPostActionError("create post contact failed", contactResult.error, { postId: post.id });
+    return { ok: false, message: "内容已创建，但联系方式保存失败，请稍后编辑补充。" };
+  }
 
   await syncPostImages(context.supabase, context.user.id, values.postType, post.id, values.images);
   revalidatePath(POST_TYPE_TO_ROUTE[values.postType]);
@@ -311,13 +326,22 @@ export async function updatePost(postId: string, values: PostFormValues): Promis
     .eq("id", postId)
     .eq("author_id", context.user.id);
 
-  if (postError) return { ok: false, message: postError.message };
+  if (postError) {
+    logPostActionError("update post failed", postError, { postId, postType: values.postType });
+    return { ok: false, message: "保存失败，请稍后再试。" };
+  }
 
   const detailResult = await upsertDetail(context.supabase, postId, values);
-  if (detailResult.error) return { ok: false, message: detailResult.error.message };
+  if (detailResult.error) {
+    logPostActionError("update post detail failed", detailResult.error, { postId, postType: values.postType });
+    return { ok: false, message: "详情保存失败，请稍后再试。" };
+  }
 
   const contactResult = await upsertContact(context.supabase, postId, values);
-  if (contactResult.error) return { ok: false, message: contactResult.error.message };
+  if (contactResult.error) {
+    logPostActionError("update post contact failed", contactResult.error, { postId });
+    return { ok: false, message: "联系方式保存失败，请稍后再试。" };
+  }
 
   await syncPostImages(context.supabase, context.user.id, values.postType, postId, values.images);
   revalidatePath(postHref(values.postType, postId));
@@ -438,6 +462,7 @@ export async function deleteOwnPostPermanently(postId: string): Promise<DeletePo
 
   const { error } = await context.supabase.from("posts").delete().eq("id", safePostId).eq("author_id", context.user.id);
   if (error) {
+    logPostActionError("delete own post permanently failed", error, { postId: safePostId });
     return { ok: false, message: "删除失败，请稍后再试。", postId: safePostId };
   }
 
@@ -516,7 +541,10 @@ export async function uploadPostImage(postId: string, postType: PostType, file: 
     upsert: false,
   });
 
-  if (uploadError) return { ok: false, message: uploadError.message };
+  if (uploadError) {
+    logPostActionError("upload post image failed", uploadError, { postId, postType });
+    return { ok: false, message: "图片上传失败，请稍后再试。" };
+  }
 
   const { data: publicUrlData } = context.supabase.storage.from("post-images").getPublicUrl(path);
   const { data: asset, error: assetError } = await context.supabase
@@ -537,7 +565,10 @@ export async function uploadPostImage(postId: string, postType: PostType, file: 
     .select("id")
     .single();
 
-  if (assetError || !asset) return { ok: false, message: assetError?.message || "图片记录保存失败。" };
+  if (assetError || !asset) {
+    logPostActionError("save uploaded image asset failed", assetError, { postId, postType });
+    return { ok: false, message: "图片记录保存失败，请稍后再试。" };
+  }
 
   await context.supabase.from("post_images").upsert({
     post_id: postId,

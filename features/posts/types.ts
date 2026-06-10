@@ -194,6 +194,7 @@ export type PostsPagination = {
 export type PublicPostsParams = {
   type: PostType;
   limit?: number;
+  showImageIndicator?: boolean;
   filters?: Partial<PublicPostFilters>;
 };
 

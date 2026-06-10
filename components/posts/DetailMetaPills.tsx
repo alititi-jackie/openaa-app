@@ -1,7 +1,7 @@
 "use client";
 
 import { PostViewTracker } from "./PostViewTracker";
-import { relativeTime } from "@/features/posts/display";
+import { formatPostTime, formatViewCount } from "@/features/posts/display";
 
 export type DetailMetaPill = {
   key?: string;
@@ -28,20 +28,20 @@ const toneClass: Record<NonNullable<DetailMetaPill["tone"]>, string> = {
 };
 
 function isViewsPill(item: DetailMetaPill) {
-  return item.key === "views" || item.label === "浏览次数";
+  return item.key === "views";
 }
 
 function isPublishedAtPill(item: DetailMetaPill) {
-  return item.key === "publishedAt" || item.label === "相对时间" || item.label === "发布时间";
+  return item.key === "publishedAt";
 }
 
 function displayValue(item: DetailMetaPill) {
   if (isViewsPill(item)) {
-    return `👁 ${item.value || "0"} 次浏览`;
+    return formatViewCount(item.value, { icon: true, unit: true });
   }
 
   if (isPublishedAtPill(item)) {
-    return relativeTime(item.value);
+    return formatPostTime(item.value, "relative");
   }
 
   return item.value;

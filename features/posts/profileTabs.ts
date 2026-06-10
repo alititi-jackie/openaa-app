@@ -70,7 +70,7 @@ export function filterAndSortProfilePosts(posts: PostCardView[], activeTab: Prof
 
 function labelFor(postType: PostType, value: ProfilePostTabValue) {
   if (shortLabels[value]) return shortLabels[value]!;
-  return postModeLabel(postType, value, "short") || value;
+  return postModeLabel(postType, value, "short") || "其它";
 }
 
 function statusRank(status?: PostStatus) {

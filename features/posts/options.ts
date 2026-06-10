@@ -35,6 +35,14 @@ export const JOB_TYPE_OPTIONS = [
   { value: "其它", label: "其它" },
 ] as const satisfies readonly PostOption[];
 
+export const JOB_SALARY_UNIT_OPTIONS = [
+  { value: "hour", label: "小时", suffix: "/小时" },
+  { value: "day", label: "天薪", suffix: "/天" },
+  { value: "week", label: "周薪", suffix: "/周" },
+  { value: "month", label: "月薪", suffix: "/月" },
+  { value: "year", label: "年薪", suffix: "/年" },
+] as const;
+
 export const JOB_CATEGORY_OPTIONS = [
   { value: "餐饮行业", label: "餐饮行业" },
   { value: "美容按摩", label: "美容按摩" },
