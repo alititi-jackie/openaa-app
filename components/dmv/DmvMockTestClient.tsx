@@ -2,9 +2,16 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { Share2 } from "lucide-react";
+import { DetailBackButton } from "@/components/common/DetailBackButton";
+import { FavoriteButton } from "@/components/common/FavoriteButton";
+import { PageShareButton } from "@/components/common/PageShareButton";
+import { DmvHorizontalNav } from "@/components/dmv/DmvHorizontalNav";
 import { DmvLoginPrompt } from "@/components/dmv/DmvLoginPrompt";
-import { dmvBackLinkClassName } from "@/components/dmv/DmvBackLink";
+import { DmvBackLink, dmvBackLinkClassName } from "@/components/dmv/DmvBackLink";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
+import { PageTitleCard } from "@/components/PageTitleCard";
+import { ChannelHero } from "@/components/posts/ChannelHero";
 import { addWrongQuestion, removeWrongQuestion, saveExamResult, shuffleQuestions } from "@/components/dmv/dmvStorage";
 import { getDmvCategoryLabel } from "@/components/dmv/dmvCategoryLabels";
 import type { DmvQuestion } from "@/features/dmv/types";
@@ -100,34 +107,12 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
   if (phase === "intro") {
     return (
       <div className="space-y-4">
-        <section className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
-          <h2 className="text-xl font-black text-slate-950">纽约 DMV 模拟考试说明</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            本模拟考试使用 OpenAA 整理练习题。每次 20 题，其中 4 道交通标志题；总正确数至少 14 题，并且交通标志题至少答对 2 题才算通过。
-          </p>
-          <ul className="mt-4 space-y-2 text-sm font-bold text-slate-700">
-            <li>总共 20 道题目</li>
-            <li>包含 4 道交通标志题</li>
-            <li>作答过程中不显示答案，提交后统一查看结果</li>
-            <li>未登录也可以完整使用，结果只保存在本机</li>
-          </ul>
-        </section>
-
-        <button type="button" onClick={startExam} className="min-h-12 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-black text-white">
-          开始考试
-        </button>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Link href="/dmv/practice" className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-center text-sm font-black text-slate-700">
-            去练习模式
-          </Link>
-          <Link href="/dmv/questions" className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-center text-sm font-black text-blue-700">
-            查看题库
-          </Link>
-          <Link href="/dmv" className={`${dmvBackLinkClassName} col-span-2`}>
-            返回 DMV 首页
-          </Link>
-        </div>
+        <DmvMockIntroHeader />
+        <MockIntroInstructions onStartExam={startExam} />
+        <MockStudyGuide />
+        <MockFaq />
+        <MockCompletionCard onStartExam={startExam} />
+        <MockDisclaimer />
       </div>
     );
   }
@@ -137,6 +122,7 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
 
     return (
       <div className="space-y-4">
+        <DmvMockLegacyHeader />
         <section className="sticky top-14 z-20 rounded-2xl border border-slate-100 bg-white p-4 text-sm text-slate-600 shadow-sm">
           <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
             <div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${progress}%` }} />
@@ -214,6 +200,7 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
 
   return (
     <div className="space-y-4">
+      <DmvMockLegacyHeader />
       <section className={`rounded-2xl border p-5 shadow-sm ${result.passed ? "border-green-100 bg-green-50" : "border-red-100 bg-red-50"}`}>
         <h2 className={`text-xl font-black ${result.passed ? "text-green-900" : "text-red-900"}`}>
           {result.passed ? "模拟考试通过" : "模拟考试未通过"}
@@ -301,6 +288,143 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
       {shareMessage ? <p className="text-center text-xs font-bold text-blue-600">{shareMessage}</p> : null}
       <DmvLoginPrompt />
     </div>
+  );
+}
+
+function DmvMockIntroHeader() {
+  return (
+    <>
+      <div className="flex items-center justify-between gap-3">
+        <DetailBackButton fallbackHref="/dmv" />
+        <div className="flex items-center gap-2">
+          <FavoriteButton
+            target={{ type: "unsupported", message: "DMV 页面收藏暂未接入收藏表，当前不会写入收藏。" }}
+            returnTo="/dmv/mock-test"
+          />
+          <PageShareButton
+            path="/dmv/mock-test"
+            title="纽约 DMV 模拟考试"
+            text="纽约 DMV Permit 模拟考试。"
+            label={
+              <span className="inline-flex items-center gap-1.5">
+                <Share2 size={15} aria-hidden="true" />
+                分享
+              </span>
+            }
+          />
+        </div>
+      </div>
+      <ChannelHero title="纽约 DMV 模拟考试" />
+      <DmvHorizontalNav activeValue="mock-test" />
+    </>
+  );
+}
+
+function DmvMockLegacyHeader() {
+  return (
+    <>
+      <PageTitleCard title="DMV 模拟考试" description="按纽约 DMV Permit 规则模拟：20 题，至少答对 14 题，交通标志至少答对 2 题。" eyebrow="DMV" />
+      <DmvBackLink />
+    </>
+  );
+}
+
+function MockIntroInstructions({ onStartExam }: { onStartExam: () => void }) {
+  return (
+    <section className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-900 shadow-sm">
+      <h2 className="text-lg font-black text-blue-950">模拟考试说明</h2>
+      <p className="mt-2">
+        这是接近真实 NY DMV Permit 的 Practice Test 场景：20 题考试、14 题及格、交通标志至少答对 2 题。适合纽约华人、新移民、留学生考前冲刺。
+      </p>
+      <ul className="mt-4 space-y-2 font-bold">
+        <li>📋 总共 20 道题目</li>
+        <li>🚦 包含 4 道交通标志题</li>
+        <li>✅ 答对 14 题以上才能通过</li>
+        <li>⚠️ 交通标志题至少答对 2 道</li>
+        <li>🔇 作答时不显示正确答案</li>
+      </ul>
+      <button type="button" onClick={onStartExam} className="mt-4 min-h-12 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-black text-white">
+        开始考试
+      </button>
+    </section>
+  );
+}
+
+function MockStudyGuide() {
+  return (
+    <section className="rounded-2xl border border-slate-100 bg-white p-4 text-sm leading-6 text-slate-700 shadow-sm">
+      <h2 className="text-base font-black text-slate-950">如何使用模拟考试提升通过率？</h2>
+      <ul className="mt-3 space-y-2">
+        <li>• 先做 Practice Test 巩固 Permit 基础</li>
+        <li>• 再做本页模拟考试检验速度与正确率</li>
+        <li>• 最后回到错题和 Road Signs 专项复习</li>
+      </ul>
+      <div className="mt-4 grid gap-2 sm:grid-cols-3">
+        <Link href="/dmv/practice" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700">
+          返回练习页
+        </Link>
+        <Link href="/dmv/questions" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700">
+          查看题库
+        </Link>
+        <Link href="/dmv/sign-test" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700">
+          交通标志专项
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function MockFaq() {
+  return (
+    <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+      <h2 className="text-base font-black text-slate-950">常见问题 FAQ</h2>
+      <div className="mt-3 space-y-3">
+        <MockFaqItem question="模拟考试和正式考试一样吗？" answer="本模拟考试参考纽约 DMV Permit 考试规则整理，仅用于学习练习。" />
+        <MockFaqItem question="多少分算通过？" answer="20 题中至少答对 14 题，交通标志题至少答对 2 题。" />
+        <MockFaqItem question="考试过程中显示答案吗？" answer="不会，提交后统一查看结果。" />
+      </div>
+    </section>
+  );
+}
+
+function MockFaqItem({ question, answer }: { question: string; answer: string }) {
+  return (
+    <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+      <h3 className="text-sm font-bold text-slate-950">{question}</h3>
+      <p className="mt-1 text-sm leading-6 text-slate-600">{answer}</p>
+    </div>
+  );
+}
+
+function MockCompletionCard({ onStartExam }: { onStartExam: () => void }) {
+  return (
+    <section className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-900">
+      <p className="text-base font-black">🎉 已准备好开始考试？</p>
+      <p className="mt-1 text-blue-800">登录 OpenAA 后，可同步学习进度和错题记录，也可以直接开始考试或返回其它学习模块。</p>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <Link href="/login?returnTo=/dmv/mock-test" className="inline-flex min-h-10 items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-center text-sm font-black leading-5 text-white">
+          登录 / 注册，解锁更多功能
+        </Link>
+        <Link href="/dmv/questions" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-black text-blue-700">
+          返回题库
+        </Link>
+        <Link href="/dmv/practice" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-black text-blue-700">
+          返回练习页
+        </Link>
+        <button type="button" onClick={onStartExam} className="inline-flex min-h-10 items-center justify-center rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-black text-blue-700">
+          开始考试
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function MockDisclaimer() {
+  return (
+    <section className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-xs leading-5 text-amber-900">
+      <p className="font-bold">非官方学习工具，仅供备考参考。</p>
+      <p className="mt-1">OpenAA 模拟考试根据纽约 DMV Permit 学习规则整理，不代表 DMV 官方考试内容；正式要求请以 New York DMV 官方资料为准。</p>
+    </section>
   );
 }
 

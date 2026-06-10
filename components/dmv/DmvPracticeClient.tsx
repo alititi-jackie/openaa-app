@@ -2,9 +2,16 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { Share2 } from "lucide-react";
+import { DetailBackButton } from "@/components/common/DetailBackButton";
+import { FavoriteButton } from "@/components/common/FavoriteButton";
+import { PageShareButton } from "@/components/common/PageShareButton";
+import { DmvHorizontalNav } from "@/components/dmv/DmvHorizontalNav";
 import { DmvLoginPrompt } from "@/components/dmv/DmvLoginPrompt";
-import { dmvBackLinkClassName } from "@/components/dmv/DmvBackLink";
+import { DmvBackLink, dmvBackLinkClassName } from "@/components/dmv/DmvBackLink";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
+import { PageTitleCard } from "@/components/PageTitleCard";
+import { ChannelHero } from "@/components/posts/ChannelHero";
 import { addWrongQuestion, removeWrongQuestion, savePracticeProgress, savePracticeResult, shuffleQuestions } from "@/components/dmv/dmvStorage";
 import { getDmvCategoryLabel } from "@/components/dmv/dmvCategoryLabels";
 import type { DmvQuestion } from "@/features/dmv/types";
@@ -111,13 +118,7 @@ export function DmvPracticeClient({ questions }: { questions: DmvQuestion[] }) {
   if (mode === "setup") {
     return (
       <div className="space-y-4">
-        <section className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
-          <h2 className="text-xl font-black text-slate-950">开始 DMV 中文练习</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            选择随机或顺序练习，再选择本次题数。答题后会立即显示正确答案和解释，错题会保存在本机浏览器中。
-          </p>
-          <p className="mt-1 text-xs font-bold text-slate-400">当前题库：{questions.length} 题</p>
-        </section>
+        <DmvPracticeSetupHeader questionCount={questions.length} />
 
         <section className="grid gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:grid-cols-2">
           <label className="grid gap-1 text-sm font-bold text-slate-700">
@@ -166,6 +167,7 @@ export function DmvPracticeClient({ questions }: { questions: DmvQuestion[] }) {
   if (mode === "done") {
     return (
       <div className="space-y-4">
+        <DmvPracticeLegacyHeader />
         <section className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
           <h2 className="text-xl font-black text-slate-950">练习完成</h2>
           <div className="mt-4 grid grid-cols-3 gap-3 text-center">
@@ -217,6 +219,7 @@ export function DmvPracticeClient({ questions }: { questions: DmvQuestion[] }) {
 
   return (
     <div className="space-y-4">
+      <DmvPracticeLegacyHeader />
       <section className="sticky top-14 z-20 rounded-2xl border border-slate-100 bg-white p-4 text-sm text-slate-600 shadow-sm">
         <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
           <div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${progress}%` }} />
@@ -265,6 +268,45 @@ export function DmvPracticeClient({ questions }: { questions: DmvQuestion[] }) {
         </button>
       </div>
     </div>
+  );
+}
+
+function DmvPracticeSetupHeader({ questionCount }: { questionCount: number }) {
+  return (
+    <>
+      <div className="flex items-center justify-between gap-3">
+        <DetailBackButton fallbackHref="/dmv" />
+        <div className="flex items-center gap-2">
+          <FavoriteButton
+            target={{ type: "unsupported", message: "DMV 页面收藏暂未接入收藏表，当前不会写入收藏。" }}
+            returnTo="/dmv/practice"
+          />
+          <PageShareButton
+            path="/dmv/practice"
+            title="随机 / 顺序 DMV 中文练习"
+            text="使用完整题库练习：随机或顺序；支持选择题数。"
+            label={
+              <span className="inline-flex items-center gap-1.5">
+                <Share2 size={15} aria-hidden="true" />
+                分享
+              </span>
+            }
+          />
+        </div>
+      </div>
+      <ChannelHero title="随机 / 顺序 DMV 中文练习" description="使用完整题库练习：随机或顺序；支持选择题数。" />
+      <p className="text-xs font-bold text-slate-400">当前题库：{questionCount} 题</p>
+      <DmvHorizontalNav activeValue="practice" />
+    </>
+  );
+}
+
+function DmvPracticeLegacyHeader() {
+  return (
+    <>
+      <PageTitleCard title="DMV 练习模式" description="选择随机或顺序练习、设置题数，答题后立即查看正确与否，并把错题保存在本机浏览器。" eyebrow="DMV" />
+      <DmvBackLink />
+    </>
   );
 }
 

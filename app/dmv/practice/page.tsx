@@ -1,6 +1,4 @@
-import { DmvBackLink } from "@/components/dmv/DmvBackLink";
 import { DmvPracticeClient } from "@/components/dmv/DmvPracticeClient";
-import { PageShell } from "@/components/layout/PageShell";
 import { ChannelSeoCard } from "@/components/posts/ChannelSeoCard";
 import { getDmvQuestionBank } from "@/features/dmv/questions";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -18,8 +16,7 @@ export default async function DmvPracticePage() {
   const bank = await getDmvQuestionBank();
 
   return (
-    <PageShell title="DMV 练习模式" description="选择随机或顺序练习、设置题数，答题后立即查看正确与否，并把错题保存在本机浏览器。" eyebrow="DMV">
-      <DmvBackLink />
+    <div className="space-y-4">
       <DmvPracticeClient questions={bank.questions} />
       <ChannelSeoCard title="DMV Permit 中文练习与模拟考试说明">
         <div className="space-y-3">
@@ -42,6 +39,6 @@ export default async function DmvPracticePage() {
           </ul>
         </div>
       </ChannelSeoCard>
-    </PageShell>
+    </div>
   );
 }

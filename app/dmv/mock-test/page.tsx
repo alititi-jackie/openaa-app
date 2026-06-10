@@ -1,6 +1,4 @@
-import { DmvBackLink } from "@/components/dmv/DmvBackLink";
 import { DmvMockTestClient } from "@/components/dmv/DmvMockTestClient";
-import { PageShell } from "@/components/layout/PageShell";
 import { getDmvQuestionBank } from "@/features/dmv/questions";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -16,10 +14,5 @@ export const metadata = buildPageMetadata({
 export default async function DmvMockTestPage() {
   const bank = await getDmvQuestionBank();
 
-  return (
-    <PageShell title="DMV 模拟考试" description="按纽约 DMV Permit 规则模拟：20 题，至少答对 14 题，交通标志至少答对 2 题。" eyebrow="DMV">
-      <DmvBackLink />
-      <DmvMockTestClient questions={bank.questions} />
-    </PageShell>
-  );
+  return <DmvMockTestClient questions={bank.questions} />;
 }
