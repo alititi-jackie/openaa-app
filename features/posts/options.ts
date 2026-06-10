@@ -115,7 +115,7 @@ export const HOUSING_TYPE_OPTIONS = [
 
 export const SECONDHAND_MODE_OPTIONS = [
   { value: "selling", label: "出售商品" },
-  { value: "buying", label: "求购信息" },
+  { value: "buying", label: "求购商品" },
 ] as const satisfies readonly PostOption[];
 
 export const SECONDHAND_CATEGORY_OPTIONS = [
