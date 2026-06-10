@@ -1,64 +1,90 @@
-import { postModeLabel } from "./display";
+import { formatPostCategoryLabel, postModeLabel, postStatusLabel } from "./display";
+import { postChannelConfig } from "./channelConfig";
 import { housingTypeFromValue } from "./options";
 import type { PostCardView, PostStatus, PostType } from "./types";
 
-export type ProfilePostTabValue =
-  | "all"
-  | "hiring"
-  | "seeking"
-  | "rent"
-  | "sale"
-  | "rent_request"
-  | "buy_request"
-  | "other"
-  | "selling"
-  | "buying"
-  | "published"
-  | "hidden";
+export const PROFILE_POST_ALL_TYPE = "all";
+export const PROFILE_POST_ALL_STATUS = "all";
 
-type ProfilePostTab = {
-  value: ProfilePostTabValue;
+export type ProfilePostTypeFilterValue = typeof PROFILE_POST_ALL_TYPE | string;
+export type ProfilePostStatusFilterValue = typeof PROFILE_POST_ALL_STATUS | PostStatus;
+
+export type ProfilePostFilterOption = {
+  value: string;
   label: string;
-  href: string;
 };
 
-const profileTabsByType: Record<PostType, ProfilePostTabValue[]> = {
-  job: ["all", "hiring", "seeking", "published", "hidden"],
-  housing: ["all", "rent", "sale", "rent_request", "buy_request", "other", "published", "hidden"],
-  marketplace: ["all", "selling", "buying", "published", "hidden"],
-  service: ["all", "published", "hidden"],
+export type ProfilePostFiltersState = {
+  selectedType: ProfilePostTypeFilterValue;
+  selectedStatus: ProfilePostStatusFilterValue;
 };
 
-const shortLabels: Partial<Record<ProfilePostTabValue, string>> = {
-  all: "全部",
-  published: "显示",
-  hidden: "隐藏",
+type ProfileFilterSearchParams = {
+  type?: string | string[];
+  status?: string | string[];
+  tab?: string | string[];
 };
 
-export function normalizeProfilePostTab(postType: PostType, value?: string | null): ProfilePostTabValue {
+const PROFILE_POST_STATUS_VALUES: readonly PostStatus[] = ["published", "hidden", "draft", "expired", "pending_review", "rejected", "deleted"];
+const BASE_PROFILE_POST_STATUS_VALUES: readonly PostStatus[] = ["published", "hidden"];
+
+export function normalizeProfilePostTypeFilter(postType: PostType, value?: string | null): ProfilePostTypeFilterValue {
+  const normalized = value?.trim();
+  if (!normalized || normalized === PROFILE_POST_ALL_TYPE) return PROFILE_POST_ALL_TYPE;
+
+  const options = typeOptionsFor(postType);
   if (postType === "housing" && value) {
     const housingType = housingTypeFromValue(value);
-    if (housingType) return housingType;
+    if (housingType && options.some((option) => option.value === housingType)) return housingType;
   }
 
-  const tabs = profileTabsByType[postType];
-  return tabs.includes(value as ProfilePostTabValue) ? (value as ProfilePostTabValue) : "all";
+  return options.find((option) => option.value === normalized || option.label === normalized)?.value ?? PROFILE_POST_ALL_TYPE;
 }
 
-export function buildProfilePostTabs(postType: PostType, activeTab: ProfilePostTabValue, path: string): ProfilePostTab[] {
-  void activeTab;
-  return profileTabsByType[postType].map((value) => ({
-    value,
-    label: labelFor(postType, value),
-    href: value === "all" ? path : `${path}?tab=${value}`,
-  }));
+export function normalizeProfilePostStatusFilter(value?: string | null): ProfilePostStatusFilterValue {
+  const normalized = value?.trim();
+  if (!normalized || normalized === PROFILE_POST_ALL_STATUS) return PROFILE_POST_ALL_STATUS;
+  return PROFILE_POST_STATUS_VALUES.includes(normalized as PostStatus) ? (normalized as PostStatus) : PROFILE_POST_ALL_STATUS;
 }
 
-export function filterAndSortProfilePosts(posts: PostCardView[], activeTab: ProfilePostTabValue) {
+export function normalizeProfilePostFilters(postType: PostType, params?: ProfileFilterSearchParams | null): ProfilePostFiltersState {
+  const legacyTab = firstParam(params?.tab);
+
+  return {
+    selectedType: normalizeProfilePostTypeFilter(postType, firstParam(params?.type) ?? legacyTab),
+    selectedStatus: normalizeProfilePostStatusFilter(firstParam(params?.status) ?? legacyTab),
+  };
+}
+
+export function buildProfilePostTypeOptions(postType: PostType): ProfilePostFilterOption[] {
+  return [
+    { value: PROFILE_POST_ALL_TYPE, label: "全部类型" },
+    ...typeOptionsFor(postType).map((option) => ({
+      value: option.value,
+      label: typeLabelFor(postType, option.value, option.label),
+    })),
+  ];
+}
+
+export function buildProfilePostStatusOptions(posts: PostCardView[] = []): ProfilePostFilterOption[] {
+  const presentStatuses = new Set(posts.flatMap((post) => (post.status ? [post.status] : [])));
+  const statuses = [
+    ...BASE_PROFILE_POST_STATUS_VALUES,
+    ...PROFILE_POST_STATUS_VALUES.filter((status) => !BASE_PROFILE_POST_STATUS_VALUES.includes(status) && presentStatuses.has(status)),
+  ];
+
+  return [
+    { value: PROFILE_POST_ALL_STATUS, label: "全部状态" },
+    ...statuses.flatMap((status) => {
+      const label = postStatusLabel(status);
+      return label ? [{ value: status, label }] : [];
+    }),
+  ];
+}
+
+export function filterAndSortProfilePosts(posts: PostCardView[], filters: ProfilePostFiltersState) {
   const filtered = posts.filter((post) => {
-    if (activeTab === "all") return true;
-    if (activeTab === "published" || activeTab === "hidden") return post.status === activeTab;
-    return post.mode === activeTab;
+    return matchesTypeFilter(post, filters.selectedType) && matchesStatusFilter(post, filters.selectedStatus);
   });
 
   return [...filtered].sort((a, b) => {
@@ -68,9 +94,34 @@ export function filterAndSortProfilePosts(posts: PostCardView[], activeTab: Prof
   });
 }
 
-function labelFor(postType: PostType, value: ProfilePostTabValue) {
-  if (shortLabels[value]) return shortLabels[value]!;
-  return postModeLabel(postType, value, "short") || "其它";
+function firstParam(value?: string | string[]) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function typeOptionsFor(postType: PostType) {
+  const config = postChannelConfig(postType);
+  return postType === "service" ? (config.categoryOptions ?? []) : (config.modeOptions ?? []);
+}
+
+function typeLabelFor(postType: PostType, value: string, fallback: string) {
+  if (postType === "service") return fallback;
+  return postModeLabel(postType, value, "short") || fallback;
+}
+
+function matchesTypeFilter(post: PostCardView, selectedType: ProfilePostTypeFilterValue) {
+  if (selectedType === PROFILE_POST_ALL_TYPE) return true;
+
+  if (post.type === "service") {
+    const selectedLabel = formatPostCategoryLabel("service", selectedType);
+    return Boolean(selectedLabel && post.categoryValue === selectedLabel);
+  }
+
+  return post.mode === selectedType;
+}
+
+function matchesStatusFilter(post: PostCardView, selectedStatus: ProfilePostStatusFilterValue) {
+  if (selectedStatus === PROFILE_POST_ALL_STATUS) return true;
+  return post.status === selectedStatus;
 }
 
 function statusRank(status?: PostStatus) {

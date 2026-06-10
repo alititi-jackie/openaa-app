@@ -1,7 +1,7 @@
 import { ProfileManagementPageHeader, ProfilePublishLink } from "@/components/profile/ProfileManagementPageHeader";
-import { ProfilePostFilterTabs } from "@/components/profile/ProfilePostFilterTabs";
+import { ProfilePostFilters } from "@/components/profile/ProfilePostFilters";
 import { ProfileUserPostsList } from "@/components/profile/ProfileUserPostsList";
-import { filterAndSortProfilePosts, normalizeProfilePostTab } from "@/features/posts/profileTabs";
+import { buildProfilePostStatusOptions, buildProfilePostTypeOptions, filterAndSortProfilePosts, normalizeProfilePostFilters } from "@/features/posts/profileTabs";
 import { getMyPosts } from "@/features/posts/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -16,10 +16,9 @@ export const metadata = buildPageMetadata({
   noIndex: true,
 });
 
-export default async function ProfileServicesPage({ searchParams }: { searchParams?: Promise<{ tab?: string | string[] }> }) {
+export default async function ProfileServicesPage({ searchParams }: { searchParams?: Promise<{ type?: string | string[]; status?: string | string[]; tab?: string | string[] }> }) {
   const params = await searchParams;
-  const rawTab = Array.isArray(params?.tab) ? params?.tab[0] : params?.tab;
-  const activeTab = normalizeProfilePostTab("service", rawTab);
+  const filters = normalizeProfilePostFilters("service", params);
   const user = await getCurrentUser();
 
   if (!user) {
@@ -27,7 +26,7 @@ export default async function ProfileServicesPage({ searchParams }: { searchPara
   }
 
   const posts = await getMyPosts("service");
-  const visiblePosts = filterAndSortProfilePosts(posts.data, activeTab);
+  const visiblePosts = filterAndSortProfilePosts(posts.data, filters);
 
   return (
     <div className="space-y-4">
@@ -36,8 +35,14 @@ export default async function ProfileServicesPage({ searchParams }: { searchPara
         description="管理您发布的本地服务信息"
         actions={<ProfilePublishLink href="/services/publish" label="+ 发布服务" />}
       />
-      <ProfilePostFilterTabs postType="service" activeTab={activeTab} path="/profile/services" />
-      <ProfileUserPostsList key={activeTab} posts={visiblePosts} />
+      <ProfilePostFilters
+        path="/profile/services"
+        typeOptions={buildProfilePostTypeOptions("service")}
+        statusOptions={buildProfilePostStatusOptions(posts.data)}
+        selectedType={filters.selectedType}
+        selectedStatus={filters.selectedStatus}
+      />
+      <ProfileUserPostsList key={`${filters.selectedType}:${filters.selectedStatus}`} posts={visiblePosts} />
     </div>
   );
 }

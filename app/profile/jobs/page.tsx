@@ -1,7 +1,7 @@
 import { ProfileManagementPageHeader, ProfilePublishLink } from "@/components/profile/ProfileManagementPageHeader";
-import { ProfilePostFilterTabs } from "@/components/profile/ProfilePostFilterTabs";
+import { ProfilePostFilters } from "@/components/profile/ProfilePostFilters";
 import { ProfileUserPostsList } from "@/components/profile/ProfileUserPostsList";
-import { filterAndSortProfilePosts, normalizeProfilePostTab } from "@/features/posts/profileTabs";
+import { buildProfilePostStatusOptions, buildProfilePostTypeOptions, filterAndSortProfilePosts, normalizeProfilePostFilters } from "@/features/posts/profileTabs";
 import { getMyPosts } from "@/features/posts/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -16,10 +16,9 @@ export const metadata = buildPageMetadata({
   noIndex: true,
 });
 
-export default async function ProfileJobsPage({ searchParams }: { searchParams?: Promise<{ tab?: string | string[] }> }) {
+export default async function ProfileJobsPage({ searchParams }: { searchParams?: Promise<{ type?: string | string[]; status?: string | string[]; tab?: string | string[] }> }) {
   const params = await searchParams;
-  const rawTab = Array.isArray(params?.tab) ? params?.tab[0] : params?.tab;
-  const activeTab = normalizeProfilePostTab("job", rawTab);
+  const filters = normalizeProfilePostFilters("job", params);
   const user = await getCurrentUser();
 
   if (!user) {
@@ -27,7 +26,7 @@ export default async function ProfileJobsPage({ searchParams }: { searchParams?:
   }
 
   const posts = await getMyPosts("job");
-  const visiblePosts = filterAndSortProfilePosts(posts.data, activeTab);
+  const visiblePosts = filterAndSortProfilePosts(posts.data, filters);
 
   return (
     <div className="space-y-4">
@@ -36,8 +35,14 @@ export default async function ProfileJobsPage({ searchParams }: { searchParams?:
         description="管理您发布的招聘岗位与求职信息"
         actions={<ProfilePublishLink href="/jobs/publish" label="+ 发布招聘" />}
       />
-      <ProfilePostFilterTabs postType="job" activeTab={activeTab} path="/profile/jobs" />
-      <ProfileUserPostsList key={activeTab} posts={visiblePosts} />
+      <ProfilePostFilters
+        path="/profile/jobs"
+        typeOptions={buildProfilePostTypeOptions("job")}
+        statusOptions={buildProfilePostStatusOptions(posts.data)}
+        selectedType={filters.selectedType}
+        selectedStatus={filters.selectedStatus}
+      />
+      <ProfileUserPostsList key={`${filters.selectedType}:${filters.selectedStatus}`} posts={visiblePosts} />
     </div>
   );
 }

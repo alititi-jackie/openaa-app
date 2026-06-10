@@ -1,7 +1,7 @@
 import { ProfileManagementPageHeader, ProfilePublishLink } from "@/components/profile/ProfileManagementPageHeader";
-import { ProfilePostFilterTabs } from "@/components/profile/ProfilePostFilterTabs";
+import { ProfilePostFilters } from "@/components/profile/ProfilePostFilters";
 import { ProfileUserPostsList } from "@/components/profile/ProfileUserPostsList";
-import { filterAndSortProfilePosts, normalizeProfilePostTab } from "@/features/posts/profileTabs";
+import { buildProfilePostStatusOptions, buildProfilePostTypeOptions, filterAndSortProfilePosts, normalizeProfilePostFilters } from "@/features/posts/profileTabs";
 import { getMyPosts } from "@/features/posts/queries";
 import { redirectToAuthRequired } from "@/lib/auth/redirects";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -16,10 +16,9 @@ export const metadata = buildPageMetadata({
   noIndex: true,
 });
 
-export default async function ProfileSecondhandPage({ searchParams }: { searchParams?: Promise<{ tab?: string | string[] }> }) {
+export default async function ProfileSecondhandPage({ searchParams }: { searchParams?: Promise<{ type?: string | string[]; status?: string | string[]; tab?: string | string[] }> }) {
   const params = await searchParams;
-  const rawTab = Array.isArray(params?.tab) ? params?.tab[0] : params?.tab;
-  const activeTab = normalizeProfilePostTab("marketplace", rawTab);
+  const filters = normalizeProfilePostFilters("marketplace", params);
   const user = await getCurrentUser();
 
   if (!user) {
@@ -27,7 +26,7 @@ export default async function ProfileSecondhandPage({ searchParams }: { searchPa
   }
 
   const posts = await getMyPosts("marketplace");
-  const visiblePosts = filterAndSortProfilePosts(posts.data, activeTab);
+  const visiblePosts = filterAndSortProfilePosts(posts.data, filters);
 
   return (
     <div className="space-y-4">
@@ -36,8 +35,14 @@ export default async function ProfileSecondhandPage({ searchParams }: { searchPa
         description="管理您发布的二手出售与求购信息"
         actions={<ProfilePublishLink href="/secondhand/publish" label="+ 发布商品" />}
       />
-      <ProfilePostFilterTabs postType="marketplace" activeTab={activeTab} path="/profile/secondhand" />
-      <ProfileUserPostsList key={activeTab} posts={visiblePosts} />
+      <ProfilePostFilters
+        path="/profile/secondhand"
+        typeOptions={buildProfilePostTypeOptions("marketplace")}
+        statusOptions={buildProfilePostStatusOptions(posts.data)}
+        selectedType={filters.selectedType}
+        selectedStatus={filters.selectedStatus}
+      />
+      <ProfileUserPostsList key={`${filters.selectedType}:${filters.selectedStatus}`} posts={visiblePosts} />
     </div>
   );
 }
