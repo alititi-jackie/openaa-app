@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { HorizontalPillTabs } from "@/components/common/HorizontalPillTabs";
 import { createPost, updatePost, uploadPostImage } from "@/features/posts/actions";
 import { POST_TYPE_LABELS, POST_TYPE_TO_ROUTE } from "@/features/posts/constants";
 import type { HousingFields, JobFields, MarketplaceFields, PostFormErrors, PostFormValues, ServiceFields } from "@/features/posts/formTypes";
@@ -505,25 +506,7 @@ function ModeSwitch({
   return (
     <div>
       <label className="mb-2 block text-sm font-medium text-gray-700">{label}</label>
-      <div className="inline-flex rounded-xl bg-gray-100 p-1">
-        {options.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => {
-              if (!locked) onChange(option.value);
-            }}
-            disabled={locked}
-            className={
-              value === option.value
-                ? "rounded-lg bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm disabled:opacity-50"
-                : "rounded-lg px-4 py-2 text-sm font-semibold text-gray-600 transition hover:text-gray-900 disabled:opacity-50"
-            }
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
+      <HorizontalPillTabs tabs={options} activeValue={value} ariaLabel={label} disabled={locked} onChange={onChange} />
       {locked ? <p className="mt-2 text-xs text-gray-400">编辑模式下不支持切换类型。</p> : null}
     </div>
   );
