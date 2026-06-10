@@ -19,7 +19,8 @@ import {
   Shuffle,
   X,
 } from "lucide-react";
-import { PageTitleCard } from "@/components/PageTitleCard";
+import { DmvHorizontalNav } from "@/components/dmv/DmvHorizontalNav";
+import { ChannelHero } from "@/components/posts/ChannelHero";
 import { ChannelSeoCard } from "@/components/posts/ChannelSeoCard";
 import { cn } from "@/lib/utils/cn";
 
@@ -66,7 +67,7 @@ const practiceCards = [
 ] as const;
 
 const quickTools = [
-  { title: "DMV 笔试模拟", desc: "查看题库、练习模式、模拟考试与错题练习", href: "/dmv/practice", Icon: BookOpen, external: false },
+  { title: "纽约 DMV 笔试练习", desc: "查看题库、练习模式、模拟考试与错题练习", href: "#dmv-practice-section", Icon: BookOpen, external: false, scrollTarget: "dmv-practice-section" },
   { title: "罚单查询", desc: "交通罚单与处理指引", href: "/dmv/tickets", Icon: AlertTriangle, external: false },
   { title: "DMV 小工具", desc: "文件检查、6 Points、REAL ID 工具", href: "https://openaa.com/tool/dmv/document-checker.html", Icon: Car, external: true },
   { title: "驾照申请", desc: "Learner Permit 官方入口", href: "https://dmv.ny.gov/driver-license/get-learner-permit", Icon: FileText, external: true },
@@ -192,10 +193,11 @@ export function DmvHomeClient({ questionCount, guides }: DmvHomeClientProps) {
 
   return (
     <>
-      <PageTitleCard
+      <ChannelHero
         title="DMV 工具中心"
-        description="DMV 笔试、路考、罚单查询、驾照申请及常用 DMV 工具入口。"
+        description="纽约 DMV 笔试、路考、罚单查询、驾照申请及常用工具入口。"
       />
+      <DmvHorizontalNav activeValue="tools" />
 
       <section>
         <h2 className="text-base font-black text-slate-950">DMV 快捷工具</h2>
@@ -253,7 +255,7 @@ export function DmvHomeClient({ questionCount, guides }: DmvHomeClientProps) {
         </div>
       </section>
 
-      <section id="dmv-practice-section">
+      <section id="dmv-practice-section" className="scroll-mt-32 md:scroll-mt-28">
         <h2 className="text-base font-black text-slate-950">纽约 DMV 笔试练习</h2>
         <p className="mt-1 text-xs text-slate-500">中文题库 · {questionCount} 题 · 无需登录 · 支持错题练习</p>
         <div className="mt-3 grid grid-cols-2 gap-3">
@@ -375,6 +377,7 @@ export function DmvHomeClient({ questionCount, guides }: DmvHomeClientProps) {
 
 function ToolCard({ item }: { item: (typeof quickTools)[number] }) {
   const Icon = item.Icon;
+  const scrollTarget = "scrollTarget" in item ? item.scrollTarget : undefined;
   const content = (
     <>
       <span className="flex items-start justify-between gap-2">
@@ -397,6 +400,37 @@ function ToolCard({ item }: { item: (typeof quickTools)[number] }) {
       <a href={item.href} target="_blank" rel="noopener noreferrer" className={className}>
         {content}
       </a>
+    );
+  }
+
+  if (scrollTarget) {
+    return (
+      <button
+        type="button"
+        className={`w-full ${className}`}
+        onClick={(event) => {
+          const target = document.getElementById(scrollTarget);
+          if (!target) return;
+
+          event.preventDefault();
+          window.history.pushState(null, "", `#${scrollTarget}`);
+          const targetTop = target.getBoundingClientRect().top + window.scrollY - 132;
+          window.scrollTo({
+            top: targetTop,
+            behavior: "smooth",
+          });
+          window.setTimeout(() => {
+            const distanceFromOffset = Math.abs(target.getBoundingClientRect().top - 132);
+            if (distanceFromOffset > 12) {
+              const scrollingElement = document.scrollingElement ?? document.documentElement;
+              scrollingElement.scrollTop = targetTop;
+              document.body.scrollTop = targetTop;
+            }
+          }, 300);
+        }}
+      >
+        {content}
+      </button>
     );
   }
 

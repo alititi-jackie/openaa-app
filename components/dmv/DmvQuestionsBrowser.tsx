@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { HorizontalPillTabs } from "@/components/common/HorizontalPillTabs";
-import { DmvLoginPrompt } from "@/components/dmv/DmvLoginPrompt";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
 import { addWrongQuestion, removeWrongQuestion } from "@/components/dmv/dmvStorage";
 import { getDmvCategoryLabel } from "@/components/dmv/dmvCategoryLabels";
@@ -17,6 +17,7 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");
   const [revealAnswer, setRevealAnswer] = useState(false);
+  const [showCompletionPrompt, setShowCompletionPrompt] = useState(true);
   const [selectedById, setSelectedById] = useState<Record<string, number>>({});
   const categories = useMemo(() => ["all", ...Array.from(new Set(questions.map((question) => question.category)))], [questions]);
 
@@ -48,38 +49,41 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
 
   return (
     <div className="space-y-4">
-      <section className="flex flex-wrap gap-2 rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
-        <Link href="/dmv/practice" className="rounded-full bg-blue-50 px-3 py-2 text-sm font-black text-blue-700">
-          开始练习
-        </Link>
-        <Link href="/dmv/mock-test" className="rounded-full bg-green-50 px-3 py-2 text-sm font-black text-green-700">
-          模拟考试
-        </Link>
-      </section>
-
-      <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-        <div className="grid gap-3">
-          <input
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="搜索题目、选项或答案"
-            className="min-h-11 rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          />
-          <HorizontalPillTabs
-            tabs={categories.map((item) => ({ value: item, label: item === "all" ? "全部" : getDmvCategoryLabel(item) }))}
-            activeValue={category}
-            ariaLabel="DMV 题目分类"
-            onChange={setCategory}
-          />
-          <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
-            <input type="checkbox" checked={revealAnswer} onChange={(event) => setRevealAnswer(event.target.checked)} />
-            显示全部答案
-          </label>
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-base font-black text-slate-950">查看题库</h2>
+          <button
+            type="button"
+            onClick={() => setRevealAnswer((current) => !current)}
+            aria-pressed={revealAnswer}
+            className={`inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-bold transition active:scale-[0.98] ${
+              revealAnswer ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600"
+            }`}
+          >
+            {revealAnswer ? <Eye size={15} aria-hidden="true" /> : <EyeOff size={15} aria-hidden="true" />}
+            {revealAnswer ? "显示答案" : "隐藏答案"}
+          </button>
         </div>
-      </section>
 
-      <p className="text-sm font-bold text-slate-500">共 {filtered.length} 题</p>
+        <input
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="搜索题目、选项或答案"
+          className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+        />
+
+        <p className="text-xs leading-5 text-slate-400">
+          共 {questions.length} 题 · {revealAnswer ? "当前显示答案与解析" : "点击选项可以直接答题"}
+        </p>
+
+        <HorizontalPillTabs
+          tabs={categories.map((item) => ({ value: item, label: item === "all" ? "全部" : getDmvCategoryLabel(item) }))}
+          activeValue={category}
+          ariaLabel="DMV 题目分类"
+          onChange={setCategory}
+        />
+      </section>
 
       {filtered.length > 0 ? (
         <div className="space-y-3">
@@ -101,7 +105,42 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
         </section>
       )}
 
-      <DmvLoginPrompt />
+      {showCompletionPrompt ? (
+        <section className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-900">
+          <p className="text-base font-black">🎉 已浏览完题库！</p>
+          <p className="mt-1 text-blue-800">登录 OpenAA 后，未来可同步错题和学习进度，支持多设备继续学习。</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link href="/login?returnTo=/dmv/questions" className="inline-flex h-10 items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-black text-white">
+              登录 / 注册
+            </Link>
+            <button type="button" onClick={() => setShowCompletionPrompt(false)} className="inline-flex h-10 items-center justify-center rounded-xl border border-blue-200 bg-white px-4 text-sm font-black text-blue-700">
+              稍后
+            </button>
+          </div>
+        </section>
+      ) : null}
+
+      <Link href="/dmv" className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 shadow-sm">
+        退出题库
+      </Link>
+
+      <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+        <h2 className="text-base font-black text-slate-950">常见问题 FAQ</h2>
+        <div className="mt-3 space-y-3">
+          <FaqItem question="纽约 DMV Permit 要多少题及格？" answer="考试共 20 题，至少答对 14 题，且交通标志题至少答对 2 题。" />
+          <FaqItem question="题库有答案解析吗？" answer="有，题库支持查看答案和中文解析，方便理解道路规则与交通标志。" />
+          <FaqItem question="看完题库后下一步做什么？" answer="建议先去 Practice 练习，再做 Mock Test 模拟考试检验通过率。" />
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function FaqItem({ question, answer }: { question: string; answer: string }) {
+  return (
+    <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+      <h3 className="text-sm font-bold text-slate-950">{question}</h3>
+      <p className="mt-1 text-sm leading-6 text-slate-600">{answer}</p>
     </div>
   );
 }
