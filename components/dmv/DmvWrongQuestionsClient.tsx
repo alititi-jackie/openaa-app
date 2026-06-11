@@ -200,9 +200,6 @@ export function DmvWrongQuestionsClient({ questions }: { questions: DmvQuestion[
           <Link href="/dmv/mock-test" className="rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-center text-sm font-black text-green-700">
             去模拟考试
           </Link>
-          <Link href="/dmv" className={`${dmvBackLinkClassName} sm:col-span-2`}>
-            返回 DMV 首页
-          </Link>
         </div>
 
         <DmvLoginPrompt />
@@ -212,10 +209,6 @@ export function DmvWrongQuestionsClient({ questions }: { questions: DmvQuestion[
 
   return (
     <div className="space-y-4">
-      <Link href="/dmv" className={dmvBackLinkClassName}>
-        返回 DMV 首页
-      </Link>
-
       <section className="rounded-2xl border border-red-100 bg-white p-4 shadow-sm">
         <h2 className="text-xl font-black text-slate-950">错题本</h2>
         <div className="mt-4 grid grid-cols-2 gap-3 text-center">

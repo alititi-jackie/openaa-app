@@ -1,6 +1,7 @@
-import { DmvBackLink } from "@/components/dmv/DmvBackLink";
+import { DetailBackButton } from "@/components/common/DetailBackButton";
+import { DmvHorizontalNav } from "@/components/dmv/DmvHorizontalNav";
 import { DmvWrongQuestionsClient } from "@/components/dmv/DmvWrongQuestionsClient";
-import { PageShell } from "@/components/layout/PageShell";
+import { ChannelHero } from "@/components/posts/ChannelHero";
 import { getDmvQuestionBank } from "@/features/dmv/questions";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -17,9 +18,13 @@ export default async function DmvWrongQuestionsPage() {
   const bank = await getDmvQuestionBank();
 
   return (
-    <PageShell title="DMV 错题练习" description="练习和模拟考试答错的题目会保存在本机浏览器，可在这里重新练习。" eyebrow="DMV">
-      <DmvBackLink />
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <DetailBackButton fallbackHref="/dmv" />
+      </div>
+      <ChannelHero title="DMV 错题练习" description="练习和模拟考试答错的题目会保存在本机浏览器，可在这里重新练习。" />
+      <DmvHorizontalNav activeValue="wrong-questions" />
       <DmvWrongQuestionsClient questions={bank.questions} />
-    </PageShell>
+    </div>
   );
 }
