@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { DmvDisclaimerCard, DmvFaqSection, DmvInfoSection } from "@/components/dmv/DmvBottomSections";
+import { DmvFaqSection, DmvLearningDisclaimerCard, DmvSeoContentSection } from "@/components/dmv/DmvBottomSections";
 import { DmvLoginPrompt } from "@/components/dmv/DmvLoginPrompt";
 import { dmvBackLinkClassName } from "@/components/dmv/DmvBackLink";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
+import { dmvSeoContent } from "@/components/dmv/dmvSeoContent";
 import { addWrongQuestion, removeWrongQuestion, shuffleQuestions } from "@/components/dmv/dmvStorage";
 import { getDmvCategoryLabel } from "@/components/dmv/dmvCategoryLabels";
 import type { DmvQuestion } from "@/features/dmv/types";
@@ -207,18 +208,8 @@ export function DmvSignTestClient({ questions }: { questions: DmvQuestion[] }) {
       </div>
 
       <DmvFaqSection items={signTestFaq} />
-      <DmvDisclaimerCard>
-        <p>OpenAA 交通标志专项练习仅供 DMV Permit 中文备考参考，不代表 New York DMV 官方考试内容。</p>
-        <p>正式考试题目、交通标志范围和通过要求，请以 New York DMV 官方资料为准。</p>
-      </DmvDisclaimerCard>
-      <DmvInfoSection>
-        <p>
-          交通标志专项把题库中的标志题集中到一个入口，方便你在考前快速复习常见标志、警告标志和道路规则题。
-        </p>
-        <p>
-          建议先完成交通标志专项，再进入模拟考试检验整体通过率。遇到反复答错的标志题，可以回到错题练习继续复盘。
-        </p>
-      </DmvInfoSection>
+      <DmvLearningDisclaimerCard />
+      <DmvSeoContentSection {...dmvSeoContent.signTest} />
     </div>
   );
 }

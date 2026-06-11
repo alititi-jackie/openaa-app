@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { HorizontalPillTabs } from "@/components/common/HorizontalPillTabs";
-import { DmvDisclaimerCard, DmvFaqSection, DmvInfoSection } from "@/components/dmv/DmvBottomSections";
+import { DmvFaqSection, DmvLearningDisclaimerCard, DmvSeoContentSection } from "@/components/dmv/DmvBottomSections";
 import { DmvLoginPrompt } from "@/components/dmv/DmvLoginPrompt";
 import { dmvBackLinkClassName } from "@/components/dmv/DmvBackLink";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
+import { dmvSeoContent } from "@/components/dmv/dmvSeoContent";
 import { addWrongQuestion, readWrongQuestionIds, removeWrongQuestion, saveWrongQuestionIds } from "@/components/dmv/dmvStorage";
 import { getDmvCategoryLabel } from "@/components/dmv/dmvCategoryLabels";
 import type { DmvQuestion } from "@/features/dmv/types";
@@ -277,18 +278,8 @@ export function DmvWrongQuestionsClient({ questions }: { questions: DmvQuestion[
       )}
 
       <DmvFaqSection items={wrongQuestionsFaq} />
-      <DmvDisclaimerCard>
-        <p>OpenAA 错题本是本机浏览器里的学习辅助功能，仅用于 DMV Permit 中文备考参考。</p>
-        <p>错题记录不等同于 DMV 官方学习记录，也不代表正式考试题目范围。</p>
-      </DmvDisclaimerCard>
-      <DmvInfoSection>
-        <p>
-          错题练习适合在刷题和模拟考试之后使用，帮助你集中复盘不熟悉的路权、标志、处罚和安全规则。
-        </p>
-        <p>
-          如果错题数量较多，建议先按“只看交通标志错题”突破标志题，再回到全部错题练习。正式考试要求和题目内容请以 New York DMV 官方系统为准。
-        </p>
-      </DmvInfoSection>
+      <DmvLearningDisclaimerCard />
+      <DmvSeoContentSection {...dmvSeoContent.wrongQuestions} />
     </div>
   );
 }

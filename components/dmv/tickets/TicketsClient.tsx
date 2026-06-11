@@ -14,8 +14,9 @@ import {
 import { DetailBackButton } from '@/components/common/DetailBackButton'
 import { FavoriteButton } from '@/components/common/FavoriteButton'
 import { PageShareButton } from '@/components/common/PageShareButton'
-import { DmvDisclaimerCard, DmvFaqSection, DmvInfoSection } from '@/components/dmv/DmvBottomSections'
+import { DmvFaqSection, DmvSeoContentSection, DmvTicketDisclaimerCard } from '@/components/dmv/DmvBottomSections'
 import { DmvHorizontalNav } from '@/components/dmv/DmvHorizontalNav'
+import { dmvSeoContent } from '@/components/dmv/dmvSeoContent'
 import { ChannelHero } from '@/components/posts/ChannelHero'
 import {
   ALL_STATES,
@@ -410,24 +411,9 @@ export default function TicketsClient() {
 
       <DmvFaqSection items={faqItems} />
 
-      <DmvDisclaimerCard>
-        <p>
-          OpenAA 不提供法律意见，也不直接查询或保存罚单数据。本页面仅整理官方查询入口和中文说明。具体罚单金额、期限、申诉和缴费结果，请以政府、法院或官方机构网站为准。
-        </p>
-        <p className="font-medium text-amber-800">安全提醒：</p>
-        <ul className="space-y-1">
-          <li>• 不要在非官方网站输入信用卡或个人敏感信息</li>
-          <li>• 核对网址是否为 .gov 或官方机构域名</li>
-          <li>• 如罚单已逾期，请尽快到官方系统处理</li>
-          <li>• 如需申诉，请按官方页面说明在规定期限内提交</li>
-        </ul>
-      </DmvDisclaimerCard>
+      <DmvTicketDisclaimerCard />
 
-      <DmvInfoSection>
-        <p>OpenAA 提供停车罚单、红灯摄像头、超速拍照、交通罚单和过路费的官方入口导航。</p>
-        <p>OpenAA 不保存车牌信息，也不直接查询罚单数据；金额、状态和截止日期请以官方系统为准。</p>
-        <p>本页整理纽约常用入口和全美州级入口，方便纽约华人快速找到正确查询路径。</p>
-      </DmvInfoSection>
+      <DmvSeoContentSection {...dmvSeoContent.tickets} />
     </div>
   )
 }

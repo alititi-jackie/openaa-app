@@ -6,11 +6,12 @@ import { Share2 } from "lucide-react";
 import { DetailBackButton } from "@/components/common/DetailBackButton";
 import { FavoriteButton } from "@/components/common/FavoriteButton";
 import { PageShareButton } from "@/components/common/PageShareButton";
-import { DmvDisclaimerCard, DmvFaqSection, DmvInfoSection } from "@/components/dmv/DmvBottomSections";
+import { DmvFaqSection, DmvLearningDisclaimerCard, DmvSeoContentSection } from "@/components/dmv/DmvBottomSections";
 import { DmvHorizontalNav } from "@/components/dmv/DmvHorizontalNav";
 import { DmvLoginPrompt } from "@/components/dmv/DmvLoginPrompt";
 import { DmvBackLink, dmvBackLinkClassName } from "@/components/dmv/DmvBackLink";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
+import { dmvSeoContent } from "@/components/dmv/dmvSeoContent";
 import { PageTitleCard } from "@/components/PageTitleCard";
 import { ChannelHero } from "@/components/posts/ChannelHero";
 import { addWrongQuestion, removeWrongQuestion, savePracticeProgress, savePracticeResult, shuffleQuestions } from "@/components/dmv/dmvStorage";
@@ -178,28 +179,8 @@ export function DmvPracticeClient({ questions }: { questions: DmvQuestion[] }) {
         </div>
 
         <DmvFaqSection items={practiceFaq} />
-        <DmvDisclaimerCard>
-          <p>OpenAA 的练习模式仅供 DMV Permit 中文备考参考，不代表 New York DMV 官方考试内容。</p>
-          <p>正式考试题目、预约、证件和费用要求，请以 New York DMV 官方系统和现场要求为准。</p>
-        </DmvDisclaimerCard>
-        <DmvInfoSection>
-          <div className="space-y-3">
-            <p>
-              这个页面是 OpenAA 的纽约 DMV Permit 训练入口，围绕 DMV Permit 题库、DMV 中文笔试、模拟考试、交通标志、Learner Permit 等核心主题设计。许多用户会先搜索“Permit 中文练习”或“纽约 DMV 中文笔试”，再进入练习系统，因此底部保留了完整文字说明，让搜索引擎与首次访问者都能快速理解页面用途。
-            </p>
-            <p>
-              适合使用的人群包括准备第一次参加 Learner Permit 笔试的新移民、想用中文复习规则的华人用户、以及需要集中突破交通标志题的考生。你可以根据自己的进度选择随机练习、顺序练习、错题复盘或完整模拟考试。
-            </p>
-            <p>
-              完成线上练习后，建议结合 DMV 官方流程核对最新政策，包括预约、证件、费用与考试安排。OpenAA 提供中文学习与导航支持，但正式评分和结果仍以纽约 DMV 官方系统为准。
-            </p>
-            <ul className="space-y-1 font-bold text-slate-700">
-              <li>适合用户：准备 DMV 中文笔试的纽约华人、新移民、留学生</li>
-              <li>核心功能：随机/顺序练习、模拟考试、错题复盘、交通标志专项</li>
-              <li>复习建议：先掌握交通标志与高频规则，再用模拟考试检验 Learner Permit 应试节奏</li>
-            </ul>
-          </div>
-        </DmvInfoSection>
+        <DmvLearningDisclaimerCard />
+        <DmvSeoContentSection {...dmvSeoContent.practice} />
       </div>
     );
   }
