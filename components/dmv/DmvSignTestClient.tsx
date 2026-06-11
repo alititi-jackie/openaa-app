@@ -9,6 +9,7 @@ import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
 import { dmvSeoContent } from "@/components/dmv/dmvSeoContent";
 import { addWrongQuestion, removeWrongQuestion, shuffleQuestions } from "@/components/dmv/dmvStorage";
 import { getDmvCategoryLabel } from "@/components/dmv/dmvCategoryLabels";
+import { isRoadSignQuestion } from "@/features/dmv/questionPredicates";
 import type { DmvQuestion } from "@/features/dmv/types";
 
 type SignTestPhase = "intro" | "practice" | "done";
@@ -29,7 +30,7 @@ const signTestFaq = [
 ];
 
 export function DmvSignTestClient({ questions }: { questions: DmvQuestion[] }) {
-  const signQuestions = useMemo(() => questions.filter(isSignQuestion), [questions]);
+  const signQuestions = useMemo(() => questions.filter(isRoadSignQuestion), [questions]);
   const [phase, setPhase] = useState<SignTestPhase>("intro");
   const [practiceQuestions, setPracticeQuestions] = useState<DmvQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -209,10 +210,6 @@ export function DmvSignTestClient({ questions }: { questions: DmvQuestion[] }) {
       <DmvSeoContentSection {...dmvSeoContent.signTest} />
     </div>
   );
-}
-
-function isSignQuestion(question: DmvQuestion) {
-  return question.isRoadSign || question.category.includes("sign") || question.tags.some((tag) => tag.toLowerCase().includes("sign"));
 }
 
 function ScoreCard({ label, value, tone }: { label: string; value: number | string; tone: "green" | "red" | "blue" | "slate" }) {

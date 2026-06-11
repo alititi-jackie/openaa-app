@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Eye, EyeOff, Search } from "lucide-react";
 import { HorizontalPillTabs } from "@/components/common/HorizontalPillTabs";
 import { DmvFaqSection } from "@/components/dmv/DmvBottomSections";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
 import { addWrongQuestion, removeWrongQuestion } from "@/components/dmv/dmvStorage";
 import { getDmvCategoryLabel } from "@/components/dmv/dmvCategoryLabels";
+import { isRoadSignQuestion } from "@/features/dmv/questionPredicates";
 import type { DmvQuestion } from "@/features/dmv/types";
 
 type DmvQuestionsBrowserProps = {
@@ -29,18 +30,28 @@ const questionBrowserFaq = [
   },
 ];
 
+const STICKY_TOP_FALLBACK = 69;
+
+function getStickyTopOffset() {
+  if (typeof document === "undefined") return STICKY_TOP_FALLBACK;
+  const header = document.querySelector("header");
+  return Math.ceil(header?.getBoundingClientRect().height ?? STICKY_TOP_FALLBACK);
+}
+
 export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");
   const [revealAnswer, setRevealAnswer] = useState(false);
+  const [isControlHeaderCollapsed, setIsControlHeaderCollapsed] = useState(false);
   const [selectedById, setSelectedById] = useState<Record<string, number>>({});
   const questionBrowserRef = useRef<HTMLElement | null>(null);
+  const lastScrollYRef = useRef(0);
   const categories = useMemo(() => ["all", ...Array.from(new Set(questions.map((question) => question.category)))], [questions]);
 
   const filtered = useMemo(() => {
     const keyword = search.trim().toLowerCase();
     return questions.filter((question) => {
-      const matchesCategory = category === "all" || question.category === category;
+      const matchesCategory = category === "all" || (category === "traffic-signs" ? isRoadSignQuestion(question) : question.category === category);
       const matchesSearch =
         !keyword ||
         question.questionText.toLowerCase().includes(keyword) ||
@@ -53,6 +64,48 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
   const questionCountHint = revealAnswer
     ? `共 ${filtered.length} 题 · ${activeCategoryLabel}`
     : `共 ${filtered.length} 题 · ${activeCategoryLabel} · 点击选项可以直接答题`;
+
+  useEffect(() => {
+    lastScrollYRef.current = window.scrollY;
+    let frameId = 0;
+
+    function updateControlHeader() {
+      frameId = 0;
+      const target = questionBrowserRef.current;
+      if (!target) return;
+
+      const stickyTop = getStickyTopOffset();
+      const currentScrollY = window.scrollY;
+      const isScrollingDown = currentScrollY > lastScrollYRef.current;
+      const isScrollingUp = currentScrollY < lastScrollYRef.current;
+      const isSticky = target.getBoundingClientRect().top <= stickyTop + 1 && currentScrollY > 0;
+
+      if (!isSticky) {
+        setIsControlHeaderCollapsed(false);
+      } else if (isScrollingDown) {
+        setIsControlHeaderCollapsed(true);
+      } else if (isScrollingUp) {
+        setIsControlHeaderCollapsed(false);
+      }
+
+      lastScrollYRef.current = currentScrollY;
+    }
+
+    function handleScroll() {
+      if (frameId) return;
+      frameId = window.requestAnimationFrame(updateControlHeader);
+    }
+
+    updateControlHeader();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", updateControlHeader);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", updateControlHeader);
+      if (frameId) window.cancelAnimationFrame(frameId);
+    };
+  }, []);
 
   if (questions.length === 0) {
     return <EmptyDmvState />;
@@ -71,11 +124,12 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
     const target = questionBrowserRef.current;
     if (!target) return;
 
-    const targetTop = target.getBoundingClientRect().top + window.scrollY - 148;
+    const stickyTop = getStickyTopOffset();
+    const targetTop = target.getBoundingClientRect().top + window.scrollY - stickyTop;
     window.history.replaceState(null, "", "#dmv-question-browser");
     window.scrollTo({ top: targetTop, behavior: "smooth" });
     window.setTimeout(() => {
-      if (Math.abs(target.getBoundingClientRect().top - 148) > 12) {
+      if (Math.abs(target.getBoundingClientRect().top - stickyTop) > 12) {
         const scrollingElement = document.scrollingElement ?? document.documentElement;
         scrollingElement.scrollTop = targetTop;
         document.body.scrollTop = targetTop;
@@ -88,24 +142,26 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
       <section
         id="dmv-question-browser"
         ref={questionBrowserRef}
-        className="sticky top-[76px] z-40 scroll-mt-[148px] rounded-2xl border border-slate-100 bg-white p-4 shadow-sm"
+        className="sticky top-[calc(3.5rem+max(0.75rem,env(safe-area-inset-top))+1px)] z-40 scroll-mt-[calc(3.5rem+max(0.75rem,env(safe-area-inset-top))+1px)] rounded-2xl border border-slate-100 bg-white px-3 py-2 shadow-sm"
       >
-        <div className="flex items-center gap-3">
-          <h2 className="text-base font-bold text-zinc-900">查看题库</h2>
-          <button
-            type="button"
-            onClick={() => setRevealAnswer((current) => !current)}
-            aria-pressed={revealAnswer}
-            className={`ml-auto flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-colors active:scale-[0.98] ${
-              revealAnswer ? "bg-blue-600 text-white" : "bg-zinc-100 text-zinc-600"
-            }`}
-          >
-            {revealAnswer ? <Eye size={12} aria-hidden="true" /> : <EyeOff size={12} aria-hidden="true" />}
-            {revealAnswer ? "显示答案" : "隐藏答案"}
-          </button>
-        </div>
+        {!isControlHeaderCollapsed ? (
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-bold text-zinc-900">查看题库</h2>
+            <button
+              type="button"
+              onClick={() => setRevealAnswer((current) => !current)}
+              aria-pressed={revealAnswer}
+              className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-colors active:scale-[0.98] ${
+                revealAnswer ? "bg-blue-600 text-white" : "bg-zinc-100 text-zinc-600"
+              }`}
+            >
+              {revealAnswer ? <Eye size={12} aria-hidden="true" /> : <EyeOff size={12} aria-hidden="true" />}
+              {revealAnswer ? "显示答案" : "隐藏答案"}
+            </button>
+          </div>
+        ) : null}
 
-        <div className="mt-2">
+        <div className={isControlHeaderCollapsed ? "" : "mt-2"}>
           <div className="relative">
             <Search size={14} aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
             <input
@@ -117,11 +173,11 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
             />
           </div>
 
-          <p className="mt-1.5 text-xs leading-5 text-zinc-400">{questionCountHint}</p>
+          <p className="mt-1 text-xs leading-5 text-zinc-400">{questionCountHint}</p>
         </div>
 
         <HorizontalPillTabs
-          className="mt-2"
+          className="mt-1"
           tabs={categories.map((item) => ({ value: item, label: item === "all" ? "全部" : getDmvCategoryLabel(item) }))}
           activeValue={category}
           ariaLabel="DMV 题目分类"
