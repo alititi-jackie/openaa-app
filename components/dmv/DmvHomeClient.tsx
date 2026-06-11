@@ -112,19 +112,23 @@ function scrollToSection(sectionId: string) {
   if (!target) return;
 
   const targetTop = Math.max(0, target.getBoundingClientRect().top + window.scrollY - SCROLL_OFFSET);
+  const alignTarget = () => {
+    const correction = target.getBoundingClientRect().top - SCROLL_OFFSET;
+    if (Math.abs(correction) > 8) {
+      window.scrollBy({
+        top: correction,
+        behavior: "auto",
+      });
+    }
+  };
+
   window.history.pushState(null, "", `#${sectionId}`);
   window.scrollTo({
     top: targetTop,
     behavior: "smooth",
   });
-  window.setTimeout(() => {
-    const distanceFromOffset = Math.abs(target.getBoundingClientRect().top - SCROLL_OFFSET);
-    if (distanceFromOffset > 12) {
-      const scrollingElement = document.scrollingElement ?? document.documentElement;
-      scrollingElement.scrollTop = targetTop;
-      document.body.scrollTop = targetTop;
-    }
-  }, 300);
+  window.setTimeout(alignTarget, 700);
+  window.setTimeout(alignTarget, 1100);
 }
 
 const processDetails = [
@@ -258,15 +262,6 @@ export function DmvHomeClient({ questionCount, guides }: DmvHomeClientProps) {
         />
       </section>
 
-      <section id="dmv-quick-tools-section" className="scroll-mt-[132px]">
-        <h2 className="text-base font-black text-slate-950">DMV 快捷工具</h2>
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          {quickTools.map((item) => (
-            <ToolCard key={item.title} item={item} />
-          ))}
-        </div>
-      </section>
-
       <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
         <h2 className="text-base font-black text-slate-950">纽约华人 DMV 中文学习平台</h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -310,6 +305,15 @@ export function DmvHomeClient({ questionCount, guides }: DmvHomeClientProps) {
               </span>
               <ChevronRight size={14} className="shrink-0 text-slate-300" />
             </button>
+          ))}
+        </div>
+      </section>
+
+      <section id="dmv-quick-tools-section" className="scroll-mt-[132px]">
+        <h2 className="text-base font-black text-slate-950">DMV 快捷工具</h2>
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          {quickTools.map((item) => (
+            <ToolCard key={item.title} item={item} />
           ))}
         </div>
       </section>
