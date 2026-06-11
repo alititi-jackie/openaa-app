@@ -244,12 +244,12 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
   return (
     <div className="space-y-4">
       <section className={`rounded-2xl border p-4 text-left shadow-sm ${result.passed ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}>
-        <h2 className={`flex items-center gap-2 text-lg font-black ${result.passed ? "text-green-900" : "text-red-900"}`}>
+        <p className="text-xs font-bold text-slate-500">本次考试用时：{formatDuration(elapsedSeconds)}</p>
+        <h2 className={`mt-2 flex items-center justify-center gap-2 text-xl font-black ${result.passed ? "text-green-900" : "text-red-900"}`}>
           <span aria-hidden="true">{result.passed ? "✅" : "❗"}</span>
           <span>{result.passed ? "模拟考试通过" : "未通过，请继续练习"}</span>
         </h2>
-        <p className="mt-1 text-xs font-bold text-slate-500">本次考试用时：{formatDuration(elapsedSeconds)}</p>
-        <div className="mt-3 space-y-0.5 text-sm font-bold leading-5 text-slate-700">
+        <div className="mt-3 space-y-0.5 text-center text-sm font-bold leading-5 text-slate-700">
           <p>
             答对 {result.correct} / {result.total} 题
           </p>
@@ -257,13 +257,13 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
             交通标志答对 {result.signCorrect} / {result.signTotal} 题
           </p>
         </div>
-        <div className="mt-3 rounded-xl bg-white/75 p-3 text-sm leading-6 text-slate-700">
+        <div className="mt-3 text-sm font-bold leading-6 text-slate-700">
           <h3 className="font-black text-slate-950">通过标准</h3>
-          <p className={correctStandardPassed ? "mt-1 font-bold text-green-700" : "mt-1 font-bold text-red-600"}>
-            20题中至少答对14题：当前{result.correct}题 {correctStandardPassed ? "✅" : "❌"}
+          <p className="mt-1">
+            20题中至少答对14题：当前 {result.correct} 题 <span aria-hidden="true">{correctStandardPassed ? "✅" : "❌"}</span>
           </p>
-          <p className={signStandardPassed ? "font-bold text-green-700" : "font-bold text-red-600"}>
-            4道交通标志题至少答对2题：当前{result.signCorrect}题 {signStandardPassed ? "✅" : "❌"}
+          <p>
+            4道交通标志题至少答对2题：当前 {result.signCorrect} 题 <span aria-hidden="true">{signStandardPassed ? "✅" : "❌"}</span>
           </p>
         </div>
       </section>
