@@ -39,11 +39,22 @@ function getStickyTopOffset() {
   return Math.ceil(header?.getBoundingClientRect().height ?? STICKY_TOP_FALLBACK);
 }
 
+function getElementDocumentTop(element: HTMLElement) {
+  let top = 0;
+  let current: HTMLElement | null = element;
+  while (current) {
+    top += current.offsetTop;
+    current = current.offsetParent as HTMLElement | null;
+  }
+  return top;
+}
+
 export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");
   const [revealAnswer, setRevealAnswer] = useState(false);
   const [selectedById, setSelectedById] = useState<Record<string, number>>({});
+  const questionBrowserAnchorRef = useRef<HTMLDivElement | null>(null);
   const questionBrowserRef = useRef<HTMLElement | null>(null);
   const categories = useMemo(() => ["all", ...Array.from(new Set(questions.map((question) => question.category)))], [questions]);
 
@@ -78,12 +89,11 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
   }
 
   function scrollToQuestionBrowser() {
-    const target = questionBrowserRef.current;
+    const target = questionBrowserAnchorRef.current ?? questionBrowserRef.current;
     if (!target) return;
 
     const stickyTop = getStickyTopOffset();
-    const targetTop = target.getBoundingClientRect().top + window.scrollY - stickyTop;
-    window.history.replaceState(null, "", "#dmv-question-browser");
+    const targetTop = Math.max(0, getElementDocumentTop(target) - stickyTop);
     window.scrollTo({ top: targetTop, behavior: "smooth" });
     window.setTimeout(() => {
       if (Math.abs(target.getBoundingClientRect().top - stickyTop) > 12) {
@@ -96,6 +106,7 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
 
   return (
     <div>
+      <div ref={questionBrowserAnchorRef} aria-hidden="true" />
       <section
         id="dmv-question-browser"
         ref={questionBrowserRef}
