@@ -188,7 +188,6 @@ export function DmvPracticeClient({ questions }: { questions: DmvQuestion[] }) {
   if (mode === "done") {
     return (
       <div className="space-y-4">
-        <DmvPracticeLegacyHeader />
         <section className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
           <h2 className="text-xl font-black text-slate-950">练习完成</h2>
           <div className="mt-4 grid grid-cols-3 gap-3 text-center">
@@ -196,31 +195,28 @@ export function DmvPracticeClient({ questions }: { questions: DmvQuestion[] }) {
             <ScoreCard label="错误" value={wrongCount} tone="red" />
             <ScoreCard label="正确率" value={`${correctRate}%`} tone="blue" />
           </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <button type="button" onClick={startPractice} className="min-h-12 rounded-xl bg-blue-600 px-4 py-3 text-sm font-black text-white">
+              再来一次
+            </button>
+            <Link href="/dmv/wrong-questions" className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-center text-sm font-black text-red-700">
+              去错题练习
+            </Link>
+            <button type="button" onClick={shareResult} className="col-span-2 min-h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700">
+              分享结果
+            </button>
+          </div>
+          {shareMessage ? <p className="mt-3 text-center text-xs font-bold text-blue-600">{shareMessage}</p> : null}
         </section>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <button type="button" onClick={startPractice} className="min-h-12 rounded-xl bg-blue-600 px-4 py-3 text-sm font-black text-white">
-            再来一次
+        <div className="flex justify-center">
+          <button type="button" onClick={() => setMode("setup")} className={dmvBackLinkClassName}>
+            退出练习
           </button>
-          <Link href="/dmv/wrong-questions" className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-center text-sm font-black text-red-700">
-            去错题练习
-          </Link>
-          <Link href="/dmv/mock-test" className="rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-center text-sm font-black text-green-700">
-            模拟考试
-          </Link>
-          <Link href="/dmv/sign-test" className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-center text-sm font-black text-amber-700">
-            交通标志专项
-          </Link>
-          <button type="button" onClick={shareResult} className="min-h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700">
-            分享结果
-          </button>
-          <Link href="/dmv" className={dmvBackLinkClassName}>
-            返回 DMV 首页
-          </Link>
         </div>
-
-        {shareMessage ? <p className="text-center text-xs font-bold text-blue-600">{shareMessage}</p> : null}
         <DmvLoginPrompt />
+        <DmvResultDisclaimer text="本练习结果仅供学习参考，题目、解析和统计结果不代表 DMV 官方考试结果。正式考试规则、题目和要求请以 New York DMV 官方信息为准。" />
       </div>
     );
   }
@@ -344,5 +340,14 @@ function ScoreCard({ label, value, tone }: { label: string; value: number | stri
       <p className="text-2xl font-black">{value}</p>
       <p className="text-xs font-bold">{label}</p>
     </div>
+  );
+}
+
+function DmvResultDisclaimer({ text }: { text: string }) {
+  return (
+    <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900 shadow-sm">
+      <h2 className="text-base font-black text-amber-950">免责声明</h2>
+      <p className="mt-2">{text}</p>
+    </section>
   );
 }

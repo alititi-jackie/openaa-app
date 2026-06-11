@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Share2 } from "lucide-react";
 import { DetailBackButton } from "@/components/common/DetailBackButton";
 import { FavoriteButton } from "@/components/common/FavoriteButton";
@@ -49,6 +49,8 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [submitWarning, setSubmitWarning] = useState("");
   const [shareMessage, setShareMessage] = useState("");
+  const [detailsExpanded, setDetailsExpanded] = useState(false);
+  const detailsRef = useRef<HTMLElement | null>(null);
 
   const currentQuestion = examQuestions[currentIndex];
   const answeredCount = Object.keys(answers).length;
@@ -64,6 +66,7 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
     setElapsedSeconds(0);
     setSubmitWarning("");
     setShareMessage("");
+    setDetailsExpanded(false);
     setPhase(nextExam.length > 0 ? "exam" : "intro");
   }
 
@@ -90,6 +93,7 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
     const elapsed = startedAt ? Math.max(0, Math.round((Date.now() - startedAt) / 1000)) : 0;
     setElapsedSeconds(elapsed);
     saveExamResult({ total: result.total, correct: result.correct, signCorrect: result.signCorrect, passed: result.passed, finishedAt: new Date().toISOString() });
+    setDetailsExpanded(false);
     setPhase("result");
   }
 
@@ -110,6 +114,25 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
         setShareMessage("暂时无法复制");
       }
     }
+  }
+
+  function scrollToDetails() {
+    window.setTimeout(() => detailsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+  }
+
+  function openDetails() {
+    setDetailsExpanded(true);
+    scrollToDetails();
+  }
+
+  function toggleDetails() {
+    setDetailsExpanded((current) => {
+      const next = !current;
+      if (next) {
+        scrollToDetails();
+      }
+      return next;
+    });
   }
 
   if (questions.length === 0) {
@@ -216,16 +239,40 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
     );
   }
 
+  const correctStandardPassed = result.correct >= passCorrectCount;
+  const signStandardPassed = result.signCorrect >= passSignCorrectCount;
+
   return (
     <div className="space-y-4">
-      <DmvMockLegacyHeader />
-      <section className={`rounded-2xl border p-5 shadow-sm ${result.passed ? "border-green-100 bg-green-50" : "border-red-100 bg-red-50"}`}>
-        <h2 className={`text-xl font-black ${result.passed ? "text-green-900" : "text-red-900"}`}>
-          {result.passed ? "模拟考试通过" : "模拟考试未通过"}
+      <section className={`rounded-2xl border p-5 text-center shadow-sm ${result.passed ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}>
+        <p className="text-left text-xs font-bold text-slate-500">本次考试用时：{formatDuration(elapsedSeconds)}</p>
+        <div
+          className={`mx-auto mt-2 grid h-12 w-12 place-items-center rounded-full text-2xl font-black ${
+            result.passed ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+          }`}
+        >
+          {result.passed ? "✓" : "!"}
+        </div>
+        <h2 className={`mt-3 text-xl font-black ${result.passed ? "text-green-900" : "text-red-900"}`}>
+          {result.passed ? "模拟考试通过" : "未通过，请继续练习"}
         </h2>
-        <p className="mt-2 text-sm leading-6 text-slate-700">
-          答对 {result.correct} / {result.total} 题，交通标志答对 {result.signCorrect} / {result.signTotal} 题。
-        </p>
+        <div className="mt-3 space-y-1 text-sm font-bold leading-6 text-slate-700">
+          <p>
+            答对 {result.correct} / {result.total} 题
+          </p>
+          <p>
+            交通标志答对 {result.signCorrect} / {result.signTotal} 题
+          </p>
+        </div>
+        <div className="mt-4 rounded-xl bg-white/75 p-3 text-left text-sm leading-6 text-slate-700">
+          <h3 className="font-black text-slate-950">通过标准</h3>
+          <p className={correctStandardPassed ? "mt-2 font-bold text-green-700" : "mt-2 font-bold text-red-600"}>
+            {correctStandardPassed ? "达标" : "未达标"}：20 题中至少答对 14 题，当前 {result.correct} 题
+          </p>
+          <p className={signStandardPassed ? "font-bold text-green-700" : "font-bold text-red-600"}>
+            {signStandardPassed ? "达标" : "未达标"}：4 道交通标志题至少答对 2 题，当前 {result.signCorrect} 题
+          </p>
+        </div>
       </section>
 
       <section className="grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
@@ -235,76 +282,66 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
         <ScoreCard label="正确率" value={`${result.correctRate}%`} tone="blue" />
       </section>
 
-      <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-        <h3 className="font-black text-slate-950">考试用时</h3>
-        <p className="mt-1 text-sm font-bold text-slate-600">{formatDuration(elapsedSeconds)}</p>
-      </section>
-
-      <section className="rounded-2xl border border-slate-100 bg-white p-4 text-sm leading-6 text-slate-600 shadow-sm">
-        <h3 className="font-black text-slate-950">通过标准</h3>
-        <p className={result.correct >= passCorrectCount ? "mt-2 font-bold text-green-700" : "mt-2 font-bold text-red-600"}>
-          20 题中至少答对 14 题：当前 {result.correct} 题
-        </p>
-        <p className={result.signCorrect >= passSignCorrectCount ? "font-bold text-green-700" : "font-bold text-red-600"}>
-          4 道交通标志题至少答对 2 题：当前 {result.signCorrect} 题
-        </p>
-      </section>
-
-      <section className="space-y-3">
-        <h3 className="font-black text-slate-950">答题详情</h3>
-        {examQuestions.map((question, index) => {
-          const selectedIndex = answers[question.id] ?? null;
-          const isCorrect = selectedIndex === question.correctAnswerIndex;
-          const categoryLabel = getDmvCategoryLabel(question.category);
-          return (
-            <article
-              key={question.id}
-              className={`rounded-2xl border bg-white p-4 shadow-sm ${isCorrect ? "border-green-100" : selectedIndex === null ? "border-slate-100" : "border-red-100"}`}
-            >
-              <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
-                <span className="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">第 {index + 1} 题</span>
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">{categoryLabel}</span>
-                {question.isRoadSign && categoryLabel !== "交通标志" ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700">标志题</span> : null}
-              </div>
-              <p className="mt-3 text-sm font-black leading-6 text-slate-950">{question.questionText}</p>
-              {question.imageUrl ? (
-                <div className="mt-3 flex justify-center rounded-xl bg-slate-50 p-3">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={question.imageUrl} alt="DMV question visual" className="max-h-36 max-w-full object-contain" loading="lazy" />
-                </div>
-              ) : null}
-              <div className="mt-3 rounded-xl bg-slate-50 p-3 text-sm leading-6 text-slate-700">
-                <p className={isCorrect ? "font-black text-green-700" : "font-black text-red-600"}>
-                  用户答案：{selectedIndex === null ? "未作答" : question.options[selectedIndex]}
-                </p>
-                <p className="mt-1 font-black text-green-700">正确答案：{question.correctAnswer}</p>
-                {question.explanation ? <p className="mt-1">{question.explanation}</p> : null}
-              </div>
-            </article>
-          );
-        })}
-      </section>
-
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-3">
         <button type="button" onClick={startExam} className="min-h-12 rounded-xl bg-blue-600 px-4 py-3 text-sm font-black text-white">
-          重新考试
+          再考一次
         </button>
-        <Link href="/dmv/wrong-questions" className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-center text-sm font-black text-red-700">
-          去错题练习
-        </Link>
-        <Link href="/dmv/practice" className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-center text-sm font-black text-blue-700">
-          去练习模式
-        </Link>
-        <button type="button" onClick={shareResult} className="min-h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700">
-          分享结果
+        <button type="button" onClick={openDetails} className="min-h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700">
+          答题详情
         </button>
-        <Link href="/dmv" className={`${dmvBackLinkClassName} sm:col-span-2`}>
-          返回 DMV 首页
+      </div>
+
+      <div className="flex justify-center">
+        <Link href="/dmv" className={dmvBackLinkClassName}>
+          退出考试
         </Link>
       </div>
 
-      {shareMessage ? <p className="text-center text-xs font-bold text-blue-600">{shareMessage}</p> : null}
       <DmvLoginPrompt />
+
+      <section ref={detailsRef} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+        <button type="button" onClick={toggleDetails} className="flex w-full items-center justify-between gap-3 text-left font-black text-slate-950">
+          <span>答题详情</span>
+          <span aria-hidden="true">{detailsExpanded ? "↑" : "↓"}</span>
+        </button>
+        {detailsExpanded ? (
+          <div className="mt-3 space-y-3">
+            {examQuestions.map((question, index) => {
+              const selectedIndex = answers[question.id] ?? null;
+              const isCorrect = selectedIndex === question.correctAnswerIndex;
+              const categoryLabel = getDmvCategoryLabel(question.category);
+              return (
+                <article
+                  key={question.id}
+                  className={`rounded-2xl border bg-white p-4 shadow-sm ${isCorrect ? "border-green-100" : selectedIndex === null ? "border-slate-100" : "border-red-100"}`}
+                >
+                  <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
+                    <span className="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">第 {index + 1} 题</span>
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">{categoryLabel}</span>
+                    {question.isRoadSign && categoryLabel !== "交通标志" ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700">标志题</span> : null}
+                  </div>
+                  <p className="mt-3 text-sm font-black leading-6 text-slate-950">{question.questionText}</p>
+                  {question.imageUrl ? (
+                    <div className="mt-3 flex justify-center rounded-xl bg-slate-50 p-3">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={question.imageUrl} alt="DMV question visual" className="max-h-36 max-w-full object-contain" loading="lazy" />
+                    </div>
+                  ) : null}
+                  <div className="mt-3 rounded-xl bg-slate-50 p-3 text-sm leading-6 text-slate-700">
+                    <p className={isCorrect ? "font-black text-green-700" : "font-black text-red-600"}>
+                      用户答案：{selectedIndex === null ? "未作答" : question.options[selectedIndex]}
+                    </p>
+                    <p className="mt-1 font-black text-green-700">正确答案：{question.correctAnswer}</p>
+                    {question.explanation ? <p className="mt-1">{question.explanation}</p> : null}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : null}
+      </section>
+
+      <DmvResultDisclaimer text="本模拟考试结果仅供学习参考，不代表 DMV 官方考试结果。正式考试规则、题目数量、通过标准和考试要求请以 New York DMV 官方信息为准。" />
     </div>
   );
 }
@@ -452,5 +489,14 @@ function ScoreCard({ label, value, tone }: { label: string; value: number | stri
       <p className="text-2xl font-black">{value}</p>
       <p className="text-xs font-bold">{label}</p>
     </div>
+  );
+}
+
+function DmvResultDisclaimer({ text }: { text: string }) {
+  return (
+    <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900 shadow-sm">
+      <h2 className="text-base font-black text-amber-950">免责声明</h2>
+      <p className="mt-2">{text}</p>
+    </section>
   );
 }
