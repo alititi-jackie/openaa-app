@@ -243,19 +243,13 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
 
   return (
     <div className="space-y-4">
-      <section className={`rounded-2xl border p-5 text-center shadow-sm ${result.passed ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}>
-        <p className="text-left text-xs font-bold text-slate-500">本次考试用时：{formatDuration(elapsedSeconds)}</p>
-        <div
-          className={`mx-auto mt-2 grid h-12 w-12 place-items-center rounded-full text-2xl font-black ${
-            result.passed ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-          }`}
-        >
-          {result.passed ? "✓" : "!"}
-        </div>
-        <h2 className={`mt-3 text-xl font-black ${result.passed ? "text-green-900" : "text-red-900"}`}>
-          {result.passed ? "模拟考试通过" : "未通过，请继续练习"}
+      <section className={`rounded-2xl border p-4 text-left shadow-sm ${result.passed ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}>
+        <h2 className={`flex items-center gap-2 text-lg font-black ${result.passed ? "text-green-900" : "text-red-900"}`}>
+          <span aria-hidden="true">{result.passed ? "✅" : "❗"}</span>
+          <span>{result.passed ? "模拟考试通过" : "未通过，请继续练习"}</span>
         </h2>
-        <div className="mt-3 space-y-1 text-sm font-bold leading-6 text-slate-700">
+        <p className="mt-1 text-xs font-bold text-slate-500">本次考试用时：{formatDuration(elapsedSeconds)}</p>
+        <div className="mt-3 space-y-0.5 text-sm font-bold leading-5 text-slate-700">
           <p>
             答对 {result.correct} / {result.total} 题
           </p>
@@ -263,13 +257,13 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
             交通标志答对 {result.signCorrect} / {result.signTotal} 题
           </p>
         </div>
-        <div className="mt-4 rounded-xl bg-white/75 p-3 text-left text-sm leading-6 text-slate-700">
+        <div className="mt-3 rounded-xl bg-white/75 p-3 text-sm leading-6 text-slate-700">
           <h3 className="font-black text-slate-950">通过标准</h3>
-          <p className={correctStandardPassed ? "mt-2 font-bold text-green-700" : "mt-2 font-bold text-red-600"}>
-            {correctStandardPassed ? "达标" : "未达标"}：20 题中至少答对 14 题，当前 {result.correct} 题
+          <p className={correctStandardPassed ? "mt-1 font-bold text-green-700" : "mt-1 font-bold text-red-600"}>
+            20题中至少答对14题：当前{result.correct}题 {correctStandardPassed ? "✅" : "❌"}
           </p>
           <p className={signStandardPassed ? "font-bold text-green-700" : "font-bold text-red-600"}>
-            {signStandardPassed ? "达标" : "未达标"}：4 道交通标志题至少答对 2 题，当前 {result.signCorrect} 题
+            4道交通标志题至少答对2题：当前{result.signCorrect}题 {signStandardPassed ? "✅" : "❌"}
           </p>
         </div>
       </section>
@@ -472,7 +466,7 @@ function formatDuration(seconds: number) {
   const minutes = Math.floor(seconds / 60);
   const rest = seconds % 60;
   if (minutes === 0) return `${rest} 秒`;
-  return `${minutes} 分 ${rest} 秒`;
+  return `${minutes}分${rest}秒`;
 }
 
 function ScoreCard({ label, value, tone }: { label: string; value: number | string; tone: "green" | "red" | "blue" | "slate" }) {
