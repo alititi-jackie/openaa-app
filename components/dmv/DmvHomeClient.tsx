@@ -23,6 +23,7 @@ import { DmvFaqSection, DmvLearningDisclaimerCard, DmvSeoContentSection } from "
 import { DmvHorizontalNav } from "@/components/dmv/DmvHorizontalNav";
 import { dmvSeoContent } from "@/components/dmv/dmvSeoContent";
 import { ChannelHero } from "@/components/posts/ChannelHero";
+import { DetailShareCard } from "@/components/posts/DetailShareCard";
 import { cn } from "@/lib/utils/cn";
 
 type DmvGuidePost = {
@@ -68,8 +69,8 @@ const practiceCards = [
 ] as const;
 
 const quickTools = [
-  { title: "纽约 DMV 笔试练习", desc: "查看题库、练习模式、模拟考试与错题练习", href: "#dmv-practice-section", Icon: BookOpen, external: false, scrollTarget: "dmv-practice-section" },
   { title: "罚单查询", desc: "交通罚单与处理指引", href: "/dmv/tickets", Icon: AlertTriangle, external: false },
+  { title: "纽约 DMV 笔试练习", desc: "查看题库、练习模式、模拟考试与错题练习", href: "#dmv-practice-section", Icon: BookOpen, external: false, scrollTarget: "dmv-practice-section" },
   { title: "DMV 小工具", desc: "文件检查、6 Points、REAL ID 工具", href: "https://openaa.com/tool/dmv/document-checker.html", Icon: Car, external: true },
   { title: "驾照申请", desc: "Learner Permit 官方入口", href: "https://dmv.ny.gov/driver-license/get-learner-permit", Icon: FileText, external: true },
   { title: "驾照更新", desc: "到期续期与资料要求", href: "https://dmv.ny.gov/driver-license/renew-license", Icon: RefreshCw, external: true },
@@ -103,6 +104,28 @@ const dmvFaq = [
     answer: "通过 Permit 后需先满足练车要求，再预约 Road Test。",
   },
 ];
+
+const SCROLL_OFFSET = 132;
+
+function scrollToSection(sectionId: string) {
+  const target = document.getElementById(sectionId);
+  if (!target) return;
+
+  const targetTop = Math.max(0, target.getBoundingClientRect().top + window.scrollY - SCROLL_OFFSET);
+  window.history.pushState(null, "", `#${sectionId}`);
+  window.scrollTo({
+    top: targetTop,
+    behavior: "smooth",
+  });
+  window.setTimeout(() => {
+    const distanceFromOffset = Math.abs(target.getBoundingClientRect().top - SCROLL_OFFSET);
+    if (distanceFromOffset > 12) {
+      const scrollingElement = document.scrollingElement ?? document.documentElement;
+      scrollingElement.scrollTop = targetTop;
+      document.body.scrollTop = targetTop;
+    }
+  }, 300);
+}
 
 const processDetails = [
   {
@@ -200,7 +223,42 @@ export function DmvHomeClient({ questionCount, guides }: DmvHomeClientProps) {
       />
       <DmvHorizontalNav activeValue="tools" />
 
-      <section>
+      <section id="dmv-practice-section" className="scroll-mt-[132px]">
+        <h2 className="text-base font-black text-slate-950">纽约 DMV 笔试练习</h2>
+        <p className="mt-1 text-xs text-slate-500">中文题库 · {questionCount} 题 · 无需登录 · 支持错题练习</p>
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          {practiceCards.map((card) => (
+            <PracticeCard key={card.title} card={card} />
+          ))}
+        </div>
+      </section>
+
+      <section className="grid gap-3">
+        <button
+          type="button"
+          onClick={() => scrollToSection("dmv-quick-tools-section")}
+          className="rounded-2xl border border-blue-100 bg-white p-4 text-left shadow-sm transition active:scale-[0.99]"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-base font-black text-slate-950">DMV 快捷工具入口</h3>
+              <p className="mt-1 text-sm leading-6 text-slate-600">驾照申请、驾照更新、地址变更、罚单查询等常用 DMV 官方入口。</p>
+            </div>
+            <Car size={18} className="shrink-0 text-blue-600" />
+          </div>
+          <span className="mt-3 inline-flex items-center gap-1 rounded-full bg-blue-600 px-3 py-1.5 text-sm font-bold text-white">
+            查看快捷工具
+            <ArrowRight size={14} />
+          </span>
+        </button>
+        <DetailShareCard
+          path="/dmv"
+          title="OpenAA DMV 工具中心"
+          text="纽约 DMV 笔试练习、驾照申请、地址变更、罚单查询等常用入口。"
+        />
+      </section>
+
+      <section id="dmv-quick-tools-section" className="scroll-mt-[132px]">
         <h2 className="text-base font-black text-slate-950">DMV 快捷工具</h2>
         <div className="mt-3 grid grid-cols-2 gap-3">
           {quickTools.map((item) => (
@@ -253,32 +311,6 @@ export function DmvHomeClient({ questionCount, guides }: DmvHomeClientProps) {
               <ChevronRight size={14} className="shrink-0 text-slate-300" />
             </button>
           ))}
-        </div>
-      </section>
-
-      <section id="dmv-practice-section" className="scroll-mt-32 md:scroll-mt-28">
-        <h2 className="text-base font-black text-slate-950">纽约 DMV 笔试练习</h2>
-        <p className="mt-1 text-xs text-slate-500">中文题库 · {questionCount} 题 · 无需登录 · 支持错题练习</p>
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          {practiceCards.map((card) => (
-            <PracticeCard key={card.title} card={card} />
-          ))}
-        </div>
-      </section>
-
-      <section className="grid gap-3">
-        <div className="rounded-2xl border border-amber-100 bg-white p-4 shadow-sm">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h3 className="text-base font-black text-slate-950">罚单查询</h3>
-              <p className="mt-1 text-sm leading-6 text-slate-600">整理停车罚单、红灯摄像头、交通罚单等常用入口</p>
-            </div>
-            <AlertTriangle size={18} className="shrink-0 text-amber-600" />
-          </div>
-          <Link href="/dmv/tickets" className="mt-3 inline-flex items-center gap-1 rounded-full bg-amber-500 px-3 py-1.5 text-sm font-bold text-white">
-            查询罚单
-            <ArrowRight size={14} />
-          </Link>
         </div>
       </section>
 
@@ -370,26 +402,7 @@ function ToolCard({ item }: { item: (typeof quickTools)[number] }) {
       <button
         type="button"
         className={`w-full ${className}`}
-        onClick={(event) => {
-          const target = document.getElementById(scrollTarget);
-          if (!target) return;
-
-          event.preventDefault();
-          window.history.pushState(null, "", `#${scrollTarget}`);
-          const targetTop = target.getBoundingClientRect().top + window.scrollY - 132;
-          window.scrollTo({
-            top: targetTop,
-            behavior: "smooth",
-          });
-          window.setTimeout(() => {
-            const distanceFromOffset = Math.abs(target.getBoundingClientRect().top - 132);
-            if (distanceFromOffset > 12) {
-              const scrollingElement = document.scrollingElement ?? document.documentElement;
-              scrollingElement.scrollTop = targetTop;
-              document.body.scrollTop = targetTop;
-            }
-          }, 300);
-        }}
+        onClick={() => scrollToSection(scrollTarget)}
       >
         {content}
       </button>
