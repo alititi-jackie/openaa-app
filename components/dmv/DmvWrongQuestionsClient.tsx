@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { HorizontalPillTabs } from "@/components/common/HorizontalPillTabs";
+import { DmvDisclaimerCard, DmvFaqSection, DmvInfoSection } from "@/components/dmv/DmvBottomSections";
 import { DmvLoginPrompt } from "@/components/dmv/DmvLoginPrompt";
 import { dmvBackLinkClassName } from "@/components/dmv/DmvBackLink";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
@@ -12,6 +13,21 @@ import type { DmvQuestion } from "@/features/dmv/types";
 
 type WrongPhase = "list" | "practice" | "done";
 type WrongFilter = "all" | "signs";
+
+const wrongQuestionsFaq = [
+  {
+    question: "错题本里的题从哪里来？",
+    answer: "题库练习、随机练习、交通标志专项和模拟考试中答错的题，会加入本机浏览器的错题本。",
+  },
+  {
+    question: "错题会上传到 OpenAA 吗？",
+    answer: "不会。错题记录保存在当前浏览器本地，换设备或清理浏览器数据后可能无法继续保留。",
+  },
+  {
+    question: "答对错题后会自动移除吗？",
+    answer: "会。在错题练习中答对后，该题会从本机错题本移除。",
+  },
+];
 
 export function DmvWrongQuestionsClient({ questions }: { questions: DmvQuestion[] }) {
   const [phase, setPhase] = useState<WrongPhase>("list");
@@ -259,6 +275,20 @@ export function DmvWrongQuestionsClient({ questions }: { questions: DmvQuestion[
           )}
         </>
       )}
+
+      <DmvFaqSection items={wrongQuestionsFaq} />
+      <DmvDisclaimerCard>
+        <p>OpenAA 错题本是本机浏览器里的学习辅助功能，仅用于 DMV Permit 中文备考参考。</p>
+        <p>错题记录不等同于 DMV 官方学习记录，也不代表正式考试题目范围。</p>
+      </DmvDisclaimerCard>
+      <DmvInfoSection>
+        <p>
+          错题练习适合在刷题和模拟考试之后使用，帮助你集中复盘不熟悉的路权、标志、处罚和安全规则。
+        </p>
+        <p>
+          如果错题数量较多，建议先按“只看交通标志错题”突破标志题，再回到全部错题练习。正式考试要求和题目内容请以 New York DMV 官方系统为准。
+        </p>
+      </DmvInfoSection>
     </div>
   );
 }

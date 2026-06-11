@@ -19,9 +19,9 @@ import {
   Shuffle,
   X,
 } from "lucide-react";
+import { DmvDisclaimerCard, DmvFaqSection, DmvInfoSection } from "@/components/dmv/DmvBottomSections";
 import { DmvHorizontalNav } from "@/components/dmv/DmvHorizontalNav";
 import { ChannelHero } from "@/components/posts/ChannelHero";
-import { ChannelSeoCard } from "@/components/posts/ChannelSeoCard";
 import { cn } from "@/lib/utils/cn";
 
 type DmvGuidePost = {
@@ -325,30 +325,15 @@ export function DmvHomeClient({ questionCount, guides }: DmvHomeClientProps) {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
-        <div className="flex items-start gap-2">
-          <FileText size={16} className="mt-0.5 shrink-0 text-amber-700" />
-          <div className="space-y-1 text-xs leading-5 text-amber-900">
-            <p>OpenAA 只提供中文整理和入口导航。</p>
-            <p>DMV 规则、费用、预约和罚单信息以官方页面为准。</p>
-            <p>涉及法律、罚单争议、保险等问题，请咨询专业人士或官方机构。</p>
-          </div>
-        </div>
-      </section>
+      <DmvFaqSection items={dmvFaq} />
 
-      <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-        <h2 className="text-base font-black text-slate-950">常见问题 FAQ</h2>
-        <div className="mt-3 space-y-3">
-          {dmvFaq.map((item) => (
-            <div key={item.question} className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-              <h3 className="text-sm font-bold text-slate-950">{item.question}</h3>
-              <p className="mt-1 text-sm leading-6 text-slate-600">{item.answer}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      <DmvDisclaimerCard>
+        <p>OpenAA 只提供中文整理和入口导航。</p>
+        <p>DMV 规则、费用、预约和罚单信息以官方页面为准。</p>
+        <p>涉及法律、罚单争议、保险等问题，请咨询专业人士或官方机构。</p>
+      </DmvDisclaimerCard>
 
-      <ChannelSeoCard title="纽约 DMV 中文频道：驾照学习与办事入口整合">
+      <DmvInfoSection>
         <div className="space-y-3">
           <p>
             OpenAA 的 DMV 频道面向纽约华人驾驶学习与办事需求，重点覆盖纽约 DMV、DMV 中文、Permit 中文练习、纽约驾照流程、Road Test 预约以及罚单查询等高频关键词。很多用户在准备材料或等车时先用手机快速查流程，因此页面底部补充了完整正文，帮助搜索引擎在接口或图片慢加载时仍能准确理解频道内容。
@@ -368,7 +353,7 @@ export function DmvHomeClient({ questionCount, guides }: DmvHomeClientProps) {
             <li>使用建议：先在中文内容中确认流程，再到纽约 DMV 官方页面完成最终操作</li>
           </ul>
         </div>
-      </ChannelSeoCard>
+      </DmvInfoSection>
 
       <DmvLicenseProcessModal key={modalStep ?? "closed"} initialStep={modalStep ?? 0} open={modalStep !== null} onClose={() => setModalStep(null)} />
     </>

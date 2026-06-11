@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { HorizontalPillTabs } from "@/components/common/HorizontalPillTabs";
+import { DmvFaqSection } from "@/components/dmv/DmvBottomSections";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
 import { addWrongQuestion, removeWrongQuestion } from "@/components/dmv/dmvStorage";
 import { getDmvCategoryLabel } from "@/components/dmv/dmvCategoryLabels";
@@ -12,6 +13,21 @@ import type { DmvQuestion } from "@/features/dmv/types";
 type DmvQuestionsBrowserProps = {
   questions: DmvQuestion[];
 };
+
+const questionBrowserFaq = [
+  {
+    question: "纽约 DMV Permit 要多少题及格？",
+    answer: "考试共 20 题，至少答对 14 题，且交通标志题至少答对 2 题。",
+  },
+  {
+    question: "题库有答案解析吗？",
+    answer: "有，题库支持查看答案和中文解析，方便理解道路规则与交通标志。",
+  },
+  {
+    question: "看完题库后下一步做什么？",
+    answer: "建议先去 Practice 练习，再做 Mock Test 模拟考试检验通过率。",
+  },
+];
 
 export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
   const [category, setCategory] = useState("all");
@@ -140,23 +156,7 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-        <h2 className="text-base font-black text-slate-950">常见问题 FAQ</h2>
-        <div className="mt-3 space-y-3">
-          <FaqItem question="纽约 DMV Permit 要多少题及格？" answer="考试共 20 题，至少答对 14 题，且交通标志题至少答对 2 题。" />
-          <FaqItem question="题库有答案解析吗？" answer="有，题库支持查看答案和中文解析，方便理解道路规则与交通标志。" />
-          <FaqItem question="看完题库后下一步做什么？" answer="建议先去 Practice 练习，再做 Mock Test 模拟考试检验通过率。" />
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function FaqItem({ question, answer }: { question: string; answer: string }) {
-  return (
-    <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-      <h3 className="text-sm font-bold text-slate-950">{question}</h3>
-      <p className="mt-1 text-sm leading-6 text-slate-600">{answer}</p>
+      <DmvFaqSection items={questionBrowserFaq} />
     </div>
   );
 }

@@ -1,5 +1,4 @@
 import TicketsClient from "@/components/dmv/tickets/TicketsClient";
-import { PageShell } from "@/components/layout/PageShell";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const metadata = buildPageMetadata({
@@ -10,9 +9,5 @@ export const metadata = buildPageMetadata({
 });
 
 export default function DmvTicketsPage() {
-  return (
-    <PageShell title="纽约罚单查询指南" description="停车罚单、红灯摄像头、超速拍照、交通罚单和过路费官方入口导航。" eyebrow="DMV">
-      <TicketsClient />
-    </PageShell>
-  );
+  return <TicketsClient />;
 }

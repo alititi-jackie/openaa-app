@@ -6,6 +6,7 @@ import { Share2 } from "lucide-react";
 import { DetailBackButton } from "@/components/common/DetailBackButton";
 import { FavoriteButton } from "@/components/common/FavoriteButton";
 import { PageShareButton } from "@/components/common/PageShareButton";
+import { DmvDisclaimerCard, DmvFaqSection, DmvInfoSection } from "@/components/dmv/DmvBottomSections";
 import { DmvHorizontalNav } from "@/components/dmv/DmvHorizontalNav";
 import { DmvLoginPrompt } from "@/components/dmv/DmvLoginPrompt";
 import { DmvBackLink, dmvBackLinkClassName } from "@/components/dmv/DmvBackLink";
@@ -20,6 +21,21 @@ const examSize = 20;
 const examSignCount = 4;
 const passCorrectCount = 14;
 const passSignCorrectCount = 2;
+
+const mockTestFaq = [
+  {
+    question: "模拟考试的通过标准是什么？",
+    answer: "本页按纽约 DMV Permit 常见规则模拟：20 题中至少答对 14 题，交通标志题至少答对 2 题。",
+  },
+  {
+    question: "模拟考试会显示正确答案吗？",
+    answer: "考试过程中不显示正确答案，提交后会显示结果和答题详情，方便复盘。",
+  },
+  {
+    question: "模拟考试结果会保存吗？",
+    answer: "考试结果会保存在本机浏览器中，用于本地复习参考；OpenAA 不代表 DMV 官方评分。",
+  },
+];
 
 type MockPhase = "intro" | "exam" | "result";
 
@@ -110,7 +126,19 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
         <DmvMockIntroHeader />
         <MockIntroInstructions onStartExam={startExam} />
         <MockStudyGuide />
-        <MockDisclaimer />
+        <DmvFaqSection items={mockTestFaq} />
+        <DmvDisclaimerCard>
+          <p className="font-bold">非官方学习工具，仅供备考参考。</p>
+          <p>OpenAA 模拟考试根据纽约 DMV Permit 学习规则整理，不代表 DMV 官方考试内容；正式要求请以 New York DMV 官方资料为准。</p>
+        </DmvDisclaimerCard>
+        <DmvInfoSection>
+          <p>
+            模拟考试适合在完成题库练习后使用，用来检验答题速度、交通标志掌握情况和错题复盘效果。
+          </p>
+          <p>
+            建议考前多次完成完整模拟，并把未掌握的题回到错题练习或交通标志专项中继续巩固。正式考试安排、费用和规则请以 New York DMV 官方信息为准。
+          </p>
+        </DmvInfoSection>
       </div>
     );
   }
@@ -384,15 +412,6 @@ function MockStudyGuide() {
           交通标志专项
         </Link>
       </div>
-    </section>
-  );
-}
-
-function MockDisclaimer() {
-  return (
-    <section className="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-xs leading-5 text-amber-900">
-      <p className="font-bold">非官方学习工具，仅供备考参考。</p>
-      <p className="mt-1">OpenAA 模拟考试根据纽约 DMV Permit 学习规则整理，不代表 DMV 官方考试内容；正式要求请以 New York DMV 官方资料为准。</p>
     </section>
   );
 }

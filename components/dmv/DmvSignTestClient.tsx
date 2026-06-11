@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { DmvDisclaimerCard, DmvFaqSection, DmvInfoSection } from "@/components/dmv/DmvBottomSections";
 import { DmvLoginPrompt } from "@/components/dmv/DmvLoginPrompt";
 import { dmvBackLinkClassName } from "@/components/dmv/DmvBackLink";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
@@ -10,6 +11,21 @@ import { getDmvCategoryLabel } from "@/components/dmv/dmvCategoryLabels";
 import type { DmvQuestion } from "@/features/dmv/types";
 
 type SignTestPhase = "intro" | "practice" | "done";
+
+const signTestFaq = [
+  {
+    question: "交通标志题为什么要单独练？",
+    answer: "纽约 Permit 笔试中交通标志题有单独通过要求，提前熟悉标志含义能减少正式考试中的失误。",
+  },
+  {
+    question: "交通标志专项会加入错题本吗？",
+    answer: "会。专项练习中答错的题会加入本机错题本，答对后会从错题本移除。",
+  },
+  {
+    question: "这里的标志题和正式考试完全一样吗？",
+    answer: "本页是 OpenAA 整理的中文学习辅助内容，正式题目和要求请以 New York DMV 官方系统为准。",
+  },
+];
 
 export function DmvSignTestClient({ questions }: { questions: DmvQuestion[] }) {
   const signQuestions = useMemo(() => questions.filter(isSignQuestion), [questions]);
@@ -189,6 +205,20 @@ export function DmvSignTestClient({ questions }: { questions: DmvQuestion[] }) {
           返回 DMV 首页
         </Link>
       </div>
+
+      <DmvFaqSection items={signTestFaq} />
+      <DmvDisclaimerCard>
+        <p>OpenAA 交通标志专项练习仅供 DMV Permit 中文备考参考，不代表 New York DMV 官方考试内容。</p>
+        <p>正式考试题目、交通标志范围和通过要求，请以 New York DMV 官方资料为准。</p>
+      </DmvDisclaimerCard>
+      <DmvInfoSection>
+        <p>
+          交通标志专项把题库中的标志题集中到一个入口，方便你在考前快速复习常见标志、警告标志和道路规则题。
+        </p>
+        <p>
+          建议先完成交通标志专项，再进入模拟考试检验整体通过率。遇到反复答错的标志题，可以回到错题练习继续复盘。
+        </p>
+      </DmvInfoSection>
     </div>
   );
 }

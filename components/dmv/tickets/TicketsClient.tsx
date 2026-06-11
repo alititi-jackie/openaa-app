@@ -1,18 +1,22 @@
 'use client'
 
-import Link from 'next/link'
 import { useRef, useState } from 'react'
 import {
-  AlertTriangle,
   ArrowRight,
-  ArrowLeft,
   ChevronDown,
   ChevronUp,
   ExternalLink,
   Info,
+  Share2,
   Shield,
 } from 'lucide-react'
 
+import { DetailBackButton } from '@/components/common/DetailBackButton'
+import { FavoriteButton } from '@/components/common/FavoriteButton'
+import { PageShareButton } from '@/components/common/PageShareButton'
+import { DmvDisclaimerCard, DmvFaqSection, DmvInfoSection } from '@/components/dmv/DmvBottomSections'
+import { DmvHorizontalNav } from '@/components/dmv/DmvHorizontalNav'
+import { ChannelHero } from '@/components/posts/ChannelHero'
 import {
   ALL_STATES,
   COMMON_STATES,
@@ -128,37 +132,6 @@ function AllStatesGrid() {
   )
 }
 
-function FaqSection() {
-  const [openIdx, setOpenIdx] = useState<number | null>(null)
-
-  return (
-    <section className="mt-6">
-      <h2 className="text-base font-bold text-zinc-900 mb-3">常见问题 FAQ</h2>
-      <div className="space-y-2">
-        {FAQ.map((item, idx) => (
-          <div key={idx} className="rounded-2xl border border-zinc-100 bg-white shadow-sm overflow-hidden">
-            <button
-              type="button"
-              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
-              onClick={() => setOpenIdx(openIdx === idx ? null : idx)}
-            >
-              <span className="text-sm font-semibold text-zinc-900">{item.q}</span>
-              {openIdx === idx ? (
-                <ChevronUp size={15} className="shrink-0 text-zinc-400" />
-              ) : (
-                <ChevronDown size={15} className="shrink-0 text-zinc-400" />
-              )}
-            </button>
-            {openIdx === idx && (
-              <div className="px-4 pb-4 text-sm leading-relaxed text-zinc-600">{item.a}</div>
-            )}
-          </div>
-        ))}
-      </div>
-    </section>
-  )
-}
-
 // ---------------------------------------------------------------------------
 // Main Client Component
 // ---------------------------------------------------------------------------
@@ -198,38 +171,35 @@ export default function TicketsClient() {
   const recommendedEntries = result ? getRecommendedEntries(result.state, result.ticketType) : []
   const resultStateData = result ? stateDataMap[result.state] : null
   const primaryEntry = recommendedEntries[0]
+  const faqItems = FAQ.map((item) => ({ question: item.q, answer: item.a }))
 
   return (
-    <div className="px-4 pt-4">
-      <div className="mb-6 flex items-center justify-between">
-        <Link
-          href="/dmv"
-          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 active:scale-[0.99]"
-        >
-          <ArrowLeft size={16} aria-hidden="true" />
-          返回 DMV 首页
-        </Link>
-      </div>
-
-      {/* Title + description */}
-      <section className="rounded-2xl border border-blue-100 bg-gradient-to-b from-blue-50 to-white p-4 shadow-sm mb-4">
-        <h1 className="text-2xl font-black text-zinc-900">美国罚单查询入口</h1>
-        <p className="mt-2 text-sm font-medium text-blue-700">U.S. Traffic & Parking Ticket Official Portals</p>
-        <p className="mt-2 text-sm text-zinc-600">
-          输入车牌所属州并选择罚单类型，OpenAA 会帮你找到对应的<strong>官方</strong>查询入口。
-        </p>
-        <p className="mt-2 text-sm text-zinc-600">
-          本页重点整理纽约停车罚单、超速罚单、红灯摄像头罚单查询路径；如果你正在准备 NY DMV Permit，可先回到练习区完成 Practice Test 与 Road Test 相关学习。
-        </p>
-        <p className="mt-1 text-xs text-zinc-400">
-          OpenAA 不保存车牌号，也不直接查询罚单数据。
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2 text-xs">
-          <Link href="/dmv" className="rounded-full bg-zinc-100 px-3 py-1.5 font-medium text-zinc-700">返回 DMV 学习区</Link>
-          <Link href="/dmv/practice" className="rounded-full bg-blue-50 px-3 py-1.5 font-medium text-blue-700">Permit 练习</Link>
-          <Link href="/dmv/mock-test" className="rounded-full bg-green-50 px-3 py-1.5 font-medium text-green-700">模拟考试</Link>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <DetailBackButton fallbackHref="/dmv" />
+        <div className="flex items-center gap-2">
+          <FavoriteButton
+            target={{ type: "unsupported", message: "DMV 页面收藏暂未接入收藏表，当前不会写入收藏。" }}
+            returnTo="/dmv/tickets"
+          />
+          <PageShareButton
+            path="/dmv/tickets"
+            title="罚单查询指南"
+            text="停车罚单、红灯摄像头、超速拍照、交通罚单和过路费官方入口导航。"
+            label={
+              <span className="inline-flex items-center gap-1.5">
+                <Share2 size={15} aria-hidden="true" />
+                分享
+              </span>
+            }
+          />
         </div>
-      </section>
+      </div>
+      <ChannelHero
+        title="罚单查询指南"
+        description="停车罚单、红灯摄像头、超速拍照、交通罚单和过路费官方入口导航。"
+      />
+      <DmvHorizontalNav activeValue="tickets" />
 
       {/* Query form */}
       <section className="rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm mb-4">
@@ -403,6 +373,15 @@ export default function TicketsClient() {
         </div>
       )}
 
+      <section className="rounded-2xl border border-blue-100 bg-gradient-to-b from-blue-50 to-white p-4 shadow-sm">
+        <h2 className="text-base font-bold text-zinc-900">美国罚单查询入口</h2>
+        <p className="mt-2 text-sm font-medium text-blue-700">U.S. Traffic & Parking Ticket Official Portals</p>
+        <p className="mt-2 text-sm text-zinc-600">
+          本页整理纽约停车罚单、超速罚单、红灯摄像头罚单、交通罚单和过路费查询路径，帮助你找到对应的官方入口。
+        </p>
+        <p className="mt-1 text-xs text-zinc-400">OpenAA 不保存车牌号，也不直接查询罚单数据。</p>
+      </section>
+
       {/* NY common portals */}
       <section className="mt-2 rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm">
         <h2 className="text-base font-bold text-zinc-900 mb-1">纽约常用入口</h2>
@@ -429,28 +408,26 @@ export default function TicketsClient() {
       {/* All states grid */}
       <AllStatesGrid />
 
-      {/* FAQ */}
-      <FaqSection />
+      <DmvFaqSection items={faqItems} />
 
-      {/* Disclaimer */}
-      <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
-        <div className="flex items-start gap-2">
-          <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-700" />
-          <div className="space-y-2 text-xs leading-relaxed text-amber-900">
-            <p className="font-semibold text-amber-800">免责声明 Disclaimer</p>
-            <p>
-              OpenAA 不提供法律意见，也不直接查询或保存罚单数据。本页面仅整理官方查询入口和中文说明。具体罚单金额、期限、申诉和缴费结果，请以政府、法院或官方机构网站为准。
-            </p>
-            <p className="font-medium text-amber-800">安全提醒：</p>
-            <ul className="space-y-1">
-              <li>• 不要在非官方网站输入信用卡或个人敏感信息</li>
-              <li>• 核对网址是否为 .gov 或官方机构域名</li>
-              <li>• 如罚单已逾期，请尽快到官方系统处理</li>
-              <li>• 如需申诉，请按官方页面说明在规定期限内提交</li>
-            </ul>
-          </div>
-        </div>
-      </section>
+      <DmvDisclaimerCard>
+        <p>
+          OpenAA 不提供法律意见，也不直接查询或保存罚单数据。本页面仅整理官方查询入口和中文说明。具体罚单金额、期限、申诉和缴费结果，请以政府、法院或官方机构网站为准。
+        </p>
+        <p className="font-medium text-amber-800">安全提醒：</p>
+        <ul className="space-y-1">
+          <li>• 不要在非官方网站输入信用卡或个人敏感信息</li>
+          <li>• 核对网址是否为 .gov 或官方机构域名</li>
+          <li>• 如罚单已逾期，请尽快到官方系统处理</li>
+          <li>• 如需申诉，请按官方页面说明在规定期限内提交</li>
+        </ul>
+      </DmvDisclaimerCard>
+
+      <DmvInfoSection>
+        <p>OpenAA 提供停车罚单、红灯摄像头、超速拍照、交通罚单和过路费的官方入口导航。</p>
+        <p>OpenAA 不保存车牌信息，也不直接查询罚单数据；金额、状态和截止日期请以官方系统为准。</p>
+        <p>本页整理纽约常用入口和全美州级入口，方便纽约华人快速找到正确查询路径。</p>
+      </DmvInfoSection>
     </div>
   )
 }
