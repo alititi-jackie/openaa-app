@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Search } from "lucide-react";
 import { HorizontalPillTabs } from "@/components/common/HorizontalPillTabs";
 import { DmvFaqSection } from "@/components/dmv/DmvBottomSections";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
@@ -49,6 +49,10 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
       return matchesCategory && matchesSearch;
     });
   }, [category, questions, search]);
+  const activeCategoryLabel = category === "all" ? "全部" : getDmvCategoryLabel(category);
+  const questionCountHint = revealAnswer
+    ? `共 ${filtered.length} 题 · ${activeCategoryLabel}`
+    : `共 ${filtered.length} 题 · ${activeCategoryLabel} · 点击选项可以直接答题`;
 
   if (questions.length === 0) {
     return <EmptyDmvState />;
@@ -67,11 +71,11 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
     const target = questionBrowserRef.current;
     if (!target) return;
 
-    const targetTop = target.getBoundingClientRect().top + window.scrollY - 132;
+    const targetTop = target.getBoundingClientRect().top + window.scrollY - 148;
     window.history.replaceState(null, "", "#dmv-question-browser");
     window.scrollTo({ top: targetTop, behavior: "smooth" });
     window.setTimeout(() => {
-      if (Math.abs(target.getBoundingClientRect().top - 132) > 12) {
+      if (Math.abs(target.getBoundingClientRect().top - 148) > 12) {
         const scrollingElement = document.scrollingElement ?? document.documentElement;
         scrollingElement.scrollTop = targetTop;
         document.body.scrollTop = targetTop;
@@ -81,35 +85,43 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
 
   return (
     <div className="space-y-4">
-      <section id="dmv-question-browser" ref={questionBrowserRef} className="scroll-mt-32 space-y-3 md:scroll-mt-28">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-base font-black text-slate-950">查看题库</h2>
+      <section
+        id="dmv-question-browser"
+        ref={questionBrowserRef}
+        className="sticky top-[76px] z-40 scroll-mt-[148px] rounded-2xl border border-slate-100 bg-white p-4 shadow-sm"
+      >
+        <div className="flex items-center gap-3">
+          <h2 className="text-base font-bold text-zinc-900">查看题库</h2>
           <button
             type="button"
             onClick={() => setRevealAnswer((current) => !current)}
             aria-pressed={revealAnswer}
-            className={`inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-bold transition active:scale-[0.98] ${
-              revealAnswer ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600"
+            className={`ml-auto flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-colors active:scale-[0.98] ${
+              revealAnswer ? "bg-blue-600 text-white" : "bg-zinc-100 text-zinc-600"
             }`}
           >
-            {revealAnswer ? <Eye size={15} aria-hidden="true" /> : <EyeOff size={15} aria-hidden="true" />}
+            {revealAnswer ? <Eye size={12} aria-hidden="true" /> : <EyeOff size={12} aria-hidden="true" />}
             {revealAnswer ? "显示答案" : "隐藏答案"}
           </button>
         </div>
 
-        <input
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="搜索题目、选项或答案"
-          className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-        />
+        <div className="mt-2">
+          <div className="relative">
+            <Search size={14} aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="搜索题目、选项或答案"
+              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 py-2 pl-9 pr-8 text-sm text-zinc-800 outline-none placeholder:text-zinc-400 focus:border-blue-300 focus:bg-white"
+            />
+          </div>
 
-        <p className="text-xs leading-5 text-slate-400">
-          共 {questions.length} 题 · {revealAnswer ? "当前显示答案与解析" : "点击选项可以直接答题"}
-        </p>
+          <p className="mt-1.5 text-xs leading-5 text-zinc-400">{questionCountHint}</p>
+        </div>
 
         <HorizontalPillTabs
+          className="mt-2"
           tabs={categories.map((item) => ({ value: item, label: item === "all" ? "全部" : getDmvCategoryLabel(item) }))}
           activeValue={category}
           ariaLabel="DMV 题目分类"

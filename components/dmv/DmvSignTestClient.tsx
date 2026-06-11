@@ -202,9 +202,6 @@ export function DmvSignTestClient({ questions }: { questions: DmvQuestion[] }) {
         <Link href="/dmv/mock-test" className="rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-center text-sm font-black text-green-700">
           模拟考试
         </Link>
-        <Link href="/dmv" className={`${dmvBackLinkClassName} col-span-2`}>
-          返回 DMV 首页
-        </Link>
       </div>
 
       <DmvFaqSection items={signTestFaq} />
