@@ -1,6 +1,5 @@
 import { Share2 } from "lucide-react";
 import { DetailBackButton } from "@/components/common/DetailBackButton";
-import { FavoriteButton } from "@/components/common/FavoriteButton";
 import { PageShareButton } from "@/components/common/PageShareButton";
 import { DmvLearningDisclaimerCard, DmvSeoContentSection } from "@/components/dmv/DmvBottomSections";
 import { DmvHorizontalNav } from "@/components/dmv/DmvHorizontalNav";
@@ -27,10 +26,6 @@ export default async function DmvQuestionsPage() {
       <div className="flex items-center justify-between gap-3">
         <DetailBackButton fallbackHref="/dmv" />
         <div className="flex items-center gap-2">
-          <FavoriteButton
-            target={{ type: "unsupported", message: "DMV 页面收藏暂未接入收藏表，当前不会写入收藏。" }}
-            returnTo="/dmv/questions"
-          />
           <PageShareButton
             path="/dmv/questions"
             title="纽约 DMV 中文题库与答案解析"

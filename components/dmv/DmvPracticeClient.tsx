@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Share2 } from "lucide-react";
 import { DetailBackButton } from "@/components/common/DetailBackButton";
-import { FavoriteButton } from "@/components/common/FavoriteButton";
 import { PageShareButton } from "@/components/common/PageShareButton";
 import { DmvFaqSection, DmvLearningDisclaimerCard, DmvSeoContentSection } from "@/components/dmv/DmvBottomSections";
 import { DmvHorizontalNav } from "@/components/dmv/DmvHorizontalNav";
@@ -295,10 +294,6 @@ function DmvPracticeSetupHeader({ questionCount }: { questionCount: number }) {
       <div className="flex items-center justify-between gap-3">
         <DetailBackButton fallbackHref="/dmv" />
         <div className="flex items-center gap-2">
-          <FavoriteButton
-            target={{ type: "unsupported", message: "DMV 页面收藏暂未接入收藏表，当前不会写入收藏。" }}
-            returnTo="/dmv/practice"
-          />
           <PageShareButton
             path="/dmv/practice"
             title="随机 / 顺序 DMV 中文练习"

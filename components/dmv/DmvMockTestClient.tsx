@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { Share2 } from "lucide-react";
 import { DetailBackButton } from "@/components/common/DetailBackButton";
-import { FavoriteButton } from "@/components/common/FavoriteButton";
 import { PageShareButton } from "@/components/common/PageShareButton";
 import { DmvFaqSection, DmvLearningDisclaimerCard, DmvSeoContentSection } from "@/components/dmv/DmvBottomSections";
 import { DmvHorizontalNav } from "@/components/dmv/DmvHorizontalNav";
@@ -352,10 +351,6 @@ function DmvMockIntroHeader() {
       <div className="flex items-center justify-between gap-3">
         <DetailBackButton fallbackHref="/dmv" />
         <div className="flex items-center gap-2">
-          <FavoriteButton
-            target={{ type: "unsupported", message: "DMV 页面收藏暂未接入收藏表，当前不会写入收藏。" }}
-            returnTo="/dmv/mock-test"
-          />
           <PageShareButton
             path="/dmv/mock-test"
             title="纽约 DMV 模拟考试"
@@ -387,8 +382,12 @@ function DmvMockLegacyHeader() {
 function MockIntroInstructions({ onStartExam }: { onStartExam: () => void }) {
   return (
     <section className="rounded-2xl border border-blue-100 bg-gradient-to-b from-blue-50 to-white p-5 shadow-sm">
-      <div className="mb-3 text-4xl">📝</div>
-      <h2 className="text-xl font-black text-zinc-900">模拟考试说明</h2>
+      <h2 className="flex items-center gap-2 text-xl font-black text-zinc-900">
+        <span className="text-xl" aria-hidden="true">
+          📝
+        </span>
+        模拟考试说明
+      </h2>
       <p className="mt-2 text-sm leading-relaxed text-zinc-600">
         这是接近真实 NY DMV Permit 的 Practice Test 场景：20 题考试、14 题及格、交通标志至少答对 2 题。适合纽约华人、新移民、留学生考前冲刺。
       </p>

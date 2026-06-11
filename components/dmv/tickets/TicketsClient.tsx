@@ -12,7 +12,6 @@ import {
 } from 'lucide-react'
 
 import { DetailBackButton } from '@/components/common/DetailBackButton'
-import { FavoriteButton } from '@/components/common/FavoriteButton'
 import { PageShareButton } from '@/components/common/PageShareButton'
 import { DmvFaqSection, DmvSeoContentSection, DmvTicketDisclaimerCard } from '@/components/dmv/DmvBottomSections'
 import { DmvHorizontalNav } from '@/components/dmv/DmvHorizontalNav'
@@ -179,10 +178,6 @@ export default function TicketsClient() {
       <div className="flex items-center justify-between gap-3">
         <DetailBackButton fallbackHref="/dmv" />
         <div className="flex items-center gap-2">
-          <FavoriteButton
-            target={{ type: "unsupported", message: "DMV 页面收藏暂未接入收藏表，当前不会写入收藏。" }}
-            returnTo="/dmv/tickets"
-          />
           <PageShareButton
             path="/dmv/tickets"
             title="罚单查询指南"

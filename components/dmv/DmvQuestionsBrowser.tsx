@@ -5,6 +5,7 @@ import { useMemo, useRef, useState } from "react";
 import { Eye, EyeOff, Search } from "lucide-react";
 import { HorizontalPillTabs } from "@/components/common/HorizontalPillTabs";
 import { DmvFaqSection } from "@/components/dmv/DmvBottomSections";
+import { DmvLoginPrompt } from "@/components/dmv/DmvLoginPrompt";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
 import { addWrongQuestion, removeWrongQuestion } from "@/components/dmv/dmvStorage";
 import { getDmvCategoryLabel } from "@/components/dmv/dmvCategoryLabels";
@@ -160,22 +161,26 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
 
       <section className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-900">
         <p className="text-base font-black">🎉 已浏览完题库！</p>
-        <p className="mt-1 text-blue-800">登录 OpenAA 后，可同步错题和学习进度；也可以继续回到题库巩固，或进入随机练习检验掌握情况。</p>
-        <div className="mt-3 grid gap-2 sm:grid-cols-2">
-          <Link href="/login?returnTo=/dmv/questions" className="inline-flex min-h-10 items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-center text-sm font-black leading-5 text-white">
-            登录 / 注册，解锁更多功能
-          </Link>
+        <p className="mt-1 text-blue-800">建议继续随机练习，巩固知识点并检验学习成果。</p>
+        <div className="mt-3 grid grid-cols-2 gap-2">
           <button type="button" onClick={scrollToQuestionBrowser} className="inline-flex min-h-10 items-center justify-center rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-black text-blue-700">
-            继续查看题库
+            继续查看
           </button>
-          <Link href="/dmv/practice" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-black text-blue-700">
-            下一步：随机练习
-          </Link>
-          <Link href="/dmv" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-black text-blue-700">
-            退出题库
+          <Link href="/dmv/practice" className="inline-flex min-h-10 items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-center text-sm font-black leading-5 text-white">
+            随机练习
           </Link>
         </div>
       </section>
+
+      <div className="mt-3 flex justify-center">
+        <Link href="/dmv" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-black text-blue-700">
+          退出浏览
+        </Link>
+      </div>
+
+      <div className="mt-4">
+        <DmvLoginPrompt />
+      </div>
 
       <div className="mt-4">
         <DmvFaqSection items={questionBrowserFaq} />

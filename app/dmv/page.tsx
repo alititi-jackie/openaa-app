@@ -1,5 +1,4 @@
 import { ChannelPageChrome } from "@/components/channels/ChannelPageChrome";
-import { FavoriteButton } from "@/components/common/FavoriteButton";
 import { detailActionButtonClass } from "@/components/common/detailActionStyles";
 import { DmvHomeClient } from "@/components/dmv/DmvHomeClient";
 import { getDmvQuestionBank } from "@/features/dmv/questions";
@@ -25,12 +24,6 @@ export default async function DmvPage() {
       title="2026纽约 DMV 中文驾照指南 | Permit笔试模拟・罚单查询・驾照流程 - OpenAA"
       description="纽约 DMV 笔试、罚单查询、驾照申请与车辆服务入口。"
       topActionButtonClassName={detailActionButtonClass}
-      topActionFavorite={
-        <FavoriteButton
-          target={{ type: "unsupported", message: "DMV 页面收藏暂未接入收藏表，当前不会写入收藏。" }}
-          returnTo="/dmv"
-        />
-      }
     >
       <DmvHomeClient
         questionCount={questionBank.questions.length}
