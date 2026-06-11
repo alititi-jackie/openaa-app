@@ -138,13 +138,12 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
     const progress = ((currentIndex + 1) / examQuestions.length) * 100;
 
     return (
-      <div className="space-y-4">
-        <DmvMockLegacyHeader />
-        <section className="sticky top-14 z-20 rounded-2xl border border-slate-100 bg-white p-4 text-sm text-slate-600 shadow-sm">
-          <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+      <div className="-mx-4 -mt-4 space-y-4">
+        <section className="sticky top-[69px] z-20 border-b border-slate-100 bg-white px-4 pb-2 text-sm text-slate-600 shadow-sm">
+          <div className="h-1.5 overflow-hidden bg-slate-100">
             <div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${progress}%` }} />
           </div>
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
             <span className="font-black text-slate-950">
               {currentIndex + 1} / {examQuestions.length}
             </span>
@@ -153,14 +152,35 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
           </div>
         </section>
 
-        <DmvQuestionCard
-          question={currentQuestion}
-          index={currentIndex}
-          categoryLabel={getDmvCategoryLabel(currentQuestion.category)}
-          selectedIndex={answers[currentQuestion.id] ?? null}
-          feedbackMode="selected"
-          onSelect={selectAnswer}
-        />
+        <div className="space-y-4 px-4">
+          <DmvQuestionCard
+            question={currentQuestion}
+            index={currentIndex}
+            categoryLabel={getDmvCategoryLabel(currentQuestion.category)}
+            selectedIndex={answers[currentQuestion.id] ?? null}
+            feedbackMode="selected"
+            onSelect={selectAnswer}
+          />
+
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setCurrentIndex((value) => Math.max(0, value - 1))}
+            disabled={currentIndex === 0}
+            className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 disabled:opacity-40"
+          >
+            上一题
+          </button>
+          {currentIndex < examQuestions.length - 1 ? (
+            <button type="button" onClick={() => setCurrentIndex((value) => Math.min(examQuestions.length - 1, value + 1))} className="min-h-11 rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white">
+              下一题
+            </button>
+          ) : (
+            <button type="button" onClick={() => submitExam({ force: submitWarning !== "" })} className="min-h-11 rounded-xl bg-green-600 px-4 py-2 text-sm font-black text-white">
+              提交考试
+            </button>
+          )}
+        </div>
 
         <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
           <p className="text-xs font-black text-slate-500">题目概览</p>
@@ -186,30 +206,11 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
 
         {submitWarning ? <p className="rounded-xl border border-amber-100 bg-amber-50 p-3 text-sm font-bold text-amber-800">{submitWarning}</p> : null}
 
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            onClick={() => setCurrentIndex((value) => Math.max(0, value - 1))}
-            disabled={currentIndex === 0}
-            className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 disabled:opacity-40"
-          >
-            上一题
-          </button>
-          {currentIndex < examQuestions.length - 1 ? (
-            <button type="button" onClick={() => setCurrentIndex((value) => Math.min(examQuestions.length - 1, value + 1))} className="min-h-11 rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white">
-              下一题
-            </button>
-          ) : (
-            <button type="button" onClick={() => submitExam({ force: submitWarning !== "" })} className="min-h-11 rounded-xl bg-green-600 px-4 py-2 text-sm font-black text-white">
-              提交考试
-            </button>
-          )}
-        </div>
-
         <div className="flex justify-center">
           <Link href="/dmv" className={dmvBackLinkClassName}>
             退出考试
           </Link>
+        </div>
         </div>
       </div>
     );

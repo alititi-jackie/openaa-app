@@ -239,13 +239,12 @@ export function DmvPracticeClient({ questions }: { questions: DmvQuestion[] }) {
   const progress = ((currentIndex + 1) / practiceQuestions.length) * 100;
 
   return (
-    <div className="space-y-4">
-      <DmvPracticeLegacyHeader />
-      <section className="sticky top-14 z-20 rounded-2xl border border-slate-100 bg-white p-4 text-sm text-slate-600 shadow-sm">
-        <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+    <div className="-mx-4 -mt-4 space-y-4">
+      <section className="sticky top-[69px] z-20 border-b border-slate-100 bg-white px-4 pb-2 text-sm text-slate-600 shadow-sm">
+        <div className="h-1.5 overflow-hidden bg-slate-100">
           <div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${progress}%` }} />
         </div>
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
           <span className="font-black text-slate-950">
             {currentIndex + 1} / {practiceQuestions.length}
           </span>
@@ -256,37 +255,39 @@ export function DmvPracticeClient({ questions }: { questions: DmvQuestion[] }) {
         </div>
       </section>
 
-      <DmvQuestionCard
-        question={currentQuestion}
-        index={currentIndex}
-        categoryLabel={getDmvCategoryLabel(currentQuestion.category)}
-        selectedIndex={selectedById[currentQuestion.id] ?? null}
-        onSelect={selectAnswer}
-      />
+      <div className="space-y-4 px-4">
+        <DmvQuestionCard
+          question={currentQuestion}
+          index={currentIndex}
+          categoryLabel={getDmvCategoryLabel(currentQuestion.category)}
+          selectedIndex={selectedById[currentQuestion.id] ?? null}
+          onSelect={selectAnswer}
+        />
 
-      <div className="grid grid-cols-2 gap-3">
-        <button
-          type="button"
-          onClick={goPrevious}
-          disabled={currentIndex === 0}
-          className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 disabled:opacity-40"
-        >
-          上一题
-        </button>
-        <button
-          type="button"
-          onClick={goNext}
-          disabled={!currentAnswered}
-          className="min-h-11 rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white disabled:bg-slate-300"
-        >
-          {currentIndex >= practiceQuestions.length - 1 ? "完成练习" : "下一题"}
-        </button>
-      </div>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={goPrevious}
+            disabled={currentIndex === 0}
+            className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 disabled:opacity-40"
+          >
+            上一题
+          </button>
+          <button
+            type="button"
+            onClick={goNext}
+            disabled={!currentAnswered}
+            className="min-h-11 rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white disabled:bg-slate-300"
+          >
+            {currentIndex >= practiceQuestions.length - 1 ? "完成练习" : "下一题"}
+          </button>
+        </div>
 
-      <div className="flex justify-center">
-        <button type="button" onClick={() => setMode("setup")} className={dmvBackLinkClassName}>
-          退出练习
-        </button>
+        <div className="flex justify-center">
+          <button type="button" onClick={() => setMode("setup")} className={dmvBackLinkClassName}>
+            退出练习
+          </button>
+        </div>
       </div>
     </div>
   );
