@@ -12,6 +12,7 @@ import { DmvBackLink, dmvBackLinkClassName } from "@/components/dmv/DmvBackLink"
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
 import { dmvSeoContent } from "@/components/dmv/dmvSeoContent";
 import { PageTitleCard } from "@/components/PageTitleCard";
+import { DetailShareCard } from "@/components/posts/DetailShareCard";
 import { ChannelHero } from "@/components/posts/ChannelHero";
 import { addWrongQuestion, removeWrongQuestion, saveExamResult, shuffleQuestions } from "@/components/dmv/dmvStorage";
 import { getDmvCategoryLabel } from "@/components/dmv/dmvCategoryLabels";
@@ -243,51 +244,64 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
 
   return (
     <div className="space-y-4">
-      <section className={`rounded-2xl border p-4 text-left shadow-sm ${result.passed ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}>
-        <p className="text-xs font-bold text-slate-500">本次考试用时：{formatDuration(elapsedSeconds)}</p>
-        <h2 className={`mt-2 flex items-center justify-center gap-2 text-xl font-black ${result.passed ? "text-green-900" : "text-red-900"}`}>
-          <span aria-hidden="true">{result.passed ? "✅" : "❗"}</span>
-          <span>{result.passed ? "模拟考试通过" : "未通过，请继续练习"}</span>
-        </h2>
-        <div className="mt-3 space-y-0.5 text-center text-sm font-bold leading-5 text-slate-700">
-          <p>
-            答对 {result.correct} / {result.total} 题
-          </p>
-          <p>
-            交通标志答对 {result.signCorrect} / {result.signTotal} 题
-          </p>
-        </div>
-        <div className="mt-3 text-sm font-bold leading-6 text-slate-700">
-          <h3 className="font-black text-slate-950">通过标准</h3>
-          <p className="mt-1">
-            20题中至少答对14题：当前 {result.correct} 题 <span aria-hidden="true">{correctStandardPassed ? "✅" : "❌"}</span>
-          </p>
-          <p>
-            4道交通标志题至少答对2题：当前 {result.signCorrect} 题 <span aria-hidden="true">{signStandardPassed ? "✅" : "❌"}</span>
-          </p>
+      <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+        <section className={`rounded-2xl border p-4 text-left ${result.passed ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}`}>
+          <p className="text-xs font-bold text-slate-500">本次考试用时：{formatDuration(elapsedSeconds)}</p>
+          <h2 className={`mt-2 flex items-center justify-center gap-2 text-2xl font-black ${result.passed ? "text-green-900" : "text-red-900"}`}>
+            <span aria-hidden="true">{result.passed ? "✅" : "❗"}</span>
+            <span>{result.passed ? "模拟考试通过" : "未通过，请继续练习"}</span>
+          </h2>
+          <div className="mt-3 space-y-0.5 text-center text-sm font-bold leading-5 text-slate-700">
+            <p>
+              答对 {result.correct} / {result.total} 题
+            </p>
+            <p>
+              交通标志答对 {result.signCorrect} / {result.signTotal} 题
+            </p>
+          </div>
+          <div className="mt-3 font-bold leading-6 text-slate-700">
+            <h3 className="font-black text-slate-950">通过标准</h3>
+            <p className="mt-1 text-xs text-slate-500">
+              20题中至少答对14题：当前 {result.correct} 题 <span aria-hidden="true">{correctStandardPassed ? "✅" : "❌"}</span>
+            </p>
+            <p className="text-xs text-slate-500">
+              4道交通标志题至少答对2题：当前 {result.signCorrect} 题 <span aria-hidden="true">{signStandardPassed ? "✅" : "❌"}</span>
+            </p>
+          </div>
+        </section>
+
+        <section className="mt-4 grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
+          <ScoreCard label="正确" value={result.correct} tone="green" />
+          <ScoreCard label="错误" value={result.wrong} tone="red" />
+          <ScoreCard label="未答" value={result.unanswered} tone="slate" />
+          <ScoreCard label="正确率" value={`${result.correctRate}%`} tone="blue" />
+        </section>
+
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <button type="button" onClick={startExam} className="min-h-12 rounded-xl bg-blue-600 px-4 py-3 text-sm font-black text-white">
+            再考一次
+          </button>
+          <button type="button" onClick={openDetails} className="min-h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700">
+            答题详情
+          </button>
         </div>
       </section>
-
-      <section className="grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
-        <ScoreCard label="正确" value={result.correct} tone="green" />
-        <ScoreCard label="错误" value={result.wrong} tone="red" />
-        <ScoreCard label="未答" value={result.unanswered} tone="slate" />
-        <ScoreCard label="正确率" value={`${result.correctRate}%`} tone="blue" />
-      </section>
-
-      <div className="grid grid-cols-2 gap-3">
-        <button type="button" onClick={startExam} className="min-h-12 rounded-xl bg-blue-600 px-4 py-3 text-sm font-black text-white">
-          再考一次
-        </button>
-        <button type="button" onClick={openDetails} className="min-h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700">
-          答题详情
-        </button>
-      </div>
 
       <div className="flex justify-center">
         <Link href="/dmv" className={dmvBackLinkClassName}>
           退出考试
         </Link>
+      </div>
+
+      <div>
+        <DetailShareCard
+          path="/dmv/mock-test"
+          title="OpenAA DMV 模拟考试结果"
+          text={`我在 OpenAA DMV 模拟考试中答对 ${result.correct}/${result.total} 题，交通标志 ${result.signCorrect}/${result.signTotal}，${result.passed ? "通过" : "继续练习"}。`}
+          hint="分享这次模拟考试结果"
+          onClick={shareResult}
+        />
+        {shareMessage ? <p className="mt-2 text-center text-xs font-bold text-blue-600">{shareMessage}</p> : null}
       </div>
 
       <DmvLoginPrompt />
