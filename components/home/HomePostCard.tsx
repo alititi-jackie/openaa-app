@@ -41,7 +41,18 @@ export function HomePostCard({ post, variant = "grid" }: { post: PostListItem; v
             </span>
           </span>
           <Title post={post} />
-          <span className="mt-1 block line-clamp-3 text-xs leading-5 text-slate-500">{post.description}</span>
+          <span
+            className="mt-1 text-xs leading-5 text-slate-500"
+            style={{
+              display: "-webkit-box",
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: "vertical",
+              maxHeight: "3.75rem",
+              overflow: "hidden",
+            }}
+          >
+            {post.description}
+          </span>
         </span>
       </Link>
     );
