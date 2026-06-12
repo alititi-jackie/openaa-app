@@ -8,14 +8,17 @@ import { PageShareButton } from "@/components/common/PageShareButton";
 import { DmvFaqSection, DmvLearningDisclaimerCard, DmvSeoContentSection } from "@/components/dmv/DmvBottomSections";
 import { DmvHorizontalNav } from "@/components/dmv/DmvHorizontalNav";
 import { DmvLoginPrompt } from "@/components/dmv/DmvLoginPrompt";
+import { DmvProgressBar } from "@/components/dmv/DmvProgressBar";
 import { DmvBackLink, dmvBackLinkClassName } from "@/components/dmv/DmvBackLink";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
+import { DmvStatCard } from "@/components/dmv/DmvStatCard";
 import { dmvSeoContent } from "@/components/dmv/dmvSeoContent";
 import { PageTitleCard } from "@/components/PageTitleCard";
 import { DetailShareCard } from "@/components/posts/DetailShareCard";
 import { ChannelHero } from "@/components/posts/ChannelHero";
 import { addWrongQuestion, removeWrongQuestion, saveExamResult, shuffleQuestions } from "@/components/dmv/dmvStorage";
 import { getDmvCategoryLabel } from "@/components/dmv/dmvCategoryLabels";
+import { getDmvRoadSignQuestions, isRoadSignQuestion } from "@/features/dmv/questionPredicates";
 import type { DmvQuestion } from "@/features/dmv/types";
 
 const examSize = 20;
@@ -159,21 +162,23 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
 
   if (phase === "exam" && currentQuestion) {
     const progress = ((currentIndex + 1) / examQuestions.length) * 100;
+    const currentSignCount = getDmvRoadSignQuestions(examQuestions).length;
 
     return (
       <div className="-mx-4 -mt-4 space-y-4">
-        <section className="sticky top-[69px] z-20 border-b border-slate-100 bg-white px-4 pb-2 text-sm text-slate-600 shadow-sm">
-          <div className="h-1.5 overflow-hidden bg-slate-100">
-            <div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${progress}%` }} />
-          </div>
-          <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+        <DmvProgressBar
+          progress={progress}
+          barClassName="bg-blue-600"
+          className="sticky top-[69px] z-20 border-b border-slate-100 bg-white px-4 pb-2 text-sm text-slate-600 shadow-sm"
+          trackClassName="h-1.5 overflow-hidden bg-slate-100"
+          metaClassName="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-1"
+        >
             <span className="font-black text-slate-950">
               {currentIndex + 1} / {examQuestions.length}
             </span>
             <span>已答 {answeredCount} 题</span>
-            <span>标志题 4 道</span>
-          </div>
-        </section>
+            <span>标志题 {currentSignCount} 道</span>
+        </DmvProgressBar>
 
         <div className="space-y-4 px-4">
           <DmvQuestionCard
@@ -271,10 +276,10 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
         </section>
 
         <section className="mt-4 grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
-          <ScoreCard label="正确" value={result.correct} tone="green" />
-          <ScoreCard label="错误" value={result.wrong} tone="red" />
-          <ScoreCard label="未答" value={result.unanswered} tone="slate" />
-          <ScoreCard label="正确率" value={`${result.correctRate}%`} tone="blue" />
+          <DmvStatCard label="正确" value={result.correct} tone="green" />
+          <DmvStatCard label="错误" value={result.wrong} tone="red" />
+          <DmvStatCard label="未答" value={result.unanswered} tone="slate" />
+          <DmvStatCard label="正确率" value={`${result.correctRate}%`} tone="blue" />
         </section>
 
         <div className="mt-4 grid grid-cols-2 gap-3">
@@ -325,7 +330,7 @@ export function DmvMockTestClient({ questions }: { questions: DmvQuestion[] }) {
                   <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
                     <span className="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">第 {index + 1} 题</span>
                     <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">{categoryLabel}</span>
-                    {question.isRoadSign && categoryLabel !== "交通标志" ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700">标志题</span> : null}
+                    {isRoadSignQuestion(question) && categoryLabel !== "交通标志" ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700">标志题</span> : null}
                   </div>
                   <p className="mt-3 text-sm font-black leading-6 text-slate-950">{question.questionText}</p>
                   {question.imageUrl ? (
@@ -453,14 +458,16 @@ function MockStudyGuide() {
 }
 
 function buildExam(questions: DmvQuestion[]) {
-  const signs = shuffleQuestions(questions.filter((question) => question.isRoadSign)).slice(0, examSignCount);
-  const others = shuffleQuestions(questions.filter((question) => !question.isRoadSign)).slice(0, Math.max(0, examSize - signs.length));
+  const roadSignQuestions = getDmvRoadSignQuestions(questions);
+  const roadSignIds = new Set(roadSignQuestions.map((question) => question.id));
+  const signs = shuffleQuestions(roadSignQuestions).slice(0, examSignCount);
+  const others = shuffleQuestions(questions.filter((question) => !roadSignIds.has(question.id))).slice(0, Math.max(0, examSize - signs.length));
   return shuffleQuestions([...signs, ...others]).slice(0, examSize);
 }
 
 function buildResult(questions: DmvQuestion[], answers: Record<string, number>) {
   const correct = questions.filter((question) => answers[question.id] === question.correctAnswerIndex).length;
-  const signQuestions = questions.filter((question) => question.isRoadSign);
+  const signQuestions = getDmvRoadSignQuestions(questions);
   const signCorrect = signQuestions.filter((question) => answers[question.id] === question.correctAnswerIndex).length;
   const unanswered = questions.filter((question) => answers[question.id] === undefined).length;
   const wrong = Math.max(0, questions.length - correct - unanswered);
@@ -481,22 +488,6 @@ function formatDuration(seconds: number) {
   const rest = seconds % 60;
   if (minutes === 0) return `${rest} 秒`;
   return `${minutes}分${rest}秒`;
-}
-
-function ScoreCard({ label, value, tone }: { label: string; value: number | string; tone: "green" | "red" | "blue" | "slate" }) {
-  const colorClass = {
-    green: "border-green-100 bg-green-50 text-green-700",
-    red: "border-red-100 bg-red-50 text-red-600",
-    blue: "border-blue-100 bg-blue-50 text-blue-700",
-    slate: "border-slate-100 bg-white text-slate-600",
-  }[tone];
-
-  return (
-    <div className={`rounded-xl border p-3 shadow-sm ${colorClass}`}>
-      <p className="text-2xl font-black">{value}</p>
-      <p className="text-xs font-bold">{label}</p>
-    </div>
-  );
 }
 
 function DmvResultDisclaimer({ text }: { text: string }) {

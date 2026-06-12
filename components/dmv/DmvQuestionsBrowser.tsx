@@ -9,7 +9,7 @@ import { DmvLoginPrompt } from "@/components/dmv/DmvLoginPrompt";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
 import { addWrongQuestion, removeWrongQuestion } from "@/components/dmv/dmvStorage";
 import { getDmvCategoryLabel } from "@/components/dmv/dmvCategoryLabels";
-import { isRoadSignQuestion } from "@/features/dmv/questionPredicates";
+import { getDmvRoadSignQuestions } from "@/features/dmv/questionPredicates";
 import type { DmvQuestion } from "@/features/dmv/types";
 
 type DmvQuestionsBrowserProps = {
@@ -57,11 +57,12 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
   const questionBrowserAnchorRef = useRef<HTMLDivElement | null>(null);
   const questionBrowserRef = useRef<HTMLElement | null>(null);
   const categories = useMemo(() => ["all", ...Array.from(new Set(questions.map((question) => question.category)))], [questions]);
+  const roadSignQuestionIds = useMemo(() => new Set(getDmvRoadSignQuestions(questions).map((question) => question.id)), [questions]);
 
   const filtered = useMemo(() => {
     const keyword = search.trim().toLowerCase();
     return questions.filter((question) => {
-      const matchesCategory = category === "all" || (category === "traffic-signs" ? isRoadSignQuestion(question) : question.category === category);
+      const matchesCategory = category === "all" || (category === "traffic-signs" ? roadSignQuestionIds.has(question.id) : question.category === category);
       const matchesSearch =
         !keyword ||
         question.questionText.toLowerCase().includes(keyword) ||
@@ -69,7 +70,7 @@ export function DmvQuestionsBrowser({ questions }: DmvQuestionsBrowserProps) {
         question.correctAnswer.toLowerCase().includes(keyword);
       return matchesCategory && matchesSearch;
     });
-  }, [category, questions, search]);
+  }, [category, questions, roadSignQuestionIds, search]);
   const activeCategoryLabel = category === "all" ? "全部" : getDmvCategoryLabel(category);
   const questionCountHint = revealAnswer
     ? `共 ${filtered.length} 题 · ${activeCategoryLabel}`

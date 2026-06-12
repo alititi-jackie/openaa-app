@@ -4,12 +4,14 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { DmvFaqSection, DmvLearningDisclaimerCard, DmvSeoContentSection } from "@/components/dmv/DmvBottomSections";
 import { DmvLoginPrompt } from "@/components/dmv/DmvLoginPrompt";
+import { DmvProgressBar } from "@/components/dmv/DmvProgressBar";
 import { dmvBackLinkClassName } from "@/components/dmv/DmvBackLink";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
+import { DmvStatCard } from "@/components/dmv/DmvStatCard";
 import { dmvSeoContent } from "@/components/dmv/dmvSeoContent";
 import { addWrongQuestion, removeWrongQuestion, shuffleQuestions } from "@/components/dmv/dmvStorage";
 import { getDmvCategoryLabel } from "@/components/dmv/dmvCategoryLabels";
-import { isRoadSignQuestion } from "@/features/dmv/questionPredicates";
+import { getDmvRoadSignQuestions } from "@/features/dmv/questionPredicates";
 import type { DmvQuestion } from "@/features/dmv/types";
 
 type SignTestPhase = "intro" | "practice" | "done";
@@ -30,7 +32,7 @@ const signTestFaq = [
 ];
 
 export function DmvSignTestClient({ questions }: { questions: DmvQuestion[] }) {
-  const signQuestions = useMemo(() => questions.filter(isRoadSignQuestion), [questions]);
+  const signQuestions = useMemo(() => getDmvRoadSignQuestions(questions), [questions]);
   const [phase, setPhase] = useState<SignTestPhase>("intro");
   const [practiceQuestions, setPracticeQuestions] = useState<DmvQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -89,18 +91,19 @@ export function DmvSignTestClient({ questions }: { questions: DmvQuestion[] }) {
 
     return (
       <div className="space-y-4">
-        <section className="sticky top-14 z-20 rounded-2xl border border-slate-100 bg-white p-4 text-sm text-slate-600 shadow-sm">
-          <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
-            <div className="h-full rounded-full bg-amber-500 transition-all" style={{ width: `${progress}%` }} />
-          </div>
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+        <DmvProgressBar
+          progress={progress}
+          barClassName="bg-amber-500"
+          className="sticky top-14 z-20 rounded-2xl border border-slate-100 bg-white p-4 text-sm text-slate-600 shadow-sm"
+          trackClassName="h-1.5 overflow-hidden rounded-full bg-slate-100"
+          metaClassName="mt-3 flex flex-wrap items-center justify-between gap-2"
+        >
             <span className="font-black text-slate-950">
               {currentIndex + 1} / {practiceQuestions.length}
             </span>
             <span>正确 {correctCount} 题</span>
             <span>错误 {wrongCount} 题</span>
-          </div>
-        </section>
+        </DmvProgressBar>
 
         <DmvQuestionCard
           question={currentQuestion}
@@ -146,10 +149,10 @@ export function DmvSignTestClient({ questions }: { questions: DmvQuestion[] }) {
         <section className="rounded-2xl border border-amber-100 bg-white p-5 shadow-sm">
           <h2 className="text-xl font-black text-slate-950">交通标志练习完成</h2>
           <div className="mt-4 grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
-            <ScoreCard label="总题数" value={result.total} tone="slate" />
-            <ScoreCard label="答对" value={result.correct} tone="green" />
-            <ScoreCard label="答错" value={result.wrong} tone="red" />
-            <ScoreCard label="正确率" value={`${finalRate}%`} tone="blue" />
+            <DmvStatCard label="总题数" value={result.total} tone="slate" />
+            <DmvStatCard label="答对" value={result.correct} tone="green" />
+            <DmvStatCard label="答错" value={result.wrong} tone="red" />
+            <DmvStatCard label="正确率" value={`${finalRate}%`} tone="blue" />
           </div>
         </section>
 
@@ -208,22 +211,6 @@ export function DmvSignTestClient({ questions }: { questions: DmvQuestion[] }) {
       <DmvFaqSection items={signTestFaq} />
       <DmvLearningDisclaimerCard />
       <DmvSeoContentSection {...dmvSeoContent.signTest} />
-    </div>
-  );
-}
-
-function ScoreCard({ label, value, tone }: { label: string; value: number | string; tone: "green" | "red" | "blue" | "slate" }) {
-  const colorClass = {
-    green: "border-green-100 bg-green-50 text-green-700",
-    red: "border-red-100 bg-red-50 text-red-600",
-    blue: "border-blue-100 bg-blue-50 text-blue-700",
-    slate: "border-slate-100 bg-white text-slate-600",
-  }[tone];
-
-  return (
-    <div className={`rounded-xl border p-3 shadow-sm ${colorClass}`}>
-      <p className="text-2xl font-black">{value}</p>
-      <p className="text-xs font-bold">{label}</p>
     </div>
   );
 }

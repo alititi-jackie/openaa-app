@@ -8,8 +8,10 @@ import { PageShareButton } from "@/components/common/PageShareButton";
 import { DmvFaqSection, DmvLearningDisclaimerCard, DmvSeoContentSection } from "@/components/dmv/DmvBottomSections";
 import { DmvHorizontalNav } from "@/components/dmv/DmvHorizontalNav";
 import { DmvLoginPrompt } from "@/components/dmv/DmvLoginPrompt";
+import { DmvProgressBar } from "@/components/dmv/DmvProgressBar";
 import { DmvBackLink, dmvBackLinkClassName } from "@/components/dmv/DmvBackLink";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
+import { DmvStatCard } from "@/components/dmv/DmvStatCard";
 import { dmvSeoContent } from "@/components/dmv/dmvSeoContent";
 import { PageTitleCard } from "@/components/PageTitleCard";
 import { ChannelHero } from "@/components/posts/ChannelHero";
@@ -190,9 +192,9 @@ export function DmvPracticeClient({ questions }: { questions: DmvQuestion[] }) {
         <section className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
           <h2 className="text-xl font-black text-slate-950">练习完成</h2>
           <div className="mt-4 grid grid-cols-3 gap-3 text-center">
-            <ScoreCard label="正确" value={correctCount} tone="green" />
-            <ScoreCard label="错误" value={wrongCount} tone="red" />
-            <ScoreCard label="正确率" value={`${correctRate}%`} tone="blue" />
+            <DmvStatCard label="正确" value={correctCount} tone="green" shadow={false} />
+            <DmvStatCard label="错误" value={wrongCount} tone="red" shadow={false} />
+            <DmvStatCard label="正确率" value={`${correctRate}%`} tone="blue" shadow={false} />
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-3">
@@ -235,11 +237,13 @@ export function DmvPracticeClient({ questions }: { questions: DmvQuestion[] }) {
 
   return (
     <div className="-mx-4 -mt-4 space-y-4">
-      <section className="sticky top-[69px] z-20 border-b border-slate-100 bg-white px-4 pb-2 text-sm text-slate-600 shadow-sm">
-        <div className="h-1.5 overflow-hidden bg-slate-100">
-          <div className="h-full rounded-full bg-blue-600 transition-all" style={{ width: `${progress}%` }} />
-        </div>
-        <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+      <DmvProgressBar
+        progress={progress}
+        barClassName="bg-blue-600"
+        className="sticky top-[69px] z-20 border-b border-slate-100 bg-white px-4 pb-2 text-sm text-slate-600 shadow-sm"
+        trackClassName="h-1.5 overflow-hidden bg-slate-100"
+        metaClassName="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-1"
+      >
           <span className="font-black text-slate-950">
             {currentIndex + 1} / {practiceQuestions.length}
           </span>
@@ -247,8 +251,7 @@ export function DmvPracticeClient({ questions }: { questions: DmvQuestion[] }) {
           <span>
             {orderMode === "random" ? "随机练习" : "顺序练习"} · {countOption === "all" ? "全部题目" : `${countOption} 题`}
           </span>
-        </div>
-      </section>
+      </DmvProgressBar>
 
       <div className="space-y-4 px-4">
         <DmvQuestionCard
@@ -320,21 +323,6 @@ function DmvPracticeLegacyHeader() {
       <PageTitleCard title="DMV 练习模式" description="选择随机或顺序练习、设置题数，答题后立即查看正确与否，并把错题保存在本机浏览器。" eyebrow="DMV" />
       <DmvBackLink />
     </>
-  );
-}
-
-function ScoreCard({ label, value, tone }: { label: string; value: number | string; tone: "green" | "red" | "blue" }) {
-  const colorClass = {
-    green: "border-green-100 bg-green-50 text-green-700",
-    red: "border-red-100 bg-red-50 text-red-600",
-    blue: "border-blue-100 bg-blue-50 text-blue-700",
-  }[tone];
-
-  return (
-    <div className={`rounded-xl border p-3 ${colorClass}`}>
-      <p className="text-2xl font-black">{value}</p>
-      <p className="text-xs font-bold">{label}</p>
-    </div>
   );
 }
 

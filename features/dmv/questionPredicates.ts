@@ -8,3 +8,7 @@ export function isRoadSignCategory(category: string, tags: readonly string[] = [
 export function isRoadSignQuestion(question: Pick<DmvQuestion, "category" | "tags" | "isRoadSign">) {
   return question.isRoadSign || isRoadSignCategory(question.category, question.tags);
 }
+
+export function getDmvRoadSignQuestions<T extends Pick<DmvQuestion, "category" | "tags" | "isRoadSign">>(questions: readonly T[]) {
+  return questions.filter(isRoadSignQuestion);
+}
