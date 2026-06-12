@@ -16,7 +16,7 @@ export function AdminPageHeader({
   children,
   backHref,
   backLabel,
-  showBackLink = true,
+  showBackLink = false,
 }: AdminPageHeaderProps) {
   return (
     <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">

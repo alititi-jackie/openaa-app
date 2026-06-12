@@ -53,6 +53,9 @@ export async function AdminAuthGate({ children }: AdminAuthGateProps) {
 function AdminPageFrame({ children }: { children: ReactNode }) {
   return (
     <div className="space-y-4">
+      <div className="flex justify-start">
+        <AdminBackNavigation />
+      </div>
       {children}
       <AdminFooterNavigation />
     </div>
@@ -74,9 +77,6 @@ function AdminAccessMessage({
 }) {
   return (
     <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-      <div className="mb-4 flex justify-start">
-        <AdminBackNavigation />
-      </div>
       <div className="grid h-12 w-12 place-items-center rounded-xl bg-slate-100 text-slate-700">{icon}</div>
       <h1 className="mt-4 text-2xl font-black text-slate-950">{title}</h1>
       <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>

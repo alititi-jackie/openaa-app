@@ -213,12 +213,7 @@ export default function AdminDashboardPage() {
 
         return (
           <div className="space-y-4">
-            <AdminPageHeader
-              title="OpenAA 管理后台"
-              description="集中管理内容、用户、安全反馈和运营配置。已完成模块可直接进入，旧站已有但新站尚未补齐的模块会标记为待补齐。"
-              backHref="/"
-              backLabel="返回首页"
-            >
+            <AdminPageHeader title="OpenAA 管理后台" description="集中管理内容、用户、安全反馈和运营配置。已完成模块可直接进入，旧站已有但新站尚未补齐的模块会标记为待补齐。">
               <AdminPermissionBadge allowed={superAdmin} label="super_admin" />
               <AdminPermissionBadge allowed={accessibleReadyCount > 0} label={`可进入 ${accessibleReadyCount}/${readyEntries.length}`} />
               <AdminPermissionBadge allowed={adminRole.is_active} label={adminRole.role} />
