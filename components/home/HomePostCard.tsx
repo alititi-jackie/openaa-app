@@ -1,21 +1,22 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Clock, MapPin } from "lucide-react";
+import { Clock } from "lucide-react";
 import type { PostListItem } from "@/components/posts/PostList";
+import { DetailMetaPills, type DetailMetaPill } from "@/components/posts/DetailMetaPills";
 
 export function HomePostCard({ post, variant = "grid" }: { post: PostListItem; variant?: "grid" | "media" | "news" }) {
   if (variant === "media") {
     return (
       <Link
         href={post.href}
-        className="flex gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-[0_1px_10px_rgba(15,23,42,0.06)] transition active:scale-[0.99]"
+        className="flex h-[120px] gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-[0_1px_10px_rgba(15,23,42,0.06)] transition active:scale-[0.99]"
       >
         <Thumb post={post} />
-        <span className="min-w-0 flex-1">
-          <Title post={post} />
-          <MetaLine post={post} />
-          <span className="mt-1 block line-clamp-2 text-xs leading-5 text-slate-500">{post.description}</span>
-        </span>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <Title post={post} oneLine />
+          <span className="mt-1.5 block line-clamp-1 text-xs leading-5 text-slate-500">{post.description}</span>
+          <HomePillLine post={post} />
+        </div>
       </Link>
     );
   }
@@ -49,40 +50,25 @@ export function HomePostCard({ post, variant = "grid" }: { post: PostListItem; v
   return (
     <Link
       href={post.href}
-      className="flex min-h-[96px] flex-col rounded-xl border border-slate-100 bg-white px-3 py-2.5 shadow-[0_1px_6px_rgba(15,23,42,0.06)] transition active:scale-[0.98]"
+      className="flex h-[120px] min-w-0 flex-col rounded-xl border border-slate-100 bg-white px-3 py-3 shadow-[0_1px_6px_rgba(15,23,42,0.06)] transition active:scale-[0.98]"
     >
-      <Title post={post} />
-      <MetaLine post={post} />
-      <FieldLine post={post} />
+      <Title post={post} oneLine />
+      <span className="mt-1.5 block line-clamp-1 text-xs leading-5 text-slate-500">{post.description}</span>
+      <HomePillLine post={post} />
     </Link>
   );
 }
 
 function Thumb({ post }: { post: PostListItem }) {
   return (
-    <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-slate-100">
-      {post.imageUrl ? <Image src={post.imageUrl} alt={post.title} fill sizes="64px" className="object-cover" /> : <span className="absolute inset-0 bg-gradient-to-br from-blue-50 to-slate-100" />}
+    <span className="relative h-full w-24 shrink-0 overflow-hidden rounded-lg bg-slate-100 sm:w-28">
+      {post.imageUrl ? <Image src={post.imageUrl} alt={post.title} fill sizes="(min-width: 640px) 112px, 96px" className="object-cover" /> : <span className="absolute inset-0 bg-gradient-to-br from-blue-50 to-slate-100" />}
     </span>
   );
 }
 
-function Title({ post }: { post: PostListItem }) {
-  return <span className="line-clamp-2 text-sm font-black leading-snug text-slate-950">{post.title}</span>;
-}
-
-function MetaLine({ post }: { post: PostListItem }) {
-  return (
-    <span className="mt-2 flex min-h-4 items-center gap-1 text-[11px] font-semibold text-slate-500">
-      {post.location ? (
-        <>
-          <MapPin size={11} aria-hidden="true" />
-          <span className="truncate">{post.location}</span>
-        </>
-      ) : (
-        <span>{post.meta}</span>
-      )}
-    </span>
-  );
+function Title({ post, oneLine = false }: { post: PostListItem; oneLine?: boolean }) {
+  return <span className={`${oneLine ? "line-clamp-1" : "line-clamp-2"} text-sm font-black leading-snug text-slate-950`}>{post.title}</span>;
 }
 
 function rankClassName(rank: number) {
@@ -92,19 +78,31 @@ function rankClassName(rank: number) {
   return "text-slate-300";
 }
 
-function FieldLine({ post }: { post: PostListItem }) {
-  const field = post.fields?.[0];
-  const second = post.fields?.[1];
+function homePillItems(post: PostListItem): DetailMetaPill[] {
+  const items = post.listingMetaFields ?? post.detailMetaFields ?? [];
+  const businessItems = items.filter((item) => item.group === "business");
 
-  if (!field && !post.tag) {
-    return <span className="mt-auto pt-3 text-[11px] font-semibold text-slate-400">{post.meta}</span>;
+  if (post.type === "service") {
+    const commonItems = items.filter((item) => item.group === "common");
+    return [...businessItems, ...commonItems].map((item) => ({ ...item, group: undefined }));
   }
 
+  return businessItems.map((item) => ({ ...item, group: undefined }));
+}
+
+function HomePillLine({ post }: { post: PostListItem }) {
+  const items = homePillItems(post);
+
   return (
-    <span className="mt-auto flex min-w-0 items-center gap-1.5 pt-3 text-[11px] font-bold text-slate-500">
-      {post.tag ? <span className="truncate rounded-full bg-slate-50 px-2 py-1">{post.tag}</span> : null}
-      {field ? <span className="truncate rounded-full bg-blue-50 px-2 py-1 text-blue-700">{field.value}</span> : null}
-      {second ? <span className="truncate rounded-full bg-slate-50 px-2 py-1">{second.value}</span> : null}
-    </span>
+    <div className="mt-auto max-h-8 min-h-8 min-w-0 overflow-hidden pt-1">
+      <DetailMetaPills
+        items={items}
+        postId={post.id ?? post.href}
+        initialViewCount={post.viewCount ?? 0}
+        trackViews={false}
+        oneLine
+        className="!mt-0"
+      />
+    </div>
   );
 }

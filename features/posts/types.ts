@@ -145,7 +145,7 @@ export type PostCardView = {
   favoriteCount: number;
   viewCount: number;
   fields: Array<{ label: string; value: string }>;
-  detailMetaFields?: Array<{ label: string; value: string }>;
+  detailMetaFields?: PostListingMetaField[];
   listingMetaFields?: PostListingMetaField[];
 };
 
@@ -155,7 +155,7 @@ export type PostDetailView = PostCardView & {
   publishedAt: string | null;
   createdAt: string;
   images: Array<{ url: string; caption?: string | null; imageAssetId?: string | null }>;
-  detailMetaFields: Array<{ label: string; value: string }>;
+  detailMetaFields: PostListingMetaField[];
   contact?: PostContactRecord | null;
   sourceRecord?: PostRecord;
 };
