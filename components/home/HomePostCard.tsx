@@ -28,11 +28,11 @@ export function HomePostCard({ post, variant = "grid" }: { post: PostListItem; v
         href={post.href}
         className="flex gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_2px_12px_rgba(15,23,42,0.06)] transition active:scale-[0.99]"
       >
-        <span className={`mt-0.5 w-6 shrink-0 text-center text-xs font-black tabular-nums ${rankClassName(rank)}`}>
-          {post.meta}
-        </span>
         <span className="min-w-0 flex-1">
-          <span className="mb-1.5 flex flex-wrap items-center gap-2">
+          <span className="mb-1.5 flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap">
+            <span className={`mt-0.5 w-6 shrink-0 text-center text-xs font-black tabular-nums ${rankClassName(rank)}`}>
+              {post.meta}
+            </span>
             {post.tag ? <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-600">{post.tag}</span> : null}
             {post.fields?.[0]?.value ? <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">{post.fields[0].value}</span> : null}
             <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-slate-400">
@@ -40,8 +40,8 @@ export function HomePostCard({ post, variant = "grid" }: { post: PostListItem; v
               {post.location || "最新"}
             </span>
           </span>
-          <Title post={post} lines={2} />
-          <span className="mt-1 block line-clamp-2 text-xs leading-5 text-slate-500">{post.description}</span>
+          <Title post={post} />
+          <span className="mt-1 block line-clamp-3 text-xs leading-5 text-slate-500">{post.description}</span>
         </span>
       </Link>
     );
