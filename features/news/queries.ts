@@ -92,6 +92,42 @@ export async function getPublishedNewsList(params: NewsListParams = {}): Promise
   }
 }
 
+function sanitizeSearchTerm(value: string) {
+  return value.trim().replace(/[%,()]/g, " ").replace(/\s+/g, " ").slice(0, 80);
+}
+
+function normalizeSearchLimit(value?: number) {
+  if (!value || !Number.isFinite(value)) return PUBLIC_NEWS_LIMIT;
+  return Math.min(50, Math.max(1, Math.floor(value)));
+}
+
+export async function searchPublishedNews(params: { q?: string; limit?: number } = {}): Promise<NewsQueryResult<NewsPostCard[]>> {
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) return missingConfig([]);
+
+  const q = sanitizeSearchTerm(params.q ?? "");
+  if (!q) return { state: "ready", data: [] };
+
+  try {
+    const now = new Date().toISOString();
+    const { data, error } = await supabase
+      .from("news_posts")
+      .select(newsPostSelect)
+      .eq("status", "published")
+      .or(`published_at.is.null,published_at.lte.${now}`)
+      .or(`title.ilike.%${q}%,excerpt.ilike.%${q}%,body.ilike.%${q}%`)
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false })
+      .limit(normalizeSearchLimit(params.limit));
+
+    if (error) return errorResult([], error.message);
+
+    return { state: "ready", data: ((data ?? []) as unknown as NewsPostRecord[]).map(mapNewsPostToCard) };
+  } catch (error) {
+    return errorResult([], error);
+  }
+}
+
 export async function getPinnedNews(limit = 3): Promise<NewsQueryResult<NewsPostCard[]>> {
   const list = await getPublishedNewsList({ limit: Math.max(limit * 2, limit) });
   return { ...list, data: list.data.filter((post) => post.isPinned).slice(0, limit) };

@@ -16,6 +16,7 @@ import type {
 } from "./types";
 
 const MAX_PUBLIC_FILTER_ROWS = 1000;
+const MAX_PUBLIC_SEARCH_CANDIDATE_ROWS = 200;
 
 const postSelectFields = `
   id,
@@ -172,10 +173,9 @@ export async function searchPublicPosts(params: { q?: string; type?: PostType; l
     .eq("visibility", "public")
     .eq("cities.slug", DEFAULT_CITY_SLUG)
     .or(`expires_at.is.null,expires_at.gt.${now}`)
-    .or(`title.ilike.%${keyword}%,summary.ilike.%${keyword}%,body.ilike.%${keyword}%`)
     .order("published_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
-    .limit(normalizeSearchLimit(params.limit));
+    .limit(MAX_PUBLIC_SEARCH_CANDIDATE_ROWS);
 
   if (params.type) {
     query = query.eq("post_type", params.type);
@@ -186,9 +186,12 @@ export async function searchPublicPosts(params: { q?: string; type?: PostType; l
   if (error) return queryError("search public posts failed", error, []);
 
   const records = (data ?? []) as unknown as PostRecord[];
-  const authors = await fetchAuthors(records.map((post) => post.author_id));
+  const filteredRecords = records
+    .filter((record) => applyPublicPostFilters([record], record.post_type, { ...normalizePublicPostFilters({ q: keyword }), pageSize: MAX_PUBLIC_FILTER_ROWS }).length > 0)
+    .slice(0, normalizeSearchLimit(params.limit));
+  const authors = await fetchAuthors(filteredRecords.map((post) => post.author_id));
 
-  return { state: "ready", data: records.map((record) => mapPostRecordToCard(record, authors)) };
+  return { state: "ready", data: filteredRecords.map((record) => mapPostRecordToCard(record, authors)) };
 }
 
 export async function getPublicPostById(id: string, type: PostType): Promise<PostsQueryResult<PostDetailView | null>> {
