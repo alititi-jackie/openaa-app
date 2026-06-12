@@ -22,15 +22,25 @@ export function NewsCard({ post, featured = false }: { post: NewsPostCard; featu
     <Link href={post.href} className="flex min-h-30 gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
       <NewsCover src={post.coverImageUrl} alt={post.title} className="h-24 w-32 shrink-0 rounded-xl" sizes="128px" />
       <span className="flex min-w-0 flex-1 flex-col">
-        <Meta post={post} />
-        <span className="mt-1 block line-clamp-2 text-sm font-semibold leading-snug text-slate-950">{post.title}</span>
-        <span className="mt-1 block line-clamp-1 text-xs leading-5 text-slate-600">{post.excerpt}</span>
+        <Meta post={post} compact />
+        <span className="mt-1 block line-clamp-1 text-sm font-semibold leading-snug text-slate-950">{post.title}</span>
+        <span className="mt-1 block line-clamp-3 text-xs leading-5 text-slate-600">{post.excerpt}</span>
       </span>
     </Link>
   );
 }
 
-function Meta({ post }: { post: NewsPostCard }) {
+function Meta({ post, compact = false }: { post: NewsPostCard; compact?: boolean }) {
+  if (compact) {
+    return (
+      <span className="block truncate whitespace-nowrap text-xs">
+        <span className="font-medium text-blue-600">{post.categoryName}</span>
+        <span className="px-2 text-slate-300">路</span>
+        <span className="font-normal text-slate-400">{formatNewsDate(post.publishedAt)}</span>
+      </span>
+    );
+  }
+
   return (
     <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
       <span className="font-medium text-blue-600">{post.categoryName}</span>
