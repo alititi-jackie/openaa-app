@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { hasAdminPermission } from "@/lib/permissions/admin";
 import { ADMIN_NEWS_LIMIT, PUBLIC_NEWS_LIMIT } from "./constants";
 import { fallbackNewsCategories, mapNewsCategory, mapNewsPostToAdmin, mapNewsPostToCard, mapNewsPostToDetail, sortPinnedFirst } from "./mappers";
-import type { AdminNewsPermissions, AdminNewsPost, NewsCategory, NewsCategoryRecord, NewsListParams, NewsPostCard, NewsPostDetail, NewsPostRecord, NewsQueryResult, NewsStatus } from "./types";
+import type { AdminNewsPermissions, AdminNewsPost, NewsCategory, NewsCategoryRecord, NewsDetailContext, NewsListParams, NewsPostCard, NewsPostDetail, NewsPostRecord, NewsQueryResult, NewsStatus } from "./types";
 
 type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
 
@@ -121,6 +121,79 @@ export async function getNewsBySlug(slug: string): Promise<NewsQueryResult<NewsP
   } catch (error) {
     return errorResult(null, error);
   }
+}
+
+async function getPublishedNewsCards(params: NewsListParams = {}): Promise<NewsQueryResult<NewsPostCard[]>> {
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) return missingConfig([]);
+
+  try {
+    const now = new Date().toISOString();
+    let query = supabase
+      .from("news_posts")
+      .select(params.categorySlug ? newsPostCategoryInnerSelect : newsPostSelect)
+      .eq("status", "published")
+      .or(`published_at.is.null,published_at.lte.${now}`)
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false })
+      .limit(params.limit ?? PUBLIC_NEWS_LIMIT);
+
+    if (params.categorySlug) {
+      query = query.eq("news_categories.slug", params.categorySlug);
+    }
+
+    const { data, error } = await query;
+    if (error) return errorResult([], error.message);
+
+    return { state: "ready", data: ((data ?? []) as unknown as NewsPostRecord[]).map(mapNewsPostToCard) };
+  } catch (error) {
+    return errorResult([], error);
+  }
+}
+
+export async function getNewsDetailContext(slug: string): Promise<NewsQueryResult<NewsDetailContext | null>> {
+  const postResult = await getNewsBySlug(slug);
+  const post = postResult.data;
+
+  if (!post) {
+    return { state: postResult.state, data: null, error: postResult.error };
+  }
+
+  const emptySameCategoryResult: NewsQueryResult<NewsPostCard[]> = { state: "ready", data: [] };
+  const [orderedResult, sameCategoryResult] = await Promise.all([
+    getPublishedNewsCards({ limit: 100 }),
+    post.categorySlug ? getPublishedNewsCards({ categorySlug: post.categorySlug, limit: 4 }) : Promise.resolve(emptySameCategoryResult),
+  ]);
+
+  const orderedPosts = orderedResult.data;
+  const currentIndex = orderedPosts.findIndex((item) => item.slug === slug);
+  const previousPost = currentIndex > 0 ? orderedPosts[currentIndex - 1] ?? null : null;
+  const nextPost = currentIndex >= 0 ? orderedPosts[currentIndex + 1] ?? null : null;
+
+  const relatedPosts = sameCategoryResult.data.filter((item) => item.slug !== slug).slice(0, 3);
+
+  if (relatedPosts.length < 3) {
+    const relatedSlugs = new Set(relatedPosts.map((item) => item.slug));
+    relatedPosts.push(
+      ...orderedPosts
+        .filter((item) => item.slug !== slug && !relatedSlugs.has(item.slug))
+        .slice(0, 3 - relatedPosts.length),
+    );
+  }
+
+  const state = postResult.state === "error" || orderedResult.state === "error" || sameCategoryResult.state === "error" ? "error" : postResult.state;
+  const error = postResult.error ?? orderedResult.error ?? sameCategoryResult.error;
+
+  return {
+    state,
+    data: {
+      post,
+      previousPost,
+      nextPost,
+      relatedPosts,
+    },
+    error,
+  };
 }
 
 export async function getAdminNewsPermissions(): Promise<AdminNewsPermissions> {

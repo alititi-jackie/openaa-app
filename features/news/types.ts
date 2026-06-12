@@ -70,6 +70,13 @@ export type NewsPostDetail = NewsPostCard & {
   seoDescription: string | null;
 };
 
+export type NewsDetailContext = {
+  post: NewsPostDetail;
+  previousPost: NewsPostCard | null;
+  nextPost: NewsPostCard | null;
+  relatedPosts: NewsPostCard[];
+};
+
 export type AdminNewsPost = NewsPostDetail & {
   status: NewsStatus;
   categoryId: string | null;
