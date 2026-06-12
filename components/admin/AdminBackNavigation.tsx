@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { AdminLogoutButton } from "./AdminLogoutButton";
 
 const ADMIN_HOME_PATH = "/admin/dashboard";
 
@@ -12,13 +13,13 @@ export const adminNavigationLinkClassName =
 export function AdminBackNavigation() {
   const pathname = usePathname();
   const isAdminHome = pathname === "/admin" || pathname === ADMIN_HOME_PATH;
-  const href = isAdminHome ? "/" : ADMIN_HOME_PATH;
-  const label = isAdminHome ? "返回首页" : "返回总后台";
+
+  if (isAdminHome) return <AdminLogoutButton />;
 
   return (
-    <Link href={href} className={adminNavigationLinkClassName}>
+    <Link href={ADMIN_HOME_PATH} className={adminNavigationLinkClassName}>
       <ArrowLeft size={16} aria-hidden="true" />
-      {label}
+      返回总后台
     </Link>
   );
 }

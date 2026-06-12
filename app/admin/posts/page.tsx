@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { FileText } from "lucide-react";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
+import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPostsFilter, AdminPostsList, AdminPostsPagination, AdminPostsPermissionBadges } from "@/components/posts/AdminPostsManagement";
@@ -74,12 +75,10 @@ export default function AdminPostsPage({ searchParams }: AdminPostsPageProps) {
             </AdminCard>
             <nav aria-label="后台底部导航" className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
               <div className="flex flex-wrap gap-2">
-                <Link href="/" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
-                  返回首页
-                </Link>
                 <Link href="/admin/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
                   返回总后台
                 </Link>
+                <AdminLogoutButton />
               </div>
             </nav>
 
