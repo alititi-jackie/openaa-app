@@ -9,12 +9,12 @@ export function HomePostCard({ post, variant = "grid" }: { post: PostListItem; v
     return (
       <Link
         href={post.href}
-        className="flex h-[120px] gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-[0_1px_10px_rgba(15,23,42,0.06)] transition active:scale-[0.99]"
+        className="flex h-[104px] min-w-0 gap-3 overflow-hidden rounded-xl border border-slate-100 bg-white p-3 shadow-[0_1px_10px_rgba(15,23,42,0.06)] transition active:scale-[0.99]"
       >
         <Thumb post={post} />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <Title post={post} oneLine />
-          <span className="mt-1.5 block line-clamp-1 text-xs leading-5 text-slate-500">{post.description}</span>
+        <div className="grid min-w-0 flex-1 grid-rows-[20px_20px_28px] content-between overflow-hidden">
+          <Title post={post} />
+          <Summary post={post} />
           <HomePillLine post={post} />
         </div>
       </Link>
@@ -40,7 +40,7 @@ export function HomePostCard({ post, variant = "grid" }: { post: PostListItem; v
               {post.location || "最新"}
             </span>
           </span>
-          <Title post={post} />
+          <Title post={post} lines={2} />
           <span className="mt-1 block line-clamp-2 text-xs leading-5 text-slate-500">{post.description}</span>
         </span>
       </Link>
@@ -50,10 +50,10 @@ export function HomePostCard({ post, variant = "grid" }: { post: PostListItem; v
   return (
     <Link
       href={post.href}
-      className="flex h-[120px] min-w-0 flex-col rounded-xl border border-slate-100 bg-white px-3 py-3 shadow-[0_1px_6px_rgba(15,23,42,0.06)] transition active:scale-[0.98]"
+      className="grid h-[104px] min-w-0 grid-rows-[20px_20px_28px] content-between overflow-hidden rounded-xl border border-slate-100 bg-white px-3 py-3 shadow-[0_1px_6px_rgba(15,23,42,0.06)] transition active:scale-[0.98]"
     >
-      <Title post={post} oneLine />
-      <span className="mt-1.5 block line-clamp-1 text-xs leading-5 text-slate-500">{post.description}</span>
+      <Title post={post} />
+      <Summary post={post} />
       <HomePillLine post={post} />
     </Link>
   );
@@ -61,14 +61,22 @@ export function HomePostCard({ post, variant = "grid" }: { post: PostListItem; v
 
 function Thumb({ post }: { post: PostListItem }) {
   return (
-    <span className="relative h-full w-24 shrink-0 overflow-hidden rounded-lg bg-slate-100 sm:w-28">
-      {post.imageUrl ? <Image src={post.imageUrl} alt={post.title} fill sizes="(min-width: 640px) 112px, 96px" className="object-cover" /> : <span className="absolute inset-0 bg-gradient-to-br from-blue-50 to-slate-100" />}
+    <span className="relative h-full w-28 shrink-0 overflow-hidden rounded-lg bg-slate-100 sm:w-32">
+      {post.imageUrl ? <Image src={post.imageUrl} alt={post.title} fill sizes="(min-width: 640px) 128px, 112px" className="object-cover" /> : <span className="absolute inset-0 bg-gradient-to-br from-blue-50 to-slate-100" />}
     </span>
   );
 }
 
-function Title({ post, oneLine = false }: { post: PostListItem; oneLine?: boolean }) {
-  return <span className={`${oneLine ? "line-clamp-1" : "line-clamp-2"} text-sm font-black leading-snug text-slate-950`}>{post.title}</span>;
+function Title({ post, lines = 1 }: { post: PostListItem; lines?: 1 | 2 }) {
+  return (
+    <span className={`block min-w-0 text-sm font-black leading-5 text-slate-950 ${lines === 1 ? "truncate" : "line-clamp-2"}`}>
+      {post.title}
+    </span>
+  );
+}
+
+function Summary({ post }: { post: PostListItem }) {
+  return <span className="block min-w-0 truncate text-xs leading-5 text-slate-500">{post.description}</span>;
 }
 
 function rankClassName(rank: number) {
@@ -94,14 +102,14 @@ function HomePillLine({ post }: { post: PostListItem }) {
   const items = homePillItems(post);
 
   return (
-    <div className="mt-auto max-h-8 min-h-8 min-w-0 overflow-hidden pt-1">
+    <div className="min-h-0 min-w-0 overflow-hidden pt-1">
       <DetailMetaPills
         items={items}
         postId={post.id ?? post.href}
         initialViewCount={post.viewCount ?? 0}
         trackViews={false}
         oneLine
-        className="!mt-0"
+        className="!mt-0 !max-w-full !gap-1.5 [&>span]:!shrink-0 [&>span]:!whitespace-nowrap [&>span]:!px-2 [&>span]:!py-0.5 [&>span]:!text-[11px] [&>span]:!leading-5"
       />
     </div>
   );
