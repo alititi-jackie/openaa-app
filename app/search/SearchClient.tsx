@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Clock, Flame, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { DetailBackButton } from "@/components/common/DetailBackButton";
 import { EmptyState } from "@/components/common/EmptyState";
+import { HorizontalPillTabs, type HorizontalPillTab } from "@/components/common/HorizontalPillTabs";
 import type { SearchQueryResult, SearchResultItem } from "@/features/search/types";
 
 type SearchClientProps = {
@@ -13,7 +14,79 @@ type SearchClientProps = {
 
 type SearchStatus = "idle" | "loading" | "ready" | "error";
 
-const HOT_KEYWORDS = ["租房", "兼职", "DMV", "搬家", "二手家具"];
+type FeatureGroup = {
+  keywords: string[];
+  entries: HorizontalPillTab[];
+};
+
+const FEATURE_GROUPS: FeatureGroup[] = [
+  {
+    keywords: ["驾照", "dmv", "permit", "笔试", "考试", "罚单"],
+    entries: [
+      { value: "dmv-home", label: "DMV首页", href: "/dmv" },
+      { value: "dmv-questions", label: "DMV题库", href: "/dmv/questions" },
+      { value: "dmv-practice", label: "DMV练习", href: "/dmv/practice" },
+      { value: "dmv-mock", label: "模拟考试", href: "/dmv/mock-test" },
+      { value: "dmv-wrong", label: "错题练习", href: "/dmv/wrong-questions" },
+      { value: "dmv-tickets", label: "罚单查询", href: "/dmv/tickets" },
+    ],
+  },
+  {
+    keywords: ["招聘", "工作", "兼职", "求职"],
+    entries: [
+      { value: "jobs", label: "招聘信息", href: "/jobs" },
+      { value: "jobs-publish", label: "发布招聘", href: "/jobs/publish" },
+      { value: "job-seeking", label: "求职信息", href: "/jobs?mode=seeking" },
+      { value: "my-jobs", label: "我的招聘", href: "/profile/jobs" },
+    ],
+  },
+  {
+    keywords: ["房屋", "租房", "求租", "住房"],
+    entries: [
+      { value: "housing", label: "房屋信息", href: "/housing" },
+      { value: "housing-publish", label: "发布房屋", href: "/housing/publish" },
+      { value: "housing-seeking", label: "求租求购", href: "/housing?mode=seeking" },
+      { value: "my-housing", label: "我的房屋", href: "/profile/housing" },
+    ],
+  },
+  {
+    keywords: ["二手", "买卖", "家具", "求购"],
+    entries: [
+      { value: "secondhand", label: "二手交易", href: "/secondhand" },
+      { value: "secondhand-publish", label: "发布二手", href: "/secondhand/publish" },
+      { value: "secondhand-buying", label: "求购信息", href: "/secondhand?mode=buying" },
+      { value: "my-secondhand", label: "我的二手", href: "/profile/secondhand" },
+    ],
+  },
+  {
+    keywords: ["服务", "搬家", "装修", "清洁", "律师", "会计"],
+    entries: [
+      { value: "services", label: "本地服务", href: "/services" },
+      { value: "services-publish", label: "发布服务", href: "/services/publish" },
+      { value: "my-services", label: "我的服务", href: "/profile/services" },
+    ],
+  },
+  {
+    keywords: ["导航", "网站", "收藏"],
+    entries: [
+      { value: "navigation", label: "网站导航", href: "/navigation" },
+      { value: "my-navigation", label: "我的导航", href: "/navigation/my" },
+    ],
+  },
+  {
+    keywords: ["新闻", "资讯"],
+    entries: [{ value: "news", label: "新闻资讯", href: "/news" }],
+  },
+];
+
+const FALLBACK_FEATURE_ENTRIES: HorizontalPillTab[] = [
+  { value: "jobs", label: "招聘信息", href: "/jobs" },
+  { value: "housing", label: "房屋信息", href: "/housing" },
+  { value: "secondhand", label: "二手交易", href: "/secondhand" },
+  { value: "services", label: "本地服务", href: "/services" },
+  { value: "dmv-home", label: "DMV首页", href: "/dmv" },
+  { value: "navigation", label: "网站导航", href: "/navigation" },
+];
 
 export default function SearchClient({ initialQuery = "" }: SearchClientProps) {
   const [query, setQuery] = useState(initialQuery);
@@ -21,6 +94,7 @@ export default function SearchClient({ initialQuery = "" }: SearchClientProps) {
   const [results, setResults] = useState<SearchResultItem[]>([]);
   const [message, setMessage] = useState("");
   const trimmedQuery = useMemo(() => query.trim(), [query]);
+  const featureEntries = useMemo(() => getFeatureEntries(trimmedQuery), [trimmedQuery]);
 
   useEffect(() => {
     if (!trimmedQuery) {
@@ -82,36 +156,33 @@ export default function SearchClient({ initialQuery = "" }: SearchClientProps) {
           />
         </label>
       </section>
-      <section className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-        <div className="mb-3 flex items-center gap-2 text-slate-700">
-          <Clock size={18} aria-hidden="true" />
-          <h2 className="font-black">搜索历史</h2>
-        </div>
-        <EmptyState title="暂无搜索历史" description="后续接入本地历史或登录用户搜索记录。" />
-      </section>
-      <section className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-        <div className="mb-3 flex items-center gap-2 text-orange-700">
-          <Flame size={18} aria-hidden="true" />
-          <h2 className="font-black">热门搜索</h2>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {HOT_KEYWORDS.map((item) => (
-            <button key={item} type="button" onClick={() => setQuery(item)} className="rounded-full bg-slate-100 px-3 py-2 text-sm font-bold text-slate-700">
-              {item}
-            </button>
-          ))}
-        </div>
-      </section>
-      <SearchResults query={trimmedQuery} status={status} results={results} message={message} />
+      {trimmedQuery ? <FeatureEntryBar entries={featureEntries} /> : null}
+      {trimmedQuery ? <SearchResults query={trimmedQuery} status={status} results={results} message={message} /> : null}
     </div>
   );
 }
 
-function SearchResults({ query, status, results, message }: { query: string; status: SearchStatus; results: SearchResultItem[]; message: string }) {
-  if (!query) {
-    return <EmptyState title="搜索结果占位" description="输入关键词后会显示招聘、房屋、二手、服务、新闻和导航结果。" icon={<Search size={20} aria-hidden="true" />} />;
-  }
+function getFeatureEntries(query: string): HorizontalPillTab[] {
+  const normalized = query.toLowerCase();
+  const entries = FEATURE_GROUPS.filter((group) => group.keywords.some((keyword) => normalized.includes(keyword.toLowerCase()))).flatMap((group) => group.entries);
+  const uniqueEntries = uniqueByValue(entries);
+  return uniqueEntries.length > 0 ? uniqueEntries : FALLBACK_FEATURE_ENTRIES;
+}
 
+function uniqueByValue(entries: HorizontalPillTab[]) {
+  const seen = new Set<string>();
+  return entries.filter((entry) => {
+    if (seen.has(entry.value)) return false;
+    seen.add(entry.value);
+    return true;
+  });
+}
+
+function FeatureEntryBar({ entries }: { entries: HorizontalPillTab[] }) {
+  return <HorizontalPillTabs tabs={entries} activeValue="" ariaLabel="相关功能入口" />;
+}
+
+function SearchResults({ query, status, results, message }: { query: string; status: SearchStatus; results: SearchResultItem[]; message: string }) {
   if (status === "loading") {
     return <EmptyState title="搜索中" description={`正在搜索“${query}”`} icon={<Search size={20} aria-hidden="true" />} />;
   }
