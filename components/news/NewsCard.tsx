@@ -23,8 +23,8 @@ export function NewsCard({ post, featured = false }: { post: NewsPostCard; featu
       <NewsCover src={post.coverImageUrl} alt={post.title} className="h-24 w-32 shrink-0 rounded-xl" sizes="128px" />
       <span className="flex min-w-0 flex-1 flex-col">
         <Meta post={post} compact />
-        <span className="mt-1 block line-clamp-1 text-sm font-semibold leading-snug text-slate-950">{post.title}</span>
-        <span className="mt-1 block line-clamp-3 text-xs leading-5 text-slate-600">{post.excerpt}</span>
+        <span className="mt-1 overflow-hidden text-sm font-semibold leading-snug text-slate-950 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:1] md:[-webkit-line-clamp:2]">{post.title}</span>
+        <span className="mt-1 overflow-hidden text-xs leading-5 text-slate-600 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3] md:[-webkit-line-clamp:1]">{post.excerpt}</span>
       </span>
     </Link>
   );
@@ -33,10 +33,16 @@ export function NewsCard({ post, featured = false }: { post: NewsPostCard; featu
 function Meta({ post, compact = false }: { post: NewsPostCard; compact?: boolean }) {
   if (compact) {
     return (
-      <span className="block truncate whitespace-nowrap text-xs">
+      <span className="block overflow-hidden text-ellipsis whitespace-nowrap text-xs md:flex md:flex-wrap md:items-center md:gap-x-2 md:gap-y-1 md:overflow-visible md:whitespace-normal">
         <span className="font-medium text-blue-600">{post.categoryName}</span>
-        <span className="px-2 text-slate-300">路</span>
+        <span className="px-2 text-slate-300 md:px-0">&middot;</span>
         <span className="font-normal text-slate-400">{formatNewsDate(post.publishedAt)}</span>
+        {post.isPinned ? (
+          <span className="hidden items-center gap-1 rounded-full border border-amber-100 bg-amber-50 px-2 py-0.5 font-medium text-amber-700 md:inline-flex">
+            <Pin size={12} aria-hidden="true" />
+            置顶
+          </span>
+        ) : null}
       </span>
     );
   }
@@ -44,7 +50,7 @@ function Meta({ post, compact = false }: { post: NewsPostCard; compact?: boolean
   return (
     <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
       <span className="font-medium text-blue-600">{post.categoryName}</span>
-      <span className="text-slate-300">·</span>
+      <span className="text-slate-300">&middot;</span>
       <span className="font-normal text-slate-400">{formatNewsDate(post.publishedAt)}</span>
       {post.isPinned ? (
         <span className="inline-flex items-center gap-1 rounded-full border border-amber-100 bg-amber-50 px-2 py-0.5 font-medium text-amber-700">
