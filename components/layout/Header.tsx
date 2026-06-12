@@ -42,7 +42,7 @@ export function Header({ quickLinks = getFallbackTopQuickLinks("ny") }: { quickL
         </button>
 
         <Link href="/" className="absolute left-1/2 flex -translate-x-1/2 items-center gap-1.5" aria-label="OpenAA 首页">
-          <Image src="/openaa-logo.png" alt="OpenAA" width={32} height={32} className="h-8 w-8 rounded-xl object-contain" priority />
+          <Image src="/openaa-logo.png" alt="OpenAA" width={36} height={36} className="h-9 w-9 rounded-xl object-contain" priority />
           <span className="text-[20px] font-black leading-none tracking-normal">
             <span className="text-blue-600">Open</span>
             <span className="text-slate-900">AA</span>
@@ -55,7 +55,7 @@ export function Header({ quickLinks = getFallbackTopQuickLinks("ny") }: { quickL
             className="grid h-10 w-10 place-items-center rounded-full border border-slate-200 text-slate-700"
             aria-label="搜索"
           >
-            <Search size={18} aria-hidden="true" />
+            <Search size={20} aria-hidden="true" />
           </Link>
           <button
             type="button"
