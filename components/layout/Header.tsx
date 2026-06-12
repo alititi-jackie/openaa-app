@@ -55,7 +55,7 @@ export function Header({ quickLinks = getFallbackTopQuickLinks("ny") }: { quickL
             className="grid h-10 w-10 place-items-center rounded-full border border-slate-200 text-slate-700"
             aria-label="搜索"
           >
-            <Search size={20} aria-hidden="true" />
+            <Search size={22} aria-hidden="true" />
           </Link>
           <button
             type="button"
