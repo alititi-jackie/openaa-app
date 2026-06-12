@@ -1,4 +1,5 @@
 import { Clock, Flame, Search } from "lucide-react";
+import { DetailBackButton } from "@/components/common/DetailBackButton";
 import { EmptyState } from "@/components/common/EmptyState";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -12,6 +13,9 @@ export const metadata = buildPageMetadata({
 export default function SearchPage() {
   return (
     <div className="space-y-4">
+      <div>
+        <DetailBackButton />
+      </div>
       <section className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
         <h1 className="text-2xl font-black text-slate-950">搜索</h1>
         <label className="mt-4 flex min-h-12 items-center gap-2 rounded-xl bg-slate-50 px-3 text-sm text-slate-500">

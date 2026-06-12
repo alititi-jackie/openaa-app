@@ -4,22 +4,22 @@ import { useRouter } from "next/navigation";
 import { detailActionButtonClass } from "./detailActionStyles";
 
 type DetailBackButtonProps = {
-  fallbackHref: string;
+  fallbackHref?: string;
   label?: string;
   className?: string;
 };
 
-export function DetailBackButton({ fallbackHref, label = "返回", className = detailActionButtonClass }: DetailBackButtonProps) {
+export function DetailBackButton({ label = "返回", className = detailActionButtonClass }: DetailBackButtonProps) {
   const router = useRouter();
 
   function handleBack() {
-    const hasPriorPage = typeof window !== "undefined" && (document.referrer !== "" || window.history.length > 2);
+    const hasPriorPage = typeof window !== "undefined" && window.history.length > 1;
     if (hasPriorPage) {
       router.back();
       return;
     }
 
-    router.push(fallbackHref);
+    router.push("/");
   }
 
   return (
