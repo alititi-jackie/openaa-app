@@ -5,7 +5,6 @@ import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { DetailBackButton } from "@/components/common/DetailBackButton";
 import { EmptyState } from "@/components/common/EmptyState";
-import { HorizontalPillTabs, type HorizontalPillTab } from "@/components/common/HorizontalPillTabs";
 import type { SearchQueryResult, SearchResultItem } from "@/features/search/types";
 
 type SearchClientProps = {
@@ -14,9 +13,15 @@ type SearchClientProps = {
 
 type SearchStatus = "idle" | "loading" | "ready" | "error";
 
+type FeatureEntry = {
+  value: string;
+  label: string;
+  href: string;
+};
+
 type FeatureGroup = {
   keywords: string[];
-  entries: HorizontalPillTab[];
+  entries: FeatureEntry[];
 };
 
 const FEATURE_GROUPS: FeatureGroup[] = [
@@ -79,7 +84,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
   },
 ];
 
-const FALLBACK_FEATURE_ENTRIES: HorizontalPillTab[] = [
+const FALLBACK_FEATURE_ENTRIES: FeatureEntry[] = [
   { value: "jobs", label: "招聘信息", href: "/jobs" },
   { value: "housing", label: "房屋信息", href: "/housing" },
   { value: "secondhand", label: "二手交易", href: "/secondhand" },
@@ -143,33 +148,30 @@ export default function SearchClient({ initialQuery = "" }: SearchClientProps) {
       <div>
         <DetailBackButton />
       </div>
-      <section className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-        <h1 className="text-2xl font-black text-slate-950">搜索</h1>
-        <label className="mt-4 flex min-h-12 items-center gap-2 rounded-xl bg-slate-50 px-3 text-sm text-slate-500">
-          <Search size={18} aria-hidden="true" />
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="搜索招聘、房屋、二手、服务、新闻"
-            className="min-w-0 flex-1 bg-transparent text-base text-slate-900 outline-none placeholder:text-slate-400"
-          />
-        </label>
-      </section>
+      <label className="flex min-h-12 items-center gap-2 rounded-xl bg-slate-50 px-3 text-sm text-slate-500">
+        <Search size={18} aria-hidden="true" />
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="搜索招聘、房屋、二手、服务、新闻"
+          className="min-w-0 flex-1 bg-transparent text-base text-slate-900 outline-none placeholder:text-slate-400"
+        />
+      </label>
       {trimmedQuery ? <FeatureEntryBar entries={featureEntries} /> : null}
       {trimmedQuery ? <SearchResults query={trimmedQuery} status={status} results={results} message={message} /> : null}
     </div>
   );
 }
 
-function getFeatureEntries(query: string): HorizontalPillTab[] {
+function getFeatureEntries(query: string): FeatureEntry[] {
   const normalized = query.toLowerCase();
   const entries = FEATURE_GROUPS.filter((group) => group.keywords.some((keyword) => normalized.includes(keyword.toLowerCase()))).flatMap((group) => group.entries);
   const uniqueEntries = uniqueByValue(entries);
   return uniqueEntries.length > 0 ? uniqueEntries : FALLBACK_FEATURE_ENTRIES;
 }
 
-function uniqueByValue(entries: HorizontalPillTab[]) {
+function uniqueByValue(entries: FeatureEntry[]) {
   const seen = new Set<string>();
   return entries.filter((entry) => {
     if (seen.has(entry.value)) return false;
@@ -178,8 +180,18 @@ function uniqueByValue(entries: HorizontalPillTab[]) {
   });
 }
 
-function FeatureEntryBar({ entries }: { entries: HorizontalPillTab[] }) {
-  return <HorizontalPillTabs tabs={entries} activeValue="" ariaLabel="相关功能入口" />;
+function FeatureEntryBar({ entries }: { entries: FeatureEntry[] }) {
+  return (
+    <nav aria-label="相关功能入口" className="max-w-full overflow-x-auto overflow-y-hidden whitespace-nowrap py-1 [touch-action:pan-x] [overscroll-behavior-x:contain] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex flex-nowrap items-center gap-2">
+        {entries.map((entry) => (
+          <Link key={entry.value} href={entry.href} className="inline-flex min-h-8 flex-shrink-0 items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium leading-none text-gray-600 transition hover:bg-gray-50">
+            {entry.label}
+          </Link>
+        ))}
+      </div>
+    </nav>
+  );
 }
 
 function SearchResults({ query, status, results, message }: { query: string; status: SearchStatus; results: SearchResultItem[]; message: string }) {
