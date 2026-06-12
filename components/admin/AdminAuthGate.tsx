@@ -47,7 +47,7 @@ export async function AdminAuthGate({ children }: AdminAuthGateProps) {
     );
   }
 
-  return <AdminPageFrame>{children(admin)}</AdminPageFrame>;
+  return children(admin);
 }
 
 function AdminPageFrame({ children }: { children: ReactNode }) {

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Image as ImageIcon } from "lucide-react";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminCard } from "@/components/admin/AdminCard";
@@ -53,6 +54,10 @@ export default function AdminImageCleanupPage({ searchParams }: AdminImageCleanu
 
         return (
           <div className="space-y-4">
+            <Link href="/admin/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+              ← 返回总后台
+            </Link>
+
             <AdminPageHeader title="图片清理工具" description="扫描 image_assets 中疑似未使用的图片资产，展示引用状态和风险提示；确认后只标记删除，不物理删除文件。">
               <AdminImageCleanupPermissionBadges permissions={data.permissions} />
             </AdminPageHeader>
@@ -84,6 +89,17 @@ export default function AdminImageCleanupPage({ searchParams }: AdminImageCleanu
                 q={params?.q}
               />
             </AdminCard>
+            <nav aria-label="后台底部导航" className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+              <div className="flex flex-wrap gap-2">
+                <Link href="/" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+                  返回首页
+                </Link>
+                <Link href="/admin/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+                  返回总后台
+                </Link>
+              </div>
+            </nav>
+
           </div>
         );
       }}

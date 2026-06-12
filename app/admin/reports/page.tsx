@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminCard } from "@/components/admin/AdminCard";
@@ -49,6 +50,10 @@ export default function AdminReportsPage({ searchParams }: AdminReportsPageProps
 
         return (
           <div className="space-y-4">
+            <Link href="/admin/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+              ← 返回总后台
+            </Link>
+
             <AdminPageHeader title="举报管理" description="统一查看、筛选和处理用户提交的帖子举报，并可联动帖子管理操作。">
               <AdminReportsPermissionBadges permissions={data.permissions} />
             </AdminPageHeader>
@@ -81,6 +86,17 @@ export default function AdminReportsPage({ searchParams }: AdminReportsPageProps
                 q={params?.q}
               />
             </AdminCard>
+            <nav aria-label="后台底部导航" className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+              <div className="flex flex-wrap gap-2">
+                <Link href="/" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+                  返回首页
+                </Link>
+                <Link href="/admin/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+                  返回总后台
+                </Link>
+              </div>
+            </nav>
+
           </div>
         );
       }}

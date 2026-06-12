@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Compass } from "lucide-react";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminCard } from "@/components/admin/AdminCard";
@@ -36,6 +37,10 @@ export default function AdminNavigationPage({ searchParams }: AdminNavigationPag
 
         return (
           <div className="space-y-4">
+            <Link href="/admin/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+              ← 返回总后台
+            </Link>
+
             <AdminPageHeader title="导航管理" description="管理导航分类、链接、启用状态、推荐状态、排序、图标和图片。">
               <NavigationAdminPermissions permissions={data.permissions} />
             </AdminPageHeader>
@@ -80,6 +85,17 @@ export default function AdminNavigationPage({ searchParams }: AdminNavigationPag
             <AdminCard title="导航分类" description="维护导航分类名称、slug、图标、启用状态和排序。">
               <NavigationCategoryManager categories={data.categories} />
             </AdminCard>
+            <nav aria-label="后台底部导航" className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+              <div className="flex flex-wrap gap-2">
+                <Link href="/" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+                  返回首页
+                </Link>
+                <Link href="/admin/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+                  返回总后台
+                </Link>
+              </div>
+            </nav>
+
           </div>
         );
       }}

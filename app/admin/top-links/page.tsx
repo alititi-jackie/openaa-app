@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AdminActionForm, AdminCheckbox, AdminSelect, AdminTextInput } from "@/components/admin/AdminActionForm";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminCard } from "@/components/admin/AdminCard";
@@ -29,6 +30,10 @@ export default function AdminTopLinksPage() {
 
         return (
           <div className="space-y-4">
+            <Link href="/admin/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+              ← 返回总后台
+            </Link>
+
             <AdminPageHeader title="顶部快捷导航" description="管理 Header 城市入口展开后的快捷导航。">
               <AdminPermissionBadge allowed={data.permissions.manageTopLinks} label="manage_top_links" />
             </AdminPageHeader>
@@ -42,6 +47,17 @@ export default function AdminTopLinksPage() {
                 {data.topLinks.length > 0 ? data.topLinks.map((link) => <TopLinkForm key={link.id} link={link} />) : <p className="text-sm text-slate-500">暂无 top_quick_links 配置。</p>}
               </div>
             </AdminCard>
+            <nav aria-label="后台底部导航" className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+              <div className="flex flex-wrap gap-2">
+                <Link href="/" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+                  返回首页
+                </Link>
+                <Link href="/admin/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+                  返回总后台
+                </Link>
+              </div>
+            </nav>
+
           </div>
         );
       }}

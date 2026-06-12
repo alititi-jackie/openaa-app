@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Newspaper } from "lucide-react";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminCard } from "@/components/admin/AdminCard";
@@ -42,6 +43,10 @@ export default function AdminNewsPage({ searchParams }: AdminNewsPageProps) {
 
         return (
           <div className="space-y-4">
+            <Link href="/admin/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+              ← 返回总后台
+            </Link>
+
             <AdminPageHeader title="新闻管理" description="管理新闻列表、草稿、发布状态、置顶、SEO 字段和基础分类。">
               <NewsAdminPermissions permissions={data.permissions} />
             </AdminPageHeader>
@@ -90,6 +95,17 @@ export default function AdminNewsPage({ searchParams }: AdminNewsPageProps) {
             <AdminCard title="新闻分类" description="维护新闻分类名称、slug、启用状态和排序。">
               <NewsCategoryManager categories={data.categories} canManage={data.permissions.manageNewsCategories} />
             </AdminCard>
+            <nav aria-label="后台底部导航" className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+              <div className="flex flex-wrap gap-2">
+                <Link href="/" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+                  返回首页
+                </Link>
+                <Link href="/admin/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+                  返回总后台
+                </Link>
+              </div>
+            </nav>
+
           </div>
         );
       }}
