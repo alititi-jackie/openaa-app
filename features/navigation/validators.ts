@@ -21,8 +21,8 @@ function normalizeSlug(value: string) {
 }
 
 function clampDisplayLimit(value: number) {
-  if (value <= 0) return 50;
-  return Math.min(value, 50);
+  if (value < 0) return 0;
+  return Math.min(value, 999);
 }
 
 export function normalizeNavigationUrl(raw: string): ValidationResult<string> {

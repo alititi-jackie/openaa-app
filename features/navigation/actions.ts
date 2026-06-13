@@ -7,7 +7,7 @@ import { validateNavigationCategoryForm, validateNavigationLinkForm, validateUse
 
 type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
 
-export type NavigationActionState = { ok: boolean; message: string };
+export type NavigationActionState = { ok: boolean; message: string; id?: string };
 
 type AdminActionContext =
   | { ok: false; message: string }
@@ -25,7 +25,7 @@ type UserActionContext =
       userId: string;
     };
 
-const ok = (message: string): NavigationActionState => ({ ok: true, message });
+const ok = (message: string, id?: string): NavigationActionState => ({ ok: true, message, id });
 const fail = (message: string): NavigationActionState => ({ ok: false, message });
 
 async function getAdminActionContext(): Promise<AdminActionContext> {
@@ -134,6 +134,70 @@ export async function upsertNavigationCategory(_state: NavigationActionState, fo
   return ok("导航分类已保存。");
 }
 
+export async function updateNavigationCategoryDisplayLimit(_state: NavigationActionState, formData: FormData): Promise<NavigationActionState> {
+  const context = await getAdminActionContext();
+  if (!context.ok) return fail(context.message);
+
+  const id = readText(formData, "id");
+  const displayLimit = Number(readText(formData, "display_limit"));
+  if (!id) return fail("缺少导航分类 ID。");
+  if (!Number.isInteger(displayLimit) || displayLimit < 0) return fail("前台显示数量必须是 0 或正整数。");
+
+  const payload = { display_limit: Math.min(displayLimit, 999), updated_at: new Date().toISOString() };
+  const { error, data } = await context.supabase.from("navigation_categories").update(payload).eq("id", id).select("id").single();
+  if (error || !data) return fail("前台显示数量保存失败。");
+
+  if (!(await auditLog(context, "update_navigation_category_display_limit", "navigation_categories", id, payload))) {
+    return fail("显示数量已保存，但审计日志写入失败。");
+  }
+
+  revalidateNavigation();
+  return ok("前台显示数量已保存。", id);
+}
+
+export async function moveNavigationCategory(_state: NavigationActionState, formData: FormData): Promise<NavigationActionState> {
+  const context = await getAdminActionContext();
+  if (!context.ok) return fail(context.message);
+
+  const id = readText(formData, "id");
+  const direction = readText(formData, "direction");
+  if (!id) return fail("缺少导航分类 ID。");
+  if (direction !== "up" && direction !== "down") return fail("不支持的排序方向。");
+
+  const { data, error } = await context.supabase
+    .from("navigation_categories")
+    .select("id,sort_order,name")
+    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true });
+
+  if (error) return fail("分类排序读取失败。");
+  const categories = data ?? [];
+  const currentIndex = categories.findIndex((category) => category.id === id);
+  const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+  if (currentIndex < 0 || targetIndex < 0 || targetIndex >= categories.length) return ok("分类顺序已是当前状态。", id);
+
+  const normalized = categories.map((category, index) => ({ id: category.id, sort_order: (index + 1) * 10 }));
+  const currentOrder = normalized[currentIndex].sort_order;
+  normalized[currentIndex].sort_order = normalized[targetIndex].sort_order;
+  normalized[targetIndex].sort_order = currentOrder;
+
+  for (const category of normalized) {
+    const { error: updateError } = await context.supabase
+      .from("navigation_categories")
+      .update({ sort_order: category.sort_order, updated_at: new Date().toISOString() })
+      .eq("id", category.id);
+
+    if (updateError) return fail("分类排序保存失败。");
+  }
+
+  if (!(await auditLog(context, "sort_navigation_categories", "navigation_categories", id, { direction, order: normalized }))) {
+    return fail("分类排序已保存，但审计日志写入失败。");
+  }
+
+  revalidateNavigation();
+  return ok("分类排序已更新。", id);
+}
+
 export async function upsertNavigationLink(_state: NavigationActionState, formData: FormData): Promise<NavigationActionState> {
   const context = await getAdminActionContext();
   if (!context.ok) return fail(context.message);
@@ -173,7 +237,7 @@ export async function upsertNavigationLink(_state: NavigationActionState, formDa
   }
 
   revalidateNavigation();
-  return ok("导航链接已保存。");
+  return ok("导航链接已保存。", result.data.id);
 }
 
 export async function toggleNavigationLinkFlag(_state: NavigationActionState, formData: FormData): Promise<NavigationActionState> {
