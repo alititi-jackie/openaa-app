@@ -3,6 +3,9 @@ alter table public.navigation_categories
   add column if not exists display_limit integer not null default 50;
 
 alter table public.navigation_links
+  add column if not exists deleted_at timestamp with time zone;
+
+alter table public.navigation_links
   drop constraint if exists navigation_links_open_mode_check;
 
 alter table public.navigation_links
@@ -21,6 +24,10 @@ alter table public.user_navigation_links
 alter table public.user_navigation_links
   add constraint user_navigation_links_open_mode_check
     check (open_mode in ('auto', 'same', 'new'));
+
+create index if not exists navigation_links_not_deleted_sort_idx
+  on public.navigation_links (category_id, is_active, sort_order)
+  where deleted_at is null;
 
 delete from public.navigation_links;
 delete from public.navigation_categories;

@@ -36,6 +36,7 @@ export type NavigationLinkRecord = {
   sort_order: number;
   is_active: boolean;
   is_featured: boolean;
+  deleted_at: string | null;
   metadata: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
@@ -81,6 +82,7 @@ export type NavigationLink = {
   sortOrder: number;
   isActive: boolean;
   isFeatured: boolean;
+  deletedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };

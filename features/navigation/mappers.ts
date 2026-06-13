@@ -70,6 +70,7 @@ export function mapNavigationLink(record: NavigationLinkRecord): NavigationLink 
     sortOrder: record.sort_order,
     isActive: record.is_active,
     isFeatured: record.is_featured,
+    deletedAt: record.deleted_at,
     createdAt: record.created_at,
     updatedAt: record.updated_at,
   };

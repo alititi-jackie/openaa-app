@@ -29,6 +29,7 @@ const navigationLinkSelect = `
   sort_order,
   is_active,
   is_featured,
+  deleted_at,
   metadata,
   created_at,
   updated_at,
@@ -87,6 +88,7 @@ export async function getPublicNavigationLinks(params: { categorySlug?: string; 
       .from("navigation_links")
       .select(navigationLinkPublicSelect)
       .eq("is_active", true)
+      .is("deleted_at", null)
       .eq("navigation_categories.is_active", true)
       .order("sort_order", { ascending: true })
       .order("title", { ascending: true })
@@ -186,6 +188,7 @@ async function readAdminLinks(supabase: SupabaseServerClient, params: { category
   let query = supabase
     .from("navigation_links")
     .select(navigationLinkSelect)
+    .is("deleted_at", null)
     .order("sort_order", { ascending: true })
     .order("updated_at", { ascending: false })
     .limit(ADMIN_NAVIGATION_LIMIT);

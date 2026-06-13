@@ -39,8 +39,8 @@ export default async function NavigationPage({ searchParams }: NavigationPagePro
 
       <NavigationPublicSections categories={data.categories} links={data.links} />
 
-      <ChannelSeoCard title="美国华人常用网站导航说明">
-        OpenAA 导航频道集中整理美国华人日常上网和办事常用入口，包括政府服务、银行金融、购物平台、通讯网络、AI 工具、视频娱乐、社交媒体和生活服务等分类。页面只展示后台启用的分类和网站，帮助用户快速打开常用网站。
+      <ChannelSeoCard title="纽约华人生活导航">
+        OpenAA 导航页整理纽约华人常用网站、政府办事、交通出行、DMV / 驾照、生活服务和华人社区入口。公开页面只读取后台启用的导航分类和链接，不显示占位假数据。
       </ChannelSeoCard>
     </ChannelPageChrome>
   );

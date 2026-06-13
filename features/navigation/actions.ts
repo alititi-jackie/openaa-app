@@ -204,10 +204,11 @@ export async function deleteNavigationLink(_state: NavigationActionState, formDa
   const id = readText(formData, "id");
   if (!id) return fail("缺少导航链接 ID。");
 
-  const { error } = await context.supabase.from("navigation_links").delete().eq("id", id);
-  if (error) return fail("导航链接删除失败。");
+  const payload = { deleted_at: new Date().toISOString(), is_active: false, updated_at: new Date().toISOString() };
+  const { error, data } = await context.supabase.from("navigation_links").update(payload).eq("id", id).select("id").single();
+  if (error || !data) return fail("导航链接删除失败。");
 
-  if (!(await auditLog(context, "delete_navigation_link", "navigation_links", id))) {
+  if (!(await auditLog(context, "soft_delete_navigation_link", "navigation_links", id, payload))) {
     return fail("链接已删除，但审计日志写入失败。");
   }
 
