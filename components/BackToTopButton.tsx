@@ -13,7 +13,7 @@ export function BackToTopButton() {
       if (rafId !== null) return;
 
       rafId = requestAnimationFrame(() => {
-        setVisible(window.scrollY > 500);
+        setVisible(window.scrollY > 1000);
         rafId = null;
       });
     };
