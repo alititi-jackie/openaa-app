@@ -20,6 +20,7 @@ export const fallbackTopQuickLinks: TopQuickLink[] = [
   { id: "navigation", title: "导航", url: "/navigation", open_mode: "same", sort_order: 50, is_active: true, city_id: "ny", icon: "map" },
   { id: "news", title: "新闻", url: "/news", open_mode: "same", sort_order: 60, is_active: true, city_id: "ny", icon: "newspaper" },
   { id: "services", title: "本地服务", url: "/services", open_mode: "same", sort_order: 70, is_active: true, city_id: "ny", icon: "store" },
+  { id: "feedback", title: "反馈", url: "/feedback", open_mode: "same", sort_order: 80, is_active: true, city_id: "ny", icon: "message-square" },
 ];
 
 export function getFallbackTopQuickLinks(cityId = "ny") {

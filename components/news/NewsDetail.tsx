@@ -28,7 +28,7 @@ function NewsSuggestionCard() {
       </p>
       <div className="mt-3">
         <Link
-          href="/feedback"
+          href="/feedback?type=%E6%96%B0%E9%97%BB%E7%BA%BF%E7%B4%A2%20%2F%20%E6%8A%95%E7%A8%BF%E5%BB%BA%E8%AE%AE"
           className="inline-flex items-center justify-center rounded-xl border border-blue-200 bg-white px-3 py-1.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-50"
         >
           提交新闻线索 / 建议

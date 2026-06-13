@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { MessageSquareText } from "lucide-react";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
 import { AdminCard } from "@/components/admin/AdminCard";
@@ -9,9 +8,11 @@ import {
   AdminFeedbackList,
   AdminFeedbackPagination,
   AdminFeedbackPermissionBadges,
+  AdminFeedbackReadHint,
+  AdminFeedbackSettingsForm,
   AdminFeedbackStats,
 } from "@/components/feedback/AdminFeedbackManagement";
-import { getAdminFeedbackData, normalizeFeedbackStatus } from "@/features/feedback/adminQueries";
+import { getAdminFeedbackData, normalizeFeedbackStatus, normalizeFeedbackTypeFilter } from "@/features/feedback/adminQueries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +25,7 @@ export const metadata = buildPageMetadata({
 });
 
 type AdminFeedbackPageProps = {
-  searchParams?: Promise<{ status?: string; category?: string; q?: string; page?: string }>;
+  searchParams?: Promise<{ status?: string; type?: string; q?: string; page?: string }>;
 };
 
 export default function AdminFeedbackPage({ searchParams }: AdminFeedbackPageProps) {
@@ -34,7 +35,7 @@ export default function AdminFeedbackPage({ searchParams }: AdminFeedbackPagePro
         const params = await searchParams;
         const data = await getAdminFeedbackData({
           status: normalizeFeedbackStatus(params?.status),
-          category: params?.category,
+          type: normalizeFeedbackTypeFilter(params?.type),
           q: params?.q,
           page: normalizePage(params?.page),
         });
@@ -53,7 +54,7 @@ export default function AdminFeedbackPage({ searchParams }: AdminFeedbackPagePro
               ← 返回总后台
             </Link>
 
-            <AdminPageHeader title="反馈管理" description="查看、筛选和处理用户提交的问题反馈、功能建议、内容举报和新闻线索。">
+            <AdminPageHeader title="反馈与举报管理" description="查看用户提交的信息举报、页面错误、功能建议、新闻线索和其它反馈。">
               <AdminFeedbackPermissionBadges permissions={data.permissions} />
             </AdminPageHeader>
 
@@ -65,22 +66,23 @@ export default function AdminFeedbackPage({ searchParams }: AdminFeedbackPagePro
 
             <AdminFeedbackStats totals={data.totals} />
 
-            <AdminCard title="筛选反馈" description="按状态、类型、标题、内容或邮箱快速筛选反馈记录。">
-              <AdminFeedbackFilter status={params?.status} category={params?.category} q={params?.q} />
+            <AdminCard title="提交设置" description="配置单个用户、匿名访客和全站每天允许提交的反馈数量。">
+              <AdminFeedbackSettingsForm settings={data.settings} permissions={data.permissions} />
             </AdminCard>
 
-            <AdminCard title="反馈列表" description="反馈不会被物理删除；关闭反馈只改变处理状态，方便后续追溯。">
-              <div className="mb-4 flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">
-                <MessageSquareText size={15} aria-hidden="true" />
-                默认按最近提交排序，每页显示 {data.pageSize} 条。
-              </div>
+            <AdminCard title="筛选反馈" description="按状态、类型、内容、联系方式或相关链接快速筛选反馈记录。">
+              <AdminFeedbackFilter status={params?.status} type={params?.type} q={params?.q} />
+            </AdminCard>
+
+            <AdminCard title="反馈列表" description="删除反馈只会写入 deleted_at 软删除，不做物理删除，方便后续追溯。">
+              <AdminFeedbackReadHint pageSize={data.pageSize} />
               <AdminFeedbackList feedback={data.feedback} permissions={data.permissions} />
               <AdminFeedbackPagination
                 page={data.page}
                 pageCount={data.pageCount}
                 totalCount={data.totalCount}
                 status={params?.status}
-                category={params?.category}
+                type={params?.type}
                 q={params?.q}
               />
             </AdminCard>
