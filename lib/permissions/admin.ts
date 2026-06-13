@@ -36,7 +36,21 @@ export async function getCurrentAdminRole(): Promise<AdminRoleRecord | null> {
     return null;
   }
 
-  return data as AdminRoleRecord | null;
+  if (!data) {
+    return null;
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("status")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profileError || profile?.status !== "active") {
+    return null;
+  }
+
+  return data as AdminRoleRecord;
 }
 
 export async function requireAdmin(): Promise<AdminCheckResult> {

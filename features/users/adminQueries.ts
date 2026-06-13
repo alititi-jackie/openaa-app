@@ -75,19 +75,19 @@ type AdminUsersResult = {
 
 type ProfileRow = {
   id: string;
-  email: string | null;
-  email_verified: boolean;
+  email?: string | null;
+  email_verified?: boolean;
   nickname: string | null;
   account_type: string;
   status: ProfileStatus;
-  phone: string | null;
-  wechat_id: string | null;
-  whatsapp: string | null;
-  preferred_contact_method: string | null;
+  phone?: string | null;
+  wechat_id?: string | null;
+  whatsapp?: string | null;
+  preferred_contact_method?: string | null;
   location_area: string | null;
   trust_level: number;
   is_verified_user: boolean;
-  private_metadata: unknown;
+  private_metadata?: unknown;
   last_login_at: string | null;
   last_active_at: string | null;
   created_at: string;
@@ -116,6 +116,8 @@ export async function getAdminUsersPermissions(): Promise<AdminUsersPermissions>
 export async function getAdminUsersData(params: AdminUsersParams = {}): Promise<AdminUsersResult> {
   const supabase = await createSupabaseServerClient();
   const permissions = await getAdminUsersPermissions();
+  const canReadContacts = permissions.viewUserContacts;
+  const canReadInternalNotes = permissions.manageUserStatus && permissions.editUserNotes;
   const page = normalizePage(params.page);
   const from = (page - 1) * ADMIN_USERS_PAGE_SIZE;
   const to = from + ADMIN_USERS_PAGE_SIZE - 1;
@@ -133,9 +135,29 @@ export async function getAdminUsersData(params: AdminUsersParams = {}): Promise<
     return emptyResult("ready", permissions, page, currentAdminId);
   }
 
+  const selectFields = [
+    "id",
+    "nickname",
+    "account_type",
+    "status",
+    "location_area",
+    "trust_level",
+    "is_verified_user",
+    "last_login_at",
+    "last_active_at",
+    "created_at",
+    "updated_at",
+  ];
+  if (canReadContacts) {
+    selectFields.push("email", "email_verified", "phone", "wechat_id", "whatsapp", "preferred_contact_method");
+  }
+  if (canReadInternalNotes) {
+    selectFields.push("private_metadata");
+  }
+
   let query = supabase
     .from("profiles")
-    .select("id,email,email_verified,nickname,account_type,status,phone,wechat_id,whatsapp,preferred_contact_method,location_area,trust_level,is_verified_user,private_metadata,last_login_at,last_active_at,created_at,updated_at", { count: "exact" })
+    .select(selectFields.join(","), { count: "exact" })
     .order("updated_at", { ascending: false })
     .range(from, to);
 
@@ -149,10 +171,8 @@ export async function getAdminUsersData(params: AdminUsersParams = {}): Promise<
 
   const keyword = sanitizeSearchTerm(params.q ?? "");
   if (keyword) {
-    const filters = [`email.ilike.%${keyword}%`, `nickname.ilike.%${keyword}%`];
-    if (permissions.viewUserContacts) {
-      filters.push(`phone.ilike.%${keyword}%`, `wechat_id.ilike.%${keyword}%`, `whatsapp.ilike.%${keyword}%`);
-    }
+    const filters = [`nickname.ilike.%${keyword}%`];
+    if (canReadContacts) filters.push(`email.ilike.%${keyword}%`, `phone.ilike.%${keyword}%`, `wechat_id.ilike.%${keyword}%`, `whatsapp.ilike.%${keyword}%`);
     if (isUuid(keyword)) filters.push(`id.eq.${keyword}`);
     query = query.or(filters.join(","));
   }
@@ -163,7 +183,7 @@ export async function getAdminUsersData(params: AdminUsersParams = {}): Promise<
   }
 
   const totalCount = count ?? 0;
-  const profiles = ((data ?? []) as ProfileRow[]).map(mapProfile);
+  const profiles = ((data ?? []) as unknown as ProfileRow[]).map((row) => mapProfile(row, { canReadContacts, canReadInternalNotes }));
   const usersWithCounts = await attachPostCounts(supabase, profiles, permissions);
   const totals = await getUserStatusTotals(supabase);
 
@@ -207,19 +227,19 @@ function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
 
-function mapProfile(row: ProfileRow): AdminUserListItem {
-  const privateMetadata = isRecord(row.private_metadata) ? row.private_metadata : {};
+function mapProfile(row: ProfileRow, permissions: { canReadContacts: boolean; canReadInternalNotes: boolean }): AdminUserListItem {
+  const privateMetadata = permissions.canReadInternalNotes && isRecord(row.private_metadata) ? row.private_metadata : {};
   return {
     id: row.id,
-    email: row.email,
-    emailVerified: row.email_verified,
+    email: permissions.canReadContacts ? (row.email ?? null) : null,
+    emailVerified: permissions.canReadContacts ? Boolean(row.email_verified) : false,
     nickname: row.nickname,
     accountType: row.account_type,
     status: row.status,
-    phone: row.phone,
-    wechatId: row.wechat_id,
-    whatsapp: row.whatsapp,
-    preferredContactMethod: row.preferred_contact_method,
+    phone: permissions.canReadContacts ? (row.phone ?? null) : null,
+    wechatId: permissions.canReadContacts ? (row.wechat_id ?? null) : null,
+    whatsapp: permissions.canReadContacts ? (row.whatsapp ?? null) : null,
+    preferredContactMethod: permissions.canReadContacts ? (row.preferred_contact_method ?? null) : null,
     locationArea: row.location_area,
     trustLevel: row.trust_level,
     isVerifiedUser: row.is_verified_user,
