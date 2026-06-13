@@ -9,11 +9,10 @@ import { DmvFaqSection, DmvLearningDisclaimerCard, DmvSeoContentSection } from "
 import { DmvHorizontalNav } from "@/components/dmv/DmvHorizontalNav";
 import { DmvLoginPrompt } from "@/components/dmv/DmvLoginPrompt";
 import { DmvProgressBar } from "@/components/dmv/DmvProgressBar";
-import { DmvBackLink, dmvBackLinkClassName } from "@/components/dmv/DmvBackLink";
+import { dmvBackLinkClassName } from "@/components/dmv/DmvBackLink";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
 import { DmvStatCard } from "@/components/dmv/DmvStatCard";
 import { dmvSeoContent } from "@/components/dmv/dmvSeoContent";
-import { PageTitleCard } from "@/components/PageTitleCard";
 import { ChannelHero } from "@/components/posts/ChannelHero";
 import { addWrongQuestion, removeWrongQuestion, savePracticeProgress, savePracticeResult, shuffleQuestions } from "@/components/dmv/dmvStorage";
 import { getDmvCategoryLabel } from "@/components/dmv/dmvCategoryLabels";
@@ -313,15 +312,6 @@ function DmvPracticeSetupHeader({ questionCount }: { questionCount: number }) {
       <ChannelHero title="随机 / 顺序 DMV 中文练习" description="使用完整题库练习：随机或顺序；支持选择题数。" />
       <p className="text-xs font-bold text-slate-400">当前题库：{questionCount} 题</p>
       <DmvHorizontalNav activeValue="practice" />
-    </>
-  );
-}
-
-function DmvPracticeLegacyHeader() {
-  return (
-    <>
-      <PageTitleCard title="DMV 练习模式" description="选择随机或顺序练习、设置题数，答题后立即查看正确与否，并把错题保存在本机浏览器。" eyebrow="DMV" />
-      <DmvBackLink />
     </>
   );
 }

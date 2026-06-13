@@ -50,7 +50,11 @@ export function ContactRevealCard({ postId, compact = false, defaultRevealed = f
 
   useEffect(() => {
     if (defaultRevealed || alwaysVisible) {
-      void revealContact();
+      const revealTimer = window.setTimeout(() => {
+        void revealContact();
+      }, 0);
+
+      return () => window.clearTimeout(revealTimer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultRevealed, alwaysVisible, postId]);

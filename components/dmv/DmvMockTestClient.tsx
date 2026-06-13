@@ -9,11 +9,10 @@ import { DmvFaqSection, DmvLearningDisclaimerCard, DmvSeoContentSection } from "
 import { DmvHorizontalNav } from "@/components/dmv/DmvHorizontalNav";
 import { DmvLoginPrompt } from "@/components/dmv/DmvLoginPrompt";
 import { DmvProgressBar } from "@/components/dmv/DmvProgressBar";
-import { DmvBackLink, dmvBackLinkClassName } from "@/components/dmv/DmvBackLink";
+import { dmvBackLinkClassName } from "@/components/dmv/DmvBackLink";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
 import { DmvStatCard } from "@/components/dmv/DmvStatCard";
 import { dmvSeoContent } from "@/components/dmv/dmvSeoContent";
-import { PageTitleCard } from "@/components/PageTitleCard";
 import { DetailShareCard } from "@/components/posts/DetailShareCard";
 import { ChannelHero } from "@/components/posts/ChannelHero";
 import { addWrongQuestion, removeWrongQuestion, saveExamResult, shuffleQuestions } from "@/components/dmv/dmvStorage";
@@ -379,15 +378,6 @@ function DmvMockIntroHeader() {
       </div>
       <ChannelHero title="纽约 DMV 模拟考试" />
       <DmvHorizontalNav activeValue="mock-test" />
-    </>
-  );
-}
-
-function DmvMockLegacyHeader() {
-  return (
-    <>
-      <PageTitleCard title="DMV 模拟考试" description="按纽约 DMV Permit 规则模拟：20 题，至少答对 14 题，交通标志至少答对 2 题。" eyebrow="DMV" />
-      <DmvBackLink />
     </>
   );
 }

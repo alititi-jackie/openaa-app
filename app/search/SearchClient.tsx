@@ -103,10 +103,13 @@ export default function SearchClient({ initialQuery = "" }: SearchClientProps) {
 
   useEffect(() => {
     if (!trimmedQuery) {
-      setStatus("idle");
-      setResults([]);
-      setMessage("");
-      return;
+      const resetTimer = window.setTimeout(() => {
+        setStatus("idle");
+        setResults([]);
+        setMessage("");
+      }, 0);
+
+      return () => window.clearTimeout(resetTimer);
     }
 
     const controller = new AbortController();
