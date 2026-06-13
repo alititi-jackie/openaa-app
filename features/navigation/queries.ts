@@ -67,7 +67,7 @@ export async function getNavigationCategories(includeInactive = false): Promise<
       .order("sort_order", { ascending: true })
       .order("name", { ascending: true });
 
-    if (!includeInactive) query = query.eq("is_active", true);
+    if (!includeInactive) query = query.eq("is_active", true).gt("display_limit", 0);
 
     const { data, error } = await query;
     if (error) return errorResult(fallback, error.message);
@@ -90,6 +90,7 @@ export async function getPublicNavigationLinks(params: { categorySlug?: string; 
       .eq("is_active", true)
       .is("deleted_at", null)
       .eq("navigation_categories.is_active", true)
+      .gt("navigation_categories.display_limit", 0)
       .order("sort_order", { ascending: true })
       .order("title", { ascending: true })
       .limit(params.limit ?? NAVIGATION_PUBLIC_LIMIT);
@@ -111,11 +112,14 @@ export async function getNavigationPageData(params: { categorySlug?: string; q?:
     getNavigationCategories(false),
     getPublicNavigationLinks(params),
   ]);
+  const visibleCategories = categories.data.filter((category) => category.displayLimit > 0);
+  const visibleCategoryKeys = new Set(visibleCategories.flatMap((category) => [category.id, category.slug].filter(Boolean)));
+  const visibleLinks = links.data.filter((link) => (link.categoryId ? visibleCategoryKeys.has(link.categoryId) : false) || (link.categorySlug ? visibleCategoryKeys.has(link.categorySlug) : false));
 
   return {
     state: categories.state === "error" || links.state === "error" ? ("error" as const) : categories.state === "missing_config" || links.state === "missing_config" ? ("missing_config" as const) : ("ready" as const),
-    categories: categories.data,
-    links: links.data,
+    categories: visibleCategories,
+    links: visibleLinks,
     featuredLinks: [],
     error: categories.error ?? links.error,
   };
