@@ -12,7 +12,7 @@ export function NavigationFeaturedSection({ links }: { links: NavigationLink[] }
           <p className="mt-1 text-xs font-semibold text-slate-500">纽约华人常用入口，适合先收藏到我的导航</p>
         </div>
       </div>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
         {links.map((link) => (
           <NavigationLinkCard key={link.id} link={link} featured />
         ))}

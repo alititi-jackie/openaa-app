@@ -1,6 +1,6 @@
 import { EmptyState } from "@/components/common/EmptyState";
 import type { NavigationLink } from "@/features/navigation/types";
-import { NavigationCard } from "./NavigationCard";
+import { NavigationLinkCard } from "./NavigationLinkCard";
 
 export function NavigationGrid({ links, emptyTitle = "暂时没有导航链接" }: { links: NavigationLink[]; emptyTitle?: string }) {
   if (links.length === 0) {
@@ -8,9 +8,9 @@ export function NavigationGrid({ links, emptyTitle = "暂时没有导航链接" 
   }
 
   return (
-    <section className="grid gap-3 sm:grid-cols-2">
+    <section className="grid grid-cols-2 gap-3 md:grid-cols-3">
       {links.map((link) => (
-        <NavigationCard key={link.id} link={link} />
+        <NavigationLinkCard key={link.id} link={link} />
       ))}
     </section>
   );

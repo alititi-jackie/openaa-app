@@ -48,7 +48,7 @@ function NavigationCategorySection({ group }: { group: NavigationCategoryGroup }
         {group.category.description ? <p className="mt-1 text-xs leading-5 text-slate-500">{group.category.description}</p> : null}
       </div>
       <div className="rounded-3xl border border-slate-100 bg-white p-3 shadow-sm">
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
           {group.links.map((link) => (
             <NavigationLinkCard key={link.id} link={link} />
           ))}
