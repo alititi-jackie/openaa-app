@@ -348,33 +348,6 @@ async function getPublicCardsByOrderedIds(ids: string[]): Promise<PostsQueryResu
   return { state: "ready", data: ids.flatMap((id) => cardsById.get(id) ?? []) };
 }
 
-export async function getMyFavoritePosts(): Promise<PostsQueryResult<PostCardView[]>> {
-  const supabase = await createSupabaseServerClient();
-
-  if (!supabase) {
-    return emptyResult([]);
-  }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { state: "ready", data: [] };
-  }
-
-  const { data, error } = await supabase
-    .from("post_favorites")
-    .select("post_id")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(50);
-
-  if (error) return queryError("get favorite post ids failed", error, []);
-
-  return getPublicCardsByOrderedIds(uniqueOrderedPostIds((data ?? []) as Array<{ post_id: string | null }>));
-}
-
 export async function getMyRecentPosts(): Promise<PostsQueryResult<PostCardView[]>> {
   const supabase = await createSupabaseServerClient();
 

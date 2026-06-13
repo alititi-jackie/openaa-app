@@ -1,6 +1,10 @@
 import "server-only";
 
+import { getFavoriteState } from "@/features/favorites/queries";
+import { POST_FAVORITE_TYPE_LABELS } from "@/features/favorites/helpers";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { postHref } from "./formMappers";
+import type { PostType } from "./types";
 
 export type PostEngagementState = {
   isAuthenticated: boolean;
@@ -8,7 +12,7 @@ export type PostEngagementState = {
   hasReported: boolean;
 };
 
-export async function getPostEngagementState(postId: string): Promise<PostEngagementState> {
+export async function getPostEngagementState(postId: string, postType: PostType, title: string): Promise<PostEngagementState> {
   const empty: PostEngagementState = {
     isAuthenticated: false,
     isFavorited: false,
@@ -24,14 +28,14 @@ export async function getPostEngagementState(postId: string): Promise<PostEngage
 
   if (!user) return empty;
 
-  const [favoriteResult, reportResult] = await Promise.all([
-    supabase.from("post_favorites").select("id").eq("post_id", postId).eq("user_id", user.id).maybeSingle(),
+  const [isFavorited, reportResult] = await Promise.all([
+    getFavoriteState({ type: postType, id: postId, url: postHref(postType, postId), title, category: POST_FAVORITE_TYPE_LABELS[postType] }),
     supabase.from("post_reports").select("id").eq("post_id", postId).eq("reporter_id", user.id).maybeSingle(),
   ]);
 
   return {
     isAuthenticated: true,
-    isFavorited: Boolean(favoriteResult.data?.id),
+    isFavorited,
     hasReported: Boolean(reportResult.data?.id),
   };
 }

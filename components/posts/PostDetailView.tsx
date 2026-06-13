@@ -24,7 +24,7 @@ export async function PostDetailView({ post }: { post: PostDetailViewData | null
     return <EmptyState title="内容不存在" description="这条信息不存在，或当前不是公开已发布状态。" />;
   }
 
-  const engagement = await getPostEngagementState(post.id);
+  const engagement = await getPostEngagementState(post.id, post.type, post.title);
   const backHref = listHref(post);
   const text = shareText(post);
 
@@ -33,6 +33,7 @@ export async function PostDetailView({ post }: { post: PostDetailViewData | null
       <DetailActionBar
         backHref={backHref}
         postId={post.id}
+        postType={post.type}
         path={post.href}
         title={post.title}
         text={text}

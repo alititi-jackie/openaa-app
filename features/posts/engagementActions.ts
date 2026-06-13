@@ -9,15 +9,6 @@ import type { PostType } from "./types";
 
 type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
 
-export type FavoriteActionResult = {
-  ok: boolean;
-  message: string;
-  authRequired?: boolean;
-  loginHref?: string;
-  isFavorited?: boolean;
-  favoriteCount?: number;
-};
-
 export type ReportActionResult = {
   ok: boolean;
   message: string;
@@ -52,16 +43,8 @@ async function getPublicPost(supabase: SupabaseServerClient, postId: string) {
     .or(`expires_at.is.null,expires_at.gt.${now}`)
     .maybeSingle();
 
-  if (error || !data) {
-    return null;
-  }
-
+  if (error || !data) return null;
   return data as { id: string; post_type: PostType };
-}
-
-async function getFavoriteCount(supabase: SupabaseServerClient, postId: string) {
-  const { data } = await supabase.from("post_stats").select("favorite_count").eq("post_id", postId).maybeSingle();
-  return Number(data?.favorite_count ?? 0);
 }
 
 async function getViewCount(supabase: SupabaseServerClient, postId: string) {
@@ -78,64 +61,6 @@ function viewCountFromRpcResult(data: RecordPostViewRpcResult | null) {
 function revalidatePost(type: PostType, postId: string) {
   revalidatePath(POST_TYPE_TO_ROUTE[type]);
   revalidatePath(postHref(type, postId));
-}
-
-export async function togglePostFavorite(postId: string, returnTo: string): Promise<FavoriteActionResult> {
-  const supabase = await createSupabaseServerClient();
-
-  if (!supabase) {
-    return { ok: false, message: "Supabase 环境变量尚未配置，暂时无法收藏。" };
-  }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { ok: false, message: "请先登录后再收藏。", authRequired: true, loginHref: loginHref(returnTo) };
-  }
-
-  const post = await getPublicPost(supabase, postId);
-  if (!post) {
-    return { ok: false, message: "这条内容暂时不可收藏。" };
-  }
-
-  const { data: existing, error: existingError } = await supabase
-    .from("post_favorites")
-    .select("id")
-    .eq("post_id", postId)
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (existingError) {
-    return { ok: false, message: "收藏状态读取失败，请稍后再试。" };
-  }
-
-  if (existing?.id) {
-    const { error } = await supabase.from("post_favorites").delete().eq("id", existing.id).eq("user_id", user.id);
-    if (error) return { ok: false, message: "取消收藏失败，请稍后再试。" };
-
-    revalidatePost(post.post_type, postId);
-    return {
-      ok: true,
-      message: "已取消收藏。",
-      isFavorited: false,
-      favoriteCount: await getFavoriteCount(supabase, postId),
-    };
-  }
-
-  const { error } = await supabase.from("post_favorites").insert({ post_id: postId, user_id: user.id });
-  if (error) {
-    return { ok: false, message: error.code === "23505" ? "你已经收藏过这条内容。" : "收藏失败，请稍后再试。" };
-  }
-
-  revalidatePost(post.post_type, postId);
-  return {
-    ok: true,
-    message: "已收藏。",
-    isFavorited: true,
-    favoriteCount: await getFavoriteCount(supabase, postId),
-  };
 }
 
 export async function submitPostReport(postId: string, reason: string, description: string, returnTo: string): Promise<ReportActionResult> {

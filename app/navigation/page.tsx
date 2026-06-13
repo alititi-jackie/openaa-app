@@ -4,6 +4,7 @@ import { NavigationCategoryTabs } from "@/components/navigation/NavigationCatego
 import { NavigationFeaturedSection } from "@/components/navigation/NavigationFeaturedSection";
 import { NavigationMyCard } from "@/components/navigation/NavigationMyCard";
 import { NavigationSearchBox } from "@/components/navigation/NavigationSearchBox";
+import { getFavoriteStates } from "@/features/favorites/queries";
 import { ChannelSeoCard } from "@/components/posts/ChannelSeoCard";
 import { getNavigationPageData } from "@/features/navigation/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -26,6 +27,16 @@ export default async function NavigationPage({ searchParams }: NavigationPagePro
   const q = params?.q?.trim() || "";
   const data = await getNavigationPageData({ categorySlug: activeCategory, q });
   const featuredLinks = activeCategory || q ? data.links.filter((link) => link.isFeatured) : data.featuredLinks;
+  const allVisibleLinks = [...data.links, ...featuredLinks];
+  const favoriteKeys = await getFavoriteStates(
+    allVisibleLinks.map((link) => ({
+      type: "navigation",
+      id: link.id,
+      url: "/navigation",
+      title: link.title,
+      category: link.categoryName,
+    })),
+  );
 
   return (
     <ChannelPageChrome
@@ -44,8 +55,8 @@ export default async function NavigationPage({ searchParams }: NavigationPagePro
         </div>
       ) : null}
 
-      <NavigationFeaturedSection links={featuredLinks} />
-      <NavigationCategorySections categories={data.categories} links={data.links} q={q} />
+      <NavigationFeaturedSection links={featuredLinks} favoriteKeys={favoriteKeys} />
+      <NavigationCategorySections categories={data.categories} links={data.links} q={q} favoriteKeys={favoriteKeys} />
 
       <ChannelSeoCard title="纽约华人生活导航">
         OpenAA 导航页整理纽约华人常用网站、政府办事、交通出行、DMV / 驾照、生活服务和华人社区入口。公开页面只读取后台启用的导航分类和链接，不显示占位假数据。

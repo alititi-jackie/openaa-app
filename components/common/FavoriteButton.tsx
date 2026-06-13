@@ -1,36 +1,26 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Heart } from "lucide-react";
-import { togglePostFavorite } from "@/features/posts/engagementActions";
+import { Star } from "lucide-react";
+import { toggleFavorite } from "@/features/favorites/actions";
+import type { FavoriteTarget } from "@/features/favorites/types";
+import { cn } from "@/lib/utils/cn";
 import { detailActionButtonClass } from "./detailActionStyles";
-
-type FavoriteTarget =
-  | {
-      type: "post";
-      id: string;
-    }
-  | {
-      type: "unsupported";
-      message?: string;
-    };
 
 type FavoriteButtonProps = {
   target: FavoriteTarget;
-  returnTo: string;
+  returnTo?: string;
   initialIsFavorited?: boolean;
   className?: string;
-  unsupportedMessage?: string;
+  compact?: boolean;
 };
-
-const defaultUnsupportedMessage = "当前页面收藏功能暂未接入收藏系统。";
 
 export function FavoriteButton({
   target,
-  returnTo,
+  returnTo = target.url,
   initialIsFavorited = false,
   className = detailActionButtonClass,
-  unsupportedMessage = defaultUnsupportedMessage,
+  compact = false,
 }: FavoriteButtonProps) {
   const [isPending, startTransition] = useTransition();
   const [isFavorited, setIsFavorited] = useState(initialIsFavorited);
@@ -46,18 +36,13 @@ export function FavoriteButton({
   function showToast(message: string) {
     setToast(message);
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    toastTimerRef.current = setTimeout(() => setToast(""), 2500);
+    toastTimerRef.current = setTimeout(() => setToast(""), 2200);
   }
 
   function onFavorite() {
-    if (target.type === "unsupported") {
-      showToast(target.message ?? unsupportedMessage);
-      return;
-    }
-
     setToast("");
     startTransition(async () => {
-      const result = await togglePostFavorite(target.id, returnTo);
+      const result = await toggleFavorite(target, returnTo);
 
       if (result.authRequired && result.loginHref) {
         window.location.href = result.loginHref;
@@ -73,10 +58,17 @@ export function FavoriteButton({
 
   return (
     <>
-      <button type="button" onClick={onFavorite} disabled={isPending} aria-label={isFavorited ? "取消收藏" : "收藏"} aria-pressed={isFavorited} className={className}>
+      <button
+        type="button"
+        onClick={onFavorite}
+        disabled={isPending}
+        aria-label={isFavorited ? "取消收藏" : "收藏"}
+        aria-pressed={isFavorited}
+        className={cn(className, compact && "px-3")}
+      >
         <span className="inline-flex items-center gap-1.5">
-          <Heart size={15} className={isFavorited ? "fill-blue-600 text-blue-600" : "text-blue-600"} aria-hidden="true" />
-          <span>{isPending ? "处理中" : isFavorited ? "已收藏" : "收藏"}</span>
+          <Star size={15} className={isFavorited ? "fill-blue-600 text-blue-600" : "text-blue-600"} aria-hidden="true" />
+          {compact ? null : <span>{isPending ? "处理中" : isFavorited ? "已收藏" : "收藏"}</span>}
         </span>
       </button>
       {toast ? (

@@ -147,13 +147,13 @@ async function getProfileCounts(userId: string) {
 
   const [notifications, favorites, recent] = await Promise.all([
     supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", userId).is("read_at", null),
-    supabase.from("post_favorites").select("post_id").eq("user_id", userId).limit(200),
+    supabase.from("user_favorites").select("id", { count: "exact", head: true }).eq("user_id", userId),
     supabase.from("post_views").select("post_id").eq("user_id", userId).order("created_at", { ascending: false }).limit(200),
   ]);
 
   return {
     unreadNotifications: notifications.count ?? 0,
-    favorites: countUniquePostIds(favorites.data as Array<{ post_id: string | null }> | null),
+    favorites: favorites.count ?? 0,
     recent: countUniquePostIds(recent.data as Array<{ post_id: string | null }> | null),
   };
 }

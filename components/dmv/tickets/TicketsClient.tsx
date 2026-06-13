@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 
 import { DetailBackButton } from '@/components/common/DetailBackButton'
+import { FavoriteButton } from '@/components/common/FavoriteButton'
 import { PageShareButton } from '@/components/common/PageShareButton'
 import { DmvFaqSection, DmvSeoContentSection, DmvTicketDisclaimerCard } from '@/components/dmv/DmvBottomSections'
 import { DmvHorizontalNav } from '@/components/dmv/DmvHorizontalNav'
@@ -136,7 +137,7 @@ function AllStatesGrid() {
 // Main Client Component
 // ---------------------------------------------------------------------------
 
-export default function TicketsClient() {
+export default function TicketsClient({ initialIsFavorited = false }: { initialIsFavorited?: boolean }) {
   const [plate, setPlate] = useState('')
   const [state, setState] = useState('')
   const [ticketType, setTicketType] = useState<TicketType | ''>('')
@@ -178,6 +179,11 @@ export default function TicketsClient() {
       <div className="flex items-center justify-between gap-3">
         <DetailBackButton fallbackHref="/dmv" />
         <div className="flex items-center gap-2">
+          <FavoriteButton
+            target={{ type: "dmv", id: "dmv-tickets", url: "/dmv/tickets", title: "DMV 工具页", category: "DMV" }}
+            returnTo="/dmv/tickets"
+            initialIsFavorited={initialIsFavorited}
+          />
           <PageShareButton
             path="/dmv/tickets"
             title="罚单查询指南"

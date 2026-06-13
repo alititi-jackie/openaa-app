@@ -1,7 +1,7 @@
 import type { NavigationLink } from "@/features/navigation/types";
 import { NavigationLinkCard } from "./NavigationLinkCard";
 
-export function NavigationFeaturedSection({ links }: { links: NavigationLink[] }) {
+export function NavigationFeaturedSection({ links, favoriteKeys = new Set<string>() }: { links: NavigationLink[]; favoriteKeys?: Set<string> }) {
   if (links.length === 0) return null;
 
   return (
@@ -14,7 +14,7 @@ export function NavigationFeaturedSection({ links }: { links: NavigationLink[] }
       </div>
       <div className="grid gap-2 sm:grid-cols-2">
         {links.map((link) => (
-          <NavigationLinkCard key={link.id} link={link} featured />
+          <NavigationLinkCard key={link.id} link={link} featured initialIsFavorited={favoriteKeys.has(`navigation:${link.id}`)} />
         ))}
       </div>
     </section>

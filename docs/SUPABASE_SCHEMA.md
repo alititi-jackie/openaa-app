@@ -24,7 +24,8 @@ Phase 2 establishes the minimum viable platform schema for the new `openaa-app` 
 - Users: `profiles`, `business_profiles`, `user_auth_identities`, `user_settings`, `user_security_logs`, `user_blocks`, `user_consents`, `account_deletion_requests`.
 - Admin: `admin_roles`, `admin_permissions`, `admin_role_permissions`, `admin_user_permissions`, `admin_audit_logs`.
 - Feature flags: `feature_flags`.
-- Posts: `posts`, `post_details_jobs`, `post_details_housing`, `post_details_marketplace`, `post_details_services`, `post_contacts`, `post_stats`, `post_favorites`, `post_views`, `post_reports`, `post_moderation_logs`, `post_drafts`, `post_images`.
+- Posts: `posts`, `post_details_jobs`, `post_details_housing`, `post_details_marketplace`, `post_details_services`, `post_contacts`, `post_stats`, `post_views`, `post_reports`, `post_moderation_logs`, `post_drafts`, `post_images`.
+- Favorites: `user_favorites`.
 - Media: `image_assets`.
 - Content and operations: `news_categories`, `news_posts`, `navigation_categories`, `navigation_links`, `user_navigation_links`, `user_navigation_settings`, `home_banners`, `home_sections`, `top_quick_links`, `latest_ticker`, `ads`.
 - Notifications and feedback: `notifications`, `system_announcements`, `feedback`, `push_subscriptions`.

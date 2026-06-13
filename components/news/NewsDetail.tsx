@@ -12,6 +12,7 @@ type NewsDetailProps = {
   previousPost: NewsPostCard | null;
   nextPost: NewsPostCard | null;
   relatedPosts: NewsPostCard[];
+  initialIsFavorited: boolean;
 };
 
 function visibleParagraphs(body: string) {
@@ -113,7 +114,7 @@ function RelatedNews({ posts }: { posts: NewsPostCard[] }) {
   );
 }
 
-export function NewsDetail({ post, previousPost, nextPost, relatedPosts }: NewsDetailProps) {
+export function NewsDetail({ post, previousPost, nextPost, relatedPosts, initialIsFavorited }: NewsDetailProps) {
   const paragraphs = visibleParagraphs(post.body);
   const publishedSource = post.publishedAt;
   const modifiedSource = post.updatedAt && post.updatedAt !== publishedSource ? post.updatedAt : null;
@@ -125,9 +126,9 @@ export function NewsDetail({ post, previousPost, nextPost, relatedPosts }: NewsD
         <DetailBackButton fallbackHref="/news" />
         <div className="flex items-center gap-2">
           <FavoriteButton
-            target={{ type: "unsupported", message: "新闻收藏功能即将上线" }}
+            target={{ type: "news", id: post.id, url: post.href, title: post.title, category: "新闻" }}
             returnTo={post.href}
-            initialIsFavorited={false}
+            initialIsFavorited={initialIsFavorited}
           />
           <PageShareButton path={post.href} title={post.title} text={shareText} />
         </div>

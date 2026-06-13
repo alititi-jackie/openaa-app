@@ -36,7 +36,7 @@ Authenticated users can manage their own:
 - profile and settings
 - business profile
 - blocks
-- favorites
+- user favorites in `user_favorites`
 - post drafts
 - navigation links/settings
 - notifications
