@@ -10,12 +10,10 @@ export function NavigationCategorySections({
   categories,
   links,
   q,
-  favoriteKeys = new Set<string>(),
 }: {
   categories: NavigationCategory[];
   links: NavigationLink[];
   q: string;
-  favoriteKeys?: Set<string>;
 }) {
   const groups = categories
     .map((category) => ({
@@ -36,13 +34,13 @@ export function NavigationCategorySections({
   return (
     <div className="space-y-5">
       {groups.map((group) => (
-        <NavigationCategorySection key={group.category.slug} group={group} favoriteKeys={favoriteKeys} />
+        <NavigationCategorySection key={group.category.slug} group={group} />
       ))}
     </div>
   );
 }
 
-function NavigationCategorySection({ group, favoriteKeys }: { group: NavigationCategoryGroup; favoriteKeys: Set<string> }) {
+function NavigationCategorySection({ group }: { group: NavigationCategoryGroup }) {
   return (
     <section id={`navigation-${group.category.slug}`} className="scroll-mt-28 space-y-2">
       <div className="px-1">
@@ -52,7 +50,7 @@ function NavigationCategorySection({ group, favoriteKeys }: { group: NavigationC
       <div className="rounded-3xl border border-slate-100 bg-white p-3 shadow-sm">
         <div className="grid gap-2 sm:grid-cols-2">
           {group.links.map((link) => (
-            <NavigationLinkCard key={link.id} link={link} initialIsFavorited={favoriteKeys.has(`navigation:${link.id}`)} />
+            <NavigationLinkCard key={link.id} link={link} />
           ))}
         </div>
       </div>

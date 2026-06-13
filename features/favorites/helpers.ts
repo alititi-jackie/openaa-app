@@ -7,9 +7,9 @@ export const FAVORITE_TYPE_LABELS: Record<string, string> = {
   marketplace: "二手",
   service: "服务",
   news: "新闻",
-  navigation: "导航",
-  dmv: "DMV",
 };
+
+export const FAVORITE_VISIBLE_TYPES = ["job", "housing", "marketplace", "service", "news"] as const;
 
 export const FAVORITE_CENTER_TABS = [
   { value: "all", label: FAVORITE_TYPE_LABELS.all },
@@ -18,8 +18,6 @@ export const FAVORITE_CENTER_TABS = [
   { value: "marketplace", label: FAVORITE_TYPE_LABELS.marketplace },
   { value: "service", label: FAVORITE_TYPE_LABELS.service },
   { value: "news", label: FAVORITE_TYPE_LABELS.news },
-  { value: "navigation", label: FAVORITE_TYPE_LABELS.navigation },
-  { value: "dmv", label: FAVORITE_TYPE_LABELS.dmv },
 ] as const;
 
 export const POST_FAVORITE_TYPE_LABELS: Record<string, string> = {

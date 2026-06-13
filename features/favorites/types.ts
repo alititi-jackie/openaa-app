@@ -1,4 +1,4 @@
-export type FavoriteTargetType = "job" | "housing" | "marketplace" | "service" | "news" | "navigation" | "dmv" | (string & {});
+export type FavoriteTargetType = "job" | "housing" | "marketplace" | "service" | "news" | (string & {});
 
 export type FavoriteTarget = {
   type: FavoriteTargetType;

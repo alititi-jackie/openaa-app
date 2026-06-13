@@ -85,7 +85,7 @@ export default async function ProfileFavoritesPage({ searchParams }: ProfileFavo
           ))}
         </section>
       ) : (
-        <EmptyState icon={<Bookmark size={22} aria-hidden="true" />} title="还没有收藏" description="收藏的招聘、房屋、二手、服务、新闻、导航和 DMV 页面会显示在这里。" />
+        <EmptyState icon={<Bookmark size={22} aria-hidden="true" />} title="还没有收藏" description="收藏的招聘、房屋、二手、服务和新闻会显示在这里。" />
       )}
 
       {result.pagination && result.pagination.pageCount > 1 ? (

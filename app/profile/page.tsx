@@ -11,6 +11,7 @@ import {
 import { ProfileLogoutButton } from "@/components/profile/ProfileLogoutButton";
 import { ProfileShareButton } from "@/components/profile/ProfileShareButton";
 import { ProfileUserCenterCard } from "@/components/profile/ProfileUserCenterCard";
+import { FAVORITE_VISIBLE_TYPES } from "@/features/favorites/helpers";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { ensureProfileForUser } from "@/lib/supabase/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -147,7 +148,7 @@ async function getProfileCounts(userId: string) {
 
   const [notifications, favorites, recent] = await Promise.all([
     supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", userId).is("read_at", null),
-    supabase.from("user_favorites").select("id", { count: "exact", head: true }).eq("user_id", userId),
+    supabase.from("user_favorites").select("id", { count: "exact", head: true }).eq("user_id", userId).in("target_type", [...FAVORITE_VISIBLE_TYPES]),
     supabase.from("post_views").select("post_id").eq("user_id", userId).order("created_at", { ascending: false }).limit(200),
   ]);
 

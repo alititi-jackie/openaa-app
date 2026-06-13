@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { favoriteCategory, favoriteKey, normalizeFavoriteType } from "./helpers";
+import { FAVORITE_VISIBLE_TYPES, favoriteCategory, favoriteKey, normalizeFavoriteType } from "./helpers";
 import type { FavoriteListItem, FavoriteRecord, FavoriteTarget, FavoritesQueryResult } from "./types";
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -88,6 +88,7 @@ export async function getMyFavorites(params: { type?: string | null; page?: stri
     .from("user_favorites")
     .select("id,user_id,target_type,target_id,target_url,title,category,created_at", { count: "exact" })
     .eq("user_id", user.id)
+    .in("target_type", [...FAVORITE_VISIBLE_TYPES])
     .order("created_at", { ascending: false })
     .range(from, to);
 
@@ -128,7 +129,8 @@ export async function getFavoriteCount(): Promise<number> {
   const { count } = await supabase
     .from("user_favorites")
     .select("id", { count: "exact", head: true })
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .in("target_type", [...FAVORITE_VISIBLE_TYPES]);
 
   return count ?? 0;
 }
@@ -140,28 +142,22 @@ async function getLiveUrls(rows: FavoriteRecord[]) {
 
   const postIds = rows.filter((row) => ["job", "housing", "marketplace", "service"].includes(row.target_type)).map((row) => row.target_id);
   const newsIds = rows.filter((row) => row.target_type === "news").map((row) => row.target_id);
-  const navIds = rows.filter((row) => row.target_type === "navigation").map((row) => row.target_id);
 
-  const [posts, news, navigation] = await Promise.all([
+  const [posts, news] = await Promise.all([
     postIds.length
       ? supabase.from("posts").select("id").in("id", postIds).eq("status", "published").eq("visibility", "public")
       : Promise.resolve({ data: [] }),
     newsIds.length
       ? supabase.from("news_posts").select("id").in("id", newsIds).eq("status", "published")
       : Promise.resolve({ data: [] }),
-    navIds.length
-      ? supabase.from("navigation_links").select("id").in("id", navIds).eq("is_active", true)
-      : Promise.resolve({ data: [] }),
   ]);
 
   const livePostIds = new Set(((posts.data ?? []) as Array<{ id: string }>).map((row) => row.id));
   const liveNewsIds = new Set(((news.data ?? []) as Array<{ id: string }>).map((row) => row.id));
-  const liveNavIds = new Set(((navigation.data ?? []) as Array<{ id: string }>).map((row) => row.id));
 
   for (const row of rows) {
     if (["job", "housing", "marketplace", "service"].includes(row.target_type) && !livePostIds.has(row.target_id)) liveUrls.delete(row.target_url);
     if (row.target_type === "news" && !liveNewsIds.has(row.target_id)) liveUrls.delete(row.target_url);
-    if (row.target_type === "navigation" && !liveNavIds.has(row.target_id)) liveUrls.delete(row.target_url);
   }
 
   return liveUrls;
