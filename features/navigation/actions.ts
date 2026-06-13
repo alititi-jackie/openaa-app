@@ -115,11 +115,11 @@ export async function upsertNavigationCategory(_state: NavigationActionState, fo
 
   const validation = validateNavigationCategoryForm(formData);
   if (!validation.ok) return fail(validation.message);
-  const { id, name, slug, description, icon, sortOrder, isActive } = validation.value;
+  const { id, name, slug, description, icon, sortOrder, displayLimit, isActive } = validation.value;
   const previous = id
     ? await context.supabase.from("navigation_categories").select("is_active,sort_order").eq("id", id).maybeSingle()
     : { data: null };
-  const payload = { name, slug, description, icon, sort_order: sortOrder, is_active: isActive, updated_at: new Date().toISOString() };
+  const payload = { name, slug, description, icon, sort_order: sortOrder, display_limit: displayLimit, is_active: isActive, updated_at: new Date().toISOString() };
   const result = id
     ? await context.supabase.from("navigation_categories").update(payload).eq("id", id).select("id").single()
     : await context.supabase.from("navigation_categories").insert(payload).select("id").single();
@@ -195,6 +195,24 @@ export async function toggleNavigationLinkFlag(_state: NavigationActionState, fo
 
   revalidateNavigation();
   return ok("导航链接状态已更新。");
+}
+
+export async function deleteNavigationLink(_state: NavigationActionState, formData: FormData): Promise<NavigationActionState> {
+  const context = await getAdminActionContext();
+  if (!context.ok) return fail(context.message);
+
+  const id = readText(formData, "id");
+  if (!id) return fail("缺少导航链接 ID。");
+
+  const { error } = await context.supabase.from("navigation_links").delete().eq("id", id);
+  if (error) return fail("导航链接删除失败。");
+
+  if (!(await auditLog(context, "delete_navigation_link", "navigation_links", id))) {
+    return fail("链接已删除，但审计日志写入失败。");
+  }
+
+  revalidateNavigation();
+  return ok("导航链接已删除。");
 }
 
 export async function upsertUserNavigationLink(_state: NavigationActionState, formData: FormData): Promise<NavigationActionState> {

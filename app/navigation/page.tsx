@@ -1,9 +1,6 @@
 import { ChannelPageChrome } from "@/components/channels/ChannelPageChrome";
-import { NavigationCategorySections } from "@/components/navigation/NavigationCategorySection";
-import { NavigationCategoryTabs } from "@/components/navigation/NavigationCategoryTabs";
-import { NavigationFeaturedSection } from "@/components/navigation/NavigationFeaturedSection";
 import { NavigationMyCard } from "@/components/navigation/NavigationMyCard";
-import { NavigationSearchBox } from "@/components/navigation/NavigationSearchBox";
+import { NavigationPublicSections } from "@/components/navigation/NavigationPublicSections";
 import { ChannelSeoCard } from "@/components/posts/ChannelSeoCard";
 import { getNavigationPageData } from "@/features/navigation/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -11,44 +8,39 @@ import { buildPageMetadata } from "@/lib/seo/metadata";
 export const dynamic = "force-dynamic";
 
 export const metadata = buildPageMetadata({
-  title: "纽约华人常用导航",
-  description: "OpenAA 纽约华人常用网站、政府办事、DMV、交通出行和生活服务导航。",
+  title: "美国华人常用网站导航",
+  description: "OpenAA 整理美国华人常用网站、政府服务、银行金融、购物平台、通讯网络、AI 工具和生活服务入口。",
   path: "/navigation",
 });
 
 type NavigationPageProps = {
-  searchParams?: Promise<{ category?: string; q?: string }>;
+  searchParams?: Promise<{ q?: string }>;
 };
 
 export default async function NavigationPage({ searchParams }: NavigationPageProps) {
   const params = await searchParams;
-  const activeCategory = params?.category;
   const q = params?.q?.trim() || "";
-  const data = await getNavigationPageData({ categorySlug: activeCategory, q });
-  const featuredLinks = activeCategory || q ? data.links.filter((link) => link.isFeatured) : data.featuredLinks;
+  const data = await getNavigationPageData({ q });
 
   return (
     <ChannelPageChrome
       channelKey="navigation"
       path="/navigation"
-      title="纽约华人常用导航"
-      description="OpenAA 纽约华人常用网站、政府办事、DMV、交通出行和生活服务导航。"
+      title="美国华人常用网站导航"
+      description="政府办事、银行金融、购物通讯、AI 工具、视频社交和生活服务常用入口。"
     >
       <NavigationMyCard />
-      <NavigationCategoryTabs categories={data.categories} activeSlug={activeCategory} q={q} />
-      <NavigationSearchBox activeCategory={activeCategory} q={q} />
 
       {data.state !== "ready" ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
-          {data.state === "missing_config" ? "Supabase 环境变量未配置，当前仅显示默认分类和轻量空状态。" : `导航读取暂时不可用：${data.error ?? "请稍后再试。"}`}
+          {data.state === "missing_config" ? "Supabase 环境变量未配置，当前仅显示默认分类和空状态。" : `导航读取暂时不可用：${data.error ?? "请稍后再试。"}`}
         </div>
       ) : null}
 
-      <NavigationFeaturedSection links={featuredLinks} />
-      <NavigationCategorySections categories={data.categories} links={data.links} q={q} />
+      <NavigationPublicSections categories={data.categories} links={data.links} />
 
-      <ChannelSeoCard title="纽约华人生活导航">
-        OpenAA 导航页整理纽约华人常用网站、政府办事、交通出行、DMV / 驾照、生活服务和华人社区入口。公开页面只读取后台启用的导航分类和链接，不显示占位假数据。
+      <ChannelSeoCard title="美国华人常用网站导航说明">
+        OpenAA 导航频道集中整理美国华人日常上网和办事常用入口，包括政府服务、银行金融、购物平台、通讯网络、AI 工具、视频娱乐、社交媒体和生活服务等分类。页面只展示后台启用的分类和网站，帮助用户快速打开常用网站。
       </ChannelSeoCard>
     </ChannelPageChrome>
   );

@@ -1,16 +1,21 @@
-export const NAVIGATION_PUBLIC_LIMIT = 120;
-export const ADMIN_NAVIGATION_LIMIT = 200;
+export const NAVIGATION_PUBLIC_LIMIT = 300;
+export const ADMIN_NAVIGATION_LIMIT = 300;
 
 export const NAVIGATION_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const ALLOWED_NAVIGATION_IMAGE_HOSTS = new Set(["img.openaa.com"]);
+export const OPENAA_INTERNAL_HOSTS = ["openaa.com", "www.openaa.com", "ny.openaa.com", "app.openaa.com"];
 
 export const DEFAULT_NAVIGATION_CATEGORIES = [
-  { slug: "common", name: "常用网站", description: "纽约华人常用网站与服务入口。", icon: "Star", sort_order: 10, is_active: true },
-  { slug: "government", name: "政府办事", description: "纽约、纽约州与联邦政府常用办事入口。", icon: "Landmark", sort_order: 20, is_active: true },
-  { slug: "dmv-license", name: "DMV / 驾照", description: "DMV、驾照、车辆与罚单相关入口。", icon: "Car", sort_order: 30, is_active: true },
-  { slug: "transportation", name: "交通出行", description: "公共交通、机场、停车与出行工具。", icon: "Train", sort_order: 40, is_active: true },
-  { slug: "life-services", name: "生活服务", description: "水电网、医疗、学校与社区生活服务。", icon: "Wrench", sort_order: 50, is_active: true },
-  { slug: "community", name: "华人社区", description: "华人社区、公益组织与本地信息入口。", icon: "Users", sort_order: 60, is_active: true },
+  { slug: "featured", name: "热门推荐", description: "", icon: null, sort_order: 10, display_limit: 50, is_active: true },
+  { slug: "government", name: "政府服务", description: "", icon: null, sort_order: 20, display_limit: 50, is_active: true },
+  { slug: "finance", name: "银行金融", description: "", icon: null, sort_order: 30, display_limit: 50, is_active: true },
+  { slug: "shopping", name: "购物平台", description: "", icon: null, sort_order: 40, display_limit: 50, is_active: true },
+  { slug: "telecom", name: "通讯网络", description: "", icon: null, sort_order: 50, display_limit: 50, is_active: true },
+  { slug: "ai", name: "AI工具", description: "", icon: null, sort_order: 60, display_limit: 50, is_active: true },
+  { slug: "video", name: "视频娱乐", description: "", icon: null, sort_order: 70, display_limit: 50, is_active: true },
+  { slug: "social", name: "社交媒体", description: "", icon: null, sort_order: 80, display_limit: 50, is_active: true },
+  { slug: "life", name: "生活服务", description: "", icon: null, sort_order: 90, display_limit: 50, is_active: true },
+  { slug: "other", name: "其它", description: "", icon: null, sort_order: 100, display_limit: 50, is_active: true },
 ];
 
-export const NAVIGATION_DEFAULT_DESCRIPTION = "OpenAA 纽约华人常用导航入口。";
+export const NAVIGATION_DEFAULT_DESCRIPTION = "OpenAA 美国华人常用网站导航入口。";

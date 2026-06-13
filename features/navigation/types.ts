@@ -1,4 +1,4 @@
-export type NavigationOpenMode = "same" | "new";
+export type NavigationOpenMode = "auto" | "same" | "new";
 
 export type NavigationQueryState = "ready" | "missing_config" | "error";
 
@@ -15,6 +15,7 @@ export type NavigationCategoryRecord = {
   description: string | null;
   icon: string | null;
   sort_order: number;
+  display_limit: number | null;
   is_active: boolean;
 };
 
@@ -62,6 +63,7 @@ export type NavigationCategory = {
   description: string | null;
   icon: string | null;
   sortOrder: number;
+  displayLimit: number;
   isActive: boolean;
 };
 

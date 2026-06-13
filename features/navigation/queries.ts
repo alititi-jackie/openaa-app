@@ -32,13 +32,13 @@ const navigationLinkSelect = `
   metadata,
   created_at,
   updated_at,
-  navigation_categories(id,slug,name,description,icon,sort_order,is_active),
+  navigation_categories(id,slug,name,description,icon,sort_order,display_limit,is_active),
   image_assets(public_url,external_url)
 `;
 
 const navigationLinkPublicSelect = navigationLinkSelect.replace(
-  "navigation_categories(id,slug,name,description,icon,sort_order,is_active)",
-  "navigation_categories!inner(id,slug,name,description,icon,sort_order,is_active)",
+  "navigation_categories(id,slug,name,description,icon,sort_order,display_limit,is_active)",
+  "navigation_categories!inner(id,slug,name,description,icon,sort_order,display_limit,is_active)",
 );
 
 function missingConfig<T>(data: T): NavigationQueryResult<T> {
@@ -62,7 +62,7 @@ export async function getNavigationCategories(includeInactive = false): Promise<
   try {
     let query = supabase
       .from("navigation_categories")
-      .select("id,slug,name,description,icon,sort_order,is_active")
+      .select("id,slug,name,description,icon,sort_order,display_limit,is_active")
       .order("sort_order", { ascending: true })
       .order("name", { ascending: true });
 
@@ -88,7 +88,6 @@ export async function getPublicNavigationLinks(params: { categorySlug?: string; 
       .select(navigationLinkPublicSelect)
       .eq("is_active", true)
       .eq("navigation_categories.is_active", true)
-      .order("is_featured", { ascending: false })
       .order("sort_order", { ascending: true })
       .order("title", { ascending: true })
       .limit(params.limit ?? NAVIGATION_PUBLIC_LIMIT);
@@ -106,18 +105,17 @@ export async function getPublicNavigationLinks(params: { categorySlug?: string; 
 }
 
 export async function getNavigationPageData(params: { categorySlug?: string; q?: string } = {}) {
-  const [categories, links, featured] = await Promise.all([
+  const [categories, links] = await Promise.all([
     getNavigationCategories(false),
     getPublicNavigationLinks(params),
-    getPublicNavigationLinks({ featuredOnly: true, limit: 6 }),
   ]);
 
   return {
-    state: categories.state === "error" || links.state === "error" || featured.state === "error" ? ("error" as const) : categories.state === "missing_config" || links.state === "missing_config" ? ("missing_config" as const) : ("ready" as const),
+    state: categories.state === "error" || links.state === "error" ? ("error" as const) : categories.state === "missing_config" || links.state === "missing_config" ? ("missing_config" as const) : ("ready" as const),
     categories: categories.data,
     links: links.data,
-    featuredLinks: featured.data,
-    error: categories.error ?? links.error ?? featured.error,
+    featuredLinks: [],
+    error: categories.error ?? links.error,
   };
 }
 
@@ -175,7 +173,7 @@ export async function getAdminNavigationData(params: { categoryId?: string; q?: 
 async function readAdminCategories(supabase: SupabaseServerClient): Promise<NavigationQueryResult<NavigationCategory[]>> {
   const { data, error } = await supabase
     .from("navigation_categories")
-    .select("id,slug,name,description,icon,sort_order,is_active")
+    .select("id,slug,name,description,icon,sort_order,display_limit,is_active")
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
 

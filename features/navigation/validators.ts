@@ -20,17 +20,22 @@ function normalizeSlug(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
+function clampDisplayLimit(value: number) {
+  if (value <= 0) return 50;
+  return Math.min(value, 50);
+}
+
 export function normalizeNavigationUrl(raw: string): ValidationResult<string> {
   const value = raw.trim();
   if (!value) return { ok: false, message: "请输入网址，例如 openaa.com" };
 
   const lower = value.toLowerCase();
   if (lower.startsWith("javascript:") || lower.startsWith("data:")) {
-    return { ok: false, message: "请输入网址，例如 openaa.com" };
+    return { ok: false, message: "请输入有效网址。" };
   }
 
   if (value.startsWith("/")) {
-    if (value.startsWith("//")) return { ok: false, message: "请输入网址，例如 openaa.com" };
+    if (value.startsWith("//")) return { ok: false, message: "请输入有效网址。" };
     if (value === "/marketplace" || value.startsWith("/marketplace/")) {
       return { ok: false, message: "请使用 /secondhand 作为二手频道路径。" };
     }
@@ -40,13 +45,12 @@ export function normalizeNavigationUrl(raw: string): ValidationResult<string> {
   try {
     const withProtocol = /^[a-z][a-z0-9+.-]*:\/\//i.test(value) ? value : `https://${value}`;
     const url = new URL(withProtocol);
-    if (url.protocol !== "https:" && url.protocol !== "http:") return { ok: false, message: "请输入网址，例如 openaa.com" };
-    if (!url.hostname.includes(".") || /\s/.test(url.hostname)) return { ok: false, message: "请输入网址，例如 openaa.com" };
+    if (url.protocol !== "https:" && url.protocol !== "http:") return { ok: false, message: "请输入有效网址。" };
+    if (!url.hostname.includes(".") || /\s/.test(url.hostname)) return { ok: false, message: "请输入有效网址。" };
     url.protocol = "https:";
-    const normalized = url.pathname === "/" && !url.search && !url.hash ? url.origin : url.toString();
-    return { ok: true, value: normalized };
+    return { ok: true, value: url.pathname === "/" && !url.search && !url.hash ? url.origin : url.toString() };
   } catch {
-    return { ok: false, message: "请输入网址，例如 openaa.com" };
+    return { ok: false, message: "请输入有效网址。" };
   }
 }
 
@@ -72,7 +76,9 @@ export function normalizeNavigationImageUrl(raw: string): ValidationResult<strin
 }
 
 function readOpenMode(formData: FormData): NavigationOpenMode {
-  return readText(formData, "open_mode") === "same" ? "same" : "new";
+  const value = readText(formData, "open_mode");
+  if (value === "same" || value === "new") return value;
+  return "auto";
 }
 
 export function validateNavigationCategoryForm(formData: FormData): ValidationResult<{
@@ -82,6 +88,7 @@ export function validateNavigationCategoryForm(formData: FormData): ValidationRe
   description: string | null;
   icon: string | null;
   sortOrder: number;
+  displayLimit: number;
   isActive: boolean;
 }> {
   try {
@@ -99,6 +106,7 @@ export function validateNavigationCategoryForm(formData: FormData): ValidationRe
         description: readText(formData, "description") || null,
         icon: readText(formData, "icon") || null,
         sortOrder: readInteger(formData, "sort_order", "分类排序"),
+        displayLimit: clampDisplayLimit(readInteger(formData, "display_limit", "前台显示数量")),
         isActive: formData.get("is_active") === "on",
       },
     };
@@ -125,7 +133,7 @@ export function validateNavigationLinkForm(formData: FormData): ValidationResult
     const url = normalizeNavigationUrl(readText(formData, "url"));
     const imageUrl = normalizeNavigationImageUrl(readText(formData, "image_url"));
 
-    if (!title) return { ok: false, message: "链接标题不能为空。" };
+    if (!title) return { ok: false, message: "网站名称不能为空。" };
     if (!url.ok) return url;
     if (!imageUrl.ok) return imageUrl;
 
@@ -139,14 +147,14 @@ export function validateNavigationLinkForm(formData: FormData): ValidationResult
         url: url.value,
         icon: readText(formData, "icon") || null,
         imageUrl: imageUrl.value,
-        sortOrder: readInteger(formData, "sort_order", "链接排序"),
+        sortOrder: readInteger(formData, "sort_order", "网站排序"),
         isActive: formData.get("is_active") === "on",
         isFeatured: formData.get("is_featured") === "on",
         openMode: readOpenMode(formData),
       },
     };
   } catch (error) {
-    return { ok: false, message: error instanceof Error ? error.message : "链接表单格式不正确。" };
+    return { ok: false, message: error instanceof Error ? error.message : "网站表单格式不正确。" };
   }
 }
 
