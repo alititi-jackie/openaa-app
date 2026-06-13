@@ -52,7 +52,7 @@ export function NavigationPublicSections({ categories, links }: { categories: Na
 
   if (groups.length === 0) {
     return (
-      <section className="rounded-3xl bg-white p-6 text-center text-sm text-slate-500 shadow-sm ring-1 ring-slate-100">
+      <section className="rounded-3xl bg-white p-6 text-center text-sm text-zinc-500 shadow-[0_10px_35px_rgba(0,0,0,0.06)] ring-1 ring-black/5">
         导航内容正在整理中，请稍后再来。
       </section>
     );
@@ -60,16 +60,16 @@ export function NavigationPublicSections({ categories, links }: { categories: Na
 
   return (
     <>
-      <nav className="sticky top-14 z-30 -mx-4 border-b border-slate-100 bg-white/95 px-4 py-2 backdrop-blur" aria-label="导航分类">
+      <nav className="sticky top-14 z-30 -mx-4 border-b border-zinc-100 bg-white/95 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-white/80" aria-label="导航分类">
         <div className="flex items-center gap-2">
           <button type="button" className={tabClass(activeSlug === "all")} onClick={() => selectCategory("all")}>
             全部
           </button>
           <div className="relative flex min-w-0 flex-1 items-center">
-            <button type="button" className="mr-1 hidden h-6 w-6 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm md:flex" onClick={() => scrollerRef.current?.scrollBy({ left: -200, behavior: "smooth" })} aria-label="向左滚动">
+            <button type="button" className="mr-1 hidden h-6 w-6 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition hover:bg-gray-50 md:flex" onClick={() => scrollerRef.current?.scrollBy({ left: -200, behavior: "smooth" })} aria-label="向左滚动">
               ‹
             </button>
-            <div ref={scrollerRef} className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden whitespace-nowrap py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div ref={scrollerRef} className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden whitespace-nowrap py-1 [touch-action:pan-x] [overscroll-behavior-x:contain] [overscroll-behavior-y:contain] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               <div className="flex flex-nowrap items-center gap-2">
                 {groups.map((group) => (
                   <button key={group.category.slug} type="button" className={tabClass(activeSlug === group.category.slug)} onClick={() => selectCategory(group.category.slug)}>
@@ -78,7 +78,7 @@ export function NavigationPublicSections({ categories, links }: { categories: Na
                 ))}
               </div>
             </div>
-            <button type="button" className="ml-1 hidden h-6 w-6 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm md:flex" onClick={() => scrollerRef.current?.scrollBy({ left: 200, behavior: "smooth" })} aria-label="向右滚动">
+            <button type="button" className="ml-1 hidden h-6 w-6 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition hover:bg-gray-50 md:flex" onClick={() => scrollerRef.current?.scrollBy({ left: 200, behavior: "smooth" })} aria-label="向右滚动">
               ›
             </button>
           </div>
@@ -103,14 +103,14 @@ function NavigationPublicSection({ group }: { group: NavigationGroup }) {
   return (
     <section id={sectionId(group.category.slug)} className="scroll-mt-28">
       <div className="mb-2 flex items-center justify-between px-1">
-        <h2 className="text-[14px] font-black text-slate-950 md:text-[15px]">{group.category.name}</h2>
+        <h2 className="text-[14px] font-black text-zinc-900 md:text-[15px]">{group.category.name}</h2>
         {canExpand ? (
-          <button type="button" onClick={() => setExpanded((value) => !value)} className="text-xs font-bold text-blue-600 hover:text-blue-700">
+          <button type="button" onClick={() => setExpanded((value) => !value)} className="ml-2 shrink-0 text-[12px] font-medium text-blue-600 hover:text-blue-700">
             {expanded ? "收起" : `更多 (${group.links.length})`}
           </button>
         ) : null}
       </div>
-      <div className="rounded-3xl bg-white p-3 shadow-sm ring-1 ring-slate-100">
+      <div className="rounded-3xl bg-white p-3 shadow-[0_10px_35px_rgba(0,0,0,0.06)] ring-1 ring-black/5">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {visibleLinks.map((link) => (
             <NavigationLinkCard key={link.id} link={link} />
@@ -128,6 +128,6 @@ function sectionId(slug: string) {
 function tabClass(active: boolean) {
   return [
     "inline-flex min-h-8 shrink-0 items-center rounded-full border px-3 py-1.5 text-sm font-medium leading-none transition",
-    active ? "border-blue-600 bg-blue-600 text-white" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
+    active ? "border-[#1976d2] bg-[#1976d2] text-white" : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50",
   ].join(" ");
 }

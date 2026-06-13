@@ -21,16 +21,16 @@ function isExternalTarget(url: string, openMode: NavigationLink["openMode"]) {
 
 export function NavigationLinkCard({ link }: { link: NavigationLink }) {
   const external = isExternalTarget(link.url, link.openMode);
-  const className = "group flex h-[86px] flex-col rounded-2xl bg-slate-50 px-3 py-3 ring-1 ring-slate-100 transition hover:bg-white hover:ring-slate-200";
+  const className = "group block rounded-2xl bg-zinc-50 px-3 py-3 ring-1 ring-zinc-100 transition hover:bg-white hover:ring-zinc-200";
   const content = (
     <>
       <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0 flex-1 truncate text-[12.5px] font-bold text-slate-950" title={link.title}>
+        <div className="truncate text-[12.5px] font-bold text-zinc-900" title={link.title}>
           {link.title}
         </div>
-        {external ? <ExternalLink size={13} className="shrink-0 text-slate-400" aria-label="外部链接" /> : null}
+        {external ? <ExternalLink size={13} className="shrink-0 text-zinc-400" aria-label="外部链接" /> : null}
       </div>
-      {link.description ? <div className="mt-1 line-clamp-2 text-[11px] leading-5 text-slate-500">{link.description}</div> : null}
+      {link.description ? <div className="mt-1 line-clamp-2 text-[11px] text-zinc-500">{link.description}</div> : null}
     </>
   );
 

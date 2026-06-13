@@ -1,8 +1,6 @@
 import Link from "next/link";
-import { Compass } from "lucide-react";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
-import { AdminCard } from "@/components/admin/AdminCard";
 import { NavigationAdminPermissions, NavigationLinkAdminList } from "@/components/navigation/NavigationAdminForm";
 import { getAdminNavigationData } from "@/features/navigation/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -16,16 +14,11 @@ export const metadata = buildPageMetadata({
   noIndex: true,
 });
 
-type AdminNavigationPageProps = {
-  searchParams?: Promise<{ categoryId?: string; q?: string }>;
-};
-
-export default function AdminNavigationPage({ searchParams }: AdminNavigationPageProps) {
+export default function AdminNavigationPage() {
   return (
     <AdminAuthGate>
       {async () => {
-        const params = await searchParams;
-        const data = await getAdminNavigationData({ categoryId: params?.categoryId, q: params?.q });
+        const data = await getAdminNavigationData();
 
         if (!data.permissions.manageNavigation) {
           return (
@@ -55,29 +48,6 @@ export default function AdminNavigationPage({ searchParams }: AdminNavigationPag
                 导航后台读取暂时不可用：{data.error ?? "请稍后再试。"}
               </div>
             ) : null}
-
-            <AdminCard title="筛选网站" description="按标题、URL 或分类快速筛选后台导航网站。">
-              <form action="/admin/navigation" className="grid gap-3 md:grid-cols-3">
-                <input
-                  name="q"
-                  defaultValue={params?.q ?? ""}
-                  placeholder="搜索标题或 URL"
-                  className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-500"
-                />
-                <select
-                  name="categoryId"
-                  defaultValue={params?.categoryId ?? ""}
-                  className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-500"
-                >
-                  <option value="">全部分类</option>
-                  {data.categories.flatMap((category) => (category.id ? [<option key={category.id} value={category.id}>{category.name}</option>] : []))}
-                </select>
-                <button type="submit" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-black text-blue-700 hover:bg-blue-100">
-                  <Compass size={16} aria-hidden="true" />
-                  筛选
-                </button>
-              </form>
-            </AdminCard>
 
             <section className="bg-white">
               <h2 className="text-lg font-black text-slate-950">网站列表</h2>
