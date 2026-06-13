@@ -36,7 +36,8 @@ export function FeedbackForm() {
     event.preventDefault();
     setState({ ok: true, message: "", result: "idle" });
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const visitorId = ensureVisitorId();
     if (visitorIdRef.current) visitorIdRef.current.value = visitorId;
 
@@ -62,9 +63,8 @@ export function FeedbackForm() {
       }
 
       setState({ ok: true, message: "感谢你的反馈，我们会尽快查看并处理。", result: "success" });
-      event.currentTarget.reset();
-    } catch (error) {
-      setState({ ok: false, message: error instanceof Error ? error.message : "提交失败，请稍后重试。", result: "idle" });
+    } catch {
+      setState({ ok: false, message: "提交失败，请检查网络后稍后重试。", result: "idle" });
     } finally {
       setPending(false);
     }
