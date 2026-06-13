@@ -20,6 +20,7 @@ const newsPostSelect = `
   status,
   is_featured,
   is_pinned,
+  pinned_order,
   pinned_until,
   published_at,
   seo_title,
@@ -75,6 +76,7 @@ export async function getPublishedNewsList(params: NewsListParams = {}): Promise
       .eq("status", "published")
       .or(`published_at.is.null,published_at.lte.${now}`)
       .order("is_pinned", { ascending: false })
+      .order("pinned_order", { ascending: true })
       .order("published_at", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false })
       .limit(params.limit ?? PUBLIC_NEWS_LIMIT);
@@ -284,7 +286,10 @@ async function readAdminPosts(supabase: SupabaseServerClient, params: { status?:
   let query = supabase
     .from("news_posts")
     .select(newsPostSelect)
-    .order("updated_at", { ascending: false })
+    .order("is_pinned", { ascending: false })
+    .order("pinned_order", { ascending: true })
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false })
     .limit(ADMIN_NEWS_LIMIT);
 
   if (params.status && params.status !== "all") query = query.eq("status", params.status);

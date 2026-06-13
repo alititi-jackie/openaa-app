@@ -13,6 +13,7 @@ export type NewsValidationResult =
         status: NewsStatus;
         isFeatured: boolean;
         isPinned: boolean;
+        pinnedOrder: number;
         pinnedUntil: string | null;
         publishedAt: string | null;
         seoTitle: string | null;
@@ -47,6 +48,14 @@ function readInteger(formData: FormData, key: string, label: string) {
   const value = Number(raw);
   if (!Number.isInteger(value)) {
     throw new Error(`${label} 必须是整数。`);
+  }
+  return value;
+}
+
+function readNonnegativeInteger(formData: FormData, key: string, label: string) {
+  const value = readInteger(formData, key, label);
+  if (value < 0) {
+    throw new Error(`${label} 必须是 0 或正整数。`);
   }
   return value;
 }
@@ -110,6 +119,7 @@ export function validateNewsForm(formData: FormData): NewsValidationResult {
       status,
       isFeatured: formData.get("is_featured") === "on",
       isPinned: formData.get("is_pinned") === "on",
+      pinnedOrder: readNonnegativeInteger(formData, "pinned_order", "置顶排序"),
       pinnedUntil,
       publishedAt: status === "published" ? publishedAt || new Date().toISOString() : publishedAt,
       seoTitle: readText(formData, "seo_title") || null,

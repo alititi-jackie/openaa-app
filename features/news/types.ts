@@ -37,6 +37,7 @@ export type NewsPostRecord = {
   status: NewsStatus;
   is_featured: boolean;
   is_pinned: boolean;
+  pinned_order: number;
   pinned_until?: string | null;
   published_at: string | null;
   seo_title: string | null;
@@ -61,6 +62,7 @@ export type NewsPostCard = {
   coverImageUrl: string | null;
   isFeatured: boolean;
   isPinned: boolean;
+  pinnedOrder: number;
   pinnedUntil: string | null;
 };
 

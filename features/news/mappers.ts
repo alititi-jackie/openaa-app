@@ -75,6 +75,7 @@ export function mapNewsPostToCard(record: NewsPostRecord): NewsPostCard {
     coverImageUrl: imageUrl(record),
     isFeatured: record.is_featured,
     isPinned: isEffectivePinned(record),
+    pinnedOrder: record.pinned_order ?? 0,
     pinnedUntil: record.pinned_until ?? null,
   };
 }
@@ -101,6 +102,7 @@ export function mapNewsPostToAdmin(record: NewsPostRecord): AdminNewsPost {
 export function sortPinnedFirst(posts: NewsPostCard[]) {
   return [...posts].sort((a, b) => {
     if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
+    if (a.isPinned && b.isPinned && a.pinnedOrder !== b.pinnedOrder) return a.pinnedOrder - b.pinnedOrder;
     const aTime = new Date(a.publishedAt ?? a.updatedAt).getTime();
     const bTime = new Date(b.publishedAt ?? b.updatedAt).getTime();
     return (Number.isFinite(bTime) ? bTime : 0) - (Number.isFinite(aTime) ? aTime : 0);
