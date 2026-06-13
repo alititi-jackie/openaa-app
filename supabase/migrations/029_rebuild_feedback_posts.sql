@@ -82,6 +82,17 @@ execute function public.set_feedback_posts_updated_at();
 alter table public.feedback_posts enable row level security;
 alter table public.feedback_settings enable row level security;
 
+revoke all on table public.feedback_posts from anon, authenticated;
+revoke all on table public.feedback_settings from anon, authenticated;
+
+grant insert (visitor_id, type, contact, related_url, content) on public.feedback_posts to anon;
+grant insert (user_id, visitor_id, type, contact, related_url, content) on public.feedback_posts to authenticated;
+grant select on public.feedback_posts to authenticated;
+grant update (status, admin_note, handled_by, handled_at, deleted_at) on public.feedback_posts to authenticated;
+
+grant select on public.feedback_settings to authenticated;
+grant update (value, updated_by, updated_at) on public.feedback_settings to authenticated;
+
 create policy "Users and visitors can submit feedback posts"
   on public.feedback_posts
   for insert
