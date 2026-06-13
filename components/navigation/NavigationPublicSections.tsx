@@ -29,6 +29,7 @@ export function NavigationPublicSections({ categories, links }: { categories: Na
   const groups = useMemo(
     () =>
       categories
+        .filter((category) => category.displayLimit > 0)
         .map((category) => ({
           category,
           links: links.filter((link) => link.categorySlug === category.slug || link.categoryId === category.id),
@@ -96,7 +97,7 @@ export function NavigationPublicSections({ categories, links }: { categories: Na
 
 function NavigationPublicSection({ group }: { group: NavigationGroup }) {
   const [expanded, setExpanded] = useState(false);
-  const displayLimit = group.category.displayLimit || 50;
+  const displayLimit = group.category.displayLimit;
   const visibleLinks = expanded ? group.links : group.links.slice(0, displayLimit);
   const canExpand = group.links.length > displayLimit;
 

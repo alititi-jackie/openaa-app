@@ -19,8 +19,26 @@ function isExternalTarget(url: string, openMode: NavigationLink["openMode"]) {
   }
 }
 
+function safeNavigationHref(url: string) {
+  const value = url.trim();
+  if (!value) return "#";
+  const lower = value.toLowerCase();
+  if (lower.startsWith("javascript:") || lower.startsWith("data:") || lower.startsWith("vbscript:")) return "#";
+  if (value.startsWith("//")) return "#";
+  if (value.startsWith("/") || value.startsWith("#")) return value;
+
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return "#";
+    return parsed.toString();
+  } catch {
+    return "#";
+  }
+}
+
 export function NavigationLinkCard({ link }: { link: NavigationLink }) {
-  const external = isExternalTarget(link.url, link.openMode);
+  const safeHref = safeNavigationHref(link.url);
+  const external = safeHref !== "#" && isExternalTarget(safeHref, link.openMode);
   const className = "group block rounded-2xl bg-zinc-50 px-3 py-3 ring-1 ring-zinc-100 transition hover:bg-white hover:ring-zinc-200";
   const content = (
     <>
@@ -36,14 +54,14 @@ export function NavigationLinkCard({ link }: { link: NavigationLink }) {
 
   if (external) {
     return (
-      <a href={link.url} target="_blank" rel="noopener noreferrer" className={className}>
+      <a href={safeHref} target="_blank" rel="noopener noreferrer" className={className}>
         {content}
       </a>
     );
   }
 
   return (
-    <Link href={link.url} className={className}>
+    <Link href={safeHref} className={className}>
       {content}
     </Link>
   );
