@@ -170,12 +170,15 @@ export async function upsertNewsPost(_state: NewsActionState, formData: FormData
 
   const before = id ? await readNewsPost(context.supabase, id) : null;
   const coverImageFile = readFile(formData, "cover_image_file");
+  const removeCoverImage = formData.get("remove_cover_image") === "on";
   const existingCoverImageAssetId = readText(formData, "cover_image_asset_id") || null;
-  const coverImageAssetId = coverImageFile
-    ? await uploadNewsCoverImageAsset(context, coverImageFile, id || null)
-    : validation.value.coverImageUrl
-      ? await upsertExternalImageAsset(context, validation.value.coverImageUrl, id || null)
-      : existingCoverImageAssetId;
+  const coverImageAssetId = removeCoverImage
+    ? null
+    : coverImageFile
+      ? await uploadNewsCoverImageAsset(context, coverImageFile, id || null)
+      : validation.value.coverImageUrl
+        ? await upsertExternalImageAsset(context, validation.value.coverImageUrl, id || null)
+        : existingCoverImageAssetId;
   if (coverImageAssetId === false) {
     return fail("封面图片保存失败，请确认上传的是 5MB 以内的 JPG、PNG、WebP，或填写 https://img.openaa.com/ 图片地址。");
   }
@@ -208,7 +211,7 @@ export async function upsertNewsPost(_state: NewsActionState, formData: FormData
     await context.supabase.from("image_assets").update({ entity_id: result.data.id }).eq("id", coverImageAssetId).eq("owner_id", context.userId);
   }
 
-  if (coverImageAssetId && before?.cover_image_asset_id && before.cover_image_asset_id !== coverImageAssetId) {
+  if (before?.cover_image_asset_id && (removeCoverImage || (coverImageAssetId && before.cover_image_asset_id !== coverImageAssetId))) {
     await markImageAssetDeleted(context.supabase, before.cover_image_asset_id);
   }
 

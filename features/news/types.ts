@@ -10,6 +10,7 @@ export type NewsCategory = {
 };
 
 export type NewsImageAsset = {
+  source_type: "storage" | "external" | null;
   public_url: string | null;
   external_url: string | null;
 };
@@ -60,6 +61,7 @@ export type NewsPostCard = {
   publishedAt: string | null;
   updatedAt: string;
   coverImageUrl: string | null;
+  coverImageSource: "storage" | "external" | null;
   isFeatured: boolean;
   isPinned: boolean;
   pinnedOrder: number;

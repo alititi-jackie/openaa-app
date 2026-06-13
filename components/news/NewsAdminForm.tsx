@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { Eye, Pencil, Pin, PinOff, Plus, Trash2 } from "lucide-react";
 import { AdminActionForm, AdminCheckbox, AdminTextInput } from "@/components/admin/AdminActionForm";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
@@ -45,6 +45,8 @@ type FormValues = {
   seoTitle: string;
   seoDescription: string;
 };
+
+type CoverSource = "storage" | "external" | null;
 
 export function NewsAdminPermissions({ permissions }: { permissions: AdminNewsPermissions }) {
   return (
@@ -357,6 +359,11 @@ function NewsPostEditor({
   const [slugTouched, setSlugTouched] = useState(Boolean(post?.slug));
   const [message, setMessage] = useState("");
   const [pending, startTransition] = useTransition();
+  const [coverSource, setCoverSource] = useState<CoverSource>(() => post?.coverImageSource ?? (post?.coverImageUrl ? "external" : null));
+  const [selectedUpload, setSelectedUpload] = useState(false);
+  const [removedCover, setRemovedCover] = useState(false);
+  const [fileInputKey, setFileInputKey] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   function setValue<K extends keyof FormValues>(key: K, value: FormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
@@ -379,6 +386,7 @@ function NewsPostEditor({
       }
 
       const selectedCategory = categories.find((category) => category.id === values.categoryId);
+      const nextCoverImageUrl = removedCover ? null : values.coverImageUrl || post?.coverImageUrl || null;
       onSaved({
         id: result.id ?? post?.id ?? `temp-${Date.now()}`,
         title: values.title,
@@ -389,8 +397,9 @@ function NewsPostEditor({
         categoryId: values.categoryId || null,
         categoryName: selectedCategory?.name ?? post?.categoryName ?? "新闻",
         categorySlug: selectedCategory?.slug ?? post?.categorySlug ?? null,
-        coverImageUrl: values.coverImageUrl || post?.coverImageUrl || null,
-        coverImageAssetId: post?.coverImageAssetId ?? null,
+        coverImageUrl: nextCoverImageUrl,
+        coverImageSource: removedCover ? null : coverSource,
+        coverImageAssetId: removedCover ? null : post?.coverImageAssetId ?? null,
         status: values.status,
         isFeatured: values.isFeatured,
         isPinned: values.isPinned,
@@ -409,7 +418,8 @@ function NewsPostEditor({
   return (
     <form action={save} encType="multipart/form-data" className="space-y-3">
       <input type="hidden" name="id" value={post?.id ?? ""} />
-      <input type="hidden" name="cover_image_asset_id" value={post?.coverImageAssetId ?? ""} />
+      <input type="hidden" name="cover_image_asset_id" value={removedCover ? "" : post?.coverImageAssetId ?? ""} />
+      {removedCover ? <input type="hidden" name="remove_cover_image" value="on" /> : null}
 
       <div className="grid gap-3 md:grid-cols-2">
         <TextField label="标题" name="title" value={values.title} onChange={updateTitle} required />
@@ -437,14 +447,67 @@ function NewsPostEditor({
       <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
         <p className="text-sm font-black text-slate-800">封面图</p>
         <div className="mt-2 grid gap-3 md:grid-cols-2">
-          <TextField label="封面图片 URL" name="cover_image_url" value={values.coverImageUrl} onChange={(value) => setValue("coverImageUrl", value)} placeholder="https://img.openaa.com/..." />
+          <TextField
+            label="封面图片 URL"
+            name="cover_image_url"
+            value={coverSource === "storage" ? "" : values.coverImageUrl}
+            onChange={(value) => {
+              setValue("coverImageUrl", value);
+              if (!value.trim()) setCoverSource(null);
+              setRemovedCover(false);
+            }}
+            onBlur={() => {
+              if (values.coverImageUrl.trim()) setCoverSource("external");
+            }}
+            placeholder="https://img.openaa.com/..."
+            disabled={coverSource === "storage"}
+            readOnly={coverSource === "external"}
+          />
           <label className="grid gap-1.5 text-sm font-bold text-slate-700">
             <span>上传封面</span>
-            <input name="cover_image_file" type="file" accept="image/jpeg,image/png,image/webp" className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900" />
+            <input
+              key={fileInputKey}
+              ref={fileInputRef}
+              name="cover_image_file"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              disabled={coverSource === "external" || (coverSource === "storage" && !selectedUpload)}
+              onChange={(event) => {
+                if (event.target.files?.[0]) {
+                  setCoverSource("storage");
+                  setSelectedUpload(true);
+                  setRemovedCover(false);
+                  setValue("coverImageUrl", "");
+                }
+              }}
+              className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 disabled:bg-slate-100 disabled:text-slate-400"
+            />
           </label>
         </div>
-        <p className="mt-2 text-xs font-semibold text-slate-500">上传文件支持 JPG、PNG、WebP，最大 5MB；也可以填写 https://img.openaa.com/ 图片地址。</p>
-        {values.coverImageUrl ? (
+        <p className="mt-2 text-xs font-semibold text-slate-500">
+          {coverSource === "storage"
+            ? "当前使用上传图片。如需改用外部图片链接，请先移除封面。"
+            : coverSource === "external"
+              ? "当前使用外部图片链接。如需上传图片，请先移除封面。"
+              : "上传文件支持 JPG、PNG、WebP，最大 5MB；也可以填写 https://img.openaa.com/ 图片地址。"}
+        </p>
+        {coverSource ? (
+          <button
+            type="button"
+            onClick={() => {
+              setCoverSource(null);
+              setSelectedUpload(false);
+              setRemovedCover(true);
+              setValue("coverImageUrl", "");
+              setFileInputKey((value) => value + 1);
+              if (fileInputRef.current) fileInputRef.current.value = "";
+            }}
+            className="mt-3 inline-flex min-h-9 items-center justify-center rounded-xl border border-red-100 bg-white px-3 py-1.5 text-xs font-black text-red-600 hover:bg-red-50"
+          >
+            移除封面
+          </button>
+        ) : null}
+        {values.coverImageUrl && !removedCover ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={values.coverImageUrl} alt="封面预览" className="mt-3 h-28 w-full max-w-56 rounded-xl object-cover ring-1 ring-slate-100" />
         ) : null}
@@ -517,6 +580,9 @@ function TextField({
   required = false,
   placeholder,
   min,
+  disabled = false,
+  readOnly = false,
+  onBlur,
 }: {
   label: string;
   name: string;
@@ -526,11 +592,26 @@ function TextField({
   required?: boolean;
   placeholder?: string;
   min?: number;
+  disabled?: boolean;
+  readOnly?: boolean;
+  onBlur?: () => void;
 }) {
   return (
     <label className="grid gap-1.5 text-sm font-bold text-slate-700">
       <span>{label}</span>
-      <input name={name} value={value} type={type} required={required} min={min} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-500" />
+      <input
+        name={name}
+        value={value}
+        type={type}
+        required={required}
+        min={min}
+        placeholder={placeholder}
+        disabled={disabled}
+        readOnly={readOnly}
+        onBlur={onBlur}
+        onChange={(event) => onChange(event.target.value)}
+        className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-500 disabled:bg-slate-100 disabled:text-slate-400 read-only:bg-slate-100"
+      />
     </label>
   );
 }
