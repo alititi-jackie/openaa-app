@@ -190,6 +190,30 @@ export async function setAdminPostStatus(_state: AdminPostActionState, formData:
   return ok("帖子状态已更新。");
 }
 
+export async function sendAdminPostAuthorNotification(_state: AdminPostActionState, formData: FormData): Promise<AdminPostActionState> {
+  const id = readText(formData, "id");
+  if (!id) return fail("操作参数无效。");
+
+  const context = await getAdminActionContext(["moderate_posts"]);
+  if (!context.ok) return fail(context.message);
+
+  const post = await readPost(context.supabase, id);
+  if (!post) return fail("用户发布信息不存在或无权读取。");
+
+  const notificationResult = await maybeSendPostActionNotification({
+    actorId: context.userId,
+    authorId: post.author_id,
+    postId: id,
+    postType: post.post_type,
+    status: post.status,
+    formData,
+  });
+
+  if (!notificationResult.ok) return fail(`通知发送失败：${notificationResult.message}`);
+  revalidatePath("/admin/user-posts");
+  return ok("通知已发送。");
+}
+
 export async function restoreDeletedPost(_state: AdminPostActionState, formData: FormData): Promise<AdminPostActionState> {
   const id = readText(formData, "id");
   const resourceType = readText(formData, "resource_type") || readText(formData, "content_type");
@@ -546,6 +570,8 @@ async function maybeSendPostActionNotification({
 }
 
 function notificationTemplateForStatus(status: PostStatus) {
+  if (status === "published") return "admin_post_published";
+  if (status === "hidden") return "admin_post_hidden";
   if (status === "deleted") return "admin_post_deleted";
   if (status === "rejected") return "admin_post_rejected";
   return "";
@@ -609,7 +635,7 @@ function revalidatePost(type: PostType, id: string) {
   revalidatePath("/");
   revalidatePath(POST_TYPE_TO_ROUTE[type]);
   revalidatePath(postHref(type, id));
-  revalidatePath("/admin/posts");
+  revalidatePath("/admin/user-posts");
 }
 
 function revalidateNews(slug?: string | null) {

@@ -73,7 +73,7 @@ export async function setAdminReportStatus(_state: AdminReportActionState, formD
   if (!audited) return fail("举报状态已更新，但审计日志写入失败。");
 
   revalidatePath("/admin/messages");
-  revalidatePath("/admin/posts");
+  revalidatePath("/admin/user-posts");
   return ok(`举报状态${config.label}。`);
 }
 

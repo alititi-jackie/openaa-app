@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   ClipboardList,
   Database,
-  FileText,
   Home,
   LayoutGrid,
   Megaphone,
@@ -52,10 +51,10 @@ const adminEntryGroups: AdminEntryGroup[] = [
     description: "管理前台展示内容、用户发布内容和首页运营模块。",
     entries: [
       {
-        id: "posts",
-        title: "帖子管理",
-        description: "统一管理招聘、房屋、市场和本地服务帖子，支持隐藏、恢复、待审和软删除。",
-        href: "/admin/posts",
+        id: "user-posts",
+        title: "用户发布信息管理",
+        description: "统一管理用户发布的招聘、房屋、二手和本地服务信息，支持审核、下架、恢复显示、删除到回收站。",
+        href: "/admin/user-posts",
         icon: <ClipboardList size={20} aria-hidden="true" />,
         permissionKeys: ["view_posts", "moderate_posts"],
         status: "ready",
@@ -76,15 +75,6 @@ const adminEntryGroups: AdminEntryGroup[] = [
         href: "/admin/news",
         icon: <Newspaper size={20} aria-hidden="true" />,
         permissionKeys: ["view_news", "create_news", "edit_news", "publish_news", "delete_news"],
-        status: "ready",
-      },
-      {
-        id: "services",
-        title: "本地服务管理",
-        description: "旧站独立服务后台；新站通过帖子管理里的服务筛选统一处理。",
-        href: "/admin/posts?type=services",
-        icon: <FileText size={20} aria-hidden="true" />,
-        permissionKeys: ["view_posts", "moderate_posts"],
         status: "ready",
       },
       {

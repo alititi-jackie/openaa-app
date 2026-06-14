@@ -1,46 +1,68 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
-import { AdminActionForm } from "@/components/admin/AdminActionForm";
+import { useActionState, useMemo, useState } from "react";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
-import { setAdminPostStatus, type AdminPostActionState } from "@/features/posts/adminActions";
+import { sendAdminPostAuthorNotification, setAdminPostStatus, type AdminPostActionState } from "@/features/posts/adminActions";
 import type { AdminPostListItem, AdminPostsPermissions as AdminPostsPermissionSet } from "@/features/posts/adminQueries";
+import { POST_TYPE_LABELS, PUBLIC_POST_TYPES } from "@/features/posts/constants";
 import { postStatusLabel, postStatusTone } from "@/features/posts/display";
-import type { PostStatus } from "@/features/posts/types";
+import type { PostStatus, PostType } from "@/features/posts/types";
 
-const postTypeOptions: Array<{ value: "all" | "jobs" | "housing" | "marketplace" | "services"; label: string }> = [
-  { value: "all", label: "全部频道" },
-  { value: "jobs", label: "招聘" },
-  { value: "housing", label: "房屋" },
-  { value: "marketplace", label: "二手" },
-  { value: "services", label: "服务" },
+type TemplateOption = {
+  key: string;
+  title: string;
+  body: string;
+};
+
+const initialActionState: AdminPostActionState = { ok: true, message: "" };
+
+const postTypeOptions: Array<{ value: PostType | "all"; label: string }> = [
+  { value: "all", label: "全部类型" },
+  ...PUBLIC_POST_TYPES.map((type) => ({ value: type, label: POST_TYPE_LABELS[type] })),
 ];
 
 const postStatusOptions: Array<{ value: PostStatus | "all"; label: string }> = [
   { value: "all", label: "全部状态" },
-  { value: "draft", label: "草稿" },
   { value: "pending_review", label: "待审核" },
   { value: "published", label: "已发布" },
   { value: "hidden", label: "已下架" },
   { value: "rejected", label: "已拒绝" },
-  { value: "expired", label: "已过期" },
-  { value: "deleted", label: "已删除" },
 ];
 
-const initialActionState: AdminPostActionState = { ok: true, message: "" };
-
-const notifyDefaults: Partial<Record<PostStatus, { templateKey: string; title: string; body: string }>> = {
-  deleted: {
-    templateKey: "admin_post_deleted",
+const notificationTemplates: TemplateOption[] = [
+  {
+    key: "admin_post_deleted",
     title: "信息已被删除",
-    body: "你的信息已被管理员删除并移入回收站。如有疑问，请联系网站管理员。",
+    body: "因收到用户反馈、举报或平台审核发现问题，你的信息已被删除并移入回收站。如有疑问，请联系网站管理员。",
   },
-  rejected: {
-    templateKey: "admin_post_rejected",
-    title: "信息未通过审核",
-    body: "你的信息未通过审核，请根据提示修改后重新提交。",
+  {
+    key: "admin_post_hidden",
+    title: "信息已被下架",
+    body: "因收到用户反馈、举报或平台审核发现问题，你的信息已被下架，当前不会公开显示。如有疑问，请联系网站管理员。",
   },
+  {
+    key: "admin_post_restored",
+    title: "信息已恢复",
+    body: "你的已删除信息已由管理员恢复。当前状态为未上架，如需重新公开显示，请进入我的发布，点击恢复显示或重新上架。",
+  },
+  { key: "admin_post_published", title: "信息已恢复显示", body: "你的信息已恢复公开显示，用户现在可以正常查看。" },
+  { key: "admin_post_rejected", title: "信息未通过审核", body: "因内容不符合平台发布要求，你的信息未通过审核，请根据提示修改后重新提交。" },
+  { key: "content_issue", title: "内容需要修改", body: "你的信息内容存在问题，请修改后重新提交。" },
+  { key: "image_issue", title: "图片需要修改", body: "你的信息图片存在问题，请更换图片后重新提交。" },
+  { key: "contact_issue", title: "联系方式需要修改", body: "你的联系方式可能不完整或格式不正确，请修改后重新提交。" },
+  { key: "missing_info", title: "信息需要补充", body: "你的信息内容不够完整，请补充必要信息后重新提交。" },
+  { key: "wrong_category", title: "分类需要修改", body: "你的发布内容分类可能选择不正确，请重新选择合适的分类后再上架。" },
+  { key: "duplicate_post", title: "重复发布提醒", body: "你的信息可能存在重复发布，请保留一条有效信息，避免影响展示。" },
+  { key: "system_announcement", title: "平台通知", body: "这是一条平台通知，请进入通知中心查看详情。" },
+  { key: "account_notice", title: "账号提醒", body: "你的账号或资料需要注意，请进入个人中心查看并处理。" },
+];
+
+const statusTemplateDefaults: Partial<Record<PostStatus, string>> = {
+  published: "admin_post_published",
+  hidden: "admin_post_hidden",
+  rejected: "admin_post_rejected",
+  deleted: "admin_post_deleted",
 };
 
 export function AdminPostsPermissionBadges({ permissions }: { permissions: AdminPostsPermissionSet }) {
@@ -48,25 +70,14 @@ export function AdminPostsPermissionBadges({ permissions }: { permissions: Admin
     <>
       <AdminPermissionBadge allowed={permissions.viewPosts} label="view_posts" />
       <AdminPermissionBadge allowed={permissions.moderatePosts} label="moderate_posts" />
-      <AdminPermissionBadge allowed={permissions.approvePosts} label="approve_posts" />
-      <AdminPermissionBadge allowed={permissions.rejectPosts} label="reject_posts" />
-      <AdminPermissionBadge allowed={permissions.hidePosts} label="hide_posts" />
-      <AdminPermissionBadge allowed={permissions.restorePosts} label="restore_posts" />
-      <AdminPermissionBadge allowed={permissions.deletePosts} label="delete_posts" />
     </>
   );
 }
 
 export function AdminPostsFilter({ type, status, q, author }: { type?: string; status?: string; q?: string; author?: string }) {
   return (
-    <form action="/admin/posts" className="grid gap-3 md:grid-cols-3">
+    <form action="/admin/user-posts" className="grid gap-3 md:grid-cols-[minmax(0,180px)_minmax(0,180px)_1fr_auto]">
       {author ? <input type="hidden" name="author" value={author} /> : null}
-      <input
-        name="q"
-        defaultValue={q ?? ""}
-        placeholder="搜索标题或摘要"
-        className="min-h-10 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-500"
-      />
       <select
         name="type"
         defaultValue={type ?? "all"}
@@ -89,8 +100,14 @@ export function AdminPostsFilter({ type, status, q, author }: { type?: string; s
           </option>
         ))}
       </select>
-      <button type="submit" className="inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white md:col-span-3">
-        筛选帖子
+      <input
+        name="q"
+        defaultValue={q ?? ""}
+        placeholder="搜索标题、内容或作者"
+        className="min-h-10 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-500"
+      />
+      <button type="submit" className="inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white">
+        筛选
       </button>
     </form>
   );
@@ -98,7 +115,7 @@ export function AdminPostsFilter({ type, status, q, author }: { type?: string; s
 
 export function AdminPostsList({ posts, permissions }: { posts: AdminPostListItem[]; permissions: AdminPostsPermissionSet }) {
   if (posts.length === 0) {
-    return <p className="rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-500">暂无帖子记录。</p>;
+    return <p className="rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-500">暂无用户发布信息。</p>;
   }
 
   return (
@@ -106,29 +123,38 @@ export function AdminPostsList({ posts, permissions }: { posts: AdminPostListIte
       {posts.map((post) => (
         <article key={post.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-black text-blue-700">{post.typeLabel}</span>
                 <span className={`rounded-full px-2.5 py-1 text-xs font-black ${postStatusTone(post.status)}`}>{postStatusLabel(post.status)}</span>
-                <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-500">{post.visibility}</span>
+                <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-500">{post.publiclyVisible ? "公开显示" : "未公开显示"}</span>
               </div>
               <h3 className="mt-2 line-clamp-2 font-black text-slate-950">{post.title}</h3>
               <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-600">{post.summary}</p>
-              <p className="mt-2 break-all text-xs font-semibold text-slate-500">
-                作者 {post.authorId ?? "未知"} · 更新 {formatDate(post.updatedAt)}
-              </p>
+              <div className="mt-3 grid gap-1 break-all text-xs font-semibold text-slate-500 sm:grid-cols-2">
+                <span>作者：{post.authorLabel}</span>
+                <span>地区：{post.locationLabel}</span>
+                <span>发布时间：{formatDate(post.publishedAt ?? post.createdAt)}</span>
+                <span>更新时间：{formatDate(post.updatedAt)}</span>
+                <span>浏览数：{post.viewCount}</span>
+                <span>图片数量：{post.imageCount}</span>
+                <span className="sm:col-span-2">联系方式：{post.contactSummary}</span>
+              </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex w-full flex-wrap items-center gap-2 md:w-auto md:max-w-xs md:justify-end">
               {post.status === "published" ? (
                 <Link href={post.href} className="rounded-full bg-white px-3 py-1.5 text-xs font-black text-blue-700">
-                  公开页
+                  查看
                 </Link>
               ) : null}
-              <StatusAction post={post} status="published" label="发布/恢复" enabled={permissions.moderatePosts} />
+              <Link href={`/admin/user-posts?q=${encodeURIComponent(post.id)}`} className="rounded-full bg-white px-3 py-1.5 text-xs font-black text-slate-700">
+                编辑 / 管理
+              </Link>
+              <StatusAction post={post} status="published" label={post.status === "pending_review" ? "审核通过" : "恢复显示"} enabled={permissions.moderatePosts} />
               <StatusAction post={post} status="hidden" label="下架" enabled={permissions.moderatePosts} />
-              <StatusAction post={post} status="pending_review" label="待审核" enabled={permissions.moderatePosts} />
-              <StatusAction post={post} status="rejected" label="拒绝" enabled={permissions.moderatePosts} notify />
-              <StatusAction post={post} status="deleted" label="删除到回收站" enabled={permissions.moderatePosts} notify />
+              <StatusAction post={post} status="rejected" label="审核拒绝" enabled={permissions.moderatePosts} />
+              <StatusAction post={post} status="deleted" label="删除到回收站" enabled={permissions.moderatePosts} />
+              <NotifyAuthorAction post={post} enabled={permissions.moderatePosts} />
             </div>
           </div>
         </article>
@@ -178,40 +204,47 @@ export function AdminPostsPagination({
   );
 }
 
-function buildPageHref({ page, type, status, q, author }: { page: number; type?: string; status?: string; q?: string; author?: string }) {
-  const params = new URLSearchParams();
-  if (type && type !== "all") params.set("type", type);
-  if (status && status !== "all") params.set("status", status);
-  if (q) params.set("q", q);
-  if (author) params.set("author", author);
-  if (page > 1) params.set("page", String(page));
-  const query = params.toString();
-  return query ? `/admin/posts?${query}` : "/admin/posts";
-}
-
-function StatusAction({ post, status, label, enabled, notify = false }: { post: AdminPostListItem; status: PostStatus; label: string; enabled: boolean; notify?: boolean }) {
+function StatusAction({ post, status, label, enabled }: { post: AdminPostListItem; status: PostStatus; label: string; enabled: boolean }) {
   if (!enabled || post.status === status) return null;
-
-  if (notify && notifyDefaults[status]) {
-    return <NotifyStatusAction post={post} status={status} label={label} />;
-  }
-
-  return (
-    <AdminActionForm action={setAdminPostStatus} submitLabel={label} className="contents">
-      <input type="hidden" name="id" value={post.id} />
-      <input type="hidden" name="status" value={status} />
-    </AdminActionForm>
-  );
+  const templateKey = statusTemplateDefaults[status];
+  if (!templateKey) return null;
+  return <NotifyPostAction action={setAdminPostStatus} post={post} status={status} label={label} defaultTemplateKey={templateKey} />;
 }
 
-function NotifyStatusAction({ post, status, label }: { post: AdminPostListItem; status: PostStatus; label: string }) {
-  const defaults = notifyDefaults[status];
-  const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState(defaults?.title ?? "");
-  const [body, setBody] = useState(defaults?.body ?? "");
-  const [state, formAction, pending] = useActionState(setAdminPostStatus, initialActionState);
+function NotifyAuthorAction({ post, enabled }: { post: AdminPostListItem; enabled: boolean }) {
+  if (!enabled) return null;
+  return <NotifyPostAction action={sendAdminPostAuthorNotification} post={post} label="通知作者" defaultTemplateKey="content_issue" notifyOnly />;
+}
 
-  if (!defaults) return null;
+function NotifyPostAction({
+  action,
+  post,
+  status,
+  label,
+  defaultTemplateKey,
+  notifyOnly = false,
+}: {
+  action: (state: AdminPostActionState, formData: FormData) => Promise<AdminPostActionState>;
+  post: AdminPostListItem;
+  status?: PostStatus;
+  label: string;
+  defaultTemplateKey: string;
+  notifyOnly?: boolean;
+}) {
+  const defaultTemplate = getTemplate(defaultTemplateKey);
+  const [open, setOpen] = useState(false);
+  const [templateKey, setTemplateKey] = useState(defaultTemplate.key);
+  const [title, setTitle] = useState(defaultTemplate.title);
+  const [body, setBody] = useState(defaultTemplate.body);
+  const [state, formAction, pending] = useActionState(action, initialActionState);
+  const selectedTemplate = useMemo(() => getTemplate(templateKey), [templateKey]);
+
+  function handleTemplateChange(nextKey: string) {
+    const nextTemplate = getTemplate(nextKey);
+    setTemplateKey(nextTemplate.key);
+    setTitle(nextTemplate.title);
+    setBody(nextTemplate.body);
+  }
 
   return (
     <>
@@ -222,8 +255,8 @@ function NotifyStatusAction({ post, status, label }: { post: AdminPostListItem; 
         <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 px-4">
           <form action={formAction} className="w-full max-w-lg rounded-2xl bg-white p-4 shadow-xl">
             <input type="hidden" name="id" value={post.id} />
-            <input type="hidden" name="status" value={status} />
-            <input type="hidden" name="notification_template_key" value={defaults.templateKey} />
+            {status ? <input type="hidden" name="status" value={status} /> : null}
+            <input type="hidden" name="notification_template_key" value={templateKey} />
             <input type="hidden" name="notification_action_url" value="/profile/posts" />
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -236,10 +269,19 @@ function NotifyStatusAction({ post, status, label }: { post: AdminPostListItem; 
             </div>
             <label className="mt-4 grid gap-1.5 text-sm font-bold text-slate-700">
               <span>模板</span>
-              <select name="template_preview" value={defaults.templateKey} disabled className="min-h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
-                <option value={defaults.templateKey}>{defaults.templateKey}</option>
+              <select
+                value={templateKey}
+                onChange={(event) => handleTemplateChange(event.target.value)}
+                className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-500"
+              >
+                {notificationTemplates.map((template) => (
+                  <option key={template.key} value={template.key}>
+                    {template.title} · {template.key}
+                  </option>
+                ))}
               </select>
             </label>
+            <p className="mt-2 rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold leading-5 text-slate-500">当前模板：{selectedTemplate.key}</p>
             <label className="mt-3 grid gap-1.5 text-sm font-bold text-slate-700">
               <span>通知标题</span>
               <input name="notification_title" value={title} onChange={(event) => setTitle(event.target.value)} className="min-h-10 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-500" />
@@ -253,11 +295,13 @@ function NotifyStatusAction({ post, status, label }: { post: AdminPostListItem; 
               <button type="button" onClick={() => setOpen(false)} disabled={pending} className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 disabled:opacity-60">
                 取消
               </button>
-              <button type="submit" disabled={pending} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-700 px-4 py-2 text-sm font-black text-white disabled:opacity-60">
-                不通知用户，直接执行
-              </button>
+              {!notifyOnly ? (
+                <button type="submit" disabled={pending} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-700 px-4 py-2 text-sm font-black text-white disabled:opacity-60">
+                  不通知用户，直接执行
+                </button>
+              ) : null}
               <button type="submit" name="notify_user" value="on" disabled={pending} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white disabled:opacity-60">
-                通知用户并执行
+                {notifyOnly ? "发送通知" : "通知用户并执行"}
               </button>
             </div>
           </form>
@@ -265,6 +309,21 @@ function NotifyStatusAction({ post, status, label }: { post: AdminPostListItem; 
       ) : null}
     </>
   );
+}
+
+function buildPageHref({ page, type, status, q, author }: { page: number; type?: string; status?: string; q?: string; author?: string }) {
+  const params = new URLSearchParams();
+  if (type && type !== "all") params.set("type", type);
+  if (status && status !== "all") params.set("status", status);
+  if (q) params.set("q", q);
+  if (author) params.set("author", author);
+  if (page > 1) params.set("page", String(page));
+  const query = params.toString();
+  return query ? `/admin/user-posts?${query}` : "/admin/user-posts";
+}
+
+function getTemplate(key: string) {
+  return notificationTemplates.find((template) => template.key === key) ?? notificationTemplates[0];
 }
 
 function formatDate(value: string | null) {

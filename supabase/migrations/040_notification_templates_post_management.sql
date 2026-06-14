@@ -1,0 +1,114 @@
+insert into public.notification_templates (key, title, body, type, target_type, is_active)
+values
+  (
+    'admin_post_deleted',
+    '信息已被删除',
+    '因收到用户反馈、举报或平台审核发现问题，你的信息已被删除并移入回收站。如有疑问，请联系网站管理员。',
+    'content',
+    'post',
+    true
+  ),
+  (
+    'admin_post_hidden',
+    '信息已被下架',
+    '因收到用户反馈、举报或平台审核发现问题，你的信息已被下架，当前不会公开显示。如有疑问，请联系网站管理员。',
+    'content',
+    'post',
+    true
+  ),
+  (
+    'admin_post_restored',
+    '信息已恢复',
+    '你的已删除信息已由管理员恢复。当前状态为未上架，如需重新公开显示，请进入我的发布，点击恢复显示或重新上架。',
+    'content',
+    'post',
+    true
+  ),
+  (
+    'admin_post_published',
+    '信息已恢复显示',
+    '你的信息已恢复公开显示，用户现在可以正常查看。',
+    'content',
+    'post',
+    true
+  ),
+  (
+    'admin_post_rejected',
+    '信息未通过审核',
+    '因内容不符合平台发布要求，你的信息未通过审核，请根据提示修改后重新提交。',
+    'content',
+    'post',
+    true
+  ),
+  (
+    'content_issue',
+    '内容需要修改',
+    '你的信息内容存在问题，请修改后重新提交。',
+    'content',
+    'post',
+    true
+  ),
+  (
+    'image_issue',
+    '图片需要修改',
+    '你的信息图片存在问题，请更换图片后重新提交。',
+    'content',
+    'post',
+    true
+  ),
+  (
+    'contact_issue',
+    '联系方式需要修改',
+    '你的联系方式可能不完整或格式不正确，请修改后重新提交。',
+    'content',
+    'post',
+    true
+  ),
+  (
+    'missing_info',
+    '信息需要补充',
+    '你的信息内容不够完整，请补充必要信息后重新提交。',
+    'content',
+    'post',
+    true
+  ),
+  (
+    'wrong_category',
+    '分类需要修改',
+    '你的发布内容分类可能选择不正确，请重新选择合适的分类后再上架。',
+    'content',
+    'post',
+    true
+  ),
+  (
+    'duplicate_post',
+    '重复发布提醒',
+    '你的信息可能存在重复发布，请保留一条有效信息，避免影响展示。',
+    'content',
+    'post',
+    true
+  ),
+  (
+    'system_announcement',
+    '平台通知',
+    '这是一条平台通知，请进入通知中心查看详情。',
+    'system',
+    null,
+    true
+  ),
+  (
+    'account_notice',
+    '账号提醒',
+    '你的账号或资料需要注意，请进入个人中心查看并处理。',
+    'account',
+    'profile',
+    true
+  )
+on conflict (key) do update
+set
+  title = excluded.title,
+  body = excluded.body,
+  type = excluded.type,
+  target_type = excluded.target_type,
+  is_active = excluded.is_active,
+  updated_at = now();

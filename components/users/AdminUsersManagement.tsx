@@ -172,8 +172,8 @@ export function AdminUsersList({
             ) : (
               <span className="text-xs font-bold text-slate-500">当前账号只能查看，不能修改用户状态。</span>
             )}
-            <Link href={`/admin/posts?author=${encodeURIComponent(user.id)}`} className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-700">
-              去帖子管理
+            <Link href={`/admin/user-posts?author=${encodeURIComponent(user.id)}`} className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-700">
+              去用户发布信息管理
             </Link>
           </div>
         </article>

@@ -72,7 +72,7 @@ New notifications should prefer `action_url`. Existing `link_url` rows remain re
 - `created_at`
 - `updated_at`
 
-Seeded templates: `admin_post_deleted`, `admin_post_restored`, `admin_post_rejected`, `content_issue`, `image_issue`, and `contact_issue`.
+Seeded templates: `admin_post_deleted`, `admin_post_hidden`, `admin_post_restored`, `admin_post_published`, `admin_post_rejected`, `content_issue`, `image_issue`, `contact_issue`, `missing_info`, `wrong_category`, `duplicate_post`, `system_announcement`, and `account_notice`.
 
 Admin sends, bulk sends, and automatic moderation notifications use `features/notifications/service.ts` and write audit records to `admin_audit_logs`.
 

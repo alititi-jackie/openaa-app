@@ -26,10 +26,16 @@ export type AdminPostListItem = {
   category: string | null;
   visibility: string;
   authorId: string | null;
+  authorLabel: string;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
   href: string;
+  locationLabel: string;
+  viewCount: number;
+  imageCount: number;
+  contactSummary: string;
+  publiclyVisible: boolean;
 };
 
 type AdminPostsResult = {
@@ -53,9 +59,20 @@ type AdminPostRecord = {
   category: string | null;
   status: PostStatus;
   visibility: string;
+  city_slug: string | null;
   published_at: string | null;
   created_at: string;
   updated_at: string;
+  post_contacts?: PostContactSummary[] | PostContactSummary | null;
+  post_images?: Array<{ id: string | null }> | null;
+  post_stats?: { view_count: number | null }[] | { view_count: number | null } | null;
+};
+
+type PostContactSummary = {
+  contact_name: string | null;
+  phone: string | null;
+  email: string | null;
+  wechat: string | null;
 };
 
 export type AdminPostsParams = {
@@ -209,7 +226,7 @@ export async function getAdminPostsData(params: AdminPostsParams = {}): Promise<
 
   let query = supabase
     .from("posts")
-    .select("id,post_type,author_id,title,summary,body,category,status,visibility,published_at,created_at,updated_at", { count: "exact" })
+    .select("id,post_type,author_id,title,summary,body,category,status,visibility,city_slug,published_at,created_at,updated_at,post_contacts(contact_name,phone,email,wechat),post_images(id),post_stats(view_count)", { count: "exact" })
     .order("updated_at", { ascending: false })
     .range(from, to);
 
@@ -230,7 +247,7 @@ export async function getAdminPostsData(params: AdminPostsParams = {}): Promise<
   if (params.q) {
     const keyword = sanitizeSearchTerm(params.q);
     if (keyword) {
-      query = query.or(`title.ilike.%${keyword}%,summary.ilike.%${keyword}%`);
+      query = query.or(`title.ilike.%${keyword}%,summary.ilike.%${keyword}%,body.ilike.%${keyword}%`);
     }
   }
 
@@ -532,6 +549,11 @@ function isUuid(value: string) {
 }
 
 function mapAdminPost(record: AdminPostRecord): AdminPostListItem {
+  const contact = relationOne(record.post_contacts);
+  const stats = relationOne(record.post_stats);
+  const viewCount = Number(stats?.view_count ?? 0);
+  const imageCount = Array.isArray(record.post_images) ? record.post_images.length : 0;
+
   return {
     id: record.id,
     type: record.post_type,
@@ -542,11 +564,28 @@ function mapAdminPost(record: AdminPostRecord): AdminPostListItem {
     category: record.category,
     visibility: record.visibility,
     authorId: record.author_id,
+    authorLabel: record.author_id ?? "未知作者",
     publishedAt: record.published_at,
     createdAt: record.created_at,
     updatedAt: record.updated_at,
     href: `${POST_TYPE_TO_ROUTE[record.post_type]}/${record.id}`,
+    locationLabel: record.city_slug || "未填写",
+    viewCount: Number.isFinite(viewCount) ? viewCount : 0,
+    imageCount,
+    contactSummary: contactSummary(contact),
+    publiclyVisible: record.status === "published" && record.visibility === "public",
   };
+}
+
+function relationOne<T>(value: T[] | T | null | undefined): T | null {
+  if (!value) return null;
+  return Array.isArray(value) ? (value[0] ?? null) : value;
+}
+
+function contactSummary(contact: PostContactSummary | null) {
+  if (!contact) return "未填写";
+  const parts = [contact.contact_name, contact.phone, contact.wechat, contact.email].filter(Boolean);
+  return parts.length > 0 ? parts.join(" / ") : "未填写";
 }
 
 type RecycleBinPostRecord = {

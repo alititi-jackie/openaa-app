@@ -150,8 +150,8 @@ export function AdminReportsList({ reports, permissions }: { reports: AdminRepor
                   查看帖子
                 </Link>
               ) : null}
-              <Link href={`/admin/posts?q=${encodeURIComponent(report.postId)}`} className="rounded-full bg-white px-3 py-1.5 text-xs font-black text-slate-700">
-                跳转帖子管理
+              <Link href={`/admin/user-posts?q=${encodeURIComponent(report.postId)}`} className="rounded-full bg-white px-3 py-1.5 text-xs font-black text-slate-700">
+                跳转用户发布信息管理
               </Link>
               <ReportStatusActions report={report} permissions={permissions} />
               <PostModerationActions report={report} permissions={permissions} />
