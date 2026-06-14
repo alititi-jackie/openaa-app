@@ -59,7 +59,7 @@ type AdminPostRecord = {
   category: string | null;
   status: PostStatus;
   visibility: string;
-  city_slug: string | null;
+  cities?: { name: string | null; slug: string | null }[] | { name: string | null; slug: string | null } | null;
   published_at: string | null;
   created_at: string;
   updated_at: string;
@@ -226,7 +226,7 @@ export async function getAdminPostsData(params: AdminPostsParams = {}): Promise<
 
   let query = supabase
     .from("posts")
-    .select("id,post_type,author_id,title,summary,body,category,status,visibility,city_slug,published_at,created_at,updated_at,post_contacts(contact_name,phone,email,wechat),post_images(id),post_stats(view_count)", { count: "exact" })
+    .select("id,post_type,author_id,title,summary,body,category,status,visibility,published_at,created_at,updated_at,cities(name,slug),post_contacts(contact_name,phone,email,wechat),post_images(id),post_stats(view_count)", { count: "exact" })
     .order("updated_at", { ascending: false })
     .range(from, to);
 
@@ -253,6 +253,12 @@ export async function getAdminPostsData(params: AdminPostsParams = {}): Promise<
 
   const { data, error, count } = await query;
   if (error) {
+    console.error("[admin/user-posts] Failed to read posts", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
     return { ...emptyResult("error", permissions, page), error: "后台帖子读取失败，请稍后再试。" };
   }
 
@@ -551,6 +557,7 @@ function isUuid(value: string) {
 function mapAdminPost(record: AdminPostRecord): AdminPostListItem {
   const contact = relationOne(record.post_contacts);
   const stats = relationOne(record.post_stats);
+  const city = relationOne(record.cities);
   const viewCount = Number(stats?.view_count ?? 0);
   const imageCount = Array.isArray(record.post_images) ? record.post_images.length : 0;
 
@@ -569,7 +576,7 @@ function mapAdminPost(record: AdminPostRecord): AdminPostListItem {
     createdAt: record.created_at,
     updatedAt: record.updated_at,
     href: `${POST_TYPE_TO_ROUTE[record.post_type]}/${record.id}`,
-    locationLabel: record.city_slug || "未填写",
+    locationLabel: city?.name || city?.slug || "未填写",
     viewCount: Number.isFinite(viewCount) ? viewCount : 0,
     imageCount,
     contactSummary: contactSummary(contact),
