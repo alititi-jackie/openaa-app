@@ -147,7 +147,7 @@ async function getProfileCounts(userId: string) {
   }
 
   const [notifications, favorites, recent] = await Promise.all([
-    supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", userId).is("read_at", null),
+    supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", userId).is("deleted_at", null).is("read_at", null),
     supabase.from("user_favorites").select("id", { count: "exact", head: true }).eq("user_id", userId).in("target_type", [...FAVORITE_VISIBLE_TYPES]),
     supabase.from("post_views").select("post_id").eq("user_id", userId).order("created_at", { ascending: false }).limit(200),
   ]);

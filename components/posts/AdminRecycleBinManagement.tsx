@@ -21,6 +21,11 @@ import type {
 } from "@/features/posts/adminQueries";
 
 const initialActionState: AdminPostActionState = { ok: true, message: "" };
+const restoreNotificationDefault = {
+  templateKey: "admin_post_restored",
+  title: "信息已恢复",
+  body: "你的已删除信息已由管理员恢复。当前状态为未上架，如需重新公开显示，请进入我的发布，点击恢复显示或重新上架。",
+};
 
 export function RecycleBinSettingsSection({ settings }: { settings: RecycleBinRetentionSettings }) {
   const [state, action, pending] = useActionState(updateRecycleBinRetentionSettings, initialActionState);
@@ -188,7 +193,10 @@ function HealthLink({ label, value, href, active }: { label: string; value: numb
 function RecycleBinRow({ item }: { item: RecycleBinItem }) {
   const [restoreState, restoreAction, restorePending] = useActionState(restoreDeletedPost, initialActionState);
   const [deleteState, deleteAction, deletePending] = useActionState(permanentlyDeletePost, initialActionState);
-  const restored = restoreState.ok && restoreState.message === "已恢复";
+  const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
+  const [notificationTitle, setNotificationTitle] = useState(restoreNotificationDefault.title);
+  const [notificationBody, setNotificationBody] = useState(restoreNotificationDefault.body);
+  const restored = restoreState.ok && restoreState.message.startsWith("已恢复");
 
   return (
     <article className="rounded-xl border border-slate-100 bg-slate-50 p-3">
@@ -219,14 +227,65 @@ function RecycleBinRow({ item }: { item: RecycleBinItem }) {
           </Link>
           {restored ? null : (
             <>
-              <form action={restoreAction}>
-                <input type="hidden" name="id" value={item.id} />
-                <input type="hidden" name="resource_type" value={item.contentType} />
-                <input type="hidden" name="content_type" value={item.contentType} />
-                <button type="submit" disabled={restorePending} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-emerald-600 px-3 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60">
+              {item.contentType === "post" ? (
+                <button type="button" onClick={() => setRestoreDialogOpen(true)} disabled={restorePending} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-emerald-600 px-3 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60">
                   {restorePending ? "恢复中..." : "恢复"}
                 </button>
-              </form>
+              ) : (
+                <form action={restoreAction}>
+                  <input type="hidden" name="id" value={item.id} />
+                  <input type="hidden" name="resource_type" value={item.contentType} />
+                  <input type="hidden" name="content_type" value={item.contentType} />
+                  <button type="submit" disabled={restorePending} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-emerald-600 px-3 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60">
+                    {restorePending ? "恢复中..." : "恢复"}
+                  </button>
+                </form>
+              )}
+              {item.contentType === "post" && restoreDialogOpen ? (
+                <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 px-4">
+                  <form action={restoreAction} className="w-full max-w-lg rounded-2xl bg-white p-4 shadow-xl">
+                    <input type="hidden" name="id" value={item.id} />
+                    <input type="hidden" name="resource_type" value={item.contentType} />
+                    <input type="hidden" name="content_type" value={item.contentType} />
+                    <input type="hidden" name="notification_template_key" value={restoreNotificationDefault.templateKey} />
+                    <input type="hidden" name="notification_action_url" value="/profile/posts" />
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="text-lg font-black text-slate-950">通知用户</h3>
+                        <p className="mt-1 text-sm font-semibold text-slate-500">{item.title}</p>
+                      </div>
+                      <button type="button" onClick={() => setRestoreDialogOpen(false)} className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-700">
+                        取消
+                      </button>
+                    </div>
+                    <label className="mt-4 grid gap-1.5 text-sm font-bold text-slate-700">
+                      <span>模板</span>
+                      <select value={restoreNotificationDefault.templateKey} disabled className="min-h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
+                        <option value={restoreNotificationDefault.templateKey}>{restoreNotificationDefault.templateKey}</option>
+                      </select>
+                    </label>
+                    <label className="mt-3 grid gap-1.5 text-sm font-bold text-slate-700">
+                      <span>通知标题</span>
+                      <input name="notification_title" value={notificationTitle} onChange={(event) => setNotificationTitle(event.target.value)} className="min-h-10 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-500" />
+                    </label>
+                    <label className="mt-3 grid gap-1.5 text-sm font-bold text-slate-700">
+                      <span>通知正文</span>
+                      <textarea name="notification_body" rows={5} value={notificationBody} onChange={(event) => setNotificationBody(event.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm leading-6 text-slate-900 outline-none focus:border-blue-500" />
+                    </label>
+                    <div className="mt-4 flex flex-wrap justify-end gap-2">
+                      <button type="button" onClick={() => setRestoreDialogOpen(false)} disabled={restorePending} className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 disabled:opacity-60">
+                        取消
+                      </button>
+                      <button type="submit" disabled={restorePending} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-700 px-4 py-2 text-sm font-black text-white disabled:opacity-60">
+                        不通知用户，直接执行
+                      </button>
+                      <button type="submit" name="notify_user" value="on" disabled={restorePending} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white disabled:opacity-60">
+                        通知用户并执行
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              ) : null}
               <form action={deleteAction} className="grid gap-2 rounded-xl bg-white p-2 ring-1 ring-red-100">
                 <input type="hidden" name="id" value={item.id} />
                 <input type="hidden" name="resource_type" value={item.contentType} />

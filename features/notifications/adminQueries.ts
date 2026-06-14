@@ -1,7 +1,8 @@
 import "server-only";
 
-import { hasAdminPermission } from "@/lib/permissions/admin";
+import { hasAdminPermission, isSuperAdmin } from "@/lib/permissions/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getActiveNotificationTemplates, type NotificationTemplate } from "./service";
 
 const PAGE_SIZE = 20;
 
@@ -35,7 +36,9 @@ export type AdminNotificationListItem = {
   title: string;
   body: string | null;
   linkUrl: string | null;
+  actionUrl: string | null;
   data: Record<string, unknown>;
+  metadata: Record<string, unknown> | null;
   readAt: string | null;
   createdAt: string;
 };
@@ -44,7 +47,9 @@ export type AdminNotificationsData = {
   state: "ready" | "missing_config" | "error";
   error?: string;
   canManageNotifications: boolean;
+  canSendBulkNotifications: boolean;
   notifications: AdminNotificationListItem[];
+  templates: NotificationTemplate[];
   totals: { total: number; unread: number; read: number };
   page: number;
   pageCount: number;
@@ -62,14 +67,16 @@ type AdminNotificationsFilters = {
 export async function getAdminNotificationsData(filters: AdminNotificationsFilters = {}): Promise<AdminNotificationsData> {
   const supabase = await createSupabaseServerClient();
   const canManageNotifications = await hasAdminPermission("manage_notifications");
+  const canSendBulkNotifications = await isSuperAdmin();
   const page = Math.max(1, filters.page ?? 1);
 
-  if (!canManageNotifications) return emptyResult("ready", false, page);
-  if (!supabase) return emptyResult("missing_config", canManageNotifications, page, "Supabase 环境变量未配置，暂时无法读取通知后台。");
+  if (!canManageNotifications) return emptyResult("ready", false, canSendBulkNotifications, page);
+  if (!supabase) return emptyResult("missing_config", canManageNotifications, canSendBulkNotifications, page, "Supabase 环境变量未配置，暂时无法读取通知后台。");
 
   let query = supabase
     .from("notifications")
-    .select("id,user_id,type,title,body,link_url,data,read_at,created_at", { count: "exact" })
+    .select("id,user_id,type,title,body,link_url,action_url,data,metadata,read_at,created_at", { count: "exact" })
+    .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
   if (filters.type && filters.type !== "all") query = query.eq("type", filters.type);
@@ -84,15 +91,20 @@ export async function getAdminNotificationsData(filters: AdminNotificationsFilte
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
   const { data, error, count } = await query.range(from, to);
-  if (error) return emptyResult("error", canManageNotifications, page, "通知后台读取失败，请稍后再试。");
+  if (error) return emptyResult("error", canManageNotifications, canSendBulkNotifications, page, "通知后台读取失败，请稍后再试。");
 
-  const totals = await getNotificationTotals(supabase);
+  const [totals, templates] = await Promise.all([
+    getNotificationTotals(supabase),
+    getActiveNotificationTemplates().catch(() => []),
+  ]);
   const totalCount = count ?? 0;
 
   return {
     state: "ready",
     canManageNotifications,
+    canSendBulkNotifications,
     notifications: (data ?? []).map(mapNotification),
+    templates,
     totals,
     page,
     pageCount: Math.max(1, Math.ceil(totalCount / PAGE_SIZE)),
@@ -113,9 +125,9 @@ export function normalizeNotificationTypeFilter(value?: string): NotificationTyp
 
 async function getNotificationTotals(supabase: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>) {
   const [total, unread, read] = await Promise.all([
-    supabase.from("notifications").select("id", { count: "exact", head: true }),
-    supabase.from("notifications").select("id", { count: "exact", head: true }).is("read_at", null),
-    supabase.from("notifications").select("id", { count: "exact", head: true }).not("read_at", "is", null),
+    supabase.from("notifications").select("id", { count: "exact", head: true }).is("deleted_at", null),
+    supabase.from("notifications").select("id", { count: "exact", head: true }).is("deleted_at", null).is("read_at", null),
+    supabase.from("notifications").select("id", { count: "exact", head: true }).is("deleted_at", null).not("read_at", "is", null),
   ]);
 
   return {
@@ -135,7 +147,9 @@ function mapNotification(row: Record<string, unknown>): AdminNotificationListIte
     title: typeof row.title === "string" ? row.title : "未命名通知",
     body: typeof row.body === "string" ? row.body : null,
     linkUrl: typeof row.link_url === "string" ? row.link_url : null,
+    actionUrl: typeof row.action_url === "string" ? row.action_url : null,
     data: row.data && typeof row.data === "object" && !Array.isArray(row.data) ? (row.data as Record<string, unknown>) : {},
+    metadata: row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata) ? (row.metadata as Record<string, unknown>) : null,
     readAt: typeof row.read_at === "string" ? row.read_at : null,
     createdAt: typeof row.created_at === "string" ? row.created_at : "",
   };
@@ -144,6 +158,7 @@ function mapNotification(row: Record<string, unknown>): AdminNotificationListIte
 function emptyResult(
   state: AdminNotificationsData["state"],
   canManageNotifications: boolean,
+  canSendBulkNotifications: boolean,
   page: number,
   error?: string,
 ): AdminNotificationsData {
@@ -151,7 +166,9 @@ function emptyResult(
     state,
     error,
     canManageNotifications,
+    canSendBulkNotifications,
     notifications: [],
+    templates: [],
     totals: { total: 0, unread: 0, read: 0 },
     page,
     pageCount: 1,

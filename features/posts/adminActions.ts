@@ -6,6 +6,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { POST_TYPE_TO_ROUTE } from "./constants";
 import { postHref } from "./formMappers";
+import { sendNotificationFromTemplate, sendNotificationToUser, writeNotificationAuditLog } from "@/features/notifications/service";
 import {
   MAX_RECYCLE_BIN_RETENTION_DAYS,
   MIN_RECYCLE_BIN_RETENTION_DAYS,
@@ -175,7 +176,17 @@ export async function setAdminPostStatus(_state: AdminPostActionState, formData:
   const audited = await writeAuditLog(context, auditActionForStatus(status), id, before, auditPayload);
   if (!audited) return fail("帖子状态已更新，但审计日志写入失败。");
 
+  const notificationResult = await maybeSendPostActionNotification({
+    actorId: context.userId,
+    authorId: before.author_id,
+    postId: id,
+    postType: before.post_type,
+    status,
+    formData,
+  });
+
   revalidatePost(before.post_type, id);
+  if (!notificationResult.ok) return ok(`帖子状态已更新，但通知发送失败：${notificationResult.message}`);
   return ok("帖子状态已更新。");
 }
 
@@ -209,7 +220,18 @@ export async function restoreDeletedPost(_state: AdminPostActionState, formData:
   if (error) return fail("恢复失败，请稍后再试。");
 
   await writeAuditLog(context, "restore_post_from_recycle_bin", id, before, payload);
+  const notificationResult = await maybeSendPostActionNotification({
+    actorId: context.userId,
+    authorId: before.author_id,
+    postId: id,
+    postType: before.post_type,
+    status: "hidden",
+    templateFallback: "admin_post_restored",
+    formData,
+    adminSupabase: context.adminSupabase,
+  });
   revalidatePost(before.post_type, id);
+  if (!notificationResult.ok) return ok(`已恢复；通知发送失败：${notificationResult.message}`);
   return ok("已恢复");
 }
 
@@ -429,6 +451,104 @@ async function getSuperAdminActionContext(): Promise<SuperAdminActionContext> {
   } catch {
     return { ok: false, message: "Supabase service role 环境变量未配置，无法执行永久删除。" };
   }
+}
+
+async function maybeSendPostActionNotification({
+  actorId,
+  authorId,
+  postId,
+  postType,
+  status,
+  formData,
+  templateFallback,
+  adminSupabase,
+}: {
+  actorId: string;
+  authorId: string | null;
+  postId: string;
+  postType: PostType;
+  status: PostStatus;
+  formData: FormData;
+  templateFallback?: string;
+  adminSupabase?: ReturnType<typeof createSupabaseAdminClient>;
+}): Promise<{ ok: true } | { ok: false; message: string }> {
+  if (readText(formData, "notify_user") !== "on") return { ok: true };
+  if (!authorId) return { ok: false, message: "该内容没有作者 ID。" };
+
+  const templateKey = readText(formData, "notification_template_key") || templateFallback || notificationTemplateForStatus(status);
+  if (!templateKey) return { ok: true };
+
+  let supabase = adminSupabase;
+  if (!supabase) {
+    try {
+      supabase = createSupabaseAdminClient();
+    } catch {
+      return { ok: false, message: "Supabase service role 环境变量未配置。" };
+    }
+  }
+
+  const title = readText(formData, "notification_title");
+  const body = readText(formData, "notification_body");
+  const actionUrl = readText(formData, "notification_action_url") || "/profile/posts";
+
+  const result = title || body
+    ? await sendNotificationToUser(
+        {
+          userId: authorId,
+          title,
+          body,
+          type: "content",
+          targetType: "post",
+          targetId: postId,
+          actionUrl,
+          createdBy: actorId,
+          metadata: {
+            source: "admin_post_action",
+            status,
+            template_key: templateKey,
+            post_type: postType,
+          },
+        },
+        supabase,
+      )
+    : await sendNotificationFromTemplate({
+        templateKey,
+        userId: authorId,
+        targetType: "post",
+        targetId: postId,
+        actionUrl,
+        createdBy: actorId,
+        metadata: {
+          source: "admin_post_action",
+          status,
+          post_type: postType,
+        },
+        supabase,
+      });
+
+  if (!result.ok) {
+    await writeNotificationAuditLog(supabase, {
+      actorId,
+      action: "post_action_notification_failed",
+      entityId: postId,
+      afterData: {
+        author_id: authorId,
+        post_type: postType,
+        status,
+        template_key: templateKey,
+        error: result.error ?? "Unknown notification failure.",
+      },
+    });
+    return { ok: false, message: result.error ?? "通知发送失败。" };
+  }
+
+  return { ok: true };
+}
+
+function notificationTemplateForStatus(status: PostStatus) {
+  if (status === "deleted") return "admin_post_deleted";
+  if (status === "rejected") return "admin_post_rejected";
+  return "";
 }
 
 async function readPostImagesForPermanentDelete(adminSupabase: ReturnType<typeof createSupabaseAdminClient>, postId: string) {

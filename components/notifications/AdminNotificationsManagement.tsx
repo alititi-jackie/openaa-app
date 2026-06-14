@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { Bell, CheckCircle2, MailWarning } from "lucide-react";
-import { AdminActionForm } from "@/components/admin/AdminActionForm";
+import { AdminActionForm, AdminSelect, AdminTextarea, AdminTextInput } from "@/components/admin/AdminActionForm";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
-import { deleteAdminNotification } from "@/features/notifications/adminActions";
+import { deleteAdminNotification, sendAdminNotification, sendBulkAdminNotification } from "@/features/notifications/adminActions";
 import {
   notificationTypeOptions,
   type AdminNotificationListItem,
   type NotificationReadFilter,
 } from "@/features/notifications/adminQueries";
+import type { NotificationTemplate } from "@/features/notifications/service";
 
 const readOptions: Array<{ value: NotificationReadFilter; label: string }> = [
   { value: "all", label: "全部状态" },
@@ -68,6 +69,84 @@ export function AdminNotificationsFilter({ type, read, q }: { type?: string; rea
   );
 }
 
+export function AdminNotificationSendForms({
+  templates,
+  canSendBulkNotifications,
+}: {
+  templates: NotificationTemplate[];
+  canSendBulkNotifications: boolean;
+}) {
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <AdminActionForm action={sendAdminNotification} submitLabel="发送通知">
+        <NotificationTemplateSelect templates={templates} />
+        <AdminSelect label="类型" name="type" defaultValue="system" options={notificationTypeOptions.filter((option) => option.value !== "all")} />
+        <AdminTextInput label="用户 ID" name="user_id" required placeholder="用户 UUID" />
+        <AdminTextInput label="标题（可覆盖模板）" name="title" placeholder="自定义标题" />
+        <AdminTextarea label="正文（可覆盖模板）" name="body" rows={4} />
+        <AdminTextInput label="跳转链接 action_url" name="action_url" placeholder="/profile/posts" />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <AdminTextInput label="target_type" name="target_type" placeholder="post" />
+          <AdminTextInput label="target_id" name="target_id" placeholder="关联内容 ID" />
+        </div>
+      </AdminActionForm>
+
+      {canSendBulkNotifications ? (
+        <AdminActionForm action={sendBulkAdminNotification} submitLabel="群发通知">
+          <NotificationTemplateSelect templates={templates} />
+          <AdminSelect
+            label="收件人"
+            name="recipient_scope"
+            defaultValue="active"
+            options={[
+              { value: "active", label: "全部 active 用户" },
+              { value: "all", label: "全部用户" },
+            ]}
+          />
+          <AdminSelect label="类型" name="type" defaultValue="system" options={notificationTypeOptions.filter((option) => option.value !== "all")} />
+          <AdminTextInput label="标题（可覆盖模板）" name="title" placeholder="自定义标题" />
+          <AdminTextarea label="正文（可覆盖模板）" name="body" rows={4} />
+          <AdminTextInput label="跳转链接 action_url" name="action_url" placeholder="/profile/notifications" />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <AdminTextInput label="target_type" name="target_type" placeholder="announcement" />
+            <AdminTextInput label="target_id" name="target_id" placeholder="可选关联 ID" />
+          </div>
+        </AdminActionForm>
+      ) : (
+        <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm font-semibold leading-6 text-slate-600">
+          群发通知仅 super_admin 可用。当前账号仍可按用户发送通知。
+        </div>
+      )}
+    </div>
+  );
+}
+
+function NotificationTemplateSelect({ templates }: { templates: NotificationTemplate[] }) {
+  return (
+    <div className="space-y-3">
+      <AdminSelect
+        label="通知模板"
+        name="template_key"
+        defaultValue=""
+        options={[
+          { value: "", label: "不使用模板 / 自定义内容" },
+          ...templates.map((template) => ({ value: template.key, label: `${template.key} · ${template.title}` })),
+        ]}
+      />
+      {templates.length > 0 ? (
+        <div className="grid gap-2">
+          {templates.map((template) => (
+            <details key={template.key} className="rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-600 ring-1 ring-slate-100">
+              <summary className="cursor-pointer font-black text-slate-800">{template.title}</summary>
+              <p className="mt-2 whitespace-pre-wrap">{template.body}</p>
+            </details>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function AdminNotificationsList({ notifications }: { notifications: AdminNotificationListItem[] }) {
   if (notifications.length === 0) {
     return <p className="rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-500">暂无通知记录。</p>;
@@ -93,7 +172,7 @@ export function AdminNotificationsList({ notifications }: { notifications: Admin
                 <div className="mt-3 grid gap-1 break-all text-xs font-semibold text-slate-500">
                   <span>用户 ID：{item.userId}</span>
                   <span>已读时间：{item.readAt ? formatDateTime(item.readAt) : "未读"}</span>
-                  <span>链接：{item.linkUrl || "无"}</span>
+                  <span>链接：{item.actionUrl || item.linkUrl || "无"}</span>
                 </div>
               </div>
               <AdminActionForm action={deleteAdminNotification} submitLabel="删除通知" className="contents">

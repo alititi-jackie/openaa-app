@@ -8,7 +8,10 @@ export type NotificationListItem = {
   title: string;
   body: string | null;
   link_url: string | null;
+  action_url: string | null;
+  deleted_at: string | null;
   data: Record<string, unknown>;
+  metadata: Record<string, unknown> | null;
   read_at: string | null;
   created_at: string;
 };
@@ -36,8 +39,9 @@ export async function getMyNotifications(limit = 50): Promise<NotificationsQuery
 
   const { data, error } = await supabase
     .from("notifications")
-    .select("id,type,title,body,link_url,data,read_at,created_at")
+    .select("id,type,title,body,link_url,action_url,deleted_at,data,metadata,read_at,created_at")
     .eq("user_id", user.id)
+    .is("deleted_at", null)
     .order("created_at", { ascending: false })
     .limit(limit);
 

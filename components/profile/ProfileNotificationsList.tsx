@@ -3,7 +3,7 @@ import { Bell, CheckCircle2, ExternalLink } from "lucide-react";
 import { EmptyState } from "@/components/common/EmptyState";
 import { markAllNotificationsRead } from "@/features/notifications/actions";
 import type { NotificationListItem } from "@/features/notifications/queries";
-import { NotificationReadForm } from "./NotificationReadForm";
+import { NotificationDeleteForm, NotificationReadForm } from "./NotificationReadForm";
 
 export function ProfileNotificationsList({ notifications }: { notifications: NotificationListItem[] }) {
   const unreadCount = notifications.filter((notification) => !notification.read_at).length;
@@ -37,7 +37,18 @@ export function ProfileNotificationsList({ notifications }: { notifications: Not
 
       <div className="space-y-3">
         {notifications.map((notification) => (
-          <article key={notification.id} className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+          <NotificationCard key={notification.id} notification={notification} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function NotificationCard({ notification }: { notification: NotificationListItem }) {
+  const href = notification.action_url || notification.link_url;
+
+  return (
+    <article className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
@@ -51,19 +62,19 @@ export function ProfileNotificationsList({ notifications }: { notifications: Not
                 {notification.body ? <p className="mt-2 text-sm leading-6 text-slate-600">{notification.body}</p> : null}
               </div>
 
-              {!notification.read_at ? <NotificationReadForm id={notification.id} /> : null}
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                {!notification.read_at ? <NotificationReadForm id={notification.id} /> : null}
+                <NotificationDeleteForm id={notification.id} />
+              </div>
             </div>
 
-            {notification.link_url ? (
-              <Link href={notification.link_url} className="mt-3 inline-flex items-center gap-1 text-sm font-black text-blue-700">
+            {href ? (
+              <Link href={href} className="mt-3 inline-flex items-center gap-1 text-sm font-black text-blue-700">
                 查看详情
                 <ExternalLink size={14} aria-hidden="true" />
               </Link>
             ) : null}
           </article>
-        ))}
-      </div>
-    </section>
   );
 }
 

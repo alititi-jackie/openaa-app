@@ -8,6 +8,7 @@ import {
   AdminNotificationsList,
   AdminNotificationsPagination,
   AdminNotificationsPermissionBadges,
+  AdminNotificationSendForms,
   AdminNotificationsStats,
 } from "@/components/notifications/AdminNotificationsManagement";
 import {
@@ -64,6 +65,10 @@ export default function AdminNotificationsPage({ searchParams }: AdminNotificati
             ) : null}
 
             <AdminNotificationsStats totals={data.totals} />
+
+            <AdminCard title="发送通知" description="按用户发送站内通知，super_admin 可进行简单群发。">
+              <AdminNotificationSendForms templates={data.templates} canSendBulkNotifications={data.canSendBulkNotifications} />
+            </AdminCard>
 
             <AdminCard title="筛选通知" description="按类型、已读状态、标题、内容或用户 ID 快速筛选通知。">
               <AdminNotificationsFilter type={params?.type} read={params?.read} q={params?.q} />

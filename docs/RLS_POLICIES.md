@@ -39,7 +39,7 @@ Authenticated users can manage their own:
 - user favorites in `user_favorites`
 - post drafts
 - navigation links/settings
-- notifications
+- notifications: users can read their own non-deleted notifications and can only update `read_at` / `deleted_at` for mark-read and soft-delete flows
 - DMV progress, wrong questions, and exam results
 - consents and account deletion requests
 - push subscriptions
@@ -51,6 +51,20 @@ Post contact data is not public. It is readable by the post author and admins wi
 Admin tables are not readable by ordinary users. Admin reads and writes depend on permission checks, and service role remains server-only.
 
 `admin_roles` has additional protection: non-`super_admin` admins cannot create or modify `super_admin` rows, and a trigger blocks disabling or demoting the final active `super_admin`.
+
+## Notifications
+
+Notification writes are controlled by server actions and the notification service, not by public client inserts.
+
+- Ordinary users can only view their own notifications where `deleted_at is null`.
+- Ordinary users can mark their own notifications read and soft-delete their own notifications.
+- Ordinary users cannot modify notification title, body, user ownership, creator, or metadata.
+- Admin notification list and single-user sends require `manage_notifications`.
+- Bulk notification sends require `super_admin`.
+- Admin sends, bulk sends, and system-generated moderation notifications write `admin_audit_logs`.
+- `notification_templates` is managed by admins with `manage_notifications`.
+
+Automatic first-version system notifications are created for admin post deletion to recycle bin, recycle-bin restore of user posts, and admin rejection of user posts when the admin chooses "通知用户并执行".
 
 ## Anonymous Inserts
 

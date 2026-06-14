@@ -8,6 +8,7 @@ import { AdminTopActions } from "@/components/admin/AdminTopActions";
 import { permanentlyDeleteNavigationLink, restoreNavigationLink } from "@/features/navigation/actions";
 import { getDeletedNavigationLinkDetail } from "@/features/navigation/queries";
 import type { NavigationLink } from "@/features/navigation/types";
+import { RecycleBinRestoreNotifyForm } from "@/components/posts/RecycleBinRestoreNotifyForm";
 import { permanentlyDeletePost, restoreDeletedPost } from "@/features/posts/adminActions";
 import { getRecycleBinPostDetail, type RecycleBinPostDetail } from "@/features/posts/adminQueries";
 import { isSuperAdmin } from "@/lib/permissions/admin";
@@ -139,11 +140,15 @@ function ContentRecycleBinDetail({ item, resourceType }: { item: RecycleBinPostD
 
       <AdminCard title="操作">
         <div className="flex flex-wrap items-start gap-3">
-          <AdminActionForm action={restoreDeletedPost} submitLabel="恢复" className="contents" submitClassName="inline-flex min-h-10 items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60">
-            <input type="hidden" name="id" value={item.id} />
-            <input type="hidden" name="resource_type" value={resourceType} />
-            <input type="hidden" name="content_type" value={resourceType} />
-          </AdminActionForm>
+          {resourceType === "post" ? (
+            <RecycleBinRestoreNotifyForm id={item.id} resourceType={resourceType} title={item.title} />
+          ) : (
+            <AdminActionForm action={restoreDeletedPost} submitLabel="恢复" className="contents" submitClassName="inline-flex min-h-10 items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60">
+              <input type="hidden" name="id" value={item.id} />
+              <input type="hidden" name="resource_type" value={resourceType} />
+              <input type="hidden" name="content_type" value={resourceType} />
+            </AdminActionForm>
+          )}
           <AdminActionForm action={permanentlyDeletePost} submitLabel="永久删除" className="grid gap-2 rounded-xl bg-white p-2 ring-1 ring-red-100" submitClassName="inline-flex min-h-10 items-center justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60">
             <input type="hidden" name="id" value={item.id} />
             <input type="hidden" name="resource_type" value={resourceType} />

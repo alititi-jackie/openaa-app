@@ -42,7 +42,8 @@ export async function markNotificationRead(_state: NotificationActionState, form
     .from("notifications")
     .update({ read_at: new Date().toISOString() })
     .eq("id", id)
-    .eq("user_id", context.user.id);
+    .eq("user_id", context.user.id)
+    .is("deleted_at", null);
 
   if (error) {
     return { ok: false, message: "标记已读失败，请稍后再试。" };
@@ -50,6 +51,32 @@ export async function markNotificationRead(_state: NotificationActionState, form
 
   revalidatePath(profileNotificationsPath);
   return { ok: true, message: "已标记为已读。" };
+}
+
+export async function softDeleteNotification(_state: NotificationActionState, formData: FormData): Promise<NotificationActionState> {
+  const id = String(formData.get("id") ?? "");
+
+  if (!id) {
+    return { ok: false, message: "通知参数无效。" };
+  }
+
+  const context = await getNotificationActionContext();
+  if (!context.ok) return { ok: false, message: context.message };
+
+  const { error } = await context.supabase
+    .from("notifications")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("user_id", context.user.id)
+    .is("deleted_at", null);
+
+  if (error) {
+    return { ok: false, message: "删除通知失败，请稍后再试。" };
+  }
+
+  revalidatePath(profileNotificationsPath);
+  revalidatePath("/profile");
+  return { ok: true, message: "通知已删除。" };
 }
 
 export async function markAllNotificationsRead(): Promise<void> {
@@ -60,6 +87,7 @@ export async function markAllNotificationsRead(): Promise<void> {
     .from("notifications")
     .update({ read_at: new Date().toISOString() })
     .eq("user_id", context.user.id)
+    .is("deleted_at", null)
     .is("read_at", null);
 
   revalidatePath(profileNotificationsPath);
