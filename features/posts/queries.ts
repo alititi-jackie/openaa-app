@@ -402,6 +402,7 @@ export async function getEditablePostById(id: string, type: PostType): Promise<P
     .eq("id", id)
     .eq("post_type", type)
     .eq("author_id", user.id)
+    .neq("status", "deleted")
     .maybeSingle();
 
   if (error) return queryError("get editable post by id failed", error, null);

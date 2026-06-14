@@ -100,13 +100,6 @@ export type RecycleBinNewsRetentionSettings = {
   newsRetentionDays: number;
 };
 
-export type RecycleBinNavigationRetentionSettings = {
-  navigationRetentionDays: number;
-};
-
-export type RecycleBinImageRetentionSettings = {
-  imageRetentionDays: number;
-};
 
 export type RecycleBinPostDetail = RecycleBinItem & {
   summary: string;
@@ -174,20 +167,12 @@ export type RecycleBinNewsResult = {
 export const RECYCLE_BIN_USER_RETENTION_KEY = "recycle_bin_user_retention_days";
 export const RECYCLE_BIN_ADMIN_RETENTION_KEY = "recycle_bin_admin_retention_days";
 export const RECYCLE_BIN_NEWS_RETENTION_KEY = "recycle_bin_news_retention_days";
-export const RECYCLE_BIN_NAVIGATION_RETENTION_KEY = "recycle_bin_navigation_retention_days";
-export const RECYCLE_BIN_IMAGE_RETENTION_KEY = "recycle_bin_image_retention_days";
 export const DEFAULT_RECYCLE_BIN_RETENTION_SETTINGS: RecycleBinRetentionSettings = {
   userRetentionDays: 30,
   adminRetentionDays: 90,
 };
 export const DEFAULT_RECYCLE_BIN_NEWS_RETENTION_SETTINGS: RecycleBinNewsRetentionSettings = {
   newsRetentionDays: 90,
-};
-export const DEFAULT_RECYCLE_BIN_NAVIGATION_RETENTION_SETTINGS: RecycleBinNavigationRetentionSettings = {
-  navigationRetentionDays: 90,
-};
-export const DEFAULT_RECYCLE_BIN_IMAGE_RETENTION_SETTINGS: RecycleBinImageRetentionSettings = {
-  imageRetentionDays: 30,
 };
 export const MIN_RECYCLE_BIN_RETENTION_DAYS = 1;
 export const MAX_RECYCLE_BIN_RETENTION_DAYS = 3650;
@@ -781,48 +766,6 @@ export async function getRecycleBinNewsRetentionSettings(adminSupabase?: ReturnT
 
   return {
     newsRetentionDays: normalizeRecycleBinRetentionDays(data?.value, DEFAULT_RECYCLE_BIN_NEWS_RETENTION_SETTINGS.newsRetentionDays),
-  };
-}
-
-export async function getRecycleBinNavigationRetentionSettings(adminSupabase?: ReturnType<typeof createSupabaseAdminClient>): Promise<RecycleBinNavigationRetentionSettings> {
-  let supabase = adminSupabase;
-  if (!supabase) {
-    try {
-      supabase = createSupabaseAdminClient();
-    } catch {
-      return DEFAULT_RECYCLE_BIN_NAVIGATION_RETENTION_SETTINGS;
-    }
-  }
-
-  const { data } = await supabase
-    .from("site_settings")
-    .select("key,value")
-    .eq("key", RECYCLE_BIN_NAVIGATION_RETENTION_KEY)
-    .maybeSingle();
-
-  return {
-    navigationRetentionDays: normalizeRecycleBinRetentionDays(data?.value, DEFAULT_RECYCLE_BIN_NAVIGATION_RETENTION_SETTINGS.navigationRetentionDays),
-  };
-}
-
-export async function getRecycleBinImageRetentionSettings(adminSupabase?: ReturnType<typeof createSupabaseAdminClient>): Promise<RecycleBinImageRetentionSettings> {
-  let supabase = adminSupabase;
-  if (!supabase) {
-    try {
-      supabase = createSupabaseAdminClient();
-    } catch {
-      return DEFAULT_RECYCLE_BIN_IMAGE_RETENTION_SETTINGS;
-    }
-  }
-
-  const { data } = await supabase
-    .from("site_settings")
-    .select("key,value")
-    .eq("key", RECYCLE_BIN_IMAGE_RETENTION_KEY)
-    .maybeSingle();
-
-  return {
-    imageRetentionDays: normalizeRecycleBinRetentionDays(data?.value, DEFAULT_RECYCLE_BIN_IMAGE_RETENTION_SETTINGS.imageRetentionDays),
   };
 }
 

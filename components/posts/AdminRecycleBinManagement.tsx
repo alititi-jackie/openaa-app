@@ -5,8 +5,6 @@ import { useActionState, useState, type ReactNode } from "react";
 import {
   permanentlyDeletePost,
   restoreDeletedPost,
-  updateRecycleBinImageRetentionSettings,
-  updateRecycleBinNavigationRetentionSettings,
   updateRecycleBinNewsRetentionSettings,
   updateRecycleBinRetentionSettings,
   type AdminPostActionState,
@@ -16,11 +14,9 @@ import type {
   RecycleBinFilter,
   RecycleBinHealth,
   RecycleBinItem,
-  RecycleBinImageRetentionSettings,
   RecycleBinNewsFilter,
   RecycleBinNewsHealth,
   RecycleBinNewsRetentionSettings,
-  RecycleBinNavigationRetentionSettings,
   RecycleBinRetentionSettings,
 } from "@/features/posts/adminQueries";
 
@@ -59,54 +55,6 @@ export function RecycleBinNewsSettingsSection({ settings }: { settings: RecycleB
       <form action={action} className="space-y-3">
         <div className="grid gap-3 sm:grid-cols-2">
           <RetentionInput label="新闻删除保留" name="news_retention_days" defaultValue={settings.newsRetentionDays} />
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="submit"
-            disabled={pending}
-            className="inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {pending ? "保存中..." : "保存设置"}
-          </button>
-          {state.message ? <p className={state.ok ? "text-sm font-semibold text-emerald-700" : "text-sm font-semibold text-red-600"}>{state.message}</p> : null}
-        </div>
-      </form>
-    </CollapsibleSection>
-  );
-}
-
-export function RecycleBinNavigationSettingsSection({ settings }: { settings: RecycleBinNavigationRetentionSettings }) {
-  const [state, action, pending] = useActionState(updateRecycleBinNavigationRetentionSettings, initialActionState);
-
-  return (
-    <CollapsibleSection title="åˆ é™¤è®¾ç½®">
-      <form action={action} className="space-y-3">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <RetentionInput label="公共导航删除保留" name="navigation_retention_days" defaultValue={settings.navigationRetentionDays} />
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="submit"
-            disabled={pending}
-            className="inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {pending ? "保存中..." : "保存设置"}
-          </button>
-          {state.message ? <p className={state.ok ? "text-sm font-semibold text-emerald-700" : "text-sm font-semibold text-red-600"}>{state.message}</p> : null}
-        </div>
-      </form>
-    </CollapsibleSection>
-  );
-}
-
-export function RecycleBinImageSettingsSection({ settings }: { settings: RecycleBinImageRetentionSettings }) {
-  const [state, action, pending] = useActionState(updateRecycleBinImageRetentionSettings, initialActionState);
-
-  return (
-    <CollapsibleSection title="åˆ é™¤è®¾ç½®">
-      <form action={action} className="space-y-3">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <RetentionInput label="图片标记删除保留" name="image_retention_days" defaultValue={settings.imageRetentionDays} />
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <button

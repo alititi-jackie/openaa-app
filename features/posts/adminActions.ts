@@ -10,12 +10,8 @@ import {
   MAX_RECYCLE_BIN_RETENTION_DAYS,
   MIN_RECYCLE_BIN_RETENTION_DAYS,
   RECYCLE_BIN_ADMIN_RETENTION_KEY,
-  RECYCLE_BIN_IMAGE_RETENTION_KEY,
-  RECYCLE_BIN_NAVIGATION_RETENTION_KEY,
   RECYCLE_BIN_NEWS_RETENTION_KEY,
   RECYCLE_BIN_USER_RETENTION_KEY,
-  getRecycleBinImageRetentionSettings,
-  getRecycleBinNavigationRetentionSettings,
   getRecycleBinNewsRetentionSettings,
   getRecycleBinRetentionSettings,
 } from "./adminQueries";
@@ -415,68 +411,6 @@ export async function updateRecycleBinNewsRetentionSettings(_state: AdminPostAct
     newsRetentionDays,
   });
   revalidatePath("/admin/recycle-bin");
-  return ok("删除设置已保存");
-}
-
-export async function updateRecycleBinNavigationRetentionSettings(_state: AdminPostActionState, formData: FormData): Promise<AdminPostActionState> {
-  const navigationRetentionDays = readPositiveInteger(formData, "navigation_retention_days");
-
-  if (!isValidRetentionDays(navigationRetentionDays)) {
-    return fail("保存失败，请稍后再试");
-  }
-
-  const context = await getSuperAdminActionContext();
-  if (!context.ok) return fail("保存失败，请稍后再试");
-
-  const before = await getRecycleBinNavigationRetentionSettings(context.adminSupabase);
-  const now = new Date().toISOString();
-  const payload = {
-    key: RECYCLE_BIN_NAVIGATION_RETENTION_KEY,
-    value: { days: navigationRetentionDays },
-    description: "回收站中公共导航内容的保留天数。",
-    is_public: false,
-    updated_by: context.userId,
-    updated_at: now,
-  };
-
-  const { error } = await context.adminSupabase.from("site_settings").upsert(payload, { onConflict: "key" });
-  if (error) return fail("保存失败，请稍后再试");
-
-  await writeAuditLog(context, "update_recycle_bin_navigation_retention_settings", "recycle_bin_navigation_retention", before, {
-    navigationRetentionDays,
-  });
-  revalidatePath("/admin/recycle-bin");
-  return ok("删除设置已保存");
-}
-
-export async function updateRecycleBinImageRetentionSettings(_state: AdminPostActionState, formData: FormData): Promise<AdminPostActionState> {
-  const imageRetentionDays = readPositiveInteger(formData, "image_retention_days");
-
-  if (!isValidRetentionDays(imageRetentionDays)) {
-    return fail("保存失败，请稍后再试");
-  }
-
-  const context = await getSuperAdminActionContext();
-  if (!context.ok) return fail("保存失败，请稍后再试");
-
-  const before = await getRecycleBinImageRetentionSettings(context.adminSupabase);
-  const now = new Date().toISOString();
-  const payload = {
-    key: RECYCLE_BIN_IMAGE_RETENTION_KEY,
-    value: { days: imageRetentionDays },
-    description: "图片清理工具中标记删除图片的保留天数。",
-    is_public: false,
-    updated_by: context.userId,
-    updated_at: now,
-  };
-
-  const { error } = await context.adminSupabase.from("site_settings").upsert(payload, { onConflict: "key" });
-  if (error) return fail("保存失败，请稍后再试");
-
-  await writeAuditLog(context, "update_recycle_bin_image_retention_settings", "recycle_bin_image_retention", before, {
-    imageRetentionDays,
-  });
-  revalidatePath("/admin/image-cleanup");
   return ok("删除设置已保存");
 }
 
