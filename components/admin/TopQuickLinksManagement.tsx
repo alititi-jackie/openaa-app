@@ -2,16 +2,15 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from "lucide-react";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
-import { deleteTopQuickLink, setTopQuickLinkVisibility, upsertTopQuickLink } from "@/features/admin-home/actions";
+import { deleteTopQuickLink, moveTopQuickLink, setTopQuickLinkVisibility, upsertTopQuickLink } from "@/features/admin-home/actions";
 import type { AdminHomeActionState, AdminTopQuickLinkRow } from "@/features/admin-home/types";
 
 type TopLinkFormValues = {
   title: string;
   url: string;
   openMode: "same" | "new";
-  sortOrder: number;
 };
 
 const initialState: AdminHomeActionState = { ok: true, message: "" };
@@ -28,11 +27,12 @@ export function TopQuickLinksManagement({ topLinks }: { topLinks: AdminTopQuickL
 
   return (
     <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-black text-slate-950">顶部快捷导航</h2>
-          <p className="mt-1 text-sm leading-6 text-slate-600">管理 Header 城市入口里的快捷网站，只保留名称、网址、打开方式和排序。</p>
-        </div>
+      <div>
+        <h2 className="text-lg font-black text-slate-950">顶部快捷导航</h2>
+        <p className="mt-1 text-sm leading-6 text-slate-600">管理 Header 城市入口里的快捷网站，只保留网址、网站名称和打开方式，排序在卡片里调整。</p>
+      </div>
+
+      <div className="mt-4">
         <button type="button" onClick={() => setCreating((value) => !value)} className={primaryButtonClass}>
           <Plus size={14} aria-hidden="true" />
           新增网站
@@ -53,7 +53,7 @@ export function TopQuickLinksManagement({ topLinks }: { topLinks: AdminTopQuickL
 
       <div className="mt-4 grid gap-3">
         {topLinks.length > 0 ? (
-          topLinks.map((link) => <TopQuickLinkCard key={link.id} link={link} />)
+          topLinks.map((link, index) => <TopQuickLinkCard key={link.id} link={link} index={index} total={topLinks.length} />)
         ) : (
           <p className="rounded-xl border border-dashed border-slate-200 p-4 text-sm text-slate-500">暂无顶部快捷导航。</p>
         )}
@@ -62,13 +62,25 @@ export function TopQuickLinksManagement({ topLinks }: { topLinks: AdminTopQuickL
   );
 }
 
-function TopQuickLinkCard({ link }: { link: AdminTopQuickLinkRow }) {
+function TopQuickLinkCard({ link, index, total }: { link: AdminTopQuickLinkRow; index: number; total: number }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [message, setMessage] = useState<AdminHomeActionState | null>(null);
+  const [pendingMove, startMoveTransition] = useTransition();
   const [pendingVisibility, startVisibilityTransition] = useTransition();
   const [pendingDelete, startDeleteTransition] = useTransition();
+
+  function move(direction: "up" | "down") {
+    startMoveTransition(async () => {
+      const formData = new FormData();
+      formData.set("id", link.id);
+      formData.set("direction", direction);
+      const result = await moveTopQuickLink(initialState, formData);
+      setMessage(result);
+      if (result.ok) router.refresh();
+    });
+  }
 
   function toggleVisible() {
     startVisibilityTransition(async () => {
@@ -76,13 +88,8 @@ function TopQuickLinkCard({ link }: { link: AdminTopQuickLinkRow }) {
       formData.set("id", link.id);
       formData.set("is_active", link.is_active ? "false" : "true");
       const result = await setTopQuickLinkVisibility(initialState, formData);
-      if (!result.ok) {
-        setMessage(result);
-        return;
-      }
-
       setMessage(result);
-      router.refresh();
+      if (result.ok) router.refresh();
     });
   }
 
@@ -108,13 +115,19 @@ function TopQuickLinkCard({ link }: { link: AdminTopQuickLinkRow }) {
         <h3 className="truncate text-sm font-black text-slate-950">{link.title}</h3>
         <p className="mt-1 break-all text-xs font-semibold text-slate-500">{link.href}</p>
         <p className="mt-1 text-xs font-semibold text-slate-400">
-          {link.is_active ? "显示" : "隐藏"} · {openModeLabel(link.open_mode)} · 排序 {link.sort_order}
+          {link.is_active ? "显示" : "隐藏"} · {openModeLabel(link.open_mode)}
         </p>
       </div>
 
       {message?.message ? <p className={message.ok ? "mt-3 text-sm font-semibold leading-6 text-emerald-700" : "mt-3 text-sm font-semibold leading-6 text-red-600"}>{message.message}</p> : null}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
+        <button type="button" onClick={() => move("up")} disabled={pendingMove || index === 0} className={neutralButtonClass} aria-label="上移">
+          <ArrowUp size={14} aria-hidden="true" />
+        </button>
+        <button type="button" onClick={() => move("down")} disabled={pendingMove || index === total - 1} className={neutralButtonClass} aria-label="下移">
+          <ArrowDown size={14} aria-hidden="true" />
+        </button>
         <button type="button" onClick={() => setEditing((value) => !value)} className={neutralButtonClass}>
           <Pencil size={14} aria-hidden="true" />
           修改
@@ -174,12 +187,20 @@ function TopQuickLinkEditor({
   const [values, setValues] = useState<TopLinkFormValues>({
     title: link?.title ?? "",
     url: link?.href ?? "",
-    openMode: link?.open_mode ?? "same",
-    sortOrder: link?.sort_order ?? 0,
+    openMode: link?.open_mode ?? "new",
   });
+  const [titleTouched, setTitleTouched] = useState(Boolean(link?.title));
 
   function updateValue<Key extends keyof TopLinkFormValues>(key: Key, value: TopLinkFormValues[Key]) {
     setValues((current) => ({ ...current, [key]: value }));
+  }
+
+  function updateUrl(nextUrl: string) {
+    setValues((current) => ({
+      ...current,
+      url: nextUrl,
+      title: !titleTouched ? titleFromUrl(nextUrl) : current.title,
+    }));
   }
 
   function save() {
@@ -189,8 +210,6 @@ function TopQuickLinkEditor({
       formData.set("title", values.title);
       formData.set("url", values.url);
       formData.set("open_mode", values.openMode);
-      formData.set("sort_order", String(values.sortOrder));
-      if (link?.is_active ?? true) formData.set("is_active", "on");
 
       const result = await upsertTopQuickLink(initialState, formData);
       setMessage(result);
@@ -205,23 +224,27 @@ function TopQuickLinkEditor({
     <div className="space-y-3">
       <div className="grid gap-3 md:grid-cols-2">
         <label className="grid gap-1.5 text-sm font-bold text-slate-700">
-          <span>网站名称</span>
-          <input value={values.title} onChange={(event) => updateValue("title", event.target.value)} className={inputClass} required />
+          <span>网址</span>
+          <input value={values.url} onChange={(event) => updateUrl(event.target.value)} placeholder="/jobs" className={inputClass} required />
         </label>
         <label className="grid gap-1.5 text-sm font-bold text-slate-700">
-          <span>网址</span>
-          <input value={values.url} onChange={(event) => updateValue("url", event.target.value)} placeholder="/jobs" className={inputClass} required />
+          <span>网站名称</span>
+          <input
+            value={values.title}
+            onChange={(event) => {
+              setTitleTouched(true);
+              updateValue("title", event.target.value);
+            }}
+            className={inputClass}
+            required
+          />
         </label>
         <label className="grid gap-1.5 text-sm font-bold text-slate-700">
           <span>打开方式</span>
           <select value={values.openMode} onChange={(event) => updateValue("openMode", event.target.value === "new" ? "new" : "same")} className={inputClass}>
-            <option value="same">当前窗口</option>
             <option value="new">新窗口</option>
+            <option value="same">当前窗口</option>
           </select>
-        </label>
-        <label className="grid gap-1.5 text-sm font-bold text-slate-700">
-          <span>排序</span>
-          <input value={values.sortOrder} onChange={(event) => updateValue("sortOrder", Number(event.target.value))} type="number" className={inputClass} />
         </label>
       </div>
 
@@ -240,4 +263,21 @@ function TopQuickLinkEditor({
 
 function openModeLabel(value: AdminTopQuickLinkRow["open_mode"]) {
   return value === "new" ? "新窗口" : "当前窗口";
+}
+
+function titleFromUrl(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  if (trimmed.startsWith("/") && !trimmed.startsWith("//")) {
+    return trimmed.split("/").filter(Boolean).at(-1) || "导航";
+  }
+
+  try {
+    const url = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`);
+    const hostname = url.hostname.replace(/^www\./, "");
+    return hostname.split(".")[0] || "";
+  } catch {
+    return "";
+  }
 }

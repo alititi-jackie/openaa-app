@@ -188,39 +188,39 @@ export async function upsertTopQuickLink(_state: AdminHomeActionState, formData:
   if (!context.ok) return fail(context.message);
 
   const id = readText(formData, "id");
-  const title = readText(formData, "title");
   const href = normalizeLink(readText(formData, "url"));
+  const title = readText(formData, "title") || (href.ok ? titleFromUrl(href.value) : "");
   const openMode = readOpenMode(formData);
-  const sortOrder = readInteger(formData, "sort_order", "快捷入口排序");
-  const isActive = formData.get("is_active") === "on";
-  const icon = readText(formData, "icon") || null;
   const cityId = await getDefaultCityId(context.supabase);
 
-  if (!title) return fail("快捷入口标题不能为空。");
+  if (!title) return fail("顶部快捷导航名称不能为空。");
   if (!href.ok) return fail(href.message);
-  if (!sortOrder.ok) return fail(sortOrder.message);
+
+  const existing = id ? await readTopQuickLinkForUpdate(context.supabase, id) : null;
+  if (id && !existing) return fail("顶部快捷导航不存在。");
 
   const payload = {
     title,
     href: href.value,
     open_mode: openMode,
-    sort_order: sortOrder.value,
-    is_active: isActive,
-    icon,
+    sort_order: existing?.sort_order ?? (await getFirstTopQuickLinkSortOrder(context.supabase)),
+    is_active: existing?.is_active ?? true,
+    icon: existing?.icon ?? null,
     city_id: cityId,
+    updated_at: new Date().toISOString(),
   };
 
   const result = id
     ? await context.supabase.from("top_quick_links").update(payload).eq("id", id).select("id").single()
     : await context.supabase.from("top_quick_links").insert({ ...payload, key: slugKey(title) }).select("id").single();
 
-  if (result.error || !result.data) return fail("顶部快捷入口保存失败，请检查 URL 或排序。");
+  if (result.error || !result.data) return fail("顶部快捷导航保存失败，请检查网址。");
 
   if (!(await auditLog(context, id ? "update_top_quick_link" : "create_top_quick_link", "top_quick_links", result.data.id, payload))) {
     return auditFailure();
   }
   revalidateAdminHome();
-  return ok("顶部快捷入口已保存。");
+  return ok("顶部快捷导航已保存。");
 }
 
 export async function setTopQuickLinkInactive(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
@@ -268,6 +268,46 @@ export async function deleteTopQuickLink(_state: AdminHomeActionState, formData:
   if (!(await auditLog(context, "delete_top_quick_link", "top_quick_links", id, data))) return auditFailure();
   revalidateAdminHome();
   return ok("快捷导航已删除。");
+}
+
+export async function moveTopQuickLink(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
+  const context = await getAdminActionContext("manage_top_links");
+  if (!context.ok) return fail(context.message);
+
+  const id = readText(formData, "id");
+  const direction = readText(formData, "direction") === "down" ? "down" : "up";
+  if (!id) return fail("缺少快捷导航 ID。");
+
+  const { data, error } = await context.supabase
+    .from("top_quick_links")
+    .select("id,sort_order")
+    .order("sort_order", { ascending: true })
+    .order("title", { ascending: true });
+
+  if (error || !data) return fail("快捷导航排序读取失败。");
+
+  const currentIndex = data.findIndex((item) => item.id === id);
+  const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+  if (currentIndex < 0) return fail("快捷导航不存在。");
+  if (targetIndex < 0 || targetIndex >= data.length) return ok("快捷导航排序未变化。");
+
+  const reordered = [...data];
+  const current = reordered[currentIndex];
+  reordered[currentIndex] = reordered[targetIndex];
+  reordered[targetIndex] = current;
+
+  const updates = reordered.map((item, index) =>
+    context.supabase
+      .from("top_quick_links")
+      .update({ sort_order: (index + 1) * 10, updated_at: new Date().toISOString() })
+      .eq("id", item.id),
+  );
+  const results = await Promise.all(updates);
+  if (results.some((result) => result.error)) return fail("快捷导航排序保存失败。");
+
+  if (!(await auditLog(context, "move_top_quick_link", "top_quick_links", id, { direction }))) return auditFailure();
+  revalidateAdminHome();
+  return ok("快捷导航排序已更新。");
 }
 
 export async function upsertLatestTicker(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
@@ -453,6 +493,16 @@ async function readHomeBanner(supabase: SupabaseServerClient, id: string) {
   return data ?? null;
 }
 
+async function readTopQuickLinkForUpdate(supabase: SupabaseServerClient, id: string) {
+  const { data } = await supabase.from("top_quick_links").select("id,sort_order,is_active,icon").eq("id", id).maybeSingle();
+  return data ?? null;
+}
+
+async function getFirstTopQuickLinkSortOrder(supabase: SupabaseServerClient) {
+  const { data } = await supabase.from("top_quick_links").select("sort_order").order("sort_order", { ascending: true }).limit(1).maybeSingle();
+  return typeof data?.sort_order === "number" ? data.sort_order - 10 : 0;
+}
+
 async function upsertExternalImageAsset(context: Extract<AdminActionContext, { ok: true }>, imageUrl: string, entityId: string | null) {
   try {
     const externalHost = new URL(imageUrl).hostname.toLowerCase();
@@ -636,6 +686,23 @@ function slugKey(value: string) {
     .replace(/^-+|-+$/g, "");
 
   return `${slug || "link"}-${Date.now()}`;
+}
+
+function titleFromUrl(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  if (trimmed.startsWith("/") && !trimmed.startsWith("//")) {
+    return trimmed.split("/").filter(Boolean).at(-1) || "导航";
+  }
+
+  try {
+    const url = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`);
+    const hostname = url.hostname.replace(/^www\./, "");
+    return hostname.split(".")[0] || "";
+  } catch {
+    return "";
+  }
 }
 
 function revalidateAdminHome() {
