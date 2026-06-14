@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useState, type ReactNode } from "react";
 import { Image as ImageIcon, ShieldCheck, Trash2, UploadCloud } from "lucide-react";
 import { AdminActionForm, AdminCheckbox } from "@/components/admin/AdminActionForm";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
@@ -28,14 +31,16 @@ export function AdminImageCleanupPermissionBadges({ permissions }: { permissions
   );
 }
 
-export function AdminImageCleanupStats({ totals }: { totals: AdminImageCleanupData["totals"] }) {
+export function AdminImageCleanupHealthSection({ totals, activeFilter }: { totals: AdminImageCleanupData["totals"]; activeFilter: ImageCleanupFilter }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-4">
-      <StatCard icon={<ImageIcon size={17} aria-hidden="true" />} label="图片资产" value={totals.total} />
-      <StatCard icon={<Trash2 size={17} aria-hidden="true" />} label="可清理" value={totals.deletable} />
-      <StatCard icon={<ShieldCheck size={17} aria-hidden="true" />} label="使用中" value={totals.protected} />
-      <StatCard icon={<UploadCloud size={17} aria-hidden="true" />} label="当前页" value={totals.currentPage} />
-    </div>
+    <CollapsibleSection title="健康检查">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <StatCard icon={<ImageIcon size={17} aria-hidden="true" />} label="图片资产" value={totals.total} href="/admin/image-cleanup?filter=all" active={activeFilter === "all"} />
+        <StatCard icon={<Trash2 size={17} aria-hidden="true" />} label="可清理" value={totals.deletable} href="/admin/image-cleanup" active={activeFilter === "deletable"} />
+        <StatCard icon={<ShieldCheck size={17} aria-hidden="true" />} label="使用中" value={totals.protected} href="/admin/image-cleanup?filter=protected" active={activeFilter === "protected"} />
+        <StatCard icon={<UploadCloud size={17} aria-hidden="true" />} label="当前页" value={totals.currentPage} href={imageCleanupFilterHref(activeFilter)} active={false} />
+      </div>
+    </CollapsibleSection>
   );
 }
 
@@ -75,55 +80,55 @@ export function AdminImageAssetsList({ assets, canDelete }: { assets: AdminImage
   }
 
   return (
-    <div className="grid gap-3 lg:grid-cols-2">
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
       {assets.map((asset) => (
-        <article key={asset.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
-          <div className="grid gap-3 sm:grid-cols-[120px_1fr]">
-            <div className="overflow-hidden rounded-xl border border-slate-100 bg-white">
-              {asset.displayUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={asset.displayUrl} alt={asset.path || asset.externalUrl || asset.id} className="h-28 w-full object-cover" />
-              ) : (
-                <div className="grid h-28 place-items-center text-slate-300">
-                  <ImageIcon size={28} aria-hidden="true" />
-                </div>
-              )}
+        <article key={asset.id} className="flex min-h-full flex-col rounded-2xl border border-slate-100 bg-slate-50 p-3">
+          <div className="overflow-hidden rounded-xl border border-slate-100 bg-white">
+            {asset.displayUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={asset.displayUrl} alt={asset.path || asset.externalUrl || asset.id} className="aspect-[4/3] max-h-52 w-full object-cover" />
+            ) : (
+              <div className="grid aspect-[4/3] max-h-52 place-items-center text-slate-300">
+                <ImageIcon size={32} aria-hidden="true" />
+              </div>
+            )}
+          </div>
+
+          <div className="mt-3 min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={`rounded-full px-2.5 py-1 text-xs font-black ${asset.isProbablyUnused ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
+                {asset.status === "deleted" ? "已删除" : asset.isProbablyUnused ? "疑似未使用" : "使用中"}
+              </span>
+              <span className={`rounded-full px-2.5 py-1 text-xs font-black ${riskClassName(asset.cleanupRisk)}`}>{riskLabel(asset.cleanupRisk)}</span>
+              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-700">{asset.sourceType}</span>
+              {asset.isPublic ? <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-black text-blue-700">公开</span> : null}
             </div>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className={`rounded-full px-2.5 py-1 text-xs font-black ${asset.isProbablyUnused ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
-                  {asset.status === "deleted" ? "已删除" : asset.isProbablyUnused ? "疑似未使用" : "使用中"}
-                </span>
-                <span className={`rounded-full px-2.5 py-1 text-xs font-black ${riskClassName(asset.cleanupRisk)}`}>{riskLabel(asset.cleanupRisk)}</span>
-                <span className="rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-700">{asset.sourceType}</span>
-                {asset.isPublic ? <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-black text-blue-700">公开</span> : null}
-              </div>
-              <h3 className="mt-2 break-all text-sm font-black text-slate-950">{asset.path || asset.externalUrl || asset.id}</h3>
-              <div className="mt-2 grid gap-1 break-all text-xs font-semibold text-slate-500">
-                <span>ID：{asset.id}</span>
-                <span>引用状态：{asset.referenceLabels.length ? asset.referenceLabels.join(" / ") : "未发现业务引用"}</span>
-                {asset.protectionReasons.length ? <span>保护原因：{asset.protectionReasons.join("；")}</span> : null}
-                <span>大小：{formatSize(asset.sizeBytes)} · 尺寸：{formatDimension(asset.width, asset.height)}</span>
-                <span>创建：{formatDateTime(asset.createdAt)} · 更新：{formatDateTime(asset.updatedAt)}</span>
-                {asset.deletedAt ? <span>删除标记：{formatDateTime(asset.deletedAt)}</span> : null}
-              </div>
-              <p className={`mt-3 rounded-xl px-3 py-2 text-xs font-bold leading-5 ${asset.isProbablyUnused ? "bg-amber-50 text-amber-800" : "bg-emerald-50 text-emerald-800"}`}>
-                {asset.cleanupHint}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {asset.displayUrl ? (
-                  <a href={asset.displayUrl} target="_blank" rel="noreferrer" className="rounded-full bg-white px-3 py-1.5 text-xs font-black text-blue-700">
-                    打开图片
-                  </a>
-                ) : null}
-                {asset.isProbablyUnused && canDelete ? (
-                  <AdminActionForm action={markImageAssetDeleted} submitLabel="标记删除" className="grid gap-2">
-                    <input type="hidden" name="id" value={asset.id} />
-                    <AdminCheckbox label="我确认这张图片未被业务使用，只标记记录为 deleted" name="confirm_cleanup" />
-                  </AdminActionForm>
-                ) : null}
-              </div>
+            <h3 className="mt-2 break-all text-sm font-black text-slate-950">{asset.path || asset.externalUrl || asset.id}</h3>
+            <div className="mt-2 grid gap-1 break-all text-xs font-semibold text-slate-500">
+              <span>ID：{asset.id}</span>
+              <span>引用状态：{asset.referenceLabels.length ? asset.referenceLabels.join(" / ") : "未发现业务引用"}</span>
+              {asset.protectionReasons.length ? <span>保护原因：{asset.protectionReasons.join("；")}</span> : null}
+              <span>大小：{formatSize(asset.sizeBytes)} · 尺寸：{formatDimension(asset.width, asset.height)}</span>
+              <span>创建：{formatDateTime(asset.createdAt)} · 更新：{formatDateTime(asset.updatedAt)}</span>
+              {asset.deletedAt ? <span>删除标记：{formatDateTime(asset.deletedAt)}</span> : null}
             </div>
+            <p className={`mt-3 rounded-xl px-3 py-2 text-xs font-bold leading-5 ${asset.isProbablyUnused ? "bg-amber-50 text-amber-800" : "bg-emerald-50 text-emerald-800"}`}>
+              {asset.cleanupHint}
+            </p>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            {asset.displayUrl ? (
+              <a href={asset.displayUrl} target="_blank" rel="noreferrer" className="rounded-full bg-white px-3 py-1.5 text-xs font-black text-blue-700">
+                打开图片
+              </a>
+            ) : null}
+            {asset.isProbablyUnused && canDelete ? (
+              <AdminActionForm action={markImageAssetDeleted} submitLabel="标记删除" className="grid gap-2">
+                <input type="hidden" name="id" value={asset.id} />
+                <AdminCheckbox label="我确认这张图片未被业务使用，只标记记录为 deleted" name="confirm_cleanup" />
+              </AdminActionForm>
+            ) : null}
           </div>
         </article>
       ))}
@@ -170,16 +175,41 @@ export function AdminImageCleanupPagination({
   );
 }
 
-function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
+function CollapsibleSection({ title, children }: { title: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+    <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-lg font-black text-slate-950">{title}</h2>
+        <button type="button" onClick={() => setOpen((current) => !current)} className="text-sm font-black text-blue-700 hover:text-blue-800">
+          {open ? "收起 ▴" : "展开 ▾"}
+        </button>
+      </div>
+      {open ? <div className="mt-4">{children}</div> : null}
+    </section>
+  );
+}
+
+function StatCard({ icon, label, value, href, active }: { icon: ReactNode; label: string; value: number; href: string; active: boolean }) {
+  return (
+    <Link
+      href={href}
+      className={`block rounded-xl p-3 ring-1 transition ${
+        active ? "bg-blue-50 text-blue-900 ring-blue-200" : "bg-slate-50 text-slate-950 ring-slate-100 hover:bg-slate-100"
+      }`}
+    >
       <div className="flex items-center gap-2 text-xs font-black text-slate-500">
         <span className="grid h-8 w-8 place-items-center rounded-xl bg-white text-blue-700">{icon}</span>
         {label}
       </div>
-      <p className="mt-2 text-2xl font-black text-slate-950">{value}</p>
-    </div>
+      <p className="mt-2 text-2xl font-black">{value}</p>
+    </Link>
   );
+}
+
+function imageCleanupFilterHref(filter: ImageCleanupFilter) {
+  return filter === "deletable" ? "/admin/image-cleanup" : `/admin/image-cleanup?filter=${filter}`;
 }
 
 function formatSize(value: number | null) {
@@ -190,7 +220,7 @@ function formatSize(value: number | null) {
 
 function formatDimension(width: number | null, height: number | null) {
   if (!width || !height) return "未记录";
-  return `${width}×${height}`;
+  return `${width}x${height}`;
 }
 
 function formatDateTime(value: string | null) {

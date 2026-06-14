@@ -1,21 +1,24 @@
-import Link from "next/link";
 import { Image as ImageIcon } from "lucide-react";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
+import { AdminBackNavigation } from "@/components/admin/AdminBackNavigation";
 import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { RecycleBinResourceNav } from "@/components/admin/RecycleBinResourceNav";
 import {
   AdminImageAssetsList,
   AdminImageCleanupFilter,
+  AdminImageCleanupHealthSection,
   AdminImageCleanupPagination,
   AdminImageCleanupPermissionBadges,
-  AdminImageCleanupStats,
 } from "@/components/image-cleanup/AdminImageCleanupManagement";
+import { RecycleBinImageSettingsSection } from "@/components/posts/AdminRecycleBinManagement";
 import {
   getAdminImageCleanupData,
   normalizeImageCleanupFilter,
   normalizeImageSourceFilter,
 } from "@/features/image-cleanup/adminQueries";
+import { getRecycleBinImageRetentionSettings } from "@/features/posts/adminQueries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
@@ -36,12 +39,14 @@ export default function AdminImageCleanupPage({ searchParams }: AdminImageCleanu
     <AdminAuthGate>
       {async () => {
         const params = await searchParams;
+        const activeFilter = normalizeImageCleanupFilter(params?.filter);
         const data = await getAdminImageCleanupData({
-          filter: normalizeImageCleanupFilter(params?.filter),
+          filter: activeFilter,
           source: normalizeImageSourceFilter(params?.source),
           q: params?.q,
           page: normalizePage(params?.page),
         });
+        const imageRetentionSettings = await getRecycleBinImageRetentionSettings();
         const canView = data.permissions.viewImages || data.permissions.manageImageAssets;
         const canDelete = data.permissions.manageImageAssets;
 
@@ -55,13 +60,16 @@ export default function AdminImageCleanupPage({ searchParams }: AdminImageCleanu
 
         return (
           <div className="space-y-4">
-            <Link href="/admin/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
-              ← 返回总后台
-            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <AdminBackNavigation />
+              <AdminLogoutButton />
+            </div>
 
             <AdminPageHeader title="图片清理工具" description="扫描 image_assets 中疑似未使用的图片资产，展示引用状态和风险提示；确认后只标记删除，不物理删除文件。">
               <AdminImageCleanupPermissionBadges permissions={data.permissions} />
             </AdminPageHeader>
+
+            <RecycleBinResourceNav active="image-cleanup" />
 
             {data.state === "error" || data.state === "missing_config" ? (
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
@@ -69,7 +77,8 @@ export default function AdminImageCleanupPage({ searchParams }: AdminImageCleanu
               </div>
             ) : null}
 
-            <AdminImageCleanupStats totals={data.totals} />
+            <RecycleBinImageSettingsSection settings={imageRetentionSettings} />
+            <AdminImageCleanupHealthSection totals={data.totals} activeFilter={activeFilter} />
 
             <AdminCard title="扫描图片资产" description="默认显示未绑定业务内容、也未被帖子图片引用的疑似未使用图片；使用中的图片只读展示。">
               <AdminImageCleanupFilter filter={params?.filter} source={params?.source} q={params?.q} />
@@ -90,15 +99,6 @@ export default function AdminImageCleanupPage({ searchParams }: AdminImageCleanu
                 q={params?.q}
               />
             </AdminCard>
-            <nav aria-label="后台底部导航" className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-              <div className="flex flex-wrap gap-2">
-                <Link href="/admin/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
-                  返回总后台
-                </Link>
-                <AdminLogoutButton />
-              </div>
-            </nav>
-
           </div>
         );
       }}

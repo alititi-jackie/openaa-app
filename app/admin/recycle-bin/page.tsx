@@ -6,17 +6,29 @@ import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
+import { RecycleBinResourceNav } from "@/components/admin/RecycleBinResourceNav";
 import { NavigationRecycleBinList } from "@/components/navigation/NavigationRecycleBinManagement";
 import {
   OrphanFavoritesNotice,
   RecycleBinHealthSection,
   RecycleBinList,
+  RecycleBinNavigationSettingsSection,
   RecycleBinNewsHealthSection,
   RecycleBinNewsSettingsSection,
   RecycleBinSettingsSection,
 } from "@/components/posts/AdminRecycleBinManagement";
+import { NewsRecycleBinCategorySelect, PostRecycleBinTypeSelect } from "@/components/posts/RecycleBinFilterControls";
 import { getAdminNavigationRecycleBinData } from "@/features/navigation/queries";
-import { getRecycleBinData, getRecycleBinNewsData, type RecycleBinFilter, type RecycleBinNewsFilter } from "@/features/posts/adminQueries";
+import { getNewsCategories } from "@/features/news/queries";
+import { PUBLIC_POST_TYPES, POST_TYPE_LABELS } from "@/features/posts/constants";
+import {
+  getRecycleBinData,
+  getRecycleBinNavigationRetentionSettings,
+  getRecycleBinNewsData,
+  type RecycleBinFilter,
+  type RecycleBinNewsFilter,
+} from "@/features/posts/adminQueries";
+import type { PostType } from "@/features/posts/types";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
@@ -30,18 +42,8 @@ export const metadata = buildPageMetadata({
 
 type RecycleBinResourceType = "post" | "news" | "navigation";
 
-const resourceTabs: Array<{ value: RecycleBinResourceType; label: string }> = [
-  { value: "post", label: "发布信息" },
-  { value: "news", label: "新闻" },
-  { value: "navigation", label: "公共导航" },
-];
-
-const postFilterTabs: Array<{ value: RecycleBinFilter; label: string }> = [
+const statusFilterTabs: Array<{ value: RecycleBinFilter; label: string }> = [
   { value: "all", label: "全部" },
-  { value: "job", label: "招聘" },
-  { value: "housing", label: "房屋" },
-  { value: "marketplace", label: "二手" },
-  { value: "service", label: "服务" },
   { value: "expired", label: "已超期" },
   { value: "with_images", label: "带图片" },
   { value: "image_error", label: "图片异常" },
@@ -55,7 +57,7 @@ const newsFilterTabs: Array<{ value: RecycleBinNewsFilter; label: string }> = [
 ];
 
 type RecycleBinPageProps = {
-  searchParams?: Promise<{ tab?: string; filter?: string }>;
+  searchParams?: Promise<{ tab?: string; filter?: string; type?: string; category?: string }>;
 };
 
 export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProps) {
@@ -65,20 +67,27 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
         const params = await searchParams;
         if (params?.tab === "posts") {
           const query = new URLSearchParams({ tab: "post" });
+          if (params.type) query.set("type", params.type);
+          if (params.category) query.set("category", params.category);
           if (params.filter) query.set("filter", params.filter);
           redirect(`/admin/recycle-bin?${query.toString()}`);
         }
+
         const activeTab = normalizeResourceTab(params?.tab);
+        const postType = activeTab === "post" ? normalizePostType(params?.type) : "all";
         const postFilter = activeTab === "post" ? normalizePostFilter(params?.filter) : "all";
+        const newsCategory = activeTab === "news" ? normalizeNewsCategory(params?.category) : "all";
         const newsFilter = activeTab === "news" ? normalizeNewsFilter(params?.filter) : "all";
-        const postData = await getRecycleBinData(postFilter);
-        const newsData = activeTab === "news" ? await getRecycleBinNewsData(newsFilter) : null;
+
+        const postData = await getRecycleBinData(postFilter, postType);
+        const newsCategoriesResult = activeTab === "news" ? await getNewsCategories() : null;
+        const newsData = activeTab === "news" ? await getRecycleBinNewsData(newsFilter, newsCategory) : null;
 
         if (!postData.superAdmin) {
           return (
             <div className="space-y-4">
               <AdminBackNavigation />
-              <AdminPageHeader title="回收站" description="只有超级管理员可以访问回收站">
+              <AdminPageHeader title="回收站" description="只有超级管理员可以访问删除管理">
                 <AdminPermissionBadge allowed={false} label="super_admin" />
               </AdminPageHeader>
             </div>
@@ -86,6 +95,7 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
         }
 
         const navigationData = activeTab === "navigation" ? await getAdminNavigationRecycleBinData("links") : null;
+        const navigationSettings = activeTab === "navigation" ? await getRecycleBinNavigationRetentionSettings() : null;
 
         return (
           <div className="space-y-4">
@@ -94,40 +104,25 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
               <AdminLogoutButton />
             </div>
 
-            <AdminPageHeader title="回收站" description="统一管理已删除的发布信息、新闻和公共导航内容。">
+            <AdminPageHeader title="回收站" description="统一管理已删除的用户发布信息、新闻和公共导航内容。">
               <AdminPermissionBadge allowed={postData.superAdmin} label="super_admin" />
             </AdminPageHeader>
 
-            <nav aria-label="回收站资源分类" className="max-w-full overflow-x-auto overflow-y-hidden whitespace-nowrap py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <div className="inline-flex gap-2">
-                {resourceTabs.map((tab) => (
-                  <Link
-                    key={tab.value}
-                    href={tab.value === "post" ? "/admin/recycle-bin?tab=post" : `/admin/recycle-bin?tab=${tab.value}`}
-                    className={`inline-flex min-h-10 items-center justify-center rounded-xl px-4 py-2 text-sm font-black ring-1 ${
-                      activeTab === tab.value ? "bg-slate-950 text-white ring-slate-950" : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50"
-                    }`}
-                  >
-                    {tab.label}
-                  </Link>
-                ))}
-                <Link
-                  href="/admin/image-cleanup"
-                  className="inline-flex min-h-10 items-center justify-center rounded-xl px-4 py-2 text-sm font-black text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"
-                >
-                  图片清理工具
-                </Link>
-              </div>
-            </nav>
+            <RecycleBinResourceNav active={activeTab} />
 
             {activeTab === "post" ? (
               <>
-                <nav aria-label="发布信息回收站筛选" className="max-w-full overflow-x-auto overflow-y-hidden whitespace-nowrap py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <nav aria-label="用户发布信息回收站筛选" className="max-w-full overflow-x-auto overflow-y-hidden whitespace-nowrap py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   <div className="inline-flex gap-2">
-                    {postFilterTabs.map((tab) => (
+                    <PostRecycleBinTypeSelect
+                      value={postType}
+                      filter={postData.filter}
+                      options={PUBLIC_POST_TYPES.map((type) => ({ value: type, label: POST_TYPE_LABELS[type] }))}
+                    />
+                    {statusFilterTabs.map((tab) => (
                       <Link
                         key={tab.value}
-                        href={tab.value === "all" ? "/admin/recycle-bin?tab=post" : `/admin/recycle-bin?tab=post&filter=${tab.value}`}
+                        href={postFilterHref(tab.value, postType)}
                         className={`inline-flex min-h-9 items-center justify-center rounded-xl px-3 py-2 text-xs font-black ring-1 ${
                           postData.filter === tab.value ? "bg-blue-50 text-blue-800 ring-blue-200" : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50"
                         }`}
@@ -141,10 +136,10 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
                 {postData.error ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">{postData.error}</div> : null}
 
                 <RecycleBinSettingsSection settings={postData.retentionSettings} />
-                <RecycleBinHealthSection health={postData.health} activeFilter={postData.filter} />
+                <RecycleBinHealthSection health={postData.health} activeFilter={postData.filter} postType={postType} />
                 <OrphanFavoritesNotice visible={postData.filter === "orphan_favorites"} count={postData.health.orphanFavoriteCount} />
 
-                <AdminCard title="发布信息" description="恢复会先变为隐藏状态；永久删除后不可恢复。">
+                <AdminCard title="用户发布信息" description="恢复会先变为隐藏状态；永久删除后不可恢复。">
                   <RecycleBinList items={postData.items} />
                 </AdminCard>
               </>
@@ -154,10 +149,11 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
               <>
                 <nav aria-label="新闻回收站筛选" className="max-w-full overflow-x-auto overflow-y-hidden whitespace-nowrap py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   <div className="inline-flex gap-2">
+                    <NewsRecycleBinCategorySelect value={newsCategory} filter={newsData?.filter ?? "all"} categories={newsCategoriesResult?.data ?? []} />
                     {newsFilterTabs.map((tab) => (
                       <Link
                         key={tab.value}
-                        href={tab.value === "all" ? "/admin/recycle-bin?tab=news" : `/admin/recycle-bin?tab=news&filter=${tab.value}`}
+                        href={newsFilterHref(tab.value, newsCategory)}
                         className={`inline-flex min-h-9 items-center justify-center rounded-xl px-3 py-2 text-xs font-black ring-1 ${
                           newsData?.filter === tab.value ? "bg-blue-50 text-blue-800 ring-blue-200" : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50"
                         }`}
@@ -170,7 +166,7 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
 
                 {newsData?.error ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">{newsData.error}</div> : null}
                 {newsData ? <RecycleBinNewsSettingsSection settings={newsData.retentionSettings} /> : null}
-                {newsData ? <RecycleBinNewsHealthSection health={newsData.health} activeFilter={newsData.filter} /> : null}
+                {newsData ? <RecycleBinNewsHealthSection health={newsData.health} activeFilter={newsData.filter} category={newsCategory} /> : null}
 
                 <AdminCard title="新闻" description="新闻恢复后进入 hidden 状态，不会直接发布。">
                   <RecycleBinList items={newsData?.items ?? []} />
@@ -180,8 +176,9 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
 
             {activeTab === "navigation" ? (
               <>
+                {navigationSettings ? <RecycleBinNavigationSettingsSection settings={navigationSettings} /> : null}
                 {navigationData?.state === "error" ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">{navigationData.error ?? "公共导航内容读取失败，请稍后再试。"}</div> : null}
-                <AdminCard title="公共导航" description="只管理已软删除的网站；不做健康检查、删除设置或自动清理。">
+                <AdminCard title="公共导航" description="只管理已软删除的网站；不做健康检查、图片管理或自动清理。">
                   <NavigationRecycleBinList links={navigationData?.links ?? []} kind="links" />
                 </AdminCard>
               </>
@@ -198,19 +195,32 @@ function normalizeResourceTab(value?: string): RecycleBinResourceType {
   return "post";
 }
 
+function normalizePostType(value?: string): PostType | "all" {
+  return PUBLIC_POST_TYPES.includes(value as PostType) ? (value as PostType) : "all";
+}
+
 function normalizePostFilter(value?: string): RecycleBinFilter {
-  return value === "job" ||
-    value === "housing" ||
-    value === "marketplace" ||
-    value === "service" ||
-    value === "expired" ||
-    value === "with_images" ||
-    value === "image_error" ||
-    value === "orphan_favorites"
-    ? value
-    : "all";
+  return value === "expired" || value === "with_images" || value === "image_error" || value === "orphan_favorites" ? value : "all";
 }
 
 function normalizeNewsFilter(value?: string): RecycleBinNewsFilter {
   return value === "expired" || value === "with_images" || value === "image_error" ? value : "all";
+}
+
+function normalizeNewsCategory(value?: string) {
+  return value?.trim() || "all";
+}
+
+function postFilterHref(filter: RecycleBinFilter, postType: PostType | "all") {
+  const params = new URLSearchParams({ tab: "post" });
+  if (postType !== "all") params.set("type", postType);
+  if (filter !== "all") params.set("filter", filter);
+  return `/admin/recycle-bin?${params.toString()}`;
+}
+
+function newsFilterHref(filter: RecycleBinNewsFilter, category: string) {
+  const params = new URLSearchParams({ tab: "news" });
+  if (category !== "all") params.set("category", category);
+  if (filter !== "all") params.set("filter", filter);
+  return `/admin/recycle-bin?${params.toString()}`;
 }

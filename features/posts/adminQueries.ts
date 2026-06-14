@@ -3,7 +3,7 @@ import "server-only";
 import { hasAdminPermission, isSuperAdmin } from "@/lib/permissions/admin";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { POST_TYPE_LABELS, POST_TYPE_TO_ROUTE } from "./constants";
+import { POST_TYPE_LABELS, POST_TYPE_TO_ROUTE, PUBLIC_POST_TYPES } from "./constants";
 import type { PostStatus, PostType, QueryState } from "./types";
 
 export type AdminPostsPermissions = {
@@ -68,7 +68,7 @@ export type AdminPostsParams = {
 
 const ADMIN_POSTS_PAGE_SIZE = 20;
 const RECYCLE_BIN_LIMIT = 200;
-const MANAGED_POST_TYPES: PostType[] = ["job", "housing", "marketplace", "service"];
+const MANAGED_POST_TYPES: PostType[] = PUBLIC_POST_TYPES;
 
 export type RecycleBinFilter = "all" | "job" | "housing" | "marketplace" | "service" | "news" | "expired" | "with_images" | "image_error" | "orphan_favorites";
 export type RecycleBinNewsFilter = "all" | "expired" | "with_images" | "image_error";
@@ -98,6 +98,14 @@ export type RecycleBinRetentionSettings = {
 
 export type RecycleBinNewsRetentionSettings = {
   newsRetentionDays: number;
+};
+
+export type RecycleBinNavigationRetentionSettings = {
+  navigationRetentionDays: number;
+};
+
+export type RecycleBinImageRetentionSettings = {
+  imageRetentionDays: number;
 };
 
 export type RecycleBinPostDetail = RecycleBinItem & {
@@ -166,12 +174,20 @@ export type RecycleBinNewsResult = {
 export const RECYCLE_BIN_USER_RETENTION_KEY = "recycle_bin_user_retention_days";
 export const RECYCLE_BIN_ADMIN_RETENTION_KEY = "recycle_bin_admin_retention_days";
 export const RECYCLE_BIN_NEWS_RETENTION_KEY = "recycle_bin_news_retention_days";
+export const RECYCLE_BIN_NAVIGATION_RETENTION_KEY = "recycle_bin_navigation_retention_days";
+export const RECYCLE_BIN_IMAGE_RETENTION_KEY = "recycle_bin_image_retention_days";
 export const DEFAULT_RECYCLE_BIN_RETENTION_SETTINGS: RecycleBinRetentionSettings = {
   userRetentionDays: 30,
   adminRetentionDays: 90,
 };
 export const DEFAULT_RECYCLE_BIN_NEWS_RETENTION_SETTINGS: RecycleBinNewsRetentionSettings = {
   newsRetentionDays: 90,
+};
+export const DEFAULT_RECYCLE_BIN_NAVIGATION_RETENTION_SETTINGS: RecycleBinNavigationRetentionSettings = {
+  navigationRetentionDays: 90,
+};
+export const DEFAULT_RECYCLE_BIN_IMAGE_RETENTION_SETTINGS: RecycleBinImageRetentionSettings = {
+  imageRetentionDays: 30,
 };
 export const MIN_RECYCLE_BIN_RETENTION_DAYS = 1;
 export const MAX_RECYCLE_BIN_RETENTION_DAYS = 3650;
@@ -252,7 +268,7 @@ export async function getAdminPostsData(params: AdminPostsParams = {}): Promise<
   };
 }
 
-export async function getRecycleBinData(filter: RecycleBinFilter = "all"): Promise<RecycleBinResult> {
+export async function getRecycleBinData(filter: RecycleBinFilter = "all", postType: PostType | "all" = "all"): Promise<RecycleBinResult> {
   const superAdmin = await isSuperAdmin();
   const emptyHealth: RecycleBinHealth = {
     overdueCount: 0,
@@ -293,13 +309,17 @@ export async function getRecycleBinData(filter: RecycleBinFilter = "all"): Promi
   if (filter === "job" || filter === "housing" || filter === "marketplace" || filter === "service") {
     query = query.eq("post_type", filter);
   }
+  if (postType !== "all") {
+    query = query.eq("post_type", postType);
+  }
   const { data, error } = await query;
   if (error) {
     return { state: "error", superAdmin, filter, items: [], health: emptyHealth, retentionSettings, error: "回收站读取失败，请稍后再试。" };
   }
 
   const postRows = (data ?? []) as RecycleBinPostRecord[];
-  const healthRows = await readAllRecycleBinPosts(adminSupabase);
+  const allHealthRows = await readAllRecycleBinPosts(adminSupabase);
+  const healthRows = postType === "all" ? allHealthRows : allHealthRows.filter((post) => post.post_type === postType);
   const imageRows = await readRecycleBinImageRows(adminSupabase, healthRows.map((post) => post.id));
   const imageCounts = countImagesByPost(imageRows);
   const health = await buildRecycleBinHealth(adminSupabase, healthRows, imageRows, retentionSettings);
@@ -327,7 +347,7 @@ export async function getRecycleBinData(filter: RecycleBinFilter = "all"): Promi
   return { state: "ready", superAdmin, filter, items, health, retentionSettings };
 }
 
-export async function getRecycleBinNewsData(filter: RecycleBinNewsFilter = "all"): Promise<RecycleBinNewsResult> {
+export async function getRecycleBinNewsData(filter: RecycleBinNewsFilter = "all", categorySlug: string | "all" = "all"): Promise<RecycleBinNewsResult> {
   const superAdmin = await isSuperAdmin();
   const emptyHealth: RecycleBinNewsHealth = {
     overdueCount: 0,
@@ -356,8 +376,9 @@ export async function getRecycleBinNewsData(filter: RecycleBinNewsFilter = "all"
 
   const retentionSettings = await getRecycleBinNewsRetentionSettings(adminSupabase);
   const newsRows = await readAllRecycleBinNews(adminSupabase);
-  const health = buildRecycleBinNewsHealth(newsRows, retentionSettings);
-  let items = newsRows.map((news) => mapRecycleBinNewsItem(news, retentionSettings)).sort(compareRecycleBinItems);
+  const filteredNewsRows = categorySlug === "all" ? newsRows : newsRows.filter((news) => newsCategorySlug(news.news_categories) === categorySlug);
+  const health = buildRecycleBinNewsHealth(filteredNewsRows, retentionSettings);
+  let items = filteredNewsRows.map((news) => mapRecycleBinNewsItem(news, retentionSettings)).sort(compareRecycleBinItems);
 
   if (filter === "expired") {
     const now = Date.now();
@@ -763,6 +784,48 @@ export async function getRecycleBinNewsRetentionSettings(adminSupabase?: ReturnT
   };
 }
 
+export async function getRecycleBinNavigationRetentionSettings(adminSupabase?: ReturnType<typeof createSupabaseAdminClient>): Promise<RecycleBinNavigationRetentionSettings> {
+  let supabase = adminSupabase;
+  if (!supabase) {
+    try {
+      supabase = createSupabaseAdminClient();
+    } catch {
+      return DEFAULT_RECYCLE_BIN_NAVIGATION_RETENTION_SETTINGS;
+    }
+  }
+
+  const { data } = await supabase
+    .from("site_settings")
+    .select("key,value")
+    .eq("key", RECYCLE_BIN_NAVIGATION_RETENTION_KEY)
+    .maybeSingle();
+
+  return {
+    navigationRetentionDays: normalizeRecycleBinRetentionDays(data?.value, DEFAULT_RECYCLE_BIN_NAVIGATION_RETENTION_SETTINGS.navigationRetentionDays),
+  };
+}
+
+export async function getRecycleBinImageRetentionSettings(adminSupabase?: ReturnType<typeof createSupabaseAdminClient>): Promise<RecycleBinImageRetentionSettings> {
+  let supabase = adminSupabase;
+  if (!supabase) {
+    try {
+      supabase = createSupabaseAdminClient();
+    } catch {
+      return DEFAULT_RECYCLE_BIN_IMAGE_RETENTION_SETTINGS;
+    }
+  }
+
+  const { data } = await supabase
+    .from("site_settings")
+    .select("key,value")
+    .eq("key", RECYCLE_BIN_IMAGE_RETENTION_KEY)
+    .maybeSingle();
+
+  return {
+    imageRetentionDays: normalizeRecycleBinRetentionDays(data?.value, DEFAULT_RECYCLE_BIN_IMAGE_RETENTION_SETTINGS.imageRetentionDays),
+  };
+}
+
 export function normalizeRecycleBinRetentionDays(value: unknown, fallback: number) {
   let candidate: unknown = value;
 
@@ -780,4 +843,10 @@ function imageAssetFromRelation(value: unknown) {
   if (!value) return null;
   if (Array.isArray(value)) return (value[0] as Record<string, unknown> | undefined) ?? null;
   return value as Record<string, unknown>;
+}
+
+function newsCategorySlug(value: RecycleBinNewsRecord["news_categories"]) {
+  if (!value) return null;
+  const category = Array.isArray(value) ? value[0] : value;
+  return category?.slug ?? null;
 }

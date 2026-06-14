@@ -5,7 +5,6 @@ import {
   Database,
   FileText,
   Home,
-  Image as ImageIcon,
   LayoutGrid,
   Megaphone,
   MessageSquareText,
@@ -189,15 +188,6 @@ const adminEntryGroups: AdminEntryGroup[] = [
         href: "/admin/settings",
         icon: <Settings size={20} aria-hidden="true" />,
         permissionKeys: ["manage_settings"],
-        status: "ready",
-      },
-      {
-        id: "image-cleanup",
-        title: "图片清理工具",
-        description: "扫描 image_assets 中疑似未使用的图片资产，管理员确认后标记删除。",
-        href: "/admin/image-cleanup",
-        icon: <ImageIcon size={20} aria-hidden="true" />,
-        permissionKeys: ["view_images", "manage_image_assets"],
         status: "ready",
       },
       {
