@@ -2,18 +2,32 @@
 
 import Link from "next/link";
 import { useActionState, useState, type ReactNode } from "react";
-import { permanentlyDeletePost, restoreDeletedPost, type AdminPostActionState } from "@/features/posts/adminActions";
-import type { RecycleBinFilter, RecycleBinHealth, RecycleBinItem } from "@/features/posts/adminQueries";
+import { permanentlyDeletePost, restoreDeletedPost, updateRecycleBinRetentionSettings, type AdminPostActionState } from "@/features/posts/adminActions";
+import type { RecycleBinFilter, RecycleBinHealth, RecycleBinItem, RecycleBinRetentionSettings } from "@/features/posts/adminQueries";
 
 const initialActionState: AdminPostActionState = { ok: true, message: "" };
 
-export function RecycleBinSettingsSection() {
+export function RecycleBinSettingsSection({ settings }: { settings: RecycleBinRetentionSettings }) {
+  const [state, action, pending] = useActionState(updateRecycleBinRetentionSettings, initialActionState);
+
   return (
     <CollapsibleSection title="删除设置">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <SettingItem label="用户删除保留" value="30 天" />
-        <SettingItem label="管理员删除保留" value="90 天" />
-      </div>
+      <form action={action} className="space-y-3">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <RetentionInput label="用户删除保留" name="user_retention_days" defaultValue={settings.userRetentionDays} />
+          <RetentionInput label="管理员删除保留" name="admin_retention_days" defaultValue={settings.adminRetentionDays} />
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="submit"
+            disabled={pending}
+            className="inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {pending ? "保存中..." : "保存设置"}
+          </button>
+          {state.message ? <p className={state.ok ? "text-sm font-semibold text-emerald-700" : "text-sm font-semibold text-red-600"}>{state.message}</p> : null}
+        </div>
+      </form>
     </CollapsibleSection>
   );
 }
@@ -71,12 +85,24 @@ function CollapsibleSection({ title, children }: { title: string; children: Reac
   );
 }
 
-function SettingItem({ label, value }: { label: string; value: string }) {
+function RetentionInput({ label, name, defaultValue }: { label: string; name: string; defaultValue: number }) {
   return (
-    <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100">
+    <label className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100">
       <span className="block text-xs font-bold text-slate-500">{label}</span>
-      <span className="mt-1 block text-xl font-black text-slate-950">{value}</span>
-    </div>
+      <span className="mt-2 flex items-center gap-2">
+        <input
+          name={name}
+          type="number"
+          min={1}
+          max={3650}
+          step={1}
+          required
+          defaultValue={defaultValue}
+          className="min-h-10 w-32 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-950 outline-none focus:border-blue-500"
+        />
+        <span className="text-sm font-black text-slate-700">天</span>
+      </span>
+    </label>
   );
 }
 
@@ -115,7 +141,7 @@ function RecycleBinRow({ item }: { item: RecycleBinItem }) {
           <div className="mt-2 grid gap-1 text-xs font-semibold text-slate-500 md:grid-cols-4">
             <span>删除时间：{formatDateTime(item.deletedAt)}</span>
             <span>图片数量：{item.imageCount}</span>
-            <span>保留至：{formatDateTime(item.purgeAt)}</span>
+            <span>自动物理删除时间：{formatDateTime(item.purgeAt)}</span>
             <span className="break-all">ID：{item.id}</span>
           </div>
           {item.imageError ? <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">图片异常：{item.imageError}</p> : null}

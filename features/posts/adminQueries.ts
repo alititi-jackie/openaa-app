@@ -88,6 +88,11 @@ export type RecycleBinItem = {
   imageErrorAt: string | null;
 };
 
+export type RecycleBinRetentionSettings = {
+  userRetentionDays: number;
+  adminRetentionDays: number;
+};
+
 export type RecycleBinPostDetail = RecycleBinItem & {
   summary: string;
   body: string;
@@ -114,8 +119,18 @@ export type RecycleBinResult = {
   filter: RecycleBinFilter;
   items: RecycleBinItem[];
   health: RecycleBinHealth;
+  retentionSettings: RecycleBinRetentionSettings;
   error?: string;
 };
+
+export const RECYCLE_BIN_USER_RETENTION_KEY = "recycle_bin_user_retention_days";
+export const RECYCLE_BIN_ADMIN_RETENTION_KEY = "recycle_bin_admin_retention_days";
+export const DEFAULT_RECYCLE_BIN_RETENTION_SETTINGS: RecycleBinRetentionSettings = {
+  userRetentionDays: 30,
+  adminRetentionDays: 90,
+};
+export const MIN_RECYCLE_BIN_RETENTION_DAYS = 1;
+export const MAX_RECYCLE_BIN_RETENTION_DAYS = 3650;
 
 export async function getAdminPostsPermissions(): Promise<AdminPostsPermissions> {
   const [viewPosts, moderatePosts, approvePosts, rejectPosts, hidePosts, restorePosts, deletePosts] = await Promise.all([
@@ -203,7 +218,7 @@ export async function getRecycleBinData(filter: RecycleBinFilter = "all"): Promi
   };
 
   if (!superAdmin) {
-    return { state: "ready", superAdmin, filter, items: [], health: emptyHealth };
+    return { state: "ready", superAdmin, filter, items: [], health: emptyHealth, retentionSettings: DEFAULT_RECYCLE_BIN_RETENTION_SETTINGS };
   }
 
   let adminSupabase: ReturnType<typeof createSupabaseAdminClient>;
@@ -216,9 +231,12 @@ export async function getRecycleBinData(filter: RecycleBinFilter = "all"): Promi
       filter,
       items: [],
       health: emptyHealth,
+      retentionSettings: DEFAULT_RECYCLE_BIN_RETENTION_SETTINGS,
       error: "Supabase service role 环境变量未配置，删除管理无法读取完整数据。",
     };
   }
+
+  const retentionSettings = await getRecycleBinRetentionSettings(adminSupabase);
 
   let query = adminSupabase
     .from("posts")
@@ -233,16 +251,16 @@ export async function getRecycleBinData(filter: RecycleBinFilter = "all"): Promi
   }
   const { data, error } = await query;
   if (error) {
-    return { state: "error", superAdmin, filter, items: [], health: emptyHealth, error: "删除管理读取失败，请稍后再试。" };
+    return { state: "error", superAdmin, filter, items: [], health: emptyHealth, retentionSettings, error: "删除管理读取失败，请稍后再试。" };
   }
 
   const postRows = (data ?? []) as RecycleBinPostRecord[];
   const healthRows = await readAllRecycleBinPosts(adminSupabase);
   const imageRows = await readRecycleBinImageRows(adminSupabase, healthRows.map((post) => post.id));
   const imageCounts = countImagesByPost(imageRows);
-  const health = await buildRecycleBinHealth(adminSupabase, healthRows, imageRows);
+  const health = await buildRecycleBinHealth(adminSupabase, healthRows, imageRows, retentionSettings);
 
-  let items = postRows.map((post) => mapRecycleBinItem(post, imageCounts.get(post.id) ?? 0));
+  let items = postRows.map((post) => mapRecycleBinItem(post, imageCounts.get(post.id) ?? 0, retentionSettings));
   if (filter === "expired") {
     const now = Date.now();
     items = items.filter((item) => item.purgeAt ? new Date(item.purgeAt).getTime() <= now : false);
@@ -257,7 +275,7 @@ export async function getRecycleBinData(filter: RecycleBinFilter = "all"): Promi
     items = [];
   }
 
-  return { state: "ready", superAdmin, filter, items, health };
+  return { state: "ready", superAdmin, filter, items, health, retentionSettings };
 }
 
 export async function getRecycleBinPostDetail(id: string): Promise<{
@@ -343,7 +361,7 @@ export async function getRecycleBinPostDetail(id: string): Promise<{
     state: "ready",
     superAdmin,
     post: {
-      ...mapRecycleBinItem(record, images.length),
+      ...mapRecycleBinItem(record, images.length, await getRecycleBinRetentionSettings(adminSupabase)),
       summary: record.summary ?? "",
       body: record.body ?? "",
       images,
@@ -436,9 +454,14 @@ function countImagesByPost(rows: RecycleBinImageRow[]) {
   return counts;
 }
 
-async function buildRecycleBinHealth(adminSupabase: ReturnType<typeof createSupabaseAdminClient>, posts: RecycleBinPostRecord[], imageRows: RecycleBinImageRow[]): Promise<RecycleBinHealth> {
+async function buildRecycleBinHealth(
+  adminSupabase: ReturnType<typeof createSupabaseAdminClient>,
+  posts: RecycleBinPostRecord[],
+  imageRows: RecycleBinImageRow[],
+  retentionSettings: RecycleBinRetentionSettings,
+): Promise<RecycleBinHealth> {
   const now = Date.now();
-  const items = posts.map((post) => mapRecycleBinItem(post, 0));
+  const items = posts.map((post) => mapRecycleBinItem(post, 0, retentionSettings));
   const deletedPostsWithImageIds = new Set(imageRows.map((row) => row.post_id).filter((id): id is string => Boolean(id)));
   const possibleMissingStorageCount = imageRows.filter((row) => {
     const asset = imageAssetFromRelation(row.image_assets);
@@ -479,7 +502,7 @@ async function countOrphanFavorites(adminSupabase: ReturnType<typeof createSupab
   }).length;
 }
 
-function mapRecycleBinItem(record: RecycleBinPostRecord, imageCount: number): RecycleBinItem {
+function mapRecycleBinItem(record: RecycleBinPostRecord, imageCount: number, retentionSettings: RecycleBinRetentionSettings): RecycleBinItem {
   const source = record.deletion_source === "user" || record.deletion_source === "admin" ? record.deletion_source : "unknown";
   return {
     id: record.id,
@@ -490,7 +513,7 @@ function mapRecycleBinItem(record: RecycleBinPostRecord, imageCount: number): Re
     deletedAt: record.deleted_at,
     deletedSource: source,
     imageCount,
-    purgeAt: record.deleted_at ? retentionDate(record.deleted_at, source).toISOString() : null,
+    purgeAt: record.deleted_at ? retentionDate(record.deleted_at, source, retentionSettings).toISOString() : null,
     href: `/admin/recycle-bin/${record.id}`,
     hasImageError: Boolean(record.deletion_error || record.deletion_error_at),
     imageError: record.deletion_error,
@@ -498,11 +521,46 @@ function mapRecycleBinItem(record: RecycleBinPostRecord, imageCount: number): Re
   };
 }
 
-function retentionDate(deletedAt: string, source: "user" | "admin" | "unknown") {
-  const days = source === "admin" ? 90 : 30;
+function retentionDate(deletedAt: string, source: "user" | "admin" | "unknown", settings: RecycleBinRetentionSettings) {
+  const days = source === "admin" ? settings.adminRetentionDays : settings.userRetentionDays;
   const date = new Date(deletedAt);
   date.setDate(date.getDate() + days);
   return date;
+}
+
+export async function getRecycleBinRetentionSettings(adminSupabase?: ReturnType<typeof createSupabaseAdminClient>): Promise<RecycleBinRetentionSettings> {
+  let supabase = adminSupabase;
+  if (!supabase) {
+    try {
+      supabase = createSupabaseAdminClient();
+    } catch {
+      return DEFAULT_RECYCLE_BIN_RETENTION_SETTINGS;
+    }
+  }
+
+  const { data } = await supabase
+    .from("site_settings")
+    .select("key,value")
+    .in("key", [RECYCLE_BIN_USER_RETENTION_KEY, RECYCLE_BIN_ADMIN_RETENTION_KEY]);
+
+  const rows = (data ?? []) as Array<{ key: string; value: unknown }>;
+  return {
+    userRetentionDays: normalizeRecycleBinRetentionDays(rows.find((row) => row.key === RECYCLE_BIN_USER_RETENTION_KEY)?.value, DEFAULT_RECYCLE_BIN_RETENTION_SETTINGS.userRetentionDays),
+    adminRetentionDays: normalizeRecycleBinRetentionDays(rows.find((row) => row.key === RECYCLE_BIN_ADMIN_RETENTION_KEY)?.value, DEFAULT_RECYCLE_BIN_RETENTION_SETTINGS.adminRetentionDays),
+  };
+}
+
+export function normalizeRecycleBinRetentionDays(value: unknown, fallback: number) {
+  let candidate: unknown = value;
+
+  if (candidate && typeof candidate === "object" && !Array.isArray(candidate)) {
+    const record = candidate as Record<string, unknown>;
+    candidate = record.days ?? record.retentionDays ?? record.value;
+  }
+
+  const parsed = typeof candidate === "number" ? candidate : typeof candidate === "string" ? Number(candidate) : Number.NaN;
+  if (!Number.isFinite(parsed) || !Number.isInteger(parsed)) return fallback;
+  return Math.min(MAX_RECYCLE_BIN_RETENTION_DAYS, Math.max(MIN_RECYCLE_BIN_RETENTION_DAYS, parsed));
 }
 
 function imageAssetFromRelation(value: unknown) {

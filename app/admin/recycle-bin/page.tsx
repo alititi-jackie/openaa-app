@@ -81,7 +81,7 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
 
             {data.error ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">{data.error}</div> : null}
 
-            <RecycleBinSettingsSection />
+            <RecycleBinSettingsSection settings={data.retentionSettings} />
             <RecycleBinHealthSection health={data.health} activeFilter={data.filter} />
             <OrphanFavoritesNotice visible={data.filter === "orphan_favorites"} count={data.health.orphanFavoriteCount} />
 

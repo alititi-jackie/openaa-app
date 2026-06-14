@@ -6,6 +6,13 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { POST_TYPE_TO_ROUTE } from "./constants";
 import { postHref } from "./formMappers";
+import {
+  MAX_RECYCLE_BIN_RETENTION_DAYS,
+  MIN_RECYCLE_BIN_RETENTION_DAYS,
+  RECYCLE_BIN_ADMIN_RETENTION_KEY,
+  RECYCLE_BIN_USER_RETENTION_KEY,
+  getRecycleBinRetentionSettings,
+} from "./adminQueries";
 import type { PostStatus, PostType } from "./types";
 
 type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
@@ -263,6 +270,49 @@ export async function permanentlyDeletePost(_state: AdminPostActionState, formDa
   return ok("已永久删除。");
 }
 
+export async function updateRecycleBinRetentionSettings(_state: AdminPostActionState, formData: FormData): Promise<AdminPostActionState> {
+  const userRetentionDays = readPositiveInteger(formData, "user_retention_days");
+  const adminRetentionDays = readPositiveInteger(formData, "admin_retention_days");
+
+  if (!isValidRetentionDays(userRetentionDays) || !isValidRetentionDays(adminRetentionDays)) {
+    return fail("保存失败，请稍后再试");
+  }
+
+  const context = await getSuperAdminActionContext();
+  if (!context.ok) return fail("保存失败，请稍后再试");
+
+  const before = await getRecycleBinRetentionSettings(context.adminSupabase);
+  const now = new Date().toISOString();
+  const payload = [
+    {
+      key: RECYCLE_BIN_USER_RETENTION_KEY,
+      value: { days: userRetentionDays },
+      description: "回收站中用户删除内容的保留天数。",
+      is_public: false,
+      updated_by: context.userId,
+      updated_at: now,
+    },
+    {
+      key: RECYCLE_BIN_ADMIN_RETENTION_KEY,
+      value: { days: adminRetentionDays },
+      description: "回收站中管理员删除内容的保留天数。",
+      is_public: false,
+      updated_by: context.userId,
+      updated_at: now,
+    },
+  ];
+
+  const { error } = await context.adminSupabase.from("site_settings").upsert(payload, { onConflict: "key" });
+  if (error) return fail("保存失败，请稍后再试");
+
+  await writeAuditLog(context, "update_recycle_bin_retention_settings", "recycle_bin_retention", before, {
+    userRetentionDays,
+    adminRetentionDays,
+  });
+  revalidatePath("/admin/recycle-bin");
+  return ok("删除设置已保存");
+}
+
 async function getSuperAdminActionContext(): Promise<SuperAdminActionContext> {
   const supabase = await createSupabaseServerClient();
   if (!supabase) return { ok: false, message: "Supabase 环境变量未配置。" };
@@ -305,6 +355,16 @@ function imageAssetFromRelation(value: unknown) {
 function readText(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value.trim() : "";
+}
+
+function readPositiveInteger(formData: FormData, key: string) {
+  const value = readText(formData, key);
+  if (!/^\d+$/.test(value)) return Number.NaN;
+  return Number(value);
+}
+
+function isValidRetentionDays(value: number) {
+  return Number.isInteger(value) && value >= MIN_RECYCLE_BIN_RETENTION_DAYS && value <= MAX_RECYCLE_BIN_RETENTION_DAYS;
 }
 
 function isPostStatus(value: string): value is PostStatus {
