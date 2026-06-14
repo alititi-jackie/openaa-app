@@ -69,6 +69,7 @@ export async function updateAdminRole(_state: AdminHomeActionState, formData: Fo
   if (role === "super_admin" && !context.isSuperAdmin) return fail("只有 super_admin 可以改成 super_admin。");
 
   const before = await readAdminRoleById(context.supabase, roleId);
+  if (before?.user_id === context.userId) return fail("不能修改自己的管理员权限。");
   if (!before) return fail("管理员记录不存在。");
   if (before.role === "super_admin" && !context.isSuperAdmin) return fail("只有 super_admin 可以修改 super_admin。");
 
@@ -92,6 +93,7 @@ export async function setAdminRoleActive(_state: AdminHomeActionState, formData:
   if (!context.ok) return fail(context.message);
 
   const before = await readAdminRoleById(context.supabase, roleId);
+  if (before?.user_id === context.userId) return fail(active ? "不能恢复自己的管理员账号。" : "不能停用自己的管理员账号。");
   if (!before) return fail("管理员记录不存在。");
   if (before.role === "super_admin" && !context.isSuperAdmin) return fail("只有 super_admin 可以停用或恢复 super_admin。");
 

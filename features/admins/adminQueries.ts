@@ -2,25 +2,10 @@ import "server-only";
 
 import { getCurrentAdminRole, hasAdminPermission, isSuperAdmin } from "@/lib/permissions/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { adminRoleLabels } from "@/features/admins/adminRoleConfig";
 import type { AdminRoleName } from "@/lib/supabase/types";
 
 const PAGE_SIZE = 20;
-
-export const adminRoleLabels: Record<AdminRoleName, string> = {
-  super_admin: "超级管理员",
-  admin: "管理员",
-  editor: "编辑",
-  moderator: "审核员",
-  support: "客服",
-};
-
-export const adminRoleOptions: Array<{ value: AdminRoleName; label: string }> = [
-  { value: "support", label: adminRoleLabels.support },
-  { value: "moderator", label: adminRoleLabels.moderator },
-  { value: "editor", label: adminRoleLabels.editor },
-  { value: "admin", label: adminRoleLabels.admin },
-  { value: "super_admin", label: adminRoleLabels.super_admin },
-];
 
 export type AdminsPermissions = {
   viewAdmins: boolean;

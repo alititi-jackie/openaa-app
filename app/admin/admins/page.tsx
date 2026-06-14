@@ -77,7 +77,7 @@ export default function AdminAdminsPage({ searchParams }: AdminAdminsPageProps) 
               <AdminCandidates candidates={data.candidates} permissions={data.permissions} />
             </AdminCard>
 
-            <AdminCard title="管理员列表" description="支持改角色、停用和恢复。不能停用或降级最后一个 active super_admin。">
+            <AdminCard title="管理员列表" description="支持改角色、停用和恢复。不能停用或降级最后一个启用的 super_admin。">
               <AdminRolesList admins={data.admins} permissions={data.permissions} />
               <AdminRolePagination page={data.page} pageCount={data.pageCount} totalCount={data.totalCount} q={params?.q} role={params?.role} status={params?.status} />
             </AdminCard>
