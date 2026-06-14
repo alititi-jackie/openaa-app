@@ -104,6 +104,55 @@ async function writeAuditLog(
   return !error;
 }
 
+async function writePostAdminEvent(
+  supabase: SupabasePostClient,
+  {
+    postId,
+    actorId,
+    eventType,
+    templateKey,
+    statusBefore,
+    statusAfter,
+    title,
+    body,
+  }: {
+    postId: string;
+    actorId: string;
+    eventType: string;
+    templateKey?: string | null;
+    statusBefore?: string | null;
+    statusAfter?: string | null;
+    title?: string | null;
+    body?: string | null;
+  },
+) {
+  const { error } = await supabase.from("post_admin_events").insert({
+    post_id: postId,
+    actor_id: actorId,
+    event_type: eventType,
+    template_key: templateKey || null,
+    status_before: statusBefore || null,
+    status_after: statusAfter || null,
+    title: title || null,
+    body: body || null,
+    metadata: {},
+  });
+
+  if (error) {
+    console.error("[admin/user-posts] Failed to write post admin event", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      postId,
+      eventType,
+    });
+    return false;
+  }
+
+  return true;
+}
+
 export async function setAdminPostStatus(_state: AdminPostActionState, formData: FormData): Promise<AdminPostActionState> {
   const id = readText(formData, "id");
   const status = readText(formData, "status") as PostStatus;
@@ -120,6 +169,11 @@ export async function setAdminPostStatus(_state: AdminPostActionState, formData:
   if (before.status === status) return ok("帖子状态未变化。");
 
   const now = new Date().toISOString();
+  const shouldNotify = formData.get("notify_user") === "on";
+  const eventType = eventActionForStatus(status, before.status);
+  const eventTemplateKey = shouldNotify ? readText(formData, "notification_template_key") || notificationTemplateForStatus(status) : null;
+  const eventTitle = shouldNotify ? readText(formData, "notification_title") : "";
+  const eventBody = shouldNotify ? readText(formData, "notification_body") : "";
   const payload: {
     status: PostStatus;
     published_at?: string | null;
@@ -129,9 +183,19 @@ export async function setAdminPostStatus(_state: AdminPostActionState, formData:
     deletion_source?: "admin" | null;
     deletion_error?: string | null;
     deletion_error_at?: string | null;
+    last_admin_action?: string | null;
+    last_admin_action_at?: string | null;
+    last_admin_action_by?: string | null;
+    last_admin_action_template_key?: string | null;
+    last_admin_action_reason?: string | null;
     updated_at: string;
   } = {
     status,
+    last_admin_action: eventType,
+    last_admin_action_at: now,
+    last_admin_action_by: context.userId,
+    last_admin_action_template_key: eventTemplateKey,
+    last_admin_action_reason: eventTitle || null,
     updated_at: now,
   };
   if (status === "published") {
@@ -185,6 +249,17 @@ export async function setAdminPostStatus(_state: AdminPostActionState, formData:
     formData,
   });
 
+  await writePostAdminEvent(context.supabase, {
+    postId: id,
+    actorId: context.userId,
+    eventType,
+    templateKey: eventTemplateKey,
+    statusBefore: before.status,
+    statusAfter: status,
+    title: eventTitle,
+    body: eventBody,
+  });
+
   revalidatePost(before.post_type, id);
   if (!notificationResult.ok) return ok(`帖子状态已更新，但通知发送失败：${notificationResult.message}`);
   return ok("帖子状态已更新。");
@@ -199,6 +274,9 @@ export async function sendAdminPostAuthorNotification(_state: AdminPostActionSta
 
   const post = await readPost(context.supabase, id);
   if (!post) return fail("用户发布信息不存在或无权读取。");
+  const templateKey = readText(formData, "notification_template_key") || notificationTemplateForStatus(post.status) || "content_issue";
+  const title = readText(formData, "notification_title");
+  const body = readText(formData, "notification_body");
 
   const notificationResult = await maybeSendPostActionNotification({
     actorId: context.userId,
@@ -210,6 +288,28 @@ export async function sendAdminPostAuthorNotification(_state: AdminPostActionSta
   });
 
   if (!notificationResult.ok) return fail(`通知发送失败：${notificationResult.message}`);
+  const now = new Date().toISOString();
+  await context.supabase
+    .from("posts")
+    .update({
+      last_admin_action: "notify_author",
+      last_admin_action_at: now,
+      last_admin_action_by: context.userId,
+      last_admin_action_template_key: templateKey,
+      last_admin_action_reason: title || null,
+      updated_at: now,
+    })
+    .eq("id", id);
+  await writePostAdminEvent(context.supabase, {
+    postId: id,
+    actorId: context.userId,
+    eventType: "notify_author",
+    templateKey,
+    statusBefore: post.status,
+    statusAfter: post.status,
+    title,
+    body,
+  });
   revalidatePath("/admin/user-posts");
   return ok("通知已发送。");
 }
@@ -237,6 +337,11 @@ export async function restoreDeletedPost(_state: AdminPostActionState, formData:
     deletion_source: null,
     deletion_error: null,
     deletion_error_at: null,
+    last_admin_action: "restore_post_from_recycle_bin",
+    last_admin_action_at: now,
+    last_admin_action_by: context.userId,
+    last_admin_action_template_key: formData.get("notify_user") === "on" ? readText(formData, "notification_template_key") || "admin_post_restored" : null,
+    last_admin_action_reason: formData.get("notify_user") === "on" ? readText(formData, "notification_title") || null : null,
     updated_at: now,
   };
 
@@ -253,6 +358,16 @@ export async function restoreDeletedPost(_state: AdminPostActionState, formData:
     templateFallback: "admin_post_restored",
     formData,
     adminSupabase: context.adminSupabase,
+  });
+  await writePostAdminEvent(context.adminSupabase, {
+    postId: id,
+    actorId: context.userId,
+    eventType: "restore_post_from_recycle_bin",
+    templateKey: payload.last_admin_action_template_key,
+    statusBefore: before.status,
+    statusAfter: "hidden",
+    title: readText(formData, "notification_title"),
+    body: readText(formData, "notification_body"),
   });
   revalidatePost(before.post_type, id);
   if (!notificationResult.ok) return ok(`已恢复；通知发送失败：${notificationResult.message}`);
@@ -631,11 +746,17 @@ function auditActionForStatus(status: PostStatus) {
   return `set_post_${status}`;
 }
 
+function eventActionForStatus(status: PostStatus, beforeStatus: PostStatus) {
+  if (status === "published" && beforeStatus === "pending_review") return "approve_post";
+  return auditActionForStatus(status);
+}
+
 function revalidatePost(type: PostType, id: string) {
   revalidatePath("/");
   revalidatePath(POST_TYPE_TO_ROUTE[type]);
   revalidatePath(postHref(type, id));
   revalidatePath("/admin/user-posts");
+  revalidatePath(`/admin/user-posts/${id}`);
 }
 
 function revalidateNews(slug?: string | null) {

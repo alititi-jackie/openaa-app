@@ -19,9 +19,14 @@ function shareText(post: PostDetailViewData) {
   return [post.tag, post.location, post.description].filter(Boolean).join(" · ");
 }
 
-export async function PostDetailView({ post }: { post: PostDetailViewData | null }) {
+export async function PostDetailView({ post, adminReturnHref }: { post: PostDetailViewData | null; adminReturnHref?: string | null }) {
   if (!post) {
-    return <EmptyState title="内容不存在" description="这条信息不存在，或当前不是公开已发布状态。" />;
+    return (
+      <div className="space-y-3">
+        {adminReturnHref ? <AdminReturnLink href={adminReturnHref} /> : null}
+        <EmptyState title="内容不存在" description="这条信息不存在，或当前不是公开已发布状态。" />
+      </div>
+    );
   }
 
   const engagement = await getPostEngagementState(post.id, post.type, post.title);
@@ -30,6 +35,8 @@ export async function PostDetailView({ post }: { post: PostDetailViewData | null
 
   return (
     <article className="space-y-4">
+      {adminReturnHref ? <AdminReturnLink href={adminReturnHref} /> : null}
+
       <DetailActionBar
         backHref={backHref}
         postId={post.id}
@@ -81,5 +88,13 @@ export async function PostDetailView({ post }: { post: PostDetailViewData | null
         返回列表
       </Link>
     </article>
+  );
+}
+
+function AdminReturnLink({ href }: { href: string }) {
+  return (
+    <Link href={href} className="block rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-center text-sm font-black text-blue-700">
+      返回用户发布信息管理
+    </Link>
   );
 }

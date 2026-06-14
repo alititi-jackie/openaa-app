@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useActionState, useMemo, useState } from "react";
+import { AdminActionButton } from "@/components/admin/AdminActionButton";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { sendAdminPostAuthorNotification, setAdminPostStatus, type AdminPostActionState } from "@/features/posts/adminActions";
 import type { AdminPostListItem, AdminPostsPermissions as AdminPostsPermissionSet } from "@/features/posts/adminQueries";
 import { POST_TYPE_LABELS, PUBLIC_POST_TYPES } from "@/features/posts/constants";
-import { postStatusLabel, postStatusTone } from "@/features/posts/display";
+import { postStatusTone } from "@/features/posts/display";
 import type { PostStatus, PostType } from "@/features/posts/types";
 
 type TemplateOption = {
@@ -131,39 +132,46 @@ export function AdminPostsList({ posts, permissions }: { posts: AdminPostListIte
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-black text-blue-700">{post.typeLabel}</span>
-                <span className={`rounded-full px-2.5 py-1 text-xs font-black ${postStatusTone(post.status)}`}>{postStatusLabel(post.status)}</span>
-                <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-500">{post.publiclyVisible ? "公开显示" : "未公开显示"}</span>
+                <span className={`rounded-full px-2.5 py-1 text-xs font-black ${postStatusTone(post.status)}`}>{adminPostStatusLabel(post.status)}</span>
               </div>
               <h3 className="mt-2 line-clamp-2 font-black text-slate-950">{post.title}</h3>
-              <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-600">{post.summary}</p>
-              <div className="mt-3 grid gap-1 break-all text-xs font-semibold text-slate-500 sm:grid-cols-2">
-                <span>作者：{post.authorLabel}</span>
-                <span>地区：{post.locationLabel}</span>
+              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate-500">
                 <span>发布时间：{formatDate(post.publishedAt ?? post.createdAt)}</span>
                 <span>更新时间：{formatDate(post.updatedAt)}</span>
-                <span>浏览数：{post.viewCount}</span>
-                <span>图片数量：{post.imageCount}</span>
-                <span className="sm:col-span-2">联系方式：{post.contactSummary}</span>
               </div>
+              {post.lastAdminAction ? <p className="mt-3 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-slate-600">管理员处理：{adminActionLabel(post.lastAdminAction, post.lastAdminActionTemplateKey, post.lastAdminActionReason)}</p> : null}
             </div>
-            <div className="flex w-full flex-wrap items-center gap-2 md:w-auto md:max-w-xs md:justify-end">
-              {post.status === "published" ? (
-                <Link href={post.href} className="rounded-full bg-white px-3 py-1.5 text-xs font-black text-blue-700">
-                  查看
-                </Link>
-              ) : null}
-              <Link href={`/admin/user-posts?q=${encodeURIComponent(post.id)}`} className="rounded-full bg-white px-3 py-1.5 text-xs font-black text-slate-700">
-                编辑 / 管理
-              </Link>
-              <StatusAction post={post} status="published" label={post.status === "pending_review" ? "审核通过" : "恢复显示"} enabled={permissions.moderatePosts} />
-              <StatusAction post={post} status="hidden" label="下架" enabled={permissions.moderatePosts} />
-              <StatusAction post={post} status="rejected" label="审核拒绝" enabled={permissions.moderatePosts} />
-              <StatusAction post={post} status="deleted" label="删除到回收站" enabled={permissions.moderatePosts} />
-              <NotifyAuthorAction post={post} enabled={permissions.moderatePosts} />
-            </div>
+            <PostListActions post={post} permissions={permissions} />
           </div>
         </article>
       ))}
+    </div>
+  );
+}
+
+function PostListActions({ post, permissions }: { post: AdminPostListItem; permissions: AdminPostsPermissionSet }) {
+  const [manageOpen, setManageOpen] = useState(false);
+
+  return (
+    <div className="flex w-full flex-col items-start gap-2 md:w-auto md:max-w-xs md:items-end">
+      <div className="flex flex-wrap items-center gap-2 md:justify-end">
+        <AdminActionButton href={frontPostHref(post)} variant="neutral">查看</AdminActionButton>
+        <AdminActionButton href={`/admin/user-posts/${post.id}`} variant="info">详情</AdminActionButton>
+        {permissions.moderatePosts ? (
+          <AdminActionButton onClick={() => setManageOpen((value) => !value)} variant="primary" aria-expanded={manageOpen}>
+            管理
+          </AdminActionButton>
+        ) : null}
+      </div>
+      {manageOpen ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl bg-white p-2 ring-1 ring-slate-100 md:justify-end">
+          <StatusAction post={post} status="published" label={post.status === "pending_review" ? "审核通过" : "恢复显示"} enabled={permissions.moderatePosts} />
+          <StatusAction post={post} status="hidden" label="下架" enabled={permissions.moderatePosts} />
+          <StatusAction post={post} status="rejected" label="审核拒绝" enabled={permissions.moderatePosts} />
+          <StatusAction post={post} status="deleted" label="删除到回收站" enabled={permissions.moderatePosts} />
+          <NotifyAuthorAction post={post} enabled={permissions.moderatePosts} />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -213,12 +221,12 @@ function StatusAction({ post, status, label, enabled }: { post: AdminPostListIte
   if (!enabled || post.status === status) return null;
   const templateKey = statusTemplateDefaults[status];
   if (!templateKey) return null;
-  return <AdminPostNotifyAction action={setAdminPostStatus} post={post} status={status} label={label} defaultTemplateKey={templateKey} />;
+  return <AdminPostNotifyAction action={setAdminPostStatus} post={post} status={status} label={label} defaultTemplateKey={templateKey} variant={statusActionVariant(status)} />;
 }
 
 function NotifyAuthorAction({ post, enabled }: { post: AdminPostListItem; enabled: boolean }) {
   if (!enabled) return null;
-  return <AdminPostNotifyAction action={sendAdminPostAuthorNotification} post={post} label="通知作者" defaultTemplateKey="content_issue" notifyOnly />;
+  return <AdminPostNotifyAction action={sendAdminPostAuthorNotification} post={post} label="通知作者" defaultTemplateKey="content_issue" notifyOnly variant="info" />;
 }
 
 export function AdminPostNotifyAction({
@@ -227,6 +235,7 @@ export function AdminPostNotifyAction({
   status,
   label,
   defaultTemplateKey,
+  variant = "primary",
   notifyOnly = false,
 }: {
   action: (state: AdminPostActionState, formData: FormData) => Promise<AdminPostActionState>;
@@ -234,6 +243,7 @@ export function AdminPostNotifyAction({
   status?: PostStatus;
   label: string;
   defaultTemplateKey: string;
+  variant?: "neutral" | "primary" | "success" | "warning" | "danger" | "info";
   notifyOnly?: boolean;
 }) {
   const defaultTemplate = getTemplate(defaultTemplateKey);
@@ -253,9 +263,9 @@ export function AdminPostNotifyAction({
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white">
+      <AdminActionButton onClick={() => setOpen(true)} variant={variant}>
         {label}
-      </button>
+      </AdminActionButton>
       {open ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 px-4">
           <form action={formAction} className="w-full max-w-lg rounded-2xl bg-white p-4 shadow-xl">
@@ -314,6 +324,53 @@ export function AdminPostNotifyAction({
       ) : null}
     </>
   );
+}
+
+function frontPostHref(post: AdminPostListItem) {
+  const params = new URLSearchParams({ adminReturn: "/admin/user-posts" });
+  return `${post.href}?${params.toString()}`;
+}
+
+function adminPostStatusLabel(status: PostStatus) {
+  if (status === "published") return "显示中";
+  if (status === "hidden") return "已下架";
+  if (status === "pending_review") return "待审核";
+  if (status === "rejected") return "已拒绝";
+  if (status === "draft") return "未公开显示";
+  if (status === "expired") return "已过期";
+  return "已删除";
+}
+
+function statusActionVariant(status: PostStatus) {
+  if (status === "published") return "success";
+  if (status === "hidden") return "warning";
+  if (status === "deleted" || status === "rejected") return "danger";
+  return "primary";
+}
+
+function adminActionLabel(action: string, templateKey?: string | null, reason?: string | null) {
+  if (reason) return reason;
+  if (templateKey) return templateLabel(templateKey);
+  if (action === "hide_post") return "已下架";
+  if (action === "approve_post") return "审核通过";
+  if (action === "publish_post") return "恢复显示";
+  if (action === "reject_post") return "审核拒绝";
+  if (action === "delete_post") return "删除到回收站";
+  if (action === "mark_post_pending_review") return "标记待审核";
+  if (action === "notify_author") return "通知作者";
+  return action;
+}
+
+function templateLabel(key: string) {
+  if (key === "admin_post_hidden") return "已下架";
+  if (key === "admin_post_rejected") return "审核拒绝";
+  if (key === "content_issue") return "内容需要修改";
+  if (key === "image_issue") return "图片需要修改";
+  if (key === "contact_issue") return "联系方式需要修改";
+  if (key === "missing_info") return "信息需要补充";
+  if (key === "wrong_category") return "分类需要修改";
+  if (key === "duplicate_post") return "重复发布提醒";
+  return key;
 }
 
 function buildPageHref({ page, type, status, q, author }: { page: number; type?: string; status?: string; q?: string; author?: string }) {

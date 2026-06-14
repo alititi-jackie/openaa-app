@@ -48,6 +48,8 @@ Authenticated users can manage their own:
 
 Post contact data is not public. It is readable by the post author and admins with `view_post_contacts`.
 
+`post_admin_events` is only for backend post handling records. Admins with `view_posts` or `moderate_posts` can read it, and admins with `moderate_posts` can insert event rows. Ordinary users cannot read or write these records.
+
 Admin tables are not readable by ordinary users. Admin reads and writes depend on permission checks, and service role remains server-only.
 
 `admin_roles` has additional protection: non-`super_admin` admins cannot create or modify `super_admin` rows, and a trigger blocks disabling or demoting the final active `super_admin`.

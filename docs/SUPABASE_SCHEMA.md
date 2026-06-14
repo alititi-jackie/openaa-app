@@ -17,6 +17,10 @@ Phase 2 establishes the minimum viable platform schema for the new `openaa-app` 
 11. `011_seed_initial_settings.sql`
 12. `012_seed_feature_flags.sql`
 13. `013_seed_admin_permissions.sql`
+14. `038_notifications_first_version.sql`
+15. `039_notifications_rls_hardening.sql`
+16. `040_notification_templates_post_management.sql`
+17. `041_post_admin_events.sql`
 
 ## Core Tables
 
@@ -24,7 +28,7 @@ Phase 2 establishes the minimum viable platform schema for the new `openaa-app` 
 - Users: `profiles`, `business_profiles`, `user_auth_identities`, `user_settings`, `user_security_logs`, `user_blocks`, `user_consents`, `account_deletion_requests`.
 - Admin: `admin_roles`, `admin_permissions`, `admin_role_permissions`, `admin_user_permissions`, `admin_audit_logs`.
 - Feature flags: `feature_flags`.
-- Posts: `posts`, `post_details_jobs`, `post_details_housing`, `post_details_marketplace`, `post_details_services`, `post_contacts`, `post_stats`, `post_views`, `post_reports`, `post_moderation_logs`, `post_drafts`, `post_images`.
+- Posts: `posts`, `post_details_jobs`, `post_details_housing`, `post_details_marketplace`, `post_details_services`, `post_contacts`, `post_stats`, `post_views`, `post_reports`, `post_moderation_logs`, `post_admin_events`, `post_drafts`, `post_images`.
 - Favorites: `user_favorites`.
 - Media: `image_assets`.
 - Content and operations: `news_categories`, `news_posts`, `navigation_categories`, `navigation_links`, `user_navigation_links`, `user_navigation_settings`, `home_banners`, `home_sections`, `top_quick_links`, `latest_ticker`, `ads`.
@@ -75,6 +79,35 @@ New notifications should prefer `action_url`. Existing `link_url` rows remain re
 Seeded templates: `admin_post_deleted`, `admin_post_hidden`, `admin_post_restored`, `admin_post_published`, `admin_post_rejected`, `content_issue`, `image_issue`, `contact_issue`, `missing_info`, `wrong_category`, `duplicate_post`, `system_announcement`, and `account_notice`.
 
 Admin sends, bulk sends, and automatic moderation notifications use `features/notifications/service.ts` and write audit records to `admin_audit_logs`.
+
+## User Post Admin Events
+
+`post_admin_events` stores business-level administrator handling records for user-published content. It is separate from `admin_audit_logs`: audit logs remain the global trace, while `post_admin_events` powers post management status display and future detail timelines.
+
+Fields:
+
+- `id`
+- `post_id`
+- `actor_id`
+- `event_type`
+- `template_key`
+- `status_before`
+- `status_after`
+- `title`
+- `body`
+- `notification_id`
+- `created_at`
+- `metadata`
+
+`posts` also stores a denormalized latest administrator handling summary for list views:
+
+- `last_admin_action`
+- `last_admin_action_at`
+- `last_admin_action_by`
+- `last_admin_action_template_key`
+- `last_admin_action_reason`
+
+User self-service actions do not write `post_admin_events`. Administrator post actions may update the latest summary and append a `post_admin_events` row.
 
 ## Type Generation
 

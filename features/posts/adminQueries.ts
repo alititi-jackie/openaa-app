@@ -36,6 +36,40 @@ export type AdminPostListItem = {
   imageCount: number;
   contactSummary: string;
   publiclyVisible: boolean;
+  lastAdminAction: string | null;
+  lastAdminActionAt: string | null;
+  lastAdminActionBy: string | null;
+  lastAdminActionTemplateKey: string | null;
+  lastAdminActionReason: string | null;
+};
+
+export type AdminPostDetailEvent = {
+  id: string;
+  eventType: string;
+  templateKey: string | null;
+  statusBefore: string | null;
+  statusAfter: string | null;
+  title: string | null;
+  body: string | null;
+  actorId: string | null;
+  createdAt: string;
+};
+
+export type AdminPostDetail = AdminPostListItem & {
+  body: string;
+  images: Array<{ url: string; caption?: string | null; imageAssetId?: string | null }>;
+  contact: {
+    contact_name: string | null;
+    phone: string | null;
+    email: string | null;
+    wechat: string | null;
+    whatsapp: string | null;
+    preferred_contact_method: string | null;
+  } | null;
+  favoriteCount: number;
+  reportCount: number;
+  events: AdminPostDetailEvent[];
+  canViewContact: boolean;
 };
 
 type AdminPostsResult = {
@@ -46,6 +80,15 @@ type AdminPostsResult = {
   pageSize: number;
   totalCount: number;
   pageCount: number;
+  error?: string;
+};
+
+type AdminPostDetailResult = {
+  state: QueryState;
+  permissions: AdminPostsPermissions;
+  canRead: boolean;
+  canViewContact: boolean;
+  post: AdminPostDetail | null;
   error?: string;
 };
 
@@ -63,6 +106,11 @@ type AdminPostRecord = {
   published_at: string | null;
   created_at: string;
   updated_at: string;
+  last_admin_action: string | null;
+  last_admin_action_at: string | null;
+  last_admin_action_by: string | null;
+  last_admin_action_template_key: string | null;
+  last_admin_action_reason: string | null;
   post_contacts?: PostContactSummary[] | PostContactSummary | null;
   post_images?: Array<{ id: string | null }> | null;
   post_stats?: { view_count: number | null }[] | { view_count: number | null } | null;
@@ -73,6 +121,30 @@ type PostContactSummary = {
   phone: string | null;
   email: string | null;
   wechat: string | null;
+  whatsapp?: string | null;
+  preferred_contact_method?: string | null;
+};
+
+type AdminPostDetailRecord = Omit<AdminPostRecord, "post_images" | "post_stats"> & {
+  post_images?: Array<{
+    image_asset_id: string | null;
+    sort_order: number | null;
+    caption: string | null;
+    image_assets?: unknown;
+  }> | null;
+  post_stats?: { view_count: number | null; favorite_count: number | null; report_count: number | null }[] | { view_count: number | null; favorite_count: number | null; report_count: number | null } | null;
+};
+
+type AdminPostEventRecord = {
+  id: string;
+  event_type: string;
+  template_key: string | null;
+  status_before: string | null;
+  status_after: string | null;
+  title: string | null;
+  body: string | null;
+  actor_id: string | null;
+  created_at: string;
 };
 
 export type AdminPostsParams = {
@@ -226,7 +298,7 @@ export async function getAdminPostsData(params: AdminPostsParams = {}): Promise<
 
   let query = supabase
     .from("posts")
-    .select("id,post_type,author_id,title,summary,body,category,status,visibility,published_at,created_at,updated_at,cities(name,slug),post_contacts(contact_name,phone,email,wechat),post_images(id),post_stats(view_count)", { count: "exact" })
+    .select("id,post_type,author_id,title,summary,body,category,status,visibility,published_at,created_at,updated_at,last_admin_action,last_admin_action_at,last_admin_action_by,last_admin_action_template_key,last_admin_action_reason,cities(name,slug),post_contacts(contact_name,phone,email,wechat),post_images(id),post_stats(view_count)", { count: "exact" })
     .order("updated_at", { ascending: false })
     .range(from, to);
 
@@ -273,6 +345,96 @@ export async function getAdminPostsData(params: AdminPostsParams = {}): Promise<
     totalCount,
     pageCount,
     posts: ((data ?? []) as AdminPostRecord[]).map(mapAdminPost),
+  };
+}
+
+export async function getAdminPostDetail(id: string): Promise<AdminPostDetailResult> {
+  const permissions = await getAdminPostsPermissions();
+  const superAdmin = await isSuperAdmin();
+  const canRead = superAdmin || permissions.viewPosts || permissions.moderatePosts;
+  const canViewContact = superAdmin || permissions.moderatePosts || (await hasAdminPermission("view_post_contacts"));
+
+  if (!canRead) {
+    return { state: "ready", permissions, canRead, canViewContact, post: null };
+  }
+
+  let adminSupabase: ReturnType<typeof createSupabaseAdminClient>;
+  try {
+    adminSupabase = createSupabaseAdminClient();
+  } catch {
+    return {
+      state: "missing_config",
+      permissions,
+      canRead,
+      canViewContact,
+      post: null,
+      error: "Supabase service role 环境变量未配置，暂时无法读取后台详情。",
+    };
+  }
+
+  const { data, error } = await adminSupabase
+    .from("posts")
+    .select(
+      `
+        id,
+        post_type,
+        author_id,
+        title,
+        summary,
+        body,
+        category,
+        status,
+        visibility,
+        published_at,
+        created_at,
+        updated_at,
+        last_admin_action,
+        last_admin_action_at,
+        last_admin_action_by,
+        last_admin_action_template_key,
+        last_admin_action_reason,
+        cities(name,slug),
+        post_contacts(contact_name,phone,email,wechat,whatsapp,preferred_contact_method),
+        post_images(
+          image_asset_id,
+          sort_order,
+          caption,
+          image_assets(public_url,external_url)
+        ),
+        post_stats(view_count,favorite_count,report_count)
+      `,
+    )
+    .eq("id", id)
+    .neq("status", "deleted")
+    .in("post_type", MANAGED_POST_TYPES)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[admin/user-posts/detail] Failed to read post", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
+    return { state: "error", permissions, canRead, canViewContact, post: null, error: "用户发布信息详情读取失败，请稍后再试。" };
+  }
+
+  if (!data) {
+    return { state: "ready", permissions, canRead, canViewContact, post: null };
+  }
+
+  const record = data as unknown as AdminPostDetailRecord;
+  const [authorMap, events] = await Promise.all([
+    fetchAdminPostAuthors(adminSupabase, [record.author_id]),
+    fetchAdminPostEvents(adminSupabase, id),
+  ]);
+
+  return {
+    state: "ready",
+    permissions,
+    canRead,
+    canViewContact,
+    post: mapAdminPostDetail(record, authorMap, events, canViewContact),
   };
 }
 
@@ -581,7 +743,98 @@ function mapAdminPost(record: AdminPostRecord): AdminPostListItem {
     imageCount,
     contactSummary: contactSummary(contact),
     publiclyVisible: record.status === "published" && record.visibility === "public",
+    lastAdminAction: record.last_admin_action,
+    lastAdminActionAt: record.last_admin_action_at,
+    lastAdminActionBy: record.last_admin_action_by,
+    lastAdminActionTemplateKey: record.last_admin_action_template_key,
+    lastAdminActionReason: record.last_admin_action_reason,
   };
+}
+
+function mapAdminPostDetail(
+  record: AdminPostDetailRecord,
+  authors: Map<string, { email: string | null; nickname: string | null }>,
+  events: AdminPostDetailEvent[],
+  canViewContact: boolean,
+): AdminPostDetail {
+  const base = mapAdminPost({
+    ...record,
+    post_images: record.post_images?.map((image) => ({ id: image.image_asset_id })) ?? [],
+  });
+  const stats = relationOne(record.post_stats);
+  const contact = relationOne(record.post_contacts);
+  const author = record.author_id ? authors.get(record.author_id) : null;
+  const sortedImages = [...(record.post_images ?? [])].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+  const images = sortedImages.flatMap((image) => {
+    const asset = imageAssetFromRelation(image.image_assets);
+    const url = typeof asset?.public_url === "string" && asset.public_url ? asset.public_url : typeof asset?.external_url === "string" ? asset.external_url : "";
+    return url ? [{ url, caption: image.caption, imageAssetId: image.image_asset_id }] : [];
+  });
+
+  return {
+    ...base,
+    authorLabel: authorLabel(author, record.author_id),
+    body: record.body || record.summary || "暂无正文。",
+    images,
+    imageCount: images.length,
+    contact: canViewContact && contact
+      ? {
+          contact_name: contact.contact_name,
+          phone: contact.phone,
+          email: contact.email,
+          wechat: contact.wechat,
+          whatsapp: contact.whatsapp ?? null,
+          preferred_contact_method: contact.preferred_contact_method ?? null,
+        }
+      : null,
+    favoriteCount: Number(stats?.favorite_count ?? 0),
+    reportCount: Number(stats?.report_count ?? 0),
+    events,
+    canViewContact,
+  };
+}
+
+async function fetchAdminPostAuthors(adminSupabase: ReturnType<typeof createSupabaseAdminClient>, ids: Array<string | null | undefined>) {
+  const uniqueIds = [...new Set(ids.filter((id): id is string => Boolean(id)))];
+  if (uniqueIds.length === 0) return new Map<string, { email: string | null; nickname: string | null }>();
+
+  const { data } = await adminSupabase.from("profiles").select("id,email,nickname").in("id", uniqueIds);
+  return new Map((data ?? []).map((profile) => [String(profile.id), { email: profile.email as string | null, nickname: profile.nickname as string | null }]));
+}
+
+async function fetchAdminPostEvents(adminSupabase: ReturnType<typeof createSupabaseAdminClient>, postId: string): Promise<AdminPostDetailEvent[]> {
+  const { data, error } = await adminSupabase
+    .from("post_admin_events")
+    .select("id,event_type,template_key,status_before,status_after,title,body,actor_id,created_at")
+    .eq("post_id", postId)
+    .order("created_at", { ascending: false })
+    .limit(30);
+
+  if (error) {
+    console.error("[admin/user-posts/detail] Failed to read post admin events", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
+    return [];
+  }
+
+  return ((data ?? []) as AdminPostEventRecord[]).map((event) => ({
+    id: event.id,
+    eventType: event.event_type,
+    templateKey: event.template_key,
+    statusBefore: event.status_before,
+    statusAfter: event.status_after,
+    title: event.title,
+    body: event.body,
+    actorId: event.actor_id,
+    createdAt: event.created_at,
+  }));
+}
+
+function authorLabel(author: { email: string | null; nickname: string | null } | null | undefined, fallback?: string | null) {
+  return author?.nickname?.trim() || author?.email?.trim() || fallback || "未知作者";
 }
 
 function relationOne<T>(value: T[] | T | null | undefined): T | null {
