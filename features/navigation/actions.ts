@@ -268,7 +268,7 @@ export async function deleteNavigationLink(_state: NavigationActionState, formDa
   const id = readText(formData, "id");
   if (!id) return fail("缺少导航链接 ID。");
 
-  const payload = { deleted_at: new Date().toISOString(), is_active: false, updated_at: new Date().toISOString() };
+  const payload = { deleted_at: new Date().toISOString(), deleted_by: context.userId, is_active: false, updated_at: new Date().toISOString() };
   const { error, data } = await context.supabase.from("navigation_links").update(payload).eq("id", id).select("id").single();
   if (error || !data) return fail("导航链接删除失败。");
 
@@ -278,6 +278,48 @@ export async function deleteNavigationLink(_state: NavigationActionState, formDa
 
   revalidateNavigation();
   return ok("导航链接已删除。");
+}
+
+export async function restoreNavigationLink(_state: NavigationActionState, formData: FormData): Promise<NavigationActionState> {
+  const context = await getAdminActionContext();
+  if (!context.ok) return fail(context.message);
+
+  const id = readText(formData, "id");
+  if (!id) return fail("缺少导航链接 ID。");
+
+  const payload = { deleted_at: null, deleted_by: null, updated_at: new Date().toISOString() };
+  const { error, data } = await context.supabase.from("navigation_links").update(payload).eq("id", id).select("id").single();
+  if (error || !data) return fail("导航链接恢复失败。");
+
+  if (!(await auditLog(context, "restore_navigation_link", "navigation_links", id, payload))) {
+    return fail("链接已恢复，但审计日志写入失败。");
+  }
+
+  revalidateNavigation();
+  revalidatePath("/admin/navigation/recycle-bin");
+  return ok("导航链接已恢复。");
+}
+
+export async function permanentlyDeleteNavigationLink(_state: NavigationActionState, formData: FormData): Promise<NavigationActionState> {
+  const context = await getAdminActionContext();
+  if (!context.ok) return fail(context.message);
+
+  const id = readText(formData, "id");
+  if (!id) return fail("缺少导航链接 ID。");
+
+  const { data: before } = await context.supabase.from("navigation_links").select("id,title,url,deleted_at").eq("id", id).maybeSingle();
+  if (!before?.deleted_at) return fail("只有已删除导航链接可以永久删除。");
+
+  const { error, data } = await context.supabase.from("navigation_links").delete().eq("id", id).select("id").single();
+  if (error || !data) return fail("导航链接永久删除失败。");
+
+  if (!(await auditLog(context, "permanently_delete_navigation_link", "navigation_links", id, before))) {
+    return fail("链接已永久删除，但审计日志写入失败。");
+  }
+
+  revalidateNavigation();
+  revalidatePath("/admin/navigation/recycle-bin");
+  return ok("导航链接已永久删除。");
 }
 
 export async function upsertUserNavigationLink(_state: NavigationActionState, formData: FormData): Promise<NavigationActionState> {

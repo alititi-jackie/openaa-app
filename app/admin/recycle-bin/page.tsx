@@ -24,6 +24,7 @@ const tabs: Array<{ value: RecycleBinFilter; label: string }> = [
   { value: "housing", label: "房屋" },
   { value: "marketplace", label: "二手" },
   { value: "service", label: "服务" },
+  { value: "news", label: "新闻" },
   { value: "expired", label: "已超期" },
   { value: "with_images", label: "带图片" },
   { value: "image_error", label: "图片异常" },
@@ -100,6 +101,7 @@ function normalizeFilter(value?: string): RecycleBinFilter {
     value === "housing" ||
     value === "marketplace" ||
     value === "service" ||
+    value === "news" ||
     value === "expired" ||
     value === "with_images" ||
     value === "image_error" ||

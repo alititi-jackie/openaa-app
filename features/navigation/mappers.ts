@@ -71,6 +71,7 @@ export function mapNavigationLink(record: NavigationLinkRecord): NavigationLink 
     isActive: record.is_active,
     isFeatured: record.is_featured,
     deletedAt: record.deleted_at,
+    deletedBy: record.deleted_by ?? null,
     createdAt: record.created_at,
     updatedAt: record.updated_at,
   };

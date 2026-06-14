@@ -17,7 +17,6 @@ const statusOptions: Array<{ value: NewsStatus; label: string }> = [
   { value: "draft", label: "草稿" },
   { value: "published", label: "已发布" },
   { value: "hidden", label: "已下架" },
-  { value: "deleted", label: "已删除" },
 ];
 
 const buttonBase = "inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-50";
@@ -330,7 +329,7 @@ function NewsPostCard({
       <AdminConfirmDialog
         open={deleteOpen}
         title="确认删除新闻？"
-        description="删除后不会在前台显示。该操作会软删除记录，删除后无法在后台列表直接恢复。"
+        description="删除后不会在前台显示。该操作会软删除记录，并进入删除管理。"
         confirmLabel="确认删除"
         cancelLabel="取消"
         tone="danger"

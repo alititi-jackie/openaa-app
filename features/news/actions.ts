@@ -232,11 +232,25 @@ export async function setNewsPostStatus(_state: NewsActionState, formData: FormD
   if (!context.ok) return fail(context.message);
   if (!id) return fail("缺少新闻 ID。");
 
-  const payload = {
+  const now = new Date().toISOString();
+  const payload: {
+    status: NewsStatus;
+    published_at: string | null;
+    deleted_at?: string | null;
+    deleted_by?: string | null;
+    updated_at: string;
+  } = {
     status,
-    published_at: status === "published" ? new Date().toISOString() : null,
-    updated_at: new Date().toISOString(),
+    published_at: status === "published" ? now : null,
+    updated_at: now,
   };
+  if (status === "deleted") {
+    payload.deleted_at = now;
+    payload.deleted_by = context.userId;
+  } else {
+    payload.deleted_at = null;
+    payload.deleted_by = null;
+  }
 
   const { error } = await context.supabase.from("news_posts").update(payload).eq("id", id);
   if (error) return fail("新闻状态更新失败。");

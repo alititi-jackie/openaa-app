@@ -30,6 +30,7 @@ const navigationLinkSelect = `
   is_active,
   is_featured,
   deleted_at,
+  deleted_by,
   metadata,
   created_at,
   updated_at,
@@ -176,6 +177,34 @@ export async function getAdminNavigationData(params: { categoryId?: string; q?: 
   };
 }
 
+export type NavigationRecycleBinKind = "links" | "categories";
+
+export async function getAdminNavigationRecycleBinData(kind: NavigationRecycleBinKind = "links") {
+  const supabase = await createSupabaseServerClient();
+  const permissions = await getAdminNavigationPermissions();
+  const categoriesFallback = fallbackNavigationCategories();
+
+  if (!supabase) {
+    return { state: "missing_config" as const, permissions, kind, categories: categoriesFallback, links: [] as NavigationLink[] };
+  }
+
+  if (!permissions.manageNavigation) {
+    return { state: "ready" as const, permissions, kind, categories: categoriesFallback, links: [] as NavigationLink[] };
+  }
+
+  const emptyLinks: NavigationQueryResult<NavigationLink[]> = { state: "ready", data: [] };
+  const [categories, links] = await Promise.all([readAdminCategories(supabase), kind === "links" ? readDeletedNavigationLinks(supabase) : Promise.resolve(emptyLinks)]);
+
+  return {
+    state: categories.state === "error" || links.state === "error" ? ("error" as const) : ("ready" as const),
+    permissions,
+    kind,
+    categories: categories.data.length > 0 ? categories.data : categoriesFallback,
+    links: links.data,
+    error: categories.error ?? links.error,
+  };
+}
+
 async function readAdminCategories(supabase: SupabaseServerClient): Promise<NavigationQueryResult<NavigationCategory[]>> {
   const { data, error } = await supabase
     .from("navigation_categories")
@@ -201,6 +230,18 @@ async function readAdminLinks(supabase: SupabaseServerClient, params: { category
   if (q) query = query.or(`title.ilike.%${q}%,url.ilike.%${q}%`);
 
   const { data, error } = await query;
+  if (error) return errorResult([], error.message);
+  return { state: "ready", data: ((data ?? []) as unknown as NavigationLinkRecord[]).map(mapNavigationLink) };
+}
+
+async function readDeletedNavigationLinks(supabase: SupabaseServerClient): Promise<NavigationQueryResult<NavigationLink[]>> {
+  const { data, error } = await supabase
+    .from("navigation_links")
+    .select(navigationLinkSelect)
+    .not("deleted_at", "is", null)
+    .order("deleted_at", { ascending: false, nullsFirst: false })
+    .limit(ADMIN_NAVIGATION_LIMIT);
+
   if (error) return errorResult([], error.message);
   return { state: "ready", data: ((data ?? []) as unknown as NavigationLinkRecord[]).map(mapNavigationLink) };
 }

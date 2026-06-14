@@ -37,6 +37,7 @@ export type NavigationLinkRecord = {
   is_active: boolean;
   is_featured: boolean;
   deleted_at: string | null;
+  deleted_by?: string | null;
   metadata: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
@@ -83,6 +84,7 @@ export type NavigationLink = {
   isActive: boolean;
   isFeatured: boolean;
   deletedAt: string | null;
+  deletedBy?: string | null;
   createdAt: string;
   updatedAt: string;
 };

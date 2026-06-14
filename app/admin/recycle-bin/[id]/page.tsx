@@ -125,9 +125,11 @@ function RecycleBinDetail({ post }: { post: RecycleBinPostDetail }) {
         <div className="flex flex-wrap items-start gap-3">
           <AdminActionForm action={restoreDeletedPost} submitLabel="恢复" className="contents" submitClassName="inline-flex min-h-10 items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60">
             <input type="hidden" name="id" value={post.id} />
+            <input type="hidden" name="content_type" value={post.contentType} />
           </AdminActionForm>
           <AdminActionForm action={permanentlyDeletePost} submitLabel="永久删除" className="grid gap-2 rounded-xl bg-white p-2 ring-1 ring-red-100" submitClassName="inline-flex min-h-10 items-center justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60">
             <input type="hidden" name="id" value={post.id} />
+            <input type="hidden" name="content_type" value={post.contentType} />
             <AdminCheckbox label="永久删除后不可恢复，资料、图片和相关收藏记录都会被删除。" name="confirm_permanent_delete" />
           </AdminActionForm>
         </div>

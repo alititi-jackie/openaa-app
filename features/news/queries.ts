@@ -292,7 +292,11 @@ async function readAdminPosts(supabase: SupabaseServerClient, params: { status?:
     .order("created_at", { ascending: false })
     .limit(ADMIN_NEWS_LIMIT);
 
-  if (params.status && params.status !== "all") query = query.eq("status", params.status);
+  if (params.status && params.status !== "all") {
+    query = query.eq("status", params.status);
+  } else {
+    query = query.neq("status", "deleted");
+  }
   if (params.categoryId) query = query.eq("category_id", params.categoryId);
   if (params.q) query = query.or(`title.ilike.%${params.q}%,slug.ilike.%${params.q}%`);
 

@@ -179,10 +179,13 @@ export async function setAdminPostStatus(_state: AdminPostActionState, formData:
 
 export async function restoreDeletedPost(_state: AdminPostActionState, formData: FormData): Promise<AdminPostActionState> {
   const id = readText(formData, "id");
+  const contentType = readText(formData, "content_type");
   if (!id) return fail("操作参数无效。");
 
   const context = await getSuperAdminActionContext();
   if (!context.ok) return fail(context.message);
+
+  if (contentType === "news") return restoreDeletedNews(context, id);
 
   const before = await readPost(context.adminSupabase, id);
   if (!before) return fail("帖子不存在。");
@@ -210,11 +213,14 @@ export async function restoreDeletedPost(_state: AdminPostActionState, formData:
 
 export async function permanentlyDeletePost(_state: AdminPostActionState, formData: FormData): Promise<AdminPostActionState> {
   const id = readText(formData, "id");
+  const contentType = readText(formData, "content_type");
   if (!id) return fail("操作参数无效。");
   if (formData.get("confirm_permanent_delete") !== "on") return fail("请先勾选确认永久删除。");
 
   const context = await getSuperAdminActionContext();
   if (!context.ok) return fail(context.message);
+
+  if (contentType === "news") return permanentlyDeleteNews(context, id);
 
   const before = await readPost(context.adminSupabase, id);
   if (!before) return fail("帖子不存在。");
@@ -267,6 +273,60 @@ export async function permanentlyDeletePost(_state: AdminPostActionState, formDa
   });
   revalidatePost(before.post_type, id);
   revalidatePath("/admin/recycle-bin");
+  return ok("已永久删除。");
+}
+
+async function restoreDeletedNews(context: Extract<SuperAdminActionContext, { ok: true }>, id: string): Promise<AdminPostActionState> {
+  const before = await readNewsPostForRecycleBin(context.adminSupabase, id);
+  if (!before) return fail("新闻不存在。");
+  if (before.status !== "deleted") return fail("只有已删除新闻可以恢复。");
+
+  const now = new Date().toISOString();
+  const payload = {
+    status: "hidden",
+    deleted_at: null,
+    deleted_by: null,
+    updated_at: now,
+  };
+
+  const { error } = await context.adminSupabase.from("news_posts").update(payload).eq("id", id);
+  if (error) return fail("恢复失败，请稍后再试。");
+
+  await writeAuditLog(context, "restore_news_from_recycle_bin", id, before, payload);
+  revalidateNews(before.slug);
+  return ok("已恢复");
+}
+
+async function permanentlyDeleteNews(context: Extract<SuperAdminActionContext, { ok: true }>, id: string): Promise<AdminPostActionState> {
+  const before = await readNewsPostForRecycleBin(context.adminSupabase, id);
+  if (!before) return fail("新闻不存在。");
+  if (before.status !== "deleted") return fail("只有回收站新闻可以永久删除。");
+
+  const asset = before.image_assets ? imageAssetFromRelation(before.image_assets) : null;
+  const storagePath = asset?.source_type === "storage" && asset.bucket === "news-cover-images" && typeof asset.path === "string" && asset.path.length > 0 ? asset.path : "";
+
+  if (storagePath) {
+    const { error: storageError } = await context.adminSupabase.storage.from("news-cover-images").remove([storagePath]);
+    if (storageError) return fail("新闻封面图片删除失败，新闻未永久删除。");
+  }
+
+  const { error: favoriteError } = await context.adminSupabase.from("user_favorites").delete().eq("target_type", "news").eq("target_id", id);
+  if (favoriteError) return fail("新闻收藏记录清理失败，新闻未永久删除。");
+
+  const { error: newsError } = await context.adminSupabase.from("news_posts").delete().eq("id", id);
+  if (newsError) return fail("新闻永久删除失败，请稍后再试。");
+
+  if (before.cover_image_asset_id) {
+    const { error: assetError } = await context.adminSupabase.from("image_assets").delete().eq("id", before.cover_image_asset_id);
+    if (assetError) return fail("新闻已删除，但封面资产记录清理失败。");
+  }
+
+  await writeAuditLog(context, "permanently_delete_news", id, before, {
+    deleted_news_id: id,
+    deleted_cover_image_asset_id: before.cover_image_asset_id,
+    deleted_storage_file_count: storagePath ? 1 : 0,
+  });
+  revalidateNews(before.slug);
   return ok("已永久删除。");
 }
 
@@ -389,4 +449,32 @@ function revalidatePost(type: PostType, id: string) {
   revalidatePath(POST_TYPE_TO_ROUTE[type]);
   revalidatePath(postHref(type, id));
   revalidatePath("/admin/posts");
+}
+
+function revalidateNews(slug?: string | null) {
+  revalidatePath("/");
+  revalidatePath("/news");
+  revalidatePath("/admin/news");
+  revalidatePath("/admin/recycle-bin");
+  if (slug) revalidatePath(`/news/${slug}`);
+}
+
+async function readNewsPostForRecycleBin(adminSupabase: ReturnType<typeof createSupabaseAdminClient>, id: string) {
+  const { data, error } = await adminSupabase
+    .from("news_posts")
+    .select("id,slug,title,status,cover_image_asset_id,deleted_at,deleted_by,image_assets(id,source_type,bucket,path)")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return data as {
+    id: string;
+    slug: string;
+    title: string;
+    status: PostStatus | "deleted";
+    cover_image_asset_id: string | null;
+    deleted_at: string | null;
+    deleted_by: string | null;
+    image_assets?: unknown;
+  };
 }

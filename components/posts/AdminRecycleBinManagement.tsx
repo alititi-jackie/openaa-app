@@ -156,12 +156,14 @@ function RecycleBinRow({ item }: { item: RecycleBinItem }) {
             <>
               <form action={restoreAction}>
                 <input type="hidden" name="id" value={item.id} />
+                <input type="hidden" name="content_type" value={item.contentType} />
                 <button type="submit" disabled={restorePending} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-emerald-600 px-3 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60">
                   {restorePending ? "恢复中..." : "恢复"}
                 </button>
               </form>
               <form action={deleteAction} className="grid gap-2 rounded-xl bg-white p-2 ring-1 ring-red-100">
                 <input type="hidden" name="id" value={item.id} />
+                <input type="hidden" name="content_type" value={item.contentType} />
                 <label className="inline-flex items-center gap-2 text-sm font-bold text-slate-700">
                   <input name="confirm_permanent_delete" type="checkbox" className="h-4 w-4 rounded border-slate-300" />
                   <span>永久删除后不可恢复。</span>
