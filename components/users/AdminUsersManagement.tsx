@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import type { FormEvent } from "react";
-import { useActionState } from "react";
-import { Search, ShieldCheck, UserRound } from "lucide-react";
+import { useActionState, useState } from "react";
+import { ChevronDown, ChevronUp, Search, ShieldCheck, UserRound } from "lucide-react";
 import { setAdminUserStatus, updateAdminUserNote, type AdminUserActionState } from "@/features/users/adminActions";
 import type { AdminUserListItem, AdminUsersPermissions } from "@/features/users/adminQueries";
 import type { ProfileStatus } from "@/lib/supabase/types";
@@ -39,13 +39,25 @@ export function AdminUsersPermissionBadges({ permissions }: { permissions: Admin
 }
 
 export function AdminUsersStats({ totals }: { totals: { total: number; active: number; restricted: number; banned: number; pending: number } }) {
+  const items = [
+    { label: "用户总数", value: totals.total },
+    { label: "正常", value: totals.active },
+    { label: "受限", value: totals.restricted },
+    { label: "禁用", value: totals.banned },
+    { label: "待完善", value: totals.pending },
+  ];
+
   return (
-    <div className="grid gap-3 sm:grid-cols-5">
-      <StatCard label="用户总数" value={totals.total} />
-      <StatCard label="正常" value={totals.active} />
-      <StatCard label="受限" value={totals.restricted} />
-      <StatCard label="禁用" value={totals.banned} />
-      <StatCard label="待完善" value={totals.pending} />
+    <div className="max-w-full overflow-x-auto overflow-y-hidden rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="inline-flex min-w-max items-center gap-3 text-sm">
+        {items.map((item, index) => (
+          <span key={item.label} className="inline-flex items-center gap-1.5 whitespace-nowrap font-bold text-slate-600">
+            {index > 0 ? <span className="text-slate-300">|</span> : null}
+            <span>{item.label}</span>
+            <span className="font-black text-slate-950">{item.value}</span>
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -114,26 +126,44 @@ export function AdminUsersList({
   return (
     <div className="space-y-3">
       {users.map((user) => (
-        <article key={user.id} className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${statusStyles[user.status]}`}>{statusLabels[user.status]}</span>
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">{user.accountType === "business" ? "商家账号" : "个人账号"}</span>
-                <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${user.emailVerified ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
-                  {user.emailVerified ? "邮箱已验证" : "邮箱未验证"}
-                </span>
-                {user.isVerifiedUser ? <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">平台认证</span> : null}
-                {user.id === currentAdminId ? <span className="rounded-full bg-purple-50 px-2.5 py-1 text-xs font-bold text-purple-700">当前管理员</span> : null}
-              </div>
-              <h2 className="mt-3 text-base font-black text-slate-950">{user.nickname || user.email || "未命名用户"}</h2>
-              <p className="mt-1 break-all text-sm text-slate-600">{user.email || "未绑定邮箱"}</p>
-              <p className="mt-1 break-all text-xs font-mono text-slate-400">{user.id}</p>
-            </div>
-            <UserRound className="text-slate-300" size={22} aria-hidden="true" />
-          </div>
+        <AdminUserCard key={user.id} user={user} permissions={permissions} currentAdminId={currentAdminId} />
+      ))}
+    </div>
+  );
+}
 
-          <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
+function AdminUserCard({ user, permissions, currentAdminId }: { user: AdminUserListItem; permissions: AdminUsersPermissions; currentAdminId: string | null }) {
+  const [expanded, setExpanded] = useState(false);
+  const isCurrentAdmin = user.id === currentAdminId;
+
+  return (
+    <article className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${statusStyles[user.status]}`}>{statusLabels[user.status]}</span>
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">{user.accountType === "business" ? "商家账号" : "个人账号"}</span>
+            <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${user.emailVerified ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+              {user.emailVerified ? "邮箱已验证" : "邮箱未验证"}
+            </span>
+            {user.isVerifiedUser ? <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">平台认证</span> : null}
+            {isCurrentAdmin ? <span className="rounded-full bg-purple-50 px-2.5 py-1 text-xs font-bold text-purple-700">当前管理员</span> : null}
+          </div>
+          <h2 className="mt-3 truncate text-base font-black text-slate-950">{user.nickname || user.email || "未命名用户"}</h2>
+          <p className="mt-1 break-all text-sm text-slate-600">{user.email || "未绑定邮箱"}</p>
+          <p className="mt-1 break-all text-xs font-mono text-slate-400">{user.id}</p>
+        </div>
+        <UserRound className="mt-1 shrink-0 text-slate-300" size={24} aria-hidden="true" />
+      </div>
+
+      <button type="button" onClick={() => setExpanded((value) => !value)} className="mt-3 inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-700 hover:bg-slate-200" aria-expanded={expanded}>
+        {expanded ? "收起" : "展开"}
+        {expanded ? <ChevronUp size={14} aria-hidden="true" /> : <ChevronDown size={14} aria-hidden="true" />}
+      </button>
+
+      {expanded ? (
+        <div className="mt-4 border-t border-slate-100 pt-4">
+          <dl className="grid gap-2 text-sm sm:grid-cols-2">
             <InfoRow label="所在区域" value={user.locationArea || "未填写"} />
             <InfoRow label="信任等级" value={`Lv.${user.trustLevel}`} />
             <InfoRow label="最近登录" value={formatDateTime(user.lastLoginAt)} />
@@ -168,7 +198,7 @@ export function AdminUsersList({
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
             {canChangeStatus(permissions) ? (
-              <UserStatusForm user={user} permissions={permissions} isCurrentAdmin={user.id === currentAdminId} />
+              <UserStatusForm user={user} permissions={permissions} isCurrentAdmin={isCurrentAdmin} />
             ) : (
               <span className="text-xs font-bold text-slate-500">当前账号只能查看，不能修改用户状态。</span>
             )}
@@ -176,9 +206,9 @@ export function AdminUsersList({
               去用户发布信息管理
             </Link>
           </div>
-        </article>
-      ))}
-    </div>
+        </div>
+      ) : null}
+    </article>
   );
 }
 
@@ -333,15 +363,6 @@ function InfoRow({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2">
       <dt className="shrink-0 font-bold text-slate-700">{label}</dt>
       <dd className="min-w-0 truncate text-right text-slate-600">{value}</dd>
-    </div>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
-      <div className="text-xs font-black text-slate-500">{label}</div>
-      <p className="mt-2 text-2xl font-black text-slate-950">{value}</p>
     </div>
   );
 }
