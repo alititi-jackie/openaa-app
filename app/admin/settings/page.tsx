@@ -7,6 +7,7 @@ import {
   AdminSettingsSummary,
   AdminSiteSettingsList,
   DailyPostLimitForm,
+  DefaultPlaceholderImagesForm,
 } from "@/components/settings/AdminSettingsManagement";
 import { getAdminSettingsData } from "@/features/settings/adminQueries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -51,6 +52,10 @@ export default function AdminSettingsPage() {
 
             <AdminCard title="每日发布上限" description="旧站已有的基础设置：限制每个账号每天可发布的信息总数。">
               <DailyPostLimitForm dailyPostLimit={data.dailyPostLimit} />
+            </AdminCard>
+
+            <AdminCard title="默认占位图片" description="只用于二手和本地服务：用户没有上传图片时，前台展示后台配置的默认图片。">
+              <DefaultPlaceholderImagesForm images={data.placeholderImages} />
             </AdminCard>
 
             <AdminCard title="当前站点设置" description="只展示 site_settings 中的当前配置，便于上线前核对域名策略、DMV 提示和后台基础规则。">

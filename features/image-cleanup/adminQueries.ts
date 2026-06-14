@@ -268,6 +268,7 @@ function formatEntityType(value: string) {
   if (value === "home_banner") return "首页 Banner";
   if (value === "news_post") return "新闻";
   if (value === "navigation_link") return "导航链接";
+  if (value === "site_setting") return "站点设置";
   if (value === "post") return "用户帖子";
   return value;
 }

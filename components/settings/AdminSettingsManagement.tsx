@@ -1,8 +1,9 @@
 import { Gauge, Globe, Settings2 } from "lucide-react";
-import { AdminActionForm, AdminTextInput } from "@/components/admin/AdminActionForm";
+import { AdminActionForm, AdminCheckbox, AdminTextInput } from "@/components/admin/AdminActionForm";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
-import { updateDailyPostLimit } from "@/features/settings/adminActions";
+import { updateDailyPostLimit, updateDefaultPlaceholderImage } from "@/features/settings/adminActions";
 import type { AdminSettingsData, AdminSiteSetting } from "@/features/settings/adminQueries";
+import type { DefaultPlaceholderImageKey, DefaultPlaceholderImageValue } from "@/features/settings/defaultPlaceholderImages";
 
 export function AdminSettingsPermissionBadges({ canManageSettings }: { canManageSettings: boolean }) {
   return <AdminPermissionBadge allowed={canManageSettings} label="manage_settings" />;
@@ -27,6 +28,16 @@ export function DailyPostLimitForm({ dailyPostLimit }: { dailyPostLimit: number 
         每个账号每天最多可发布的信息总数。允许范围：1~100。保存后会写入 site_settings，并记录 admin_audit_logs。
       </p>
     </AdminActionForm>
+  );
+}
+
+export function DefaultPlaceholderImagesForm({ images }: { images: AdminSettingsData["placeholderImages"] }) {
+  return (
+    <div className="grid gap-3 lg:grid-cols-2">
+      {images.map((item) => (
+        <PlaceholderImageForm key={item.key} settingKey={item.key} label={item.label} description={item.description} value={item.value} />
+      ))}
+    </div>
   );
 }
 
@@ -68,6 +79,70 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string
         {label}
       </div>
       <p className="mt-2 text-2xl font-black text-slate-950">{value}</p>
+    </div>
+  );
+}
+
+function PlaceholderImageForm({
+  settingKey,
+  label,
+  description,
+  value,
+}: {
+  settingKey: DefaultPlaceholderImageKey;
+  label: string;
+  description: string;
+  value: DefaultPlaceholderImageValue;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-base font-black text-slate-950">{label}</h3>
+          <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
+        </div>
+        {value.sourceType ? (
+          <span className="rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-600 ring-1 ring-slate-200">
+            {value.sourceType === "storage" ? "上传图片" : "外链图片"}
+          </span>
+        ) : null}
+      </div>
+
+      {value.url ? (
+        <div className="mt-3 overflow-hidden rounded-xl border border-slate-100 bg-white">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={value.url} alt={label} className="aspect-[4/3] w-full object-cover" />
+        </div>
+      ) : (
+        <p className="mt-3 rounded-xl border border-dashed border-slate-200 bg-white px-3 py-4 text-center text-sm font-semibold text-slate-500">
+          暂未设置默认占位图片。
+        </p>
+      )}
+
+      <AdminActionForm action={updateDefaultPlaceholderImage} submitLabel="保存默认图片" className="mt-3 grid gap-3">
+        <input type="hidden" name="setting_key" value={settingKey} />
+        <AdminTextInput label="外部图片链接" name="image_url" defaultValue={value.sourceType === "external" ? value.url ?? "" : ""} placeholder="https://img.openaa.com/..." />
+        <label className="grid gap-1.5 text-sm font-bold text-slate-700">
+          <span>上传图片</span>
+          <input
+            name="image_file"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 outline-none file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-black file:text-slate-700 focus:border-blue-500"
+          />
+        </label>
+        <p className="rounded-xl bg-white px-3 py-2 text-xs font-semibold leading-5 text-slate-500">
+          上传图片和外链二选一；如果同时填写，优先使用上传图片。外链第一版只支持 https://img.openaa.com/。
+        </p>
+      </AdminActionForm>
+
+      {value.url ? (
+        <AdminActionForm action={updateDefaultPlaceholderImage} submitLabel="清除默认图片" className="mt-3">
+          <input type="hidden" name="setting_key" value={settingKey} />
+          <input type="hidden" name="remove_image" value="on" />
+          <AdminCheckbox label="我确认清除这张默认占位图片" name="confirm_remove_image" />
+        </AdminActionForm>
+      ) : null}
     </div>
   );
 }

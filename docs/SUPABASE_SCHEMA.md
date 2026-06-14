@@ -21,6 +21,7 @@ Phase 2 establishes the minimum viable platform schema for the new `openaa-app` 
 15. `039_notifications_rls_hardening.sql`
 16. `040_notification_templates_post_management.sql`
 17. `041_post_admin_events.sql`
+18. `042_default_post_placeholder_images.sql`
 
 ## Core Tables
 
@@ -108,6 +109,21 @@ Fields:
 - `last_admin_action_reason`
 
 User self-service actions do not write `post_admin_events`. Administrator post actions may update the latest summary and append a `post_admin_events` row.
+
+## Default Post Placeholder Images
+
+`042_default_post_placeholder_images.sql` adds the `site-setting-images` public Storage bucket and two public `site_settings` keys:
+
+- `default_marketplace_placeholder_image`
+- `default_service_placeholder_image`
+
+Each setting stores JSON with:
+
+- `url`
+- `imageAssetId`
+- `sourceType`
+
+These settings are only used for public marketplace and service display when the post has no user-uploaded image. They do not create `post_images` rows and do not affect the user publish flow. Uploaded and external placeholder images are represented in `image_assets` with `entity_type = site_setting` and `entity_id` equal to the setting key, so the image cleanup tool treats them as business-referenced assets.
 
 ## Type Generation
 

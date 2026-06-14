@@ -19,6 +19,7 @@ import { buildDetailMetaPills, buildHousingAmountTimeMetaPill } from "./detailMe
 import { buildPostDisplayBody, formatLocationLabel, formatPostAuthorName, formatPostCategoryLabel, formatPostTime } from "./display";
 import type {
   AuthorSummary,
+  DefaultPostPlaceholderImages,
   PostCardView,
   PostDetailView,
   PostRecord,
@@ -26,6 +27,7 @@ import type {
 
 type MapPostRecordOptions = {
   showImageIndicator?: boolean;
+  placeholderImages?: DefaultPostPlaceholderImages;
 };
 
 function publishedMeta(record: PostRecord) {
@@ -59,6 +61,7 @@ function listingMetaFields(record: PostRecord, author?: AuthorSummary | null, vi
 export function mapPostRecordToCard(record: PostRecord, authors: Record<string, AuthorSummary> = {}, options: MapPostRecordOptions = {}): PostCardView {
   const stats = postStats(record);
   const cover = getPostCoverUrl(record);
+  const placeholder = record.post_type === "marketplace" ? options.placeholderImages?.marketplace : record.post_type === "service" ? options.placeholderImages?.service : undefined;
   const author = record.author_id ? authors[record.author_id] : null;
   const viewCount = stats.view_count ?? 0;
   const displayBody = buildPostDisplayBody(record);
@@ -91,7 +94,7 @@ export function mapPostRecordToCard(record: PostRecord, authors: Record<string, 
     createdAt: record.created_at,
     publishedAt: record.published_at,
     authorName: formatPostAuthorName(author),
-    imageUrl: cover,
+    imageUrl: cover || placeholder,
     favoriteCount: stats.favorite_count ?? 0,
     viewCount,
     fields: detailFields(record),
@@ -102,10 +105,12 @@ export function mapPostRecordToCard(record: PostRecord, authors: Record<string, 
   return card;
 }
 
-export function mapPostRecordToDetail(record: PostRecord, authors: Record<string, AuthorSummary> = {}): PostDetailView {
-  const card = mapPostRecordToCard(record, authors);
+export function mapPostRecordToDetail(record: PostRecord, authors: Record<string, AuthorSummary> = {}, options: MapPostRecordOptions = {}): PostDetailView {
+  const card = mapPostRecordToCard(record, authors, options);
   const contact = Array.isArray(record.post_contacts) ? (record.post_contacts[0] ?? null) : record.post_contacts ?? null;
   const author = record.author_id ? authors[record.author_id] : null;
+  const userImages = getPostImageViews(record);
+  const placeholder = !userImages.length && (record.post_type === "marketplace" ? options.placeholderImages?.marketplace : record.post_type === "service" ? options.placeholderImages?.service : undefined);
 
   return {
     ...card,
@@ -113,7 +118,7 @@ export function mapPostRecordToDetail(record: PostRecord, authors: Record<string
     status: record.status,
     publishedAt: record.published_at,
     createdAt: record.created_at,
-    images: getPostImageViews(record),
+    images: userImages.length > 0 ? userImages : placeholder ? [{ url: placeholder, caption: "默认占位图片", imageAssetId: null }] : [],
     detailMetaFields: buildDetailMetaPills(record, author, card.viewCount || 0),
     contact,
     sourceRecord: record,

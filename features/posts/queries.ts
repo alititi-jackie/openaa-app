@@ -1,12 +1,14 @@
 import "server-only";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { DEFAULT_PLACEHOLDER_IMAGE_KEYS, normalizePlaceholderImageValue, placeholderImagesFromSettings } from "@/features/settings/defaultPlaceholderImages";
 import { DEFAULT_CITY_SLUG, DEFAULT_POST_LIMIT, PUBLIC_POST_TYPES } from "./constants";
 import { applyPublicPostFilters, normalizePublicPostFilters } from "./filters";
 import { mapPostRecordToCard, mapPostRecordToDetail } from "./mappers";
 import type {
   AuthorSummary,
   ContactReveal,
+  DefaultPostPlaceholderImages,
   PostCardView,
   PostDetailView,
   PostRecord,
@@ -104,6 +106,25 @@ async function fetchAuthors(authorIds: Array<string | null | undefined>): Promis
   );
 }
 
+async function fetchDefaultPlaceholderImages(): Promise<DefaultPostPlaceholderImages> {
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) return {};
+
+  const { data, error } = await supabase
+    .from("site_settings")
+    .select("key,value")
+    .in("key", DEFAULT_PLACEHOLDER_IMAGE_KEYS)
+    .eq("is_public", true);
+
+  if (error || !data) return {};
+
+  return placeholderImagesFromSettings(
+    Object.fromEntries(
+      data.map((row) => [String(row.key), normalizePlaceholderImageValue((row as { value?: unknown }).value)]),
+    ),
+  );
+}
+
 export async function getPublicPosts(params: PublicPostsParams): Promise<PostsQueryResult<PostCardView[]>> {
   const supabase = await createSupabaseServerClient();
 
@@ -137,11 +158,14 @@ export async function getPublicPosts(params: PublicPostsParams): Promise<PostsQu
   const page = Math.min(filters.page, pageCount);
   const start = (page - 1) * filters.pageSize;
   const pageRecords = filteredRecords.slice(start, start + filters.pageSize);
-  const authors = await fetchAuthors(records.map((post) => post.author_id));
+  const [authors, placeholderImages] = await Promise.all([
+    fetchAuthors(records.map((post) => post.author_id)),
+    params.type === "marketplace" || params.type === "service" ? fetchDefaultPlaceholderImages() : Promise.resolve({}),
+  ]);
 
   return {
     state: "ready",
-    data: pageRecords.map((record) => mapPostRecordToCard(record, authors, { showImageIndicator: params.showImageIndicator })),
+    data: pageRecords.map((record) => mapPostRecordToCard(record, authors, { showImageIndicator: params.showImageIndicator, placeholderImages })),
     pagination: {
       page,
       pageSize: filters.pageSize,
@@ -189,9 +213,12 @@ export async function searchPublicPosts(params: { q?: string; type?: PostType; l
   const filteredRecords = records
     .filter((record) => applyPublicPostFilters([record], record.post_type, { ...normalizePublicPostFilters({ q: keyword }), pageSize: MAX_PUBLIC_FILTER_ROWS }).length > 0)
     .slice(0, normalizeSearchLimit(params.limit));
-  const authors = await fetchAuthors(filteredRecords.map((post) => post.author_id));
+  const [authors, placeholderImages] = await Promise.all([
+    fetchAuthors(filteredRecords.map((post) => post.author_id)),
+    fetchDefaultPlaceholderImages(),
+  ]);
 
-  return { state: "ready", data: filteredRecords.map((record) => mapPostRecordToCard(record, authors)) };
+  return { state: "ready", data: filteredRecords.map((record) => mapPostRecordToCard(record, authors, { placeholderImages })) };
 }
 
 export async function getPublicPostById(id: string, type: PostType): Promise<PostsQueryResult<PostDetailView | null>> {
@@ -220,9 +247,12 @@ export async function getPublicPostById(id: string, type: PostType): Promise<Pos
   }
 
   const record = data as unknown as PostRecord;
-  const authors = await fetchAuthors([record.author_id]);
+  const [authors, placeholderImages] = await Promise.all([
+    fetchAuthors([record.author_id]),
+    type === "marketplace" || type === "service" ? fetchDefaultPlaceholderImages() : Promise.resolve({}),
+  ]);
 
-  return { state: "ready", data: mapPostRecordToDetail(record, authors) };
+  return { state: "ready", data: mapPostRecordToDetail(record, authors, { placeholderImages }) };
 }
 
 export async function getLatestPosts(limitPerType = 3): Promise<PostsQueryResult<Record<PostType, PostCardView[]>>> {
