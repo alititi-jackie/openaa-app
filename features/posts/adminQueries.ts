@@ -3,6 +3,7 @@ import "server-only";
 import { hasAdminPermission, isSuperAdmin } from "@/lib/permissions/admin";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getActiveNotificationTemplates } from "@/features/notifications/service";
 import { POST_TYPE_LABELS, POST_TYPE_TO_ROUTE, PUBLIC_POST_TYPES } from "./constants";
 import type { PostStatus, PostType, QueryState } from "./types";
 
@@ -70,6 +71,12 @@ export type AdminPostDetail = AdminPostListItem & {
   reportCount: number;
   events: AdminPostDetailEvent[];
   canViewContact: boolean;
+};
+
+export type AdminPostNotificationTemplate = {
+  key: string;
+  title: string;
+  body: string;
 };
 
 type AdminPostsResult = {
@@ -278,6 +285,17 @@ export async function getAdminPostsPermissions(): Promise<AdminPostsPermissions>
   ]);
 
   return { viewPosts, moderatePosts, approvePosts, rejectPosts, hidePosts, restorePosts, deletePosts };
+}
+
+export async function getAdminPostNotificationTemplates(): Promise<AdminPostNotificationTemplate[]> {
+  try {
+    const adminSupabase = createSupabaseAdminClient();
+    const templates = await getActiveNotificationTemplates(adminSupabase);
+    return templates.map((template) => ({ key: template.key, title: template.title, body: template.body }));
+  } catch (error) {
+    console.error("[admin/user-posts] Failed to read notification templates", error);
+    return [];
+  }
 }
 
 export async function getAdminPostsData(params: AdminPostsParams = {}): Promise<AdminPostsResult> {

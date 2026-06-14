@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useActionState, useMemo, useState } from "react";
 import { AdminActionButton } from "@/components/admin/AdminActionButton";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
-import { sendAdminPostAuthorNotification, setAdminPostStatus, type AdminPostActionState } from "@/features/posts/adminActions";
-import type { AdminPostListItem, AdminPostsPermissions as AdminPostsPermissionSet } from "@/features/posts/adminQueries";
+import { AdminPostManageDialog } from "@/components/posts/AdminPostManageDialog";
+import { type AdminPostActionState } from "@/features/posts/adminActions";
+import type { AdminPostListItem, AdminPostNotificationTemplate, AdminPostsPermissions as AdminPostsPermissionSet } from "@/features/posts/adminQueries";
 import { POST_TYPE_LABELS, PUBLIC_POST_TYPES } from "@/features/posts/constants";
 import { postStatusTone } from "@/features/posts/display";
 import type { PostStatus, PostType } from "@/features/posts/types";
@@ -35,41 +36,6 @@ const postStatusOptions: Array<{ value: PostStatus | "all"; label: string }> = [
   { value: "hidden", label: "已下架" },
   { value: "rejected", label: "已拒绝" },
 ];
-
-const notificationTemplates: TemplateOption[] = [
-  {
-    key: "admin_post_deleted",
-    title: "信息已被删除",
-    body: "因收到用户反馈、举报或平台审核发现问题，你的信息已被删除并移入回收站。如有疑问，请联系网站管理员。",
-  },
-  {
-    key: "admin_post_hidden",
-    title: "信息已被下架",
-    body: "因收到用户反馈、举报或平台审核发现问题，你的信息已被下架，当前不会公开显示。如有疑问，请联系网站管理员。",
-  },
-  {
-    key: "admin_post_restored",
-    title: "信息已恢复",
-    body: "你的已删除信息已由管理员恢复。当前状态为未上架，如需重新公开显示，请进入我的发布，点击恢复显示或重新上架。",
-  },
-  { key: "admin_post_published", title: "信息已恢复显示", body: "你的信息已恢复公开显示，用户现在可以正常查看。" },
-  { key: "admin_post_rejected", title: "信息未通过审核", body: "因内容不符合平台发布要求，你的信息未通过审核，请根据提示修改后重新提交。" },
-  { key: "content_issue", title: "内容需要修改", body: "你的信息内容存在问题，请修改后重新提交。" },
-  { key: "image_issue", title: "图片需要修改", body: "你的信息图片存在问题，请更换图片后重新提交。" },
-  { key: "contact_issue", title: "联系方式需要修改", body: "你的联系方式可能不完整或格式不正确，请修改后重新提交。" },
-  { key: "missing_info", title: "信息需要补充", body: "你的信息内容不够完整，请补充必要信息后重新提交。" },
-  { key: "wrong_category", title: "分类需要修改", body: "你的发布内容分类可能选择不正确，请重新选择合适的分类后再上架。" },
-  { key: "duplicate_post", title: "重复发布提醒", body: "你的信息可能存在重复发布，请保留一条有效信息，避免影响展示。" },
-  { key: "system_announcement", title: "平台通知", body: "这是一条平台通知，请进入通知中心查看详情。" },
-  { key: "account_notice", title: "账号提醒", body: "你的账号或资料需要注意，请进入个人中心查看并处理。" },
-];
-
-const statusTemplateDefaults: Partial<Record<PostStatus, string>> = {
-  published: "admin_post_published",
-  hidden: "admin_post_hidden",
-  rejected: "admin_post_rejected",
-  deleted: "admin_post_deleted",
-};
 
 export function AdminPostsPermissionBadges({ permissions }: { permissions: AdminPostsPermissionSet }) {
   return (
@@ -119,7 +85,7 @@ export function AdminPostsFilter({ type, status, q, author }: { type?: string; s
   );
 }
 
-export function AdminPostsList({ posts, permissions }: { posts: AdminPostListItem[]; permissions: AdminPostsPermissionSet }) {
+export function AdminPostsList({ posts, permissions, templates }: { posts: AdminPostListItem[]; permissions: AdminPostsPermissionSet; templates: AdminPostNotificationTemplate[] }) {
   if (posts.length === 0) {
     return <p className="rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-500">暂无用户发布信息。</p>;
   }
@@ -141,7 +107,7 @@ export function AdminPostsList({ posts, permissions }: { posts: AdminPostListIte
               </div>
               {post.lastAdminAction ? <p className="mt-3 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-slate-600">管理员处理：{adminActionLabel(post.lastAdminAction, post.lastAdminActionTemplateKey, post.lastAdminActionReason)}</p> : null}
             </div>
-            <PostListActions post={post} permissions={permissions} />
+            <PostListActions post={post} permissions={permissions} templates={templates} />
           </div>
         </article>
       ))}
@@ -149,29 +115,16 @@ export function AdminPostsList({ posts, permissions }: { posts: AdminPostListIte
   );
 }
 
-function PostListActions({ post, permissions }: { post: AdminPostListItem; permissions: AdminPostsPermissionSet }) {
-  const [manageOpen, setManageOpen] = useState(false);
-
+function PostListActions({ post, permissions, templates }: { post: AdminPostListItem; permissions: AdminPostsPermissionSet; templates: AdminPostNotificationTemplate[] }) {
   return (
     <div className="flex w-full flex-col items-start gap-2 md:w-auto md:max-w-xs md:items-end">
       <div className="flex flex-wrap items-center gap-2 md:justify-end">
         <AdminActionButton href={frontPostHref(post)} variant="neutral">查看</AdminActionButton>
         <AdminActionButton href={`/admin/user-posts/${post.id}`} variant="info">详情</AdminActionButton>
         {permissions.moderatePosts ? (
-          <AdminActionButton onClick={() => setManageOpen((value) => !value)} variant="primary" aria-expanded={manageOpen}>
-            管理
-          </AdminActionButton>
+          <AdminPostManageDialog key={`${post.id}-${post.status}`} post={post} templates={templates} />
         ) : null}
       </div>
-      {manageOpen ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl bg-white p-2 ring-1 ring-slate-100 md:justify-end">
-          <StatusAction post={post} status="published" label={post.status === "pending_review" ? "审核通过" : "恢复显示"} enabled={permissions.moderatePosts} />
-          <StatusAction post={post} status="hidden" label="下架" enabled={permissions.moderatePosts} />
-          <StatusAction post={post} status="rejected" label="审核拒绝" enabled={permissions.moderatePosts} />
-          <StatusAction post={post} status="deleted" label="删除到回收站" enabled={permissions.moderatePosts} />
-          <NotifyAuthorAction post={post} enabled={permissions.moderatePosts} />
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -217,18 +170,6 @@ export function AdminPostsPagination({
   );
 }
 
-function StatusAction({ post, status, label, enabled }: { post: AdminPostListItem; status: PostStatus; label: string; enabled: boolean }) {
-  if (!enabled || post.status === status) return null;
-  const templateKey = statusTemplateDefaults[status];
-  if (!templateKey) return null;
-  return <AdminPostNotifyAction action={setAdminPostStatus} post={post} status={status} label={label} defaultTemplateKey={templateKey} variant={statusActionVariant(status)} />;
-}
-
-function NotifyAuthorAction({ post, enabled }: { post: AdminPostListItem; enabled: boolean }) {
-  if (!enabled) return null;
-  return <AdminPostNotifyAction action={sendAdminPostAuthorNotification} post={post} label="通知作者" defaultTemplateKey="content_issue" notifyOnly variant="info" />;
-}
-
 export function AdminPostNotifyAction({
   action,
   post,
@@ -237,6 +178,7 @@ export function AdminPostNotifyAction({
   defaultTemplateKey,
   variant = "primary",
   notifyOnly = false,
+  templates,
 }: {
   action: (state: AdminPostActionState, formData: FormData) => Promise<AdminPostActionState>;
   post: NotificationPostRef;
@@ -245,17 +187,18 @@ export function AdminPostNotifyAction({
   defaultTemplateKey: string;
   variant?: "neutral" | "primary" | "success" | "warning" | "danger" | "info";
   notifyOnly?: boolean;
+  templates: AdminPostNotificationTemplate[];
 }) {
-  const defaultTemplate = getTemplate(defaultTemplateKey);
+  const defaultTemplate = getTemplate(templates, defaultTemplateKey);
   const [open, setOpen] = useState(false);
   const [templateKey, setTemplateKey] = useState(defaultTemplate.key);
   const [title, setTitle] = useState(defaultTemplate.title);
   const [body, setBody] = useState(defaultTemplate.body);
   const [state, formAction, pending] = useActionState(action, initialActionState);
-  const selectedTemplate = useMemo(() => getTemplate(templateKey), [templateKey]);
+  const selectedTemplate = useMemo(() => getTemplate(templates, templateKey), [templateKey, templates]);
 
   function handleTemplateChange(nextKey: string) {
-    const nextTemplate = getTemplate(nextKey);
+    const nextTemplate = getTemplate(templates, nextKey);
     setTemplateKey(nextTemplate.key);
     setTitle(nextTemplate.title);
     setBody(nextTemplate.body);
@@ -289,11 +232,15 @@ export function AdminPostNotifyAction({
                 onChange={(event) => handleTemplateChange(event.target.value)}
                 className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-500"
               >
-                {notificationTemplates.map((template) => (
-                  <option key={template.key} value={template.key}>
-                    {template.title} · {template.key}
-                  </option>
-                ))}
+                {templates.length > 0 ? (
+                  templates.map((template) => (
+                    <option key={template.key} value={template.key}>
+                      {template.title} · {template.key}
+                    </option>
+                  ))
+                ) : (
+                  <option value={templateKey}>模板暂时不可用</option>
+                )}
               </select>
             </label>
             <p className="mt-2 rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold leading-5 text-slate-500">当前模板：{selectedTemplate.key}</p>
@@ -341,13 +288,6 @@ function adminPostStatusLabel(status: PostStatus) {
   return "已删除";
 }
 
-function statusActionVariant(status: PostStatus) {
-  if (status === "published") return "success";
-  if (status === "hidden") return "warning";
-  if (status === "deleted" || status === "rejected") return "danger";
-  return "primary";
-}
-
 function adminActionLabel(action: string, templateKey?: string | null, reason?: string | null) {
   if (reason) return reason;
   if (templateKey) return templateLabel(templateKey);
@@ -384,8 +324,8 @@ function buildPageHref({ page, type, status, q, author }: { page: number; type?:
   return query ? `/admin/user-posts?${query}` : "/admin/user-posts";
 }
 
-function getTemplate(key: string) {
-  return notificationTemplates.find((template) => template.key === key) ?? notificationTemplates[0];
+function getTemplate(templates: TemplateOption[], key: string) {
+  return templates.find((template) => template.key === key) ?? templates[0] ?? { key, title: "", body: "" };
 }
 
 function formatDate(value: string | null) {

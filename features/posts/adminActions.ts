@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { isSuperAdmin } from "@/lib/permissions/admin";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAdminPostOperationConfig } from "./adminOperations";
 import { POST_TYPE_TO_ROUTE } from "./constants";
 import { postHref } from "./formMappers";
 import { sendNotificationFromTemplate, sendNotificationToUser, writeNotificationAuditLog } from "@/features/notifications/service";
@@ -115,6 +116,8 @@ async function writePostAdminEvent(
     statusAfter,
     title,
     body,
+    notificationId,
+    metadata,
   }: {
     postId: string;
     actorId: string;
@@ -124,6 +127,8 @@ async function writePostAdminEvent(
     statusAfter?: string | null;
     title?: string | null;
     body?: string | null;
+    notificationId?: string | null;
+    metadata?: Record<string, unknown>;
   },
 ) {
   const { error } = await supabase.from("post_admin_events").insert({
@@ -135,7 +140,8 @@ async function writePostAdminEvent(
     status_after: statusAfter || null,
     title: title || null,
     body: body || null,
-    metadata: {},
+    notification_id: notificationId || null,
+    metadata: metadata ?? {},
   });
 
   if (error) {
@@ -151,6 +157,147 @@ async function writePostAdminEvent(
   }
 
   return true;
+}
+
+export async function handleAdminPostOperation(_state: AdminPostActionState, formData: FormData): Promise<AdminPostActionState> {
+  const id = readText(formData, "id");
+  const operation = readText(formData, "operation");
+  const config = getAdminPostOperationConfig(operation);
+
+  if (!id || !config) {
+    return fail("操作参数无效。");
+  }
+
+  const context = await getAdminActionContext(["moderate_posts"]);
+  if (!context.ok) return fail(context.message);
+
+  const before = await readPost(context.supabase, id);
+  if (!before) return fail("用户发布信息不存在或无权读取。");
+  if (before.status === "deleted") return fail("回收站内容请在回收站中处理。");
+  if (!config.allowedStatuses.includes(before.status)) return fail("当前状态不适合执行该处理。");
+
+  const now = new Date().toISOString();
+  const notifyUser = formData.get("notify_user") === "on";
+  const statusAfter = config.statusAfter ?? before.status;
+  const templateKey = readText(formData, "notification_template_key") || config.defaultTemplateKey;
+  const title = readText(formData, "notification_title");
+  const body = readText(formData, "notification_body");
+  const lastAdminReason = title || config.label;
+  const payload: {
+    status?: PostStatus;
+    published_at?: string | null;
+    hidden_at?: string | null;
+    deleted_at?: string | null;
+    deleted_by?: string | null;
+    deletion_source?: "admin" | null;
+    deletion_error?: string | null;
+    deletion_error_at?: string | null;
+    last_admin_action: string;
+    last_admin_action_at: string;
+    last_admin_action_by: string;
+    last_admin_action_template_key: string | null;
+    last_admin_action_reason: string | null;
+    updated_at: string;
+  } = {
+    last_admin_action: config.eventType,
+    last_admin_action_at: now,
+    last_admin_action_by: context.userId,
+    last_admin_action_template_key: templateKey || null,
+    last_admin_action_reason: lastAdminReason,
+    updated_at: now,
+  };
+
+  if (statusAfter !== before.status) {
+    payload.status = statusAfter;
+  }
+  if (statusAfter === "published" && statusAfter !== before.status) {
+    payload.published_at = before.published_at ?? now;
+    payload.hidden_at = null;
+    payload.deleted_at = null;
+    payload.deleted_by = null;
+    payload.deletion_source = null;
+    payload.deletion_error = null;
+    payload.deletion_error_at = null;
+  }
+  if (statusAfter === "hidden" && statusAfter !== before.status) {
+    payload.hidden_at = now;
+    payload.deleted_at = null;
+    payload.deleted_by = null;
+    payload.deletion_source = null;
+    payload.deletion_error = null;
+    payload.deletion_error_at = null;
+  }
+  if (statusAfter === "deleted") {
+    payload.deleted_at = now;
+    payload.deleted_by = context.userId;
+    payload.deletion_source = "admin";
+    payload.deletion_error = null;
+    payload.deletion_error_at = null;
+  }
+
+  const { error } = await context.supabase.from("posts").update(payload).eq("id", id);
+  if (error) {
+    console.error("[admin/user-posts] Failed to handle post operation", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      postId: id,
+      operation,
+    });
+    return fail("处理失败，请稍后再试。");
+  }
+
+  const notificationResult = notifyUser
+    ? await maybeSendPostActionNotification({
+        actorId: context.userId,
+        authorId: before.author_id,
+        postId: id,
+        postType: before.post_type,
+        status: statusAfter,
+        templateFallback: templateKey,
+        formData,
+      })
+    : { ok: true as const, notificationId: null };
+
+  const metadata = {
+    notify_user: notifyUser,
+    notification_failed: !notificationResult.ok,
+    error_message: notificationResult.ok ? null : notificationResult.message,
+    operation,
+    operation_label: config.label,
+  };
+
+  const audited = await writeAuditLog(context, config.auditAction, id, before, {
+    old_status: before.status,
+    new_status: statusAfter,
+    post_type: before.post_type,
+    title: before.title,
+    author_id: before.author_id,
+    operation,
+    template_key: templateKey,
+    notification_id: notificationResult.ok ? notificationResult.notificationId ?? null : null,
+    metadata,
+  });
+
+  await writePostAdminEvent(context.supabase, {
+    postId: id,
+    actorId: context.userId,
+    eventType: config.eventType,
+    templateKey,
+    statusBefore: before.status,
+    statusAfter,
+    title: title || config.label,
+    body,
+    notificationId: notificationResult.ok ? notificationResult.notificationId ?? null : null,
+    metadata,
+  });
+
+  revalidatePost(before.post_type, id);
+
+  if (!notificationResult.ok) return ok(`处理已完成，但通知发送失败：${notificationResult.message}`);
+  if (!audited) return ok("处理已完成，但审计日志写入失败。");
+  return ok(notifyUser ? "处理已完成，通知已发送。" : "处理已完成。");
 }
 
 export async function setAdminPostStatus(_state: AdminPostActionState, formData: FormData): Promise<AdminPostActionState> {
@@ -610,7 +757,7 @@ async function maybeSendPostActionNotification({
   formData: FormData;
   templateFallback?: string;
   adminSupabase?: ReturnType<typeof createSupabaseAdminClient>;
-}): Promise<{ ok: true } | { ok: false; message: string }> {
+}): Promise<{ ok: true; notificationId?: string | null } | { ok: false; message: string }> {
   if (readText(formData, "notify_user") !== "on") return { ok: true };
   if (!authorId) return { ok: false, message: "该内容没有作者 ID。" };
 
@@ -681,7 +828,7 @@ async function maybeSendPostActionNotification({
     return { ok: false, message: result.error ?? "通知发送失败。" };
   }
 
-  return { ok: true };
+  return { ok: true, notificationId: result.notificationIds[0] ?? null };
 }
 
 function notificationTemplateForStatus(status: PostStatus) {

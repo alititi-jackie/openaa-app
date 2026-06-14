@@ -35,6 +35,7 @@ import {
   normalizeNotificationReadFilter,
   normalizeNotificationTypeFilter,
 } from "@/features/notifications/adminQueries";
+import { getAdminPostNotificationTemplates } from "@/features/posts/adminQueries";
 import type { PostType } from "@/features/posts/types";
 import { getAdminReportsData, type ReportFilterStatus, type ReportReason } from "@/features/reports/adminQueries";
 import { hasAdminPermission, isSuperAdmin } from "@/lib/permissions/admin";
@@ -160,6 +161,7 @@ async function ReportsTab({ params }: { params?: Awaited<AdminMessagesPageProps[
     q: params?.q,
     page: normalizePage(params?.page),
   });
+  const templates = data.permissions.moderatePosts ? await getAdminPostNotificationTemplates() : [];
 
   if (!data.permissions.viewReports) {
     return (
@@ -188,7 +190,7 @@ async function ReportsTab({ params }: { params?: Awaited<AdminMessagesPageProps[
           <AlertTriangle size={15} aria-hidden="true" />
           默认按最近举报排序，每页显示 {data.pageSize} 条。
         </div>
-        <AdminReportsList reports={data.reports} permissions={data.permissions} />
+        <AdminReportsList reports={data.reports} permissions={data.permissions} templates={templates} />
         <AdminReportsPagination
           page={data.page}
           pageCount={data.pageCount}

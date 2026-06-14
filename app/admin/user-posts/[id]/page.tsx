@@ -3,7 +3,8 @@ import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminDetailLayout, AdminDetailSection } from "@/components/admin/AdminDetailLayout";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { AdminTopActions } from "@/components/admin/AdminTopActions";
-import { getAdminPostDetail, type AdminPostDetail } from "@/features/posts/adminQueries";
+import { AdminPostManageDialog } from "@/components/posts/AdminPostManageDialog";
+import { getAdminPostDetail, getAdminPostNotificationTemplates, type AdminPostDetail, type AdminPostNotificationTemplate, type AdminPostsPermissions } from "@/features/posts/adminQueries";
 import type { PostStatus } from "@/features/posts/types";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -59,13 +60,15 @@ export default function AdminUserPostDetailPage({ params }: { params: Promise<{ 
           );
         }
 
-        return <AdminUserPostDetail post={data.post} />;
+        const templates = data.permissions.moderatePosts ? await getAdminPostNotificationTemplates() : [];
+
+        return <AdminUserPostDetail post={data.post} permissions={data.permissions} templates={templates} />;
       }}
     </AdminAuthGate>
   );
 }
 
-function AdminUserPostDetail({ post }: { post: AdminPostDetail }) {
+function AdminUserPostDetail({ post, permissions, templates }: { post: AdminPostDetail; permissions: AdminPostsPermissions; templates: AdminPostNotificationTemplate[] }) {
   return (
     <div className="space-y-4">
       <AdminTopActions />
@@ -95,6 +98,7 @@ function AdminUserPostDetail({ post }: { post: AdminPostDetail }) {
         footer={
           <>
             <AdminActionButton href={frontPostHref(post)} variant="neutral">查看前台真实效果</AdminActionButton>
+            {permissions.moderatePosts ? <AdminPostManageDialog key={`${post.id}-${post.status}`} post={post} templates={templates} /> : null}
             <AdminActionButton href={`/admin/user-posts?q=${encodeURIComponent(post.id)}`} variant="primary">返回列表管理</AdminActionButton>
           </>
         }

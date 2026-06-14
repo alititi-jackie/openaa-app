@@ -5,6 +5,7 @@ import { AdminActionForm } from "@/components/admin/AdminActionForm";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { AdminPostNotifyAction } from "@/components/posts/AdminPostsManagement";
 import { setAdminPostStatus } from "@/features/posts/adminActions";
+import type { AdminPostNotificationTemplate } from "@/features/posts/adminQueries";
 import type { PostStatus } from "@/features/posts/types";
 import { setAdminReportStatus } from "@/features/reports/adminActions";
 import type { AdminReportListItem, AdminReportsPermissions } from "@/features/reports/adminQueries";
@@ -117,7 +118,7 @@ export function AdminReportsFilter({ status, type, reason, q }: { status?: strin
   );
 }
 
-export function AdminReportsList({ reports, permissions }: { reports: AdminReportListItem[]; permissions: AdminReportsPermissions }) {
+export function AdminReportsList({ reports, permissions, templates }: { reports: AdminReportListItem[]; permissions: AdminReportsPermissions; templates: AdminPostNotificationTemplate[] }) {
   if (reports.length === 0) {
     return <p className="rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-500">暂无举报记录。</p>;
   }
@@ -155,7 +156,7 @@ export function AdminReportsList({ reports, permissions }: { reports: AdminRepor
                 跳转用户发布信息管理
               </Link>
               <ReportStatusActions report={report} permissions={permissions} />
-              <PostModerationActions report={report} permissions={permissions} />
+              <PostModerationActions report={report} permissions={permissions} templates={templates} />
             </div>
           </div>
         </article>
@@ -226,15 +227,15 @@ function ReportAction({ reportId, action, label }: { reportId: string; action: s
   );
 }
 
-function PostModerationActions({ report, permissions }: { report: AdminReportListItem; permissions: AdminReportsPermissions }) {
+function PostModerationActions({ report, permissions, templates }: { report: AdminReportListItem; permissions: AdminReportsPermissions; templates: AdminPostNotificationTemplate[] }) {
   if (!permissions.moderatePosts) return null;
 
   return (
     <>
-      <PostStatusAction report={report} status="hidden" label="下架" defaultTemplateKey="admin_post_hidden" />
-      <PostStatusAction report={report} status="published" label="恢复显示" defaultTemplateKey="admin_post_published" />
-      <PostStatusAction report={report} status="pending_review" label="标记待审核" defaultTemplateKey="content_issue" />
-      <PostStatusAction report={report} status="deleted" label="删除到回收站" defaultTemplateKey="admin_post_deleted" />
+      <PostStatusAction report={report} status="hidden" label="下架" defaultTemplateKey="admin_post_hidden" templates={templates} />
+      <PostStatusAction report={report} status="published" label="恢复显示" defaultTemplateKey="admin_post_published" templates={templates} />
+      <PostStatusAction report={report} status="pending_review" label="标记待审核" defaultTemplateKey="content_issue" templates={templates} />
+      <PostStatusAction report={report} status="deleted" label="删除到回收站" defaultTemplateKey="admin_post_deleted" templates={templates} />
     </>
   );
 }
@@ -244,16 +245,18 @@ function PostStatusAction({
   status,
   label,
   defaultTemplateKey,
+  templates,
 }: {
   report: AdminReportListItem;
   status: PostStatus;
   label: string;
   defaultTemplateKey: string;
+  templates: AdminPostNotificationTemplate[];
 }) {
   if (report.postStatus === status) return null;
 
   return (
-    <AdminPostNotifyAction action={setAdminPostStatus} post={{ id: report.postId, title: report.postTitle }} status={status} label={label} defaultTemplateKey={defaultTemplateKey} />
+    <AdminPostNotifyAction action={setAdminPostStatus} post={{ id: report.postId, title: report.postTitle }} status={status} label={label} defaultTemplateKey={defaultTemplateKey} templates={templates} />
   );
 }
 

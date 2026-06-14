@@ -4,7 +4,7 @@ import { AdminTopActions } from "@/components/admin/AdminTopActions";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPostsFilter, AdminPostsList, AdminPostsPagination, AdminPostsPermissionBadges } from "@/components/posts/AdminPostsManagement";
-import { getAdminPostsData } from "@/features/posts/adminQueries";
+import { getAdminPostNotificationTemplates, getAdminPostsData } from "@/features/posts/adminQueries";
 import type { PostStatus, PostType } from "@/features/posts/types";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -34,6 +34,7 @@ export default function AdminUserPostsPage({ searchParams }: AdminUserPostsPageP
           page: normalizePage(params?.page),
         });
         const canRead = data.permissions.viewPosts || data.permissions.moderatePosts;
+        const templates = data.permissions.moderatePosts ? await getAdminPostNotificationTemplates() : [];
 
         if (!canRead) {
           return (
@@ -69,7 +70,7 @@ export default function AdminUserPostsPage({ searchParams }: AdminUserPostsPageP
                 <FileText size={15} aria-hidden="true" />
                 默认按最近更新排序，每页显示 {data.pageSize} 条。
               </div>
-              <AdminPostsList posts={data.posts} permissions={data.permissions} />
+              <AdminPostsList posts={data.posts} permissions={data.permissions} templates={templates} />
               <AdminPostsPagination page={data.page} pageCount={data.pageCount} totalCount={data.totalCount} type={params?.type} status={params?.status} q={params?.q} author={params?.author} />
             </AdminCard>
           </div>
