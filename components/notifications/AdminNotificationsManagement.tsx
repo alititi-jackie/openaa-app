@@ -41,7 +41,8 @@ export function AdminNotificationsStats({ totals }: { totals: { total: number; u
 
 export function AdminNotificationsFilter({ type, read, q }: { type?: string; read?: string; q?: string }) {
   return (
-    <form action="/admin/notifications" className="grid gap-3 md:grid-cols-4">
+    <form action="/admin/messages" className="grid gap-3 md:grid-cols-4">
+      <input type="hidden" name="tab" value="notifications" />
       <input
         name="q"
         defaultValue={q ?? ""}
@@ -243,8 +244,9 @@ function buildPageHref({ page, type, read, q }: { page: number; type?: string; r
   if (read && read !== "all") params.set("read", read);
   if (q) params.set("q", q);
   if (page > 1) params.set("page", String(page));
+  params.set("tab", "notifications");
   const query = params.toString();
-  return query ? `/admin/notifications?${query}` : "/admin/notifications";
+  return `/admin/messages?${query}`;
 }
 
 function formatDateTime(value: string | null) {

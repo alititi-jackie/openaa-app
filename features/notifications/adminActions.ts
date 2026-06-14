@@ -52,7 +52,7 @@ export async function deleteAdminNotification(_state: AdminNotificationActionSta
   });
   if (!audited) return fail("通知已删除，但审计日志写入失败。");
 
-  revalidatePath("/admin/notifications");
+  revalidatePath("/admin/messages");
   revalidatePath("/profile/notifications");
   return ok("通知已删除。");
 }
@@ -103,7 +103,7 @@ export async function sendAdminNotification(_state: AdminNotificationActionState
 
   if (!result.ok) return fail(`通知发送失败：${result.error ?? "请稍后再试。"}`);
 
-  revalidatePath("/admin/notifications");
+  revalidatePath("/admin/messages");
   revalidatePath("/profile/notifications");
   revalidatePath("/profile");
   return ok("通知已发送。");
@@ -176,7 +176,7 @@ export async function sendBulkAdminNotification(_state: AdminNotificationActionS
     afterData: { recipient_scope: scope, recipient_count: recipients.userIds.length, template_key: templateKey || null },
   });
 
-  revalidatePath("/admin/notifications");
+  revalidatePath("/admin/messages");
   return ok(`群发完成，共发送 ${result.notificationIds.length} 条通知。`);
 }
 

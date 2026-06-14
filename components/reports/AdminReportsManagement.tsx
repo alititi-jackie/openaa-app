@@ -68,7 +68,8 @@ export function AdminReportsStats({ totals }: { totals: { total: number; open: n
 
 export function AdminReportsFilter({ status, type, reason, q }: { status?: string; type?: string; reason?: string; q?: string }) {
   return (
-    <form action="/admin/reports" className="grid gap-3 md:grid-cols-4">
+    <form action="/admin/messages" className="grid gap-3 md:grid-cols-4">
+      <input type="hidden" name="tab" value="reports" />
       <input
         name="q"
         defaultValue={q ?? ""}
@@ -267,8 +268,9 @@ function buildPageHref({ page, status, type, reason, q }: { page: number; status
   if (reason && reason !== "all") params.set("reason", reason);
   if (q) params.set("q", q);
   if (page > 1) params.set("page", String(page));
+  params.set("tab", "reports");
   const query = params.toString();
-  return query ? `/admin/reports?${query}` : "/admin/reports";
+  return `/admin/messages?${query}`;
 }
 
 function formatDateTime(value: string) {

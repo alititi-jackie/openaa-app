@@ -74,7 +74,7 @@ export function AdminFeedbackSettingsForm({ settings, permissions }: { settings:
         </label>
       </div>
       <div className="flex flex-wrap gap-2">
-        <Link href="/admin/feedback" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+        <Link href="/admin/messages?tab=feedback" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
           <RefreshCw size={15} aria-hidden="true" />
           重新加载
         </Link>
@@ -103,7 +103,8 @@ export function AdminFeedbackFilter({ status, type, q }: { status?: string; type
           刷新
         </Link>
       </div>
-      <form action="/admin/feedback" className="grid gap-3 md:grid-cols-4">
+      <form action="/admin/messages" className="grid gap-3 md:grid-cols-4">
+        <input type="hidden" name="tab" value="feedback" />
         <input type="hidden" name="status" value={status ?? "all"} />
         <input
           name="q"
@@ -275,8 +276,9 @@ function buildPageHref({ page, status, type, q }: { page: number; status?: strin
   if (type && type !== "all") params.set("type", type);
   if (q) params.set("q", q);
   if (page > 1) params.set("page", String(page));
+  params.set("tab", "feedback");
   const query = params.toString();
-  return query ? `/admin/feedback?${query}` : "/admin/feedback";
+  return `/admin/messages?${query}`;
 }
 
 function formatDateTime(value: string | null) {

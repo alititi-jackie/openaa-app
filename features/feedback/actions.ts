@@ -59,7 +59,7 @@ export async function updateFeedbackStatus(_state: FeedbackActionState, formData
   });
   if (!audited) return fail("反馈状态已更新，但审计日志写入失败。");
 
-  revalidatePath("/admin/feedback");
+  revalidatePath("/admin/messages");
   return ok("反馈状态已更新。");
 }
 
@@ -86,7 +86,7 @@ export async function updateFeedbackNote(_state: FeedbackActionState, formData: 
   });
   if (!audited) return fail("反馈备注已保存，但审计日志写入失败。");
 
-  revalidatePath("/admin/feedback");
+  revalidatePath("/admin/messages");
   return ok("反馈备注已保存。");
 }
 
@@ -114,7 +114,7 @@ export async function softDeleteFeedback(_state: FeedbackActionState, formData: 
   });
   if (!audited) return fail("反馈已删除，但审计日志写入失败。");
 
-  revalidatePath("/admin/feedback");
+  revalidatePath("/admin/messages");
   return ok("反馈已删除。");
 }
 
@@ -147,7 +147,7 @@ export async function updateFeedbackSettings(_state: FeedbackActionState, formDa
   });
   if (!audited) return fail("反馈提交设置已保存，但审计日志写入失败。");
 
-  revalidatePath("/admin/feedback");
+  revalidatePath("/admin/messages");
   return ok("反馈提交设置已保存。");
 }
 
