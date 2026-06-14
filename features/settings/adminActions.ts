@@ -103,7 +103,10 @@ export async function updateDefaultPlaceholderImage(_state: AdminHomeActionState
   };
 
   const { error } = await context.supabase.from("site_settings").upsert(payload, { onConflict: "key" });
-  if (error) return fail("默认占位图片保存失败，请稍后再试。");
+  if (error) {
+    logSupabaseError("save default placeholder site setting failed", error, { key });
+    return fail("默认占位图片保存失败，请稍后再试。");
+  }
 
   if (beforeValue.imageAssetId && beforeValue.imageAssetId !== nextValue.imageAssetId) {
     await markImageAssetDeleted(context.supabase, beforeValue.imageAssetId);
@@ -168,9 +171,13 @@ async function upsertExternalImageAsset(context: Extract<AdminSettingsActionCont
       .select("id")
       .single();
 
-    if (error || !data) return false;
+    if (error || !data) {
+      logSupabaseError("create external placeholder image asset failed", error, { entityId, imageUrl });
+      return false;
+    }
     return { id: data.id as string, url: imageUrl, sourceType: "external" as const };
-  } catch {
+  } catch (error) {
+    console.error("[settings] create external placeholder image asset failed", { entityId, imageUrl, error });
     return false;
   }
 }
@@ -185,7 +192,10 @@ async function uploadPlaceholderImageAsset(context: Extract<AdminSettingsActionC
     contentType: file.type,
     upsert: false,
   });
-  if (uploadError) return false;
+  if (uploadError) {
+    logSupabaseError("upload placeholder image to storage failed", uploadError, { bucket: "site-setting-images", path, entityId, fileType: file.type, fileSize: file.size });
+    return false;
+  }
 
   const { data: publicUrlData } = context.supabase.storage.from("site-setting-images").getPublicUrl(path);
   const { data, error } = await context.supabase
@@ -206,15 +216,19 @@ async function uploadPlaceholderImageAsset(context: Extract<AdminSettingsActionC
     .select("id")
     .single();
 
-  if (error || !data) return false;
+  if (error || !data) {
+    logSupabaseError("create storage placeholder image asset failed", error, { bucket: "site-setting-images", path, entityId });
+    return false;
+  }
   return { id: data.id as string, url: publicUrlData.publicUrl, sourceType: "storage" as const };
 }
 
 async function markImageAssetDeleted(supabase: SupabaseServerClient, imageAssetId: string) {
-  await supabase
+  const { error } = await supabase
     .from("image_assets")
     .update({ status: "deleted", deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
     .eq("id", imageAssetId);
+  if (error) logSupabaseError("mark old placeholder image asset deleted failed", error, { imageAssetId });
 }
 
 function normalizeImageUrl(raw: string): { ok: true; value: string | null } | { ok: false; message: string } {
@@ -247,6 +261,22 @@ function readText(formData: FormData, key: string) {
 function readFile(formData: FormData, key: string) {
   const value = formData.get(key);
   return value instanceof File && value.size > 0 ? value : null;
+}
+
+function logSupabaseError(scope: string, error: unknown, metadata?: Record<string, unknown>) {
+  if (!error) {
+    console.error(`[settings] ${scope}`, { ...metadata, error: "No data returned" });
+    return;
+  }
+
+  const candidate = error as { code?: unknown; message?: unknown; details?: unknown; hint?: unknown };
+  console.error(`[settings] ${scope}`, {
+    code: candidate.code,
+    message: candidate.message,
+    details: candidate.details,
+    hint: candidate.hint,
+    ...metadata,
+  });
 }
 
 async function writeAuditLog(
