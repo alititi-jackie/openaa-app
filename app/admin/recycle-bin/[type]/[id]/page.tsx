@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { AdminActionForm, AdminCheckbox } from "@/components/admin/AdminActionForm";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
-import { AdminBackNavigation } from "@/components/admin/AdminBackNavigation";
 import { AdminCard } from "@/components/admin/AdminCard";
-import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
+import { AdminTopActions } from "@/components/admin/AdminTopActions";
 import { permanentlyDeleteNavigationLink, restoreNavigationLink } from "@/features/navigation/actions";
 import { getDeletedNavigationLinkDetail } from "@/features/navigation/queries";
 import type { NavigationLink } from "@/features/navigation/types";
@@ -36,7 +35,7 @@ export default function AdminRecycleBinDetailPage({ params }: { params: Promise<
         if (!superAdmin) {
           return (
             <div className="space-y-4">
-              <AdminBackNavigation />
+              <AdminTopActions />
               <AdminPageHeader title="回收站详情" description="只有超级管理员可以访问回收站">
                 <AdminPermissionBadge allowed={false} label="super_admin" />
               </AdminPageHeader>
@@ -68,9 +67,8 @@ export default function AdminRecycleBinDetailPage({ params }: { params: Promise<
 function MissingDetail({ message, returnHref }: { message: string; returnHref: string }) {
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <AdminBackNavigation />
-        <AdminLogoutButton />
+      <div className="space-y-2">
+      <AdminTopActions />
       </div>
       <AdminPageHeader title="回收站详情" description={message}>
         <AdminPermissionBadge allowed label="super_admin" />
@@ -199,12 +197,11 @@ function NavigationRecycleBinDetail({ link }: { link: NavigationLink }) {
 
 function DetailNavigation({ returnHref }: { returnHref: string }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <AdminBackNavigation />
+    <div className="space-y-2">
+      <AdminTopActions />
       <Link href={returnHref} className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
         返回回收站
       </Link>
-      <AdminLogoutButton />
     </div>
   );
 }

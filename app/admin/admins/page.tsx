@@ -1,7 +1,6 @@
-import Link from "next/link";
 import { UserPlus } from "lucide-react";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
-import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
+import { AdminTopActions } from "@/components/admin/AdminTopActions";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import {
@@ -52,10 +51,7 @@ export default function AdminAdminsPage({ searchParams }: AdminAdminsPageProps) 
 
         return (
           <div className="space-y-4">
-            <Link href="/admin/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
-              ← 返回总后台
-            </Link>
-
+            <AdminTopActions />
             <AdminPageHeader title="管理员授权" description="先搜索真实用户，确认 user id 后再授权后台角色。所有授权、改角色、停用和恢复都需要二次确认。">
               <AdminRolePermissionBadges permissions={data.permissions} />
             </AdminPageHeader>
@@ -85,16 +81,7 @@ export default function AdminAdminsPage({ searchParams }: AdminAdminsPageProps) 
               <AdminRolesList admins={data.admins} permissions={data.permissions} />
               <AdminRolePagination page={data.page} pageCount={data.pageCount} totalCount={data.totalCount} q={params?.q} role={params?.role} status={params?.status} />
             </AdminCard>
-            <nav aria-label="后台底部导航" className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-              <div className="flex flex-wrap gap-2">
-                <Link href="/admin/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
-                  返回总后台
-                </Link>
-                <AdminLogoutButton />
-              </div>
-            </nav>
-
-          </div>
+</div>
         );
       }}
     </AdminAuthGate>

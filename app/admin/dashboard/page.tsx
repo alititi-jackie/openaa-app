@@ -16,7 +16,7 @@ import {
   Users,
 } from "lucide-react";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
-import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
+import { AdminTopActions } from "@/components/admin/AdminTopActions";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -214,7 +214,7 @@ export default function AdminDashboardPage() {
 
         return (
           <div className="space-y-4">
-            <AdminLogoutButton />
+            <AdminTopActions />
 
             <AdminPageHeader title="OpenAA 管理后台" description="集中管理内容、用户、安全反馈和运营配置。已完成模块可直接进入，旧站已有但新站尚未补齐的模块会标记为待补齐。">
               <AdminPermissionBadge allowed={superAdmin} label="super_admin" />
@@ -229,7 +229,6 @@ export default function AdminDashboardPage() {
                   <h2 className="mt-1 text-lg font-black text-slate-950">{user.email ?? "未绑定邮箱"}</h2>
                   <p className="mt-1 text-sm leading-6 text-slate-600">角色：{adminRole.role} · 状态：{adminRole.is_active ? "active" : "inactive"}</p>
                 </div>
-                <AdminLogoutButton />
               </div>
             </section>
 
@@ -248,16 +247,7 @@ export default function AdminDashboardPage() {
                 </section>
               ))}
             </div>
-
-            <nav aria-label="后台底部导航" className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-              <div className="flex flex-wrap gap-2">
-                <Link href="/admin/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
-                  返回总后台
-                </Link>
-                <AdminLogoutButton />
-              </div>
-            </nav>
-          </div>
+</div>
         );
       }}
     </AdminAuthGate>

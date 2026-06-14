@@ -2,9 +2,8 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { LockKeyhole, ShieldAlert } from "lucide-react";
 import { requireAdmin, type AdminCheckResult } from "@/lib/permissions/admin";
-import { AdminBackNavigation } from "./AdminBackNavigation";
-import { AdminFooterNavigation } from "./AdminFooterNavigation";
 import { AdminPageHeader } from "./AdminPageHeader";
+import { AdminTopActions } from "./AdminTopActions";
 
 type AdminAuthGateProps = {
   children: (admin: Extract<AdminCheckResult, { status: "authorized" }>) => ReactNode;
@@ -57,11 +56,8 @@ export async function AdminAuthGate({ children }: AdminAuthGateProps) {
 function AdminPageFrame({ children }: { children: ReactNode }) {
   return (
     <div className="space-y-4">
-      <div className="flex justify-start">
-        <AdminBackNavigation />
-      </div>
+      <AdminTopActions />
       {children}
-      <AdminFooterNavigation />
     </div>
   );
 }

@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
-import { AdminBackNavigation } from "@/components/admin/AdminBackNavigation";
+import { AdminTopActions } from "@/components/admin/AdminTopActions";
 import { AdminCard } from "@/components/admin/AdminCard";
-import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { RecycleBinResourceNav } from "@/components/admin/RecycleBinResourceNav";
@@ -84,7 +83,7 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
         if (!postData.superAdmin) {
           return (
             <div className="space-y-4">
-              <AdminBackNavigation />
+              <AdminTopActions />
               <AdminPageHeader title="回收站" description="只有超级管理员可以访问删除管理">
                 <AdminPermissionBadge allowed={false} label="super_admin" />
               </AdminPageHeader>
@@ -96,10 +95,7 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
 
         return (
           <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <AdminBackNavigation />
-              <AdminLogoutButton />
-            </div>
+            <AdminTopActions />
 
             <AdminPageHeader title="回收站" description="统一管理已删除的用户发布信息、新闻和公共导航内容。">
               <AdminPermissionBadge allowed={postData.superAdmin} label="super_admin" />

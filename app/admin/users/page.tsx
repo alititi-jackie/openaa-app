@@ -1,7 +1,6 @@
-import Link from "next/link";
 import { Users } from "lucide-react";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
-import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
+import { AdminTopActions } from "@/components/admin/AdminTopActions";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminUsersFilter, AdminUsersList, AdminUsersPagination, AdminUsersPermissionBadges, AdminUsersStats } from "@/components/users/AdminUsersManagement";
@@ -44,10 +43,7 @@ export default function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
 
         return (
           <div className="space-y-4">
-            <Link href="/admin/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
-              ← 返回总后台
-            </Link>
-
+            <AdminTopActions />
             <AdminPageHeader title="用户管理" description="查看用户资料状态，并管理 restricted / banned / active 等账号状态。">
               <AdminUsersPermissionBadges permissions={data.permissions} />
             </AdminPageHeader>
@@ -72,16 +68,7 @@ export default function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
               <AdminUsersList users={data.users} permissions={data.permissions} currentAdminId={data.currentAdminId} />
               <AdminUsersPagination page={data.page} pageCount={data.pageCount} totalCount={data.totalCount} status={params?.status} accountType={params?.accountType} q={params?.q} />
             </AdminCard>
-            <nav aria-label="后台底部导航" className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-              <div className="flex flex-wrap gap-2">
-                <Link href="/admin/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
-                  返回总后台
-                </Link>
-                <AdminLogoutButton />
-              </div>
-            </nav>
-
-          </div>
+</div>
         );
       }}
     </AdminAuthGate>

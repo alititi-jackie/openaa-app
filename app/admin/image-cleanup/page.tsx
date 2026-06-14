@@ -1,7 +1,6 @@
 import { Image as ImageIcon } from "lucide-react";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
-import { AdminBackNavigation } from "@/components/admin/AdminBackNavigation";
-import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
+import { AdminTopActions } from "@/components/admin/AdminTopActions";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { RecycleBinResourceNav } from "@/components/admin/RecycleBinResourceNav";
@@ -57,10 +56,7 @@ export default function AdminImageCleanupPage({ searchParams }: AdminImageCleanu
 
         return (
           <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <AdminBackNavigation />
-              <AdminLogoutButton />
-            </div>
+            <AdminTopActions />
 
             <AdminPageHeader title="图片清理工具" description="扫描 image_assets 中疑似未使用的图片资产，展示引用状态和风险提示；确认后只标记删除，不物理删除文件。">
               <AdminImageCleanupPermissionBadges permissions={data.permissions} />
