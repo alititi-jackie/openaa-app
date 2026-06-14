@@ -9,7 +9,7 @@ OpenAA uses new Supabase Storage for new uploads while still allowing safe exter
 
 ## image_assets Fields
 
-Phase 2 creates `image_assets` with `source_type`, `bucket`, `path`, `public_url`, `external_url`, `external_host`, `owner_id`, `entity_type`, `entity_id`, `mime_type`, `size_bytes`, `width`, `height`, `status`, `is_public`, `metadata`, `created_at`, `updated_at`, and `deleted_at`.
+Phase 2 creates `image_assets` with `source_type`, `bucket`, `path`, `public_url`, `external_url`, `external_host`, `owner_id`, `entity_type`, `entity_id`, `mime_type`, `size_bytes`, `width`, `height`, `status`, `is_public`, `metadata`, `created_at`, `updated_at`, and `deleted_at`. `entity_id` is text so assets can reference UUID-backed content records and text-backed setting keys.
 
 External images are not deleted by OpenAA. Admins may only remove references or replace URLs. Storage images require owner or admin permission and an audit log entry before deletion.
 

@@ -1,4 +1,7 @@
+"use client";
+
 import { Gauge, Globe, Settings2 } from "lucide-react";
+import { useMemo, useState } from "react";
 import { AdminActionForm, AdminCheckbox, AdminTextInput } from "@/components/admin/AdminActionForm";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { updateDailyPostLimit, updateDefaultPlaceholderImage } from "@/features/settings/adminActions";
@@ -94,6 +97,13 @@ function PlaceholderImageForm({
   description: string;
   value: DefaultPlaceholderImageValue;
 }) {
+  const [externalUrl, setExternalUrl] = useState(value.sourceType === "external" ? value.url ?? "" : "");
+  const [previewFailed, setPreviewFailed] = useState(false);
+  const [selectedFileName, setSelectedFileName] = useState("");
+  const externalPreview = useMemo(() => normalizePreviewUrl(externalUrl), [externalUrl]);
+  const displayPreviewUrl = externalPreview.ok ? externalPreview.url : !externalUrl.trim() ? value.url : null;
+  const previewAlt = externalPreview.ok ? `${label}外链预览` : label;
+
   return (
     <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -108,29 +118,63 @@ function PlaceholderImageForm({
         ) : null}
       </div>
 
-      {value.url ? (
+      {displayPreviewUrl ? (
         <div className="mt-3 overflow-hidden rounded-xl border border-slate-100 bg-white">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={value.url} alt={label} className="aspect-[4/3] w-full object-cover" />
+          <img
+            src={displayPreviewUrl}
+            alt={previewAlt}
+            className="aspect-[4/3] w-full object-cover"
+            onLoad={() => setPreviewFailed(false)}
+            onError={() => setPreviewFailed(true)}
+          />
         </div>
       ) : (
         <p className="mt-3 rounded-xl border border-dashed border-slate-200 bg-white px-3 py-4 text-center text-sm font-semibold text-slate-500">
           暂未设置默认占位图片。
         </p>
       )}
+      {externalUrl.trim() && !externalPreview.ok ? (
+        <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-semibold leading-5 text-amber-700">
+          {externalPreview.message}
+        </p>
+      ) : null}
+      {previewFailed ? (
+        <p className="mt-2 rounded-xl bg-red-50 px-3 py-2 text-xs font-semibold leading-5 text-red-600">
+          图片预览加载失败，请检查图片地址是否可公开访问。
+        </p>
+      ) : null}
 
       <AdminActionForm action={updateDefaultPlaceholderImage} submitLabel="保存默认图片" className="mt-3 grid gap-3">
         <input type="hidden" name="setting_key" value={settingKey} />
-        <AdminTextInput label="外部图片链接" name="image_url" defaultValue={value.sourceType === "external" ? value.url ?? "" : ""} placeholder="https://img.openaa.com/..." />
+        <label className="grid gap-1.5 text-sm font-bold text-slate-700">
+          <span>外部图片链接</span>
+          <input
+            name="image_url"
+            value={externalUrl}
+            onChange={(event) => {
+              setExternalUrl(event.target.value);
+              setPreviewFailed(false);
+            }}
+            placeholder="https://img.openaa.com/..."
+            className="min-h-10 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-500"
+          />
+        </label>
         <label className="grid gap-1.5 text-sm font-bold text-slate-700">
           <span>上传图片</span>
           <input
             name="image_file"
             type="file"
             accept="image/jpeg,image/png,image/webp"
+            onChange={(event) => setSelectedFileName(event.target.files?.[0]?.name ?? "")}
             className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 outline-none file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-black file:text-slate-700 focus:border-blue-500"
           />
         </label>
+        {selectedFileName ? (
+          <p className="rounded-xl bg-blue-50 px-3 py-2 text-xs font-semibold leading-5 text-blue-700">
+            已选择上传文件：{selectedFileName}。保存时会优先使用上传图片，外部链接将被忽略。
+          </p>
+        ) : null}
         <p className="rounded-xl bg-white px-3 py-2 text-xs font-semibold leading-5 text-slate-500">
           上传图片和外链二选一；如果同时填写，优先使用上传图片。外链第一版只支持 https://img.openaa.com/。
         </p>
@@ -145,6 +189,26 @@ function PlaceholderImageForm({
       ) : null}
     </div>
   );
+}
+
+function normalizePreviewUrl(raw: string): { ok: true; url: string } | { ok: false; message: string } {
+  const value = raw.trim();
+  if (!value) return { ok: false, message: "" };
+  if (!value.startsWith("https://img.openaa.com/")) {
+    return { ok: false, message: "外部图片链接必须以 https://img.openaa.com/ 开头。" };
+  }
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || url.hostname.toLowerCase() !== "img.openaa.com") {
+      return { ok: false, message: "外部图片链接必须以 https://img.openaa.com/ 开头。" };
+    }
+    if (!/\.(png|jpe?g|webp)$/i.test(url.pathname)) {
+      return { ok: false, message: "外部图片仅支持 png、jpg、jpeg、webp。" };
+    }
+    return { ok: true, url: url.toString() };
+  } catch {
+    return { ok: false, message: "图片 URL 格式不正确。" };
+  }
 }
 
 function formatSettingValue(value: unknown) {

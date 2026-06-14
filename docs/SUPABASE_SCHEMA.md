@@ -22,6 +22,8 @@ Phase 2 establishes the minimum viable platform schema for the new `openaa-app` 
 16. `040_notification_templates_post_management.sql`
 17. `041_post_admin_events.sql`
 18. `042_default_post_placeholder_images.sql`
+19. `043_site_setting_images_storage_policies.sql`
+20. `044_image_assets_entity_id_text.sql`
 
 ## Core Tables
 
@@ -124,6 +126,8 @@ Each setting stores JSON with:
 - `sourceType`
 
 These settings are only used for public marketplace and service display when the post has no user-uploaded image. They do not create `post_images` rows and do not affect the user publish flow. Uploaded and external placeholder images are represented in `image_assets` with `entity_type = site_setting` and `entity_id` equal to the setting key, so the image cleanup tool treats them as business-referenced assets.
+
+`043_site_setting_images_storage_policies.sql` ensures the `site-setting-images` Storage policies exist. `044_image_assets_entity_id_text.sql` changes `image_assets.entity_id` from `uuid` to `text` so generic media references can point to UUID-backed rows or text-backed setting keys.
 
 ## Type Generation
 

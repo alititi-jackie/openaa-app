@@ -233,11 +233,17 @@ async function markImageAssetDeleted(supabase: SupabaseServerClient, imageAssetI
 
 function normalizeImageUrl(raw: string): { ok: true; value: string | null } | { ok: false; message: string } {
   if (!raw) return { ok: true, value: null };
+  if (!raw.startsWith("https://img.openaa.com/")) {
+    return { ok: false, message: "图片 URL 必须以 https://img.openaa.com/ 开头。" };
+  }
 
   try {
     const url = new URL(raw);
     if (url.protocol !== "https:" || url.hostname.toLowerCase() !== "img.openaa.com") {
       return { ok: false, message: "图片 URL 必须是 https://img.openaa.com/ 下的地址。" };
+    }
+    if (!/\.(png|jpe?g|webp)$/i.test(url.pathname)) {
+      return { ok: false, message: "图片 URL 仅支持 png、jpg、jpeg、webp。" };
     }
     return { ok: true, value: url.toString() };
   } catch {
