@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type NotificationActionState = {
@@ -25,7 +26,11 @@ async function getNotificationActionContext() {
     return { ok: false as const, message: "请先登录后再操作通知。" };
   }
 
-  return { ok: true as const, supabase, user };
+  try {
+    return { ok: true as const, adminSupabase: createSupabaseAdminClient(), user };
+  } catch {
+    return { ok: false as const, message: "Supabase service role 环境变量尚未配置，暂时无法更新通知。" };
+  }
 }
 
 export async function markNotificationRead(_state: NotificationActionState, formData: FormData): Promise<NotificationActionState> {
@@ -38,14 +43,17 @@ export async function markNotificationRead(_state: NotificationActionState, form
   const context = await getNotificationActionContext();
   if (!context.ok) return { ok: false, message: context.message };
 
-  const { error } = await context.supabase
+  const { data, error } = await context.adminSupabase
     .from("notifications")
     .update({ read_at: new Date().toISOString() })
     .eq("id", id)
     .eq("user_id", context.user.id)
-    .is("deleted_at", null);
+    .is("deleted_at", null)
+    .is("read_at", null)
+    .select("id")
+    .maybeSingle();
 
-  if (error) {
+  if (error || !data) {
     return { ok: false, message: "标记已读失败，请稍后再试。" };
   }
 
@@ -63,14 +71,16 @@ export async function softDeleteNotification(_state: NotificationActionState, fo
   const context = await getNotificationActionContext();
   if (!context.ok) return { ok: false, message: context.message };
 
-  const { error } = await context.supabase
+  const { data, error } = await context.adminSupabase
     .from("notifications")
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", id)
     .eq("user_id", context.user.id)
-    .is("deleted_at", null);
+    .is("deleted_at", null)
+    .select("id")
+    .maybeSingle();
 
-  if (error) {
+  if (error || !data) {
     return { ok: false, message: "删除通知失败，请稍后再试。" };
   }
 
@@ -83,7 +93,7 @@ export async function markAllNotificationsRead(): Promise<void> {
   const context = await getNotificationActionContext();
   if (!context.ok) return;
 
-  await context.supabase
+  await context.adminSupabase
     .from("notifications")
     .update({ read_at: new Date().toISOString() })
     .eq("user_id", context.user.id)

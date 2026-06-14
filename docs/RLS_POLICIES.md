@@ -39,7 +39,7 @@ Authenticated users can manage their own:
 - user favorites in `user_favorites`
 - post drafts
 - navigation links/settings
-- notifications: users can read their own non-deleted notifications and can only update `read_at` / `deleted_at` for mark-read and soft-delete flows
+- notifications: users can read their own non-deleted notifications; mark-read and soft-delete flows run through controlled server actions with service role writes
 - DMV progress, wrong questions, and exam results
 - consents and account deletion requests
 - push subscriptions
@@ -57,8 +57,10 @@ Admin tables are not readable by ordinary users. Admin reads and writes depend o
 Notification writes are controlled by server actions and the notification service, not by public client inserts.
 
 - Ordinary users can only view their own notifications where `deleted_at is null`.
-- Ordinary users can mark their own notifications read and soft-delete their own notifications.
-- Ordinary users cannot modify notification title, body, user ownership, creator, or metadata.
+- Ordinary users cannot directly update notification rows from the client.
+- Mark-read server actions only set `read_at` from `null` to the current time for the signed-in user's own non-deleted notifications.
+- Soft-delete server actions only set `deleted_at` from `null` to the current time for the signed-in user's own notifications.
+- Ordinary users cannot restore soft-deleted notifications, mark read notifications unread, or modify notification title, body, user ownership, creator, metadata, target fields, or action links.
 - Admin notification list and single-user sends require `manage_notifications`.
 - Bulk notification sends require `super_admin`.
 - Admin sends, bulk sends, and system-generated moderation notifications write `admin_audit_logs`.
