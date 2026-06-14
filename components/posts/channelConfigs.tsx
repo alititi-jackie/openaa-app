@@ -1,14 +1,8 @@
 import { BriefcaseBusiness, Building2, ShoppingBag, Store } from "lucide-react";
-import {
-  HOUSING_MODE_OPTIONS,
-  JOB_CATEGORY_OPTIONS,
-  JOB_MODE_OPTIONS,
-  JOB_TYPE_OPTIONS,
-  SECONDHAND_CATEGORY_OPTIONS,
-  SECONDHAND_MODE_OPTIONS,
-  SERVICE_CATEGORY_OPTIONS,
-} from "@/features/posts/options";
+import { POST_CHANNEL_CONFIGS } from "@/features/posts/channelConfig";
 import type { ChannelPageConfig } from "./ChannelPageShell";
+
+const postConfig = POST_CHANNEL_CONFIGS;
 
 export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "services", ChannelPageConfig> = {
   jobs: {
@@ -17,10 +11,11 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
     path: "/jobs",
     icon: BriefcaseBusiness,
     publishLabel: "发布招聘",
-    modeTabs: JOB_MODE_OPTIONS,
+    modeTabs: postConfig.job.modeOptions,
+    areaOptions: postConfig.job.areaOptions,
     searchPlaceholder: "搜索职位、公司、地点...",
-    workTypeOptions: JOB_TYPE_OPTIONS,
-    categoryOptions: JOB_CATEGORY_OPTIONS,
+    workTypeOptions: postConfig.job.workTypeOptions,
+    categoryOptions: postConfig.job.categoryOptions,
     categoryPlaceholder: "职位分类",
     posts: [
       { title: "餐馆前台招聘占位", description: "后续接入真实发布后显示薪资、区域和联系方式。", href: "/jobs", meta: "占位", tag: "招聘" },
@@ -52,8 +47,9 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
     path: "/housing",
     icon: Building2,
     publishLabel: "发布房源",
-    modeTabs: HOUSING_MODE_OPTIONS,
-    searchPlaceholder: "搜索房源信息...",
+    modeTabs: postConfig.housing.modeOptions,
+    areaOptions: postConfig.housing.areaOptions,
+    searchPlaceholder: "搜索房屋信息...",
     posts: [
       { title: "法拉盛单房出租占位", description: "后续显示价格、入住时间和交通信息。", href: "/housing", meta: "占位", tag: "出租" },
       { title: "曼哈顿求租占位", description: "这里展示求租信息卡片样式。", href: "/housing", meta: "占位", tag: "求租" },
@@ -62,18 +58,18 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
     seoContent: (
       <div className="space-y-3">
         <p>
-          OpenAA 房屋频道围绕纽约租房和本地居住需求整理信息，覆盖法拉盛租房、皇后区租房、华人房屋出租、求租求购等高频场景。很多用户在通勤途中先看文字判断是否合适，所以页面底部提供了更完整的频道说明，帮助搜索引擎在图片尚未加载时也能抓取到清晰主题。
+          OpenAA 房屋频道围绕纽约租房和本地居住需求整理信息，覆盖法拉盛租房、皇后区租房、华人房屋出租、出售、求租、求购等高频场景。很多用户在通勤途中先看文字判断是否合适，所以页面底部提供了更完整的频道说明，帮助搜索引擎在图片尚未加载时也能抓取到清晰主题。
         </p>
         <p>
-          这个频道适合准备换房的上班族、刚落地纽约的新移民、需要短租过渡的学生以及帮家人找房的用户。你可以在“房源信息”和“求租求购”之间切换，再结合搜索和地区筛选，快速缩小范围。比如你在法拉盛工作但想住在交通更方便的区域，先按皇后区租房筛一轮，再看预算与房型，效率会更高。
+          这个频道适合准备换房的上班族、刚落地纽约的新移民、需要短租过渡的学生以及帮家人找房的用户。你可以在出租、出售、求租、求购、其它之间切换，再结合搜索和地区筛选，快速缩小范围。比如你在法拉盛工作但想住在交通更方便的区域，先按皇后区租房筛一轮，再看预算与房型，效率会更高。
         </p>
         <p>
           OpenAA 提供的帮助不只是发布入口，还包括更接近日常决策的浏览方式：同类信息集中展示，价格、区域、发布时间一屏可对比。真实使用中，很多华人用户会在下班后统一看当日新帖，先收藏几个候选房源，再逐个沟通看房时间；房东也能更快触达本地有明确需求的租客，减少信息分散造成的沟通成本。
         </p>
         <ul className="space-y-1 font-bold text-slate-700">
           <li>适合用户：纽约租房人群、法拉盛与皇后区通勤家庭、华人房东与租客</li>
-          <li>核心功能：房源/求租切换、关键词与地区筛选、时间排序查看</li>
-          <li>使用建议：先按区域和预算锁定范围，再联系确认租期、押金、入住日期</li>
+          <li>核心功能：房屋类型切换、关键词与地区筛选、时间排序查看</li>
+          <li>使用建议：先按区域和预算锁定范围，再联系确认租期、押金和时间要求</li>
         </ul>
       </div>
     ),
@@ -84,9 +80,10 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
     path: "/secondhand",
     icon: ShoppingBag,
     publishLabel: "发布二手",
-    modeTabs: SECONDHAND_MODE_OPTIONS,
+    modeTabs: postConfig.marketplace.modeOptions,
+    areaOptions: postConfig.marketplace.areaOptions,
     searchPlaceholder: "搜索商品...",
-    categoryOptions: SECONDHAND_CATEGORY_OPTIONS,
+    categoryOptions: postConfig.marketplace.categoryOptions,
     categoryPlaceholder: "商品分类",
     posts: [
       { title: "搬家家具出售占位", description: "后续显示价格、区域和取货方式。", href: "/secondhand", meta: "占位", tag: "出售" },
@@ -120,7 +117,8 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
     icon: Store,
     publishLabel: "发布服务",
     searchPlaceholder: "搜索服务...",
-    categoryOptions: SERVICE_CATEGORY_OPTIONS,
+    categoryOptions: postConfig.service.categoryOptions,
+    areaOptions: postConfig.service.areaOptions,
     categoryPlaceholder: "全部服务分类",
     posts: [
       { title: "搬家服务占位", description: "后续显示服务范围、联系方式和商家资料。", href: "/services", meta: "占位", tag: "搬家" },

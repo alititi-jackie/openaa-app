@@ -1,39 +1,26 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { DetailBackButton } from "@/components/common/DetailBackButton";
+import type { PostType } from "@/features/posts/types";
 import { DetailFavoriteButton } from "./DetailFavoriteButton";
 import { DetailShareButton } from "./DetailShareButton";
-import { detailActionButtonClass } from "./detailActionStyles";
 
 type DetailActionBarProps = {
   backHref: string;
   postId: string;
+  postType: PostType;
   path: string;
   title: string;
   text: string;
   initialIsFavorited: boolean;
 };
 
-export function DetailActionBar({ backHref, postId, path, title, text, initialIsFavorited }: DetailActionBarProps) {
-  const router = useRouter();
-
-  function handleBack() {
-    const hasPriorPage = typeof window !== "undefined" && (document.referrer !== "" || window.history.length > 2);
-    if (hasPriorPage) {
-      router.back();
-      return;
-    }
-
-    router.push(backHref);
-  }
-
+export function DetailActionBar({ backHref, postId, postType, path, title, text, initialIsFavorited }: DetailActionBarProps) {
   return (
     <div className="flex items-center justify-between">
-      <button type="button" onClick={handleBack} className={`z-30 ${detailActionButtonClass}`}>
-        ← 返回
-      </button>
+      <DetailBackButton fallbackHref={backHref} />
       <div className="flex items-center gap-2">
-        <DetailFavoriteButton postId={postId} returnTo={path} initialIsFavorited={initialIsFavorited} />
+        <DetailFavoriteButton postId={postId} postType={postType} title={title} returnTo={path} initialIsFavorited={initialIsFavorited} />
         <DetailShareButton path={path} title={title} text={text} />
       </div>
     </div>

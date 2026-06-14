@@ -41,6 +41,12 @@ function imageUrl(record: NewsPostRecord) {
   return asset?.external_url || asset?.public_url || null;
 }
 
+function imageSource(record: NewsPostRecord) {
+  const asset = firstOrNull<NewsImageAsset>(record.image_assets);
+  if (asset?.source_type === "storage" || asset?.source_type === "external") return asset.source_type;
+  return null;
+}
+
 function excerptFor(record: NewsPostRecord) {
   return record.excerpt || record.body?.replace(/\s+/g, " ").trim().slice(0, 96) || NEWS_DEFAULT_DESCRIPTION;
 }
@@ -73,8 +79,10 @@ export function mapNewsPostToCard(record: NewsPostRecord): NewsPostCard {
     publishedAt: record.published_at,
     updatedAt: record.updated_at,
     coverImageUrl: imageUrl(record),
+    coverImageSource: imageSource(record),
     isFeatured: record.is_featured,
     isPinned: isEffectivePinned(record),
+    pinnedOrder: record.pinned_order ?? 0,
     pinnedUntil: record.pinned_until ?? null,
   };
 }
@@ -101,6 +109,7 @@ export function mapNewsPostToAdmin(record: NewsPostRecord): AdminNewsPost {
 export function sortPinnedFirst(posts: NewsPostCard[]) {
   return [...posts].sort((a, b) => {
     if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
+    if (a.isPinned && b.isPinned && a.pinnedOrder !== b.pinnedOrder) return a.pinnedOrder - b.pinnedOrder;
     const aTime = new Date(a.publishedAt ?? a.updatedAt).getTime();
     const bTime = new Date(b.publishedAt ?? b.updatedAt).getTime();
     return (Number.isFinite(bTime) ? bTime : 0) - (Number.isFinite(aTime) ? aTime : 0);

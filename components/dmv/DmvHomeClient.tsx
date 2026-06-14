@@ -19,8 +19,11 @@ import {
   Shuffle,
   X,
 } from "lucide-react";
-import { PageTitleCard } from "@/components/PageTitleCard";
-import { ChannelSeoCard } from "@/components/posts/ChannelSeoCard";
+import { DmvFaqSection, DmvLearningDisclaimerCard, DmvSeoContentSection } from "@/components/dmv/DmvBottomSections";
+import { DmvHorizontalNav } from "@/components/dmv/DmvHorizontalNav";
+import { dmvSeoContent } from "@/components/dmv/dmvSeoContent";
+import { ChannelHero } from "@/components/posts/ChannelHero";
+import { DetailShareCard } from "@/components/posts/DetailShareCard";
 import { cn } from "@/lib/utils/cn";
 
 type DmvGuidePost = {
@@ -66,8 +69,8 @@ const practiceCards = [
 ] as const;
 
 const quickTools = [
-  { title: "DMV 笔试模拟", desc: "查看题库、练习模式、模拟考试与错题练习", href: "/dmv/practice", Icon: BookOpen, external: false },
   { title: "罚单查询", desc: "交通罚单与处理指引", href: "/dmv/tickets", Icon: AlertTriangle, external: false },
+  { title: "纽约 DMV 笔试练习", desc: "查看题库、练习模式、模拟考试与错题练习", href: "#dmv-practice-section", Icon: BookOpen, external: false, scrollTarget: "dmv-practice-section" },
   { title: "DMV 小工具", desc: "文件检查、6 Points、REAL ID 工具", href: "https://openaa.com/tool/dmv/document-checker.html", Icon: Car, external: true },
   { title: "驾照申请", desc: "Learner Permit 官方入口", href: "https://dmv.ny.gov/driver-license/get-learner-permit", Icon: FileText, external: true },
   { title: "驾照更新", desc: "到期续期与资料要求", href: "https://dmv.ny.gov/driver-license/renew-license", Icon: RefreshCw, external: true },
@@ -101,6 +104,32 @@ const dmvFaq = [
     answer: "通过 Permit 后需先满足练车要求，再预约 Road Test。",
   },
 ];
+
+const SCROLL_OFFSET = 132;
+
+function scrollToSection(sectionId: string) {
+  const target = document.getElementById(sectionId);
+  if (!target) return;
+
+  const targetTop = Math.max(0, target.getBoundingClientRect().top + window.scrollY - SCROLL_OFFSET);
+  const alignTarget = () => {
+    const correction = target.getBoundingClientRect().top - SCROLL_OFFSET;
+    if (Math.abs(correction) > 8) {
+      window.scrollBy({
+        top: correction,
+        behavior: "auto",
+      });
+    }
+  };
+
+  window.history.pushState(null, "", `#${sectionId}`);
+  window.scrollTo({
+    top: targetTop,
+    behavior: "smooth",
+  });
+  window.setTimeout(alignTarget, 700);
+  window.setTimeout(alignTarget, 1100);
+}
 
 const processDetails = [
   {
@@ -192,18 +221,45 @@ export function DmvHomeClient({ questionCount, guides }: DmvHomeClientProps) {
 
   return (
     <>
-      <PageTitleCard
+      <ChannelHero
         title="DMV 工具中心"
-        description="DMV 笔试、路考、罚单查询、驾照申请及常用 DMV 工具入口。"
+        description="纽约 DMV 笔试、路考、罚单查询、驾照申请及常用工具入口。"
       />
+      <DmvHorizontalNav activeValue="tools" />
 
-      <section>
-        <h2 className="text-base font-black text-slate-950">DMV 快捷工具</h2>
+      <section id="dmv-practice-section" className="scroll-mt-[132px]">
+        <h2 className="text-base font-black text-slate-950">纽约 DMV 笔试练习</h2>
+        <p className="mt-1 text-xs text-slate-500">中文题库 · {questionCount} 题 · 无需登录 · 支持错题练习</p>
         <div className="mt-3 grid grid-cols-2 gap-3">
-          {quickTools.map((item) => (
-            <ToolCard key={item.title} item={item} />
+          {practiceCards.map((card) => (
+            <PracticeCard key={card.title} card={card} />
           ))}
         </div>
+      </section>
+
+      <section className="grid gap-3">
+        <button
+          type="button"
+          onClick={() => scrollToSection("dmv-quick-tools-section")}
+          className="rounded-2xl border border-blue-100 bg-white p-4 text-left shadow-sm transition active:scale-[0.99]"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-base font-black text-slate-950">DMV 快捷工具入口</h3>
+              <p className="mt-1 text-sm leading-6 text-slate-600">驾照申请、驾照更新、地址变更、罚单查询等常用 DMV 官方入口。</p>
+            </div>
+            <Car size={18} className="shrink-0 text-blue-600" />
+          </div>
+          <span className="mt-3 inline-flex items-center gap-1 rounded-full bg-blue-600 px-3 py-1.5 text-sm font-bold text-white">
+            查看快捷工具
+            <ArrowRight size={14} />
+          </span>
+        </button>
+        <DetailShareCard
+          path="/dmv"
+          title="OpenAA DMV 工具中心"
+          text="纽约 DMV 笔试练习、驾照申请、地址变更、罚单查询等常用入口。"
+        />
       </section>
 
       <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
@@ -253,29 +309,12 @@ export function DmvHomeClient({ questionCount, guides }: DmvHomeClientProps) {
         </div>
       </section>
 
-      <section id="dmv-practice-section">
-        <h2 className="text-base font-black text-slate-950">纽约 DMV 笔试练习</h2>
-        <p className="mt-1 text-xs text-slate-500">中文题库 · {questionCount} 题 · 无需登录 · 支持错题练习</p>
+      <section id="dmv-quick-tools-section" className="scroll-mt-[132px]">
+        <h2 className="text-base font-black text-slate-950">DMV 快捷工具</h2>
         <div className="mt-3 grid grid-cols-2 gap-3">
-          {practiceCards.map((card) => (
-            <PracticeCard key={card.title} card={card} />
+          {quickTools.map((item) => (
+            <ToolCard key={item.title} item={item} />
           ))}
-        </div>
-      </section>
-
-      <section className="grid gap-3">
-        <div className="rounded-2xl border border-amber-100 bg-white p-4 shadow-sm">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h3 className="text-base font-black text-slate-950">罚单查询</h3>
-              <p className="mt-1 text-sm leading-6 text-slate-600">整理停车罚单、红灯摄像头、交通罚单等常用入口</p>
-            </div>
-            <AlertTriangle size={18} className="shrink-0 text-amber-600" />
-          </div>
-          <Link href="/dmv/tickets" className="mt-3 inline-flex items-center gap-1 rounded-full bg-amber-500 px-3 py-1.5 text-sm font-bold text-white">
-            查询罚单
-            <ArrowRight size={14} />
-          </Link>
         </div>
       </section>
 
@@ -323,50 +362,11 @@ export function DmvHomeClient({ questionCount, guides }: DmvHomeClientProps) {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
-        <div className="flex items-start gap-2">
-          <FileText size={16} className="mt-0.5 shrink-0 text-amber-700" />
-          <div className="space-y-1 text-xs leading-5 text-amber-900">
-            <p>OpenAA 只提供中文整理和入口导航。</p>
-            <p>DMV 规则、费用、预约和罚单信息以官方页面为准。</p>
-            <p>涉及法律、罚单争议、保险等问题，请咨询专业人士或官方机构。</p>
-          </div>
-        </div>
-      </section>
+      <DmvFaqSection items={dmvFaq} />
 
-      <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-        <h2 className="text-base font-black text-slate-950">常见问题 FAQ</h2>
-        <div className="mt-3 space-y-3">
-          {dmvFaq.map((item) => (
-            <div key={item.question} className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-              <h3 className="text-sm font-bold text-slate-950">{item.question}</h3>
-              <p className="mt-1 text-sm leading-6 text-slate-600">{item.answer}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      <DmvLearningDisclaimerCard />
 
-      <ChannelSeoCard title="纽约 DMV 中文频道：驾照学习与办事入口整合">
-        <div className="space-y-3">
-          <p>
-            OpenAA 的 DMV 频道面向纽约华人驾驶学习与办事需求，重点覆盖纽约 DMV、DMV 中文、Permit 中文练习、纽约驾照流程、Road Test 预约以及罚单查询等高频关键词。很多用户在准备材料或等车时先用手机快速查流程，因此页面底部补充了完整正文，帮助搜索引擎在接口或图片慢加载时仍能准确理解频道内容。
-          </p>
-          <p>
-            这个频道适合初次在纽约考驾照的新移民、需要补考或续期的老司机、以及帮家人办理业务的华人家庭。你可以先从 Permit 题库与模拟考试开始，熟悉交通标志和规则，再进入 Road Test 预约、车辆注册、地址变更等官方入口。对于不熟悉英文官网结构的用户，这种“中文说明 + 官方链接”的组合能显著降低操作门槛。
-          </p>
-          <p>
-            OpenAA 的价值在于把分散的 DMV 信息串成可执行路径：先学习、再准备材料、随后预约考试或处理罚单。真实场景中，很多人白天上班，晚上才有时间查“华人考驾照”相关内容；也有人在收到罚单后急需找到正确入口。通过本页，你可以先看步骤说明，再跳转官方页面确认最新规则，减少来回搜索和误操作风险。
-          </p>
-          <p>
-            需要特别说明的是，DMV 费用、时间与合规要求会按州政策更新，OpenAA 提供的是中文整理和导航帮助，最终以纽约 DMV 官方发布信息为准。建议在提交申请、预约 Road Test、处理 ticket 或办理驾照续期前，先核对官方页面，再按个人情况准备材料。
-          </p>
-          <ul className="space-y-1 font-bold text-slate-700">
-            <li>适合用户：纽约华人新手司机、需要续期或处理罚单的本地车主</li>
-            <li>核心功能：Permit 中文练习、模拟考试、Road Test 与官方入口导航、罚单查询</li>
-            <li>使用建议：先在中文内容中确认流程，再到纽约 DMV 官方页面完成最终操作</li>
-          </ul>
-        </div>
-      </ChannelSeoCard>
+      <DmvSeoContentSection {...dmvSeoContent.home} />
 
       <DmvLicenseProcessModal key={modalStep ?? "closed"} initialStep={modalStep ?? 0} open={modalStep !== null} onClose={() => setModalStep(null)} />
     </>
@@ -375,6 +375,7 @@ export function DmvHomeClient({ questionCount, guides }: DmvHomeClientProps) {
 
 function ToolCard({ item }: { item: (typeof quickTools)[number] }) {
   const Icon = item.Icon;
+  const scrollTarget = "scrollTarget" in item ? item.scrollTarget : undefined;
   const content = (
     <>
       <span className="flex items-start justify-between gap-2">
@@ -397,6 +398,18 @@ function ToolCard({ item }: { item: (typeof quickTools)[number] }) {
       <a href={item.href} target="_blank" rel="noopener noreferrer" className={className}>
         {content}
       </a>
+    );
+  }
+
+  if (scrollTarget) {
+    return (
+      <button
+        type="button"
+        className={`w-full ${className}`}
+        onClick={() => scrollToSection(scrollTarget)}
+      >
+        {content}
+      </button>
     );
   }
 

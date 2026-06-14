@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { AdminActionForm, AdminCheckbox, AdminSelect, AdminTextarea, AdminTextInput } from "@/components/admin/AdminActionForm";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
+import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
@@ -39,6 +40,10 @@ export default function AdminHomePage({ searchParams }: AdminHomePageProps) {
 
         return (
           <div className="space-y-4">
+            <Link href="/admin/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+              ← 返回总后台
+            </Link>
+
             <AdminPageHeader title="首页配置管理" description="管理首页模块、最新动态、Banner 与顶部快捷导航入口。">
               <AdminPermissionBadge allowed={data.permissions.manageHomeSections} label="manage_home_sections" />
               <AdminPermissionBadge allowed={data.permissions.manageTopLinks} label="manage_top_links" />
@@ -94,6 +99,15 @@ export default function AdminHomePage({ searchParams }: AdminHomePageProps) {
                 </div>
               </AdminCard>
             ) : null}
+            <nav aria-label="后台底部导航" className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+              <div className="flex flex-wrap gap-2">
+                <Link href="/admin/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+                  返回总后台
+                </Link>
+                <AdminLogoutButton />
+              </div>
+            </nav>
+
           </div>
         );
       }}

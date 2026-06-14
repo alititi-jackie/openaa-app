@@ -2,15 +2,36 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { HorizontalPillTabs } from "@/components/common/HorizontalPillTabs";
+import { DmvFaqSection, DmvLearningDisclaimerCard, DmvSeoContentSection } from "@/components/dmv/DmvBottomSections";
 import { DmvLoginPrompt } from "@/components/dmv/DmvLoginPrompt";
+import { DmvProgressBar } from "@/components/dmv/DmvProgressBar";
 import { dmvBackLinkClassName } from "@/components/dmv/DmvBackLink";
 import { DmvQuestionCard } from "@/components/dmv/DmvQuestionCard";
+import { DmvStatCard } from "@/components/dmv/DmvStatCard";
+import { dmvSeoContent } from "@/components/dmv/dmvSeoContent";
 import { addWrongQuestion, readWrongQuestionIds, removeWrongQuestion, saveWrongQuestionIds } from "@/components/dmv/dmvStorage";
 import { getDmvCategoryLabel } from "@/components/dmv/dmvCategoryLabels";
+import { getDmvRoadSignQuestions, isRoadSignQuestion } from "@/features/dmv/questionPredicates";
 import type { DmvQuestion } from "@/features/dmv/types";
 
 type WrongPhase = "list" | "practice" | "done";
 type WrongFilter = "all" | "signs";
+
+const wrongQuestionsFaq = [
+  {
+    question: "错题本里的题从哪里来？",
+    answer: "题库练习、随机练习、交通标志专项和模拟考试中答错的题，会加入本机浏览器的错题本。",
+  },
+  {
+    question: "错题会上传到 OpenAA 吗？",
+    answer: "不会。错题记录保存在当前浏览器本地，换设备或清理浏览器数据后可能无法继续保留。",
+  },
+  {
+    question: "答对错题后会自动移除吗？",
+    answer: "会。在错题练习中答对后，该题会从本机错题本移除。",
+  },
+];
 
 export function DmvWrongQuestionsClient({ questions }: { questions: DmvQuestion[] }) {
   const [phase, setPhase] = useState<WrongPhase>("list");
@@ -34,9 +55,9 @@ export function DmvWrongQuestionsClient({ questions }: { questions: DmvQuestion[
     return questions.filter((question) => idSet.has(question.id));
   }, [questions, wrongIds]);
 
-  const signWrongCount = useMemo(() => wrongQuestions.filter((question) => question.isRoadSign).length, [wrongQuestions]);
+  const signWrongCount = useMemo(() => getDmvRoadSignQuestions(wrongQuestions).length, [wrongQuestions]);
   const filteredWrongQuestions = useMemo(
-    () => (filter === "signs" ? wrongQuestions.filter((question) => question.isRoadSign) : wrongQuestions),
+    () => (filter === "signs" ? getDmvRoadSignQuestions(wrongQuestions) : wrongQuestions),
     [filter, wrongQuestions],
   );
   const currentQuestion = practiceQuestions[currentIndex];
@@ -121,18 +142,19 @@ export function DmvWrongQuestionsClient({ questions }: { questions: DmvQuestion[
 
     return (
       <div className="space-y-4">
-        <section className="sticky top-14 z-20 rounded-2xl border border-slate-100 bg-white p-4 text-sm text-slate-600 shadow-sm">
-          <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
-            <div className="h-full rounded-full bg-red-500 transition-all" style={{ width: `${progress}%` }} />
-          </div>
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+        <DmvProgressBar
+          progress={progress}
+          barClassName="bg-red-500"
+          className="sticky top-14 z-20 rounded-2xl border border-slate-100 bg-white p-4 text-sm text-slate-600 shadow-sm"
+          trackClassName="h-1.5 overflow-hidden rounded-full bg-slate-100"
+          metaClassName="mt-3 flex flex-wrap items-center justify-between gap-2"
+        >
             <span className="font-black text-slate-950">
               {currentIndex + 1} / {practiceQuestions.length}
             </span>
             <span>已答 {answeredCount} 题</span>
             <span>{filter === "signs" ? "交通标志错题" : "全部错题"}</span>
-          </div>
-        </section>
+        </DmvProgressBar>
 
         <DmvQuestionCard
           question={currentQuestion}
@@ -178,10 +200,10 @@ export function DmvWrongQuestionsClient({ questions }: { questions: DmvQuestion[
         <section className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
           <h2 className="text-xl font-black text-slate-950">错题练习完成</h2>
           <div className="mt-4 grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
-            <ScoreCard label="本次题数" value={result.total} tone="slate" />
-            <ScoreCard label="答对" value={result.correct} tone="green" />
-            <ScoreCard label="答错" value={result.wrong} tone="red" />
-            <ScoreCard label="正确率" value={`${finalRate}%`} tone="blue" />
+            <DmvStatCard label="本次题数" value={result.total} tone="slate" />
+            <DmvStatCard label="答对" value={result.correct} tone="green" />
+            <DmvStatCard label="答错" value={result.wrong} tone="red" />
+            <DmvStatCard label="正确率" value={`${finalRate}%`} tone="blue" />
           </div>
           <p className="mt-4 rounded-xl bg-slate-50 p-3 text-sm font-bold text-slate-600">当前剩余错题：{result.remaining} 道</p>
         </section>
@@ -199,9 +221,6 @@ export function DmvWrongQuestionsClient({ questions }: { questions: DmvQuestion[
           <Link href="/dmv/mock-test" className="rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-center text-sm font-black text-green-700">
             去模拟考试
           </Link>
-          <Link href="/dmv" className={`${dmvBackLinkClassName} sm:col-span-2`}>
-            返回 DMV 首页
-          </Link>
         </div>
 
         <DmvLoginPrompt />
@@ -211,15 +230,11 @@ export function DmvWrongQuestionsClient({ questions }: { questions: DmvQuestion[
 
   return (
     <div className="space-y-4">
-      <Link href="/dmv" className={dmvBackLinkClassName}>
-        返回 DMV 首页
-      </Link>
-
       <section className="rounded-2xl border border-red-100 bg-white p-4 shadow-sm">
         <h2 className="text-xl font-black text-slate-950">错题本</h2>
         <div className="mt-4 grid grid-cols-2 gap-3 text-center">
-          <ScoreCard label="错题总数" value={wrongQuestions.length} tone="red" />
-          <ScoreCard label="交通标志错题" value={signWrongCount} tone="amber" />
+          <DmvStatCard label="错题总数" value={wrongQuestions.length} tone="red" />
+          <DmvStatCard label="交通标志错题" value={signWrongCount} tone="amber" />
         </div>
       </section>
 
@@ -228,22 +243,15 @@ export function DmvWrongQuestionsClient({ questions }: { questions: DmvQuestion[
       ) : (
         <>
           <section className="space-y-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              <button
-                type="button"
-                onClick={() => setFilter("all")}
-                className={`shrink-0 rounded-full px-3 py-2 text-xs font-black ${filter === "all" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`}
-              >
-                全部错题
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilter("signs")}
-                className={`shrink-0 rounded-full px-3 py-2 text-xs font-black ${filter === "signs" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`}
-              >
-                只看交通标志错题
-              </button>
-            </div>
+            <HorizontalPillTabs
+              tabs={[
+                { value: "all", label: "全部错题" },
+                { value: "signs", label: "只看交通标志错题" },
+              ]}
+              activeValue={filter}
+              ariaLabel="错题筛选"
+              onChange={(value) => setFilter(value as WrongFilter)}
+            />
             <div className="grid gap-3 sm:grid-cols-2">
               <button
                 type="button"
@@ -272,6 +280,10 @@ export function DmvWrongQuestionsClient({ questions }: { questions: DmvQuestion[
           )}
         </>
       )}
+
+      <DmvFaqSection items={wrongQuestionsFaq} />
+      <DmvLearningDisclaimerCard />
+      <DmvSeoContentSection {...dmvSeoContent.wrongQuestions} />
     </div>
   );
 }
@@ -304,7 +316,7 @@ function WrongQuestionPreview({ question, index }: { question: DmvQuestion; inde
       <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
         <span className="rounded-full bg-red-50 px-2.5 py-1 text-red-700">错题 {index + 1}</span>
         <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">{categoryLabel}</span>
-        {question.isRoadSign && categoryLabel !== "交通标志" ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700">标志题</span> : null}
+        {isRoadSignQuestion(question) && categoryLabel !== "交通标志" ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700">标志题</span> : null}
       </div>
       <p className="mt-3 text-sm font-black leading-6 text-slate-950">{question.questionText}</p>
       {question.imageUrl ? (
@@ -314,22 +326,5 @@ function WrongQuestionPreview({ question, index }: { question: DmvQuestion; inde
         </div>
       ) : null}
     </article>
-  );
-}
-
-function ScoreCard({ label, value, tone }: { label: string; value: number | string; tone: "green" | "red" | "blue" | "slate" | "amber" }) {
-  const colorClass = {
-    green: "border-green-100 bg-green-50 text-green-700",
-    red: "border-red-100 bg-red-50 text-red-600",
-    blue: "border-blue-100 bg-blue-50 text-blue-700",
-    slate: "border-slate-100 bg-white text-slate-600",
-    amber: "border-amber-100 bg-amber-50 text-amber-700",
-  }[tone];
-
-  return (
-    <div className={`rounded-xl border p-3 shadow-sm ${colorClass}`}>
-      <p className="text-2xl font-black">{value}</p>
-      <p className="text-xs font-bold">{label}</p>
-    </div>
   );
 }

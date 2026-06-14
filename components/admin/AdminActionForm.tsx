@@ -11,11 +11,13 @@ export function AdminActionForm({
   children,
   submitLabel = "保存",
   className = "space-y-3",
+  submitClassName = "inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60",
 }: {
   action: (state: AdminHomeActionState, formData: FormData) => Promise<AdminHomeActionState>;
   children: ReactNode;
   submitLabel?: string;
   className?: string;
+  submitClassName?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, initialState);
 
@@ -26,7 +28,7 @@ export function AdminActionForm({
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
+          className={submitClassName}
         >
           {pending ? "保存中..." : submitLabel}
         </button>

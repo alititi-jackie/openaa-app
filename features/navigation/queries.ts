@@ -29,16 +29,17 @@ const navigationLinkSelect = `
   sort_order,
   is_active,
   is_featured,
+  deleted_at,
   metadata,
   created_at,
   updated_at,
-  navigation_categories(id,slug,name,description,icon,sort_order,is_active),
+  navigation_categories(id,slug,name,description,icon,sort_order,display_limit,is_active),
   image_assets(public_url,external_url)
 `;
 
 const navigationLinkPublicSelect = navigationLinkSelect.replace(
-  "navigation_categories(id,slug,name,description,icon,sort_order,is_active)",
-  "navigation_categories!inner(id,slug,name,description,icon,sort_order,is_active)",
+  "navigation_categories(id,slug,name,description,icon,sort_order,display_limit,is_active)",
+  "navigation_categories!inner(id,slug,name,description,icon,sort_order,display_limit,is_active)",
 );
 
 function missingConfig<T>(data: T): NavigationQueryResult<T> {
@@ -62,11 +63,11 @@ export async function getNavigationCategories(includeInactive = false): Promise<
   try {
     let query = supabase
       .from("navigation_categories")
-      .select("id,slug,name,description,icon,sort_order,is_active")
+      .select("id,slug,name,description,icon,sort_order,display_limit,is_active")
       .order("sort_order", { ascending: true })
       .order("name", { ascending: true });
 
-    if (!includeInactive) query = query.eq("is_active", true);
+    if (!includeInactive) query = query.eq("is_active", true).gt("display_limit", 0);
 
     const { data, error } = await query;
     if (error) return errorResult(fallback, error.message);
@@ -87,8 +88,9 @@ export async function getPublicNavigationLinks(params: { categorySlug?: string; 
       .from("navigation_links")
       .select(navigationLinkPublicSelect)
       .eq("is_active", true)
+      .is("deleted_at", null)
       .eq("navigation_categories.is_active", true)
-      .order("is_featured", { ascending: false })
+      .gt("navigation_categories.display_limit", 0)
       .order("sort_order", { ascending: true })
       .order("title", { ascending: true })
       .limit(params.limit ?? NAVIGATION_PUBLIC_LIMIT);
@@ -106,18 +108,20 @@ export async function getPublicNavigationLinks(params: { categorySlug?: string; 
 }
 
 export async function getNavigationPageData(params: { categorySlug?: string; q?: string } = {}) {
-  const [categories, links, featured] = await Promise.all([
+  const [categories, links] = await Promise.all([
     getNavigationCategories(false),
     getPublicNavigationLinks(params),
-    getPublicNavigationLinks({ featuredOnly: true, limit: 6 }),
   ]);
+  const visibleCategories = categories.data.filter((category) => category.displayLimit > 0);
+  const visibleCategoryKeys = new Set(visibleCategories.flatMap((category) => [category.id, category.slug].filter(Boolean)));
+  const visibleLinks = links.data.filter((link) => (link.categoryId ? visibleCategoryKeys.has(link.categoryId) : false) || (link.categorySlug ? visibleCategoryKeys.has(link.categorySlug) : false));
 
   return {
-    state: categories.state === "error" || links.state === "error" || featured.state === "error" ? ("error" as const) : categories.state === "missing_config" || links.state === "missing_config" ? ("missing_config" as const) : ("ready" as const),
-    categories: categories.data,
-    links: links.data,
-    featuredLinks: featured.data,
-    error: categories.error ?? links.error ?? featured.error,
+    state: categories.state === "error" || links.state === "error" ? ("error" as const) : categories.state === "missing_config" || links.state === "missing_config" ? ("missing_config" as const) : ("ready" as const),
+    categories: visibleCategories,
+    links: visibleLinks,
+    featuredLinks: [],
+    error: categories.error ?? links.error,
   };
 }
 
@@ -175,7 +179,7 @@ export async function getAdminNavigationData(params: { categoryId?: string; q?: 
 async function readAdminCategories(supabase: SupabaseServerClient): Promise<NavigationQueryResult<NavigationCategory[]>> {
   const { data, error } = await supabase
     .from("navigation_categories")
-    .select("id,slug,name,description,icon,sort_order,is_active")
+    .select("id,slug,name,description,icon,sort_order,display_limit,is_active")
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
 
@@ -188,6 +192,7 @@ async function readAdminLinks(supabase: SupabaseServerClient, params: { category
   let query = supabase
     .from("navigation_links")
     .select(navigationLinkSelect)
+    .is("deleted_at", null)
     .order("sort_order", { ascending: true })
     .order("updated_at", { ascending: false })
     .limit(ADMIN_NAVIGATION_LIMIT);

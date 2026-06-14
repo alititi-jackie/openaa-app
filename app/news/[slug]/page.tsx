@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { NewsDetail } from "@/components/news/NewsDetail";
-import { getNewsBySlug } from "@/features/news/queries";
+import { getFavoriteState } from "@/features/favorites/queries";
+import { getNewsBySlug, getNewsDetailContext } from "@/features/news/queries";
 import { NEWS_DEFAULT_DESCRIPTION } from "@/features/news/constants";
 import { canonicalUrl, siteConfig } from "@/lib/seo/siteConfig";
 
@@ -53,18 +54,19 @@ export async function generateMetadata({ params }: NewsDetailPageProps): Promise
 
 export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
   const { slug } = await params;
-  const result = await getNewsBySlug(slug);
+  const result = await getNewsDetailContext(slug);
 
   if (!result.data) {
     notFound();
   }
 
-  const post = result.data;
+  const { post, previousPost, nextPost, relatedPosts } = result.data;
+  const initialIsFavorited = await getFavoriteState({ type: "news", id: post.id, url: post.href, title: post.title, category: "新闻" });
   const articleJsonLd = {
     "@context": "https://schema.org",
     "@type": "NewsArticle",
     headline: post.title,
-    description: post.seoDescription || post.excerpt,
+    description: post.seoDescription || post.excerpt || NEWS_DEFAULT_DESCRIPTION,
     datePublished: post.publishedAt,
     dateModified: post.updatedAt,
     articleSection: post.categoryName,
@@ -91,7 +93,7 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <NewsDetail post={post} />
+      <NewsDetail post={post} previousPost={previousPost} nextPost={nextPost} relatedPosts={relatedPosts} initialIsFavorited={initialIsFavorited} />
     </>
   );
 }

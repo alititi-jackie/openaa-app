@@ -7,7 +7,9 @@ import { validateNewsCategoryForm, validateNewsForm } from "./validators";
 import type { NewsStatus } from "./types";
 
 type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
-export type NewsActionState = { ok: boolean; message: string };
+
+export type NewsActionState = { ok: boolean; message: string; id?: string };
+
 type AdminActionContext =
   | { ok: false; message: string }
   | {
@@ -16,7 +18,7 @@ type AdminActionContext =
       userId: string;
     };
 
-const ok = (message: string): NewsActionState => ({ ok: true, message });
+const ok = (message: string, id?: string): NewsActionState => ({ ok: true, message, id });
 const fail = (message: string): NewsActionState => ({ ok: false, message });
 
 async function getAdminActionContext(permissionKey: string): Promise<AdminActionContext> {
@@ -40,7 +42,13 @@ async function hasPermission(supabase: SupabaseServerClient, permissionKey: stri
   return Boolean(data);
 }
 
-async function auditLog(context: Extract<AdminActionContext, { ok: true }>, action: string, entityType: string, entityId: string | null, afterData?: unknown) {
+async function auditLog(
+  context: Extract<AdminActionContext, { ok: true }>,
+  action: string,
+  entityType: string,
+  entityId: string | null,
+  afterData?: unknown,
+) {
   const { error } = await context.supabase.from("admin_audit_logs").insert({
     actor_id: context.userId,
     action,
@@ -77,6 +85,42 @@ async function upsertExternalImageAsset(context: Extract<AdminActionContext, { o
   }
 }
 
+async function uploadNewsCoverImageAsset(context: Extract<AdminActionContext, { ok: true }>, file: File, entityId: string | null) {
+  const validation = validateImageFile(file);
+  if (!validation.ok) return false;
+
+  const imageId = crypto.randomUUID();
+  const path = `news-covers/${context.userId}/${entityId || "draft"}/${imageId}.${validation.extension}`;
+  const { error: uploadError } = await context.supabase.storage.from("news-cover-images").upload(path, file, {
+    contentType: file.type,
+    upsert: false,
+  });
+
+  if (uploadError) return false;
+
+  const { data: publicUrlData } = context.supabase.storage.from("news-cover-images").getPublicUrl(path);
+  const { data, error } = await context.supabase
+    .from("image_assets")
+    .insert({
+      source_type: "storage",
+      bucket: "news-cover-images",
+      path,
+      public_url: publicUrlData.publicUrl,
+      owner_id: context.userId,
+      entity_type: "news_post",
+      entity_id: entityId,
+      mime_type: file.type,
+      size_bytes: file.size,
+      status: "active",
+      is_public: true,
+    })
+    .select("id")
+    .single();
+
+  if (error || !data) return false;
+  return data.id as string;
+}
+
 export async function createDefaultNewsCategories(_state: NewsActionState, _formData: FormData): Promise<NewsActionState> {
   void _state;
   void _formData;
@@ -111,7 +155,7 @@ export async function upsertNewsCategory(_state: NewsActionState, formData: Form
   }
 
   revalidateNews();
-  return ok("新闻分类已保存。");
+  return ok("新闻分类已保存。", result.data.id);
 }
 
 export async function upsertNewsPost(_state: NewsActionState, formData: FormData): Promise<NewsActionState> {
@@ -124,10 +168,20 @@ export async function upsertNewsPost(_state: NewsActionState, formData: FormData
   const canPublish = validation.value.status === "published" ? await hasPermission(context.supabase, "publish_news") : true;
   if (!canPublish) return fail("当前账号没有发布新闻权限。");
 
-  const coverImageAssetId = validation.value.coverImageUrl
-    ? await upsertExternalImageAsset(context, validation.value.coverImageUrl, id || null)
-    : null;
-  if (coverImageAssetId === false) return fail("封面图片保存失败，请确认地址为 https://img.openaa.com/。");
+  const before = id ? await readNewsPost(context.supabase, id) : null;
+  const coverImageFile = readFile(formData, "cover_image_file");
+  const removeCoverImage = formData.get("remove_cover_image") === "on";
+  const existingCoverImageAssetId = readText(formData, "cover_image_asset_id") || null;
+  const coverImageAssetId = removeCoverImage
+    ? null
+    : coverImageFile
+      ? await uploadNewsCoverImageAsset(context, coverImageFile, id || null)
+      : validation.value.coverImageUrl
+        ? await upsertExternalImageAsset(context, validation.value.coverImageUrl, id || null)
+        : existingCoverImageAssetId;
+  if (coverImageAssetId === false) {
+    return fail("封面图片保存失败，请确认上传的是 5MB 以内的 JPG、PNG、WebP，或填写 https://img.openaa.com/ 图片地址。");
+  }
 
   const payload = {
     title: validation.value.title,
@@ -139,6 +193,7 @@ export async function upsertNewsPost(_state: NewsActionState, formData: FormData
     status: validation.value.status,
     is_featured: validation.value.isFeatured,
     is_pinned: validation.value.isPinned,
+    pinned_order: validation.value.pinnedOrder,
     pinned_until: validation.value.pinnedUntil,
     published_at: validation.value.publishedAt,
     seo_title: validation.value.seoTitle,
@@ -156,12 +211,16 @@ export async function upsertNewsPost(_state: NewsActionState, formData: FormData
     await context.supabase.from("image_assets").update({ entity_id: result.data.id }).eq("id", coverImageAssetId).eq("owner_id", context.userId);
   }
 
+  if (before?.cover_image_asset_id && (removeCoverImage || (coverImageAssetId && before.cover_image_asset_id !== coverImageAssetId))) {
+    await markImageAssetDeleted(context.supabase, before.cover_image_asset_id);
+  }
+
   if (!(await auditLog(context, id ? "update_news_post" : "create_news_post", "news_posts", result.data.id, payload))) {
     return fail("新闻已保存，但审计日志写入失败。");
   }
 
   revalidateNews(result.data.slug);
-  return ok(id ? "新闻已保存。" : "新闻已创建。");
+  return ok(id ? "新闻已保存。" : "新闻已创建。", result.data.id);
 }
 
 export async function setNewsPostStatus(_state: NewsActionState, formData: FormData): Promise<NewsActionState> {
@@ -184,7 +243,7 @@ export async function setNewsPostStatus(_state: NewsActionState, formData: FormD
   if (!(await auditLog(context, `set_news_${status}`, "news_posts", id, payload))) return fail("状态已更新，但审计日志写入失败。");
 
   revalidateNews(slug || undefined);
-  return ok("新闻状态已更新。");
+  return ok("新闻状态已更新。", id);
 }
 
 export async function toggleNewsPin(_state: NewsActionState, formData: FormData): Promise<NewsActionState> {
@@ -202,7 +261,32 @@ export async function toggleNewsPin(_state: NewsActionState, formData: FormData)
   if (!(await auditLog(context, isPinned ? "pin_news_post" : "unpin_news_post", "news_posts", id, payload))) return fail("置顶状态已更新，但审计日志写入失败。");
 
   revalidateNews(slug || undefined);
-  return ok(isPinned ? "新闻已置顶。" : "新闻已取消置顶。");
+  return ok(isPinned ? "新闻已置顶。" : "新闻已取消置顶。", id);
+}
+
+async function readNewsPost(supabase: SupabaseServerClient, id: string) {
+  const { data } = await supabase.from("news_posts").select("id,cover_image_asset_id").eq("id", id).maybeSingle();
+  return data ?? null;
+}
+
+async function markImageAssetDeleted(supabase: SupabaseServerClient, imageAssetId: string) {
+  await supabase
+    .from("image_assets")
+    .update({ status: "deleted", deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .eq("id", imageAssetId);
+}
+
+function readFile(formData: FormData, key: string) {
+  const value = formData.get(key);
+  return value instanceof File && value.size > 0 ? value : null;
+}
+
+function validateImageFile(file: File): { ok: true; extension: "jpg" | "png" | "webp" } | { ok: false } {
+  if (!file || file.size <= 0 || file.size > 5 * 1024 * 1024) return { ok: false };
+  if (file.type === "image/jpeg") return { ok: true, extension: "jpg" };
+  if (file.type === "image/png") return { ok: true, extension: "png" };
+  if (file.type === "image/webp") return { ok: true, extension: "webp" };
+  return { ok: false };
 }
 
 function readText(formData: FormData, key: string) {

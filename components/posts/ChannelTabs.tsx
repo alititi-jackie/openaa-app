@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { HorizontalPillTabs } from "@/components/common/HorizontalPillTabs";
 import { DEFAULT_PAGE_SIZE } from "@/features/posts/filters";
 import type { PostOption } from "@/features/posts/options";
 import type { PublicPostFilters } from "@/features/posts/types";
@@ -15,30 +15,12 @@ export function ChannelTabs({
   path: string;
 }) {
   if (!tabs?.length) return null;
+  const pillTabs = [
+    { value: "all", label: "全部", href: hrefFor(path, filters) },
+    ...tabs.map((tab) => ({ value: tab.value, label: tab.label, href: hrefFor(path, filters, tab.value) })),
+  ];
 
-  return (
-    <div className="flex max-w-full flex-wrap items-center gap-2">
-      <Link href={hrefFor(path, filters)} className={tabClass(!filters.mode)}>
-        全部
-      </Link>
-      {tabs.map((tab) => {
-        const isActive = filters.mode === tab.value;
-
-        return (
-          <Link key={tab.value} href={hrefFor(path, filters, tab.value)} className={tabClass(isActive)}>
-            {tab.label}
-          </Link>
-        );
-      })}
-    </div>
-  );
-}
-
-function tabClass(isActive: boolean) {
-  return [
-    "min-h-10 rounded-lg border px-4 py-2 text-center text-sm font-bold shadow-sm transition",
-    isActive ? "border-blue-600 bg-blue-600 text-white" : "border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-200 hover:bg-white",
-  ].join(" ");
+  return <HorizontalPillTabs tabs={pillTabs} activeValue={filters.mode || "all"} ariaLabel="频道类型" />;
 }
 
 function hrefFor(path: string, filters: PublicPostFilters, mode?: string) {

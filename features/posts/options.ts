@@ -35,6 +35,14 @@ export const JOB_TYPE_OPTIONS = [
   { value: "其它", label: "其它" },
 ] as const satisfies readonly PostOption[];
 
+export const JOB_SALARY_UNIT_OPTIONS = [
+  { value: "hour", label: "小时", suffix: "/小时" },
+  { value: "day", label: "天薪", suffix: "/天" },
+  { value: "week", label: "周薪", suffix: "/周" },
+  { value: "month", label: "月薪", suffix: "/月" },
+  { value: "year", label: "年薪", suffix: "/年" },
+] as const;
+
 export const JOB_CATEGORY_OPTIONS = [
   { value: "餐饮行业", label: "餐饮行业" },
   { value: "美容按摩", label: "美容按摩" },
@@ -52,14 +60,62 @@ export const JOB_CATEGORY_OPTIONS = [
   { value: "其它职位", label: "其它职位" },
 ] as const satisfies readonly PostOption[];
 
-export const HOUSING_MODE_OPTIONS = [
-  { value: "supply", label: "房源信息" },
-  { value: "demand", label: "求租求购" },
-] as const satisfies readonly PostOption[];
+export const HOUSING_TYPE_OPTIONS = [
+  {
+    value: "rent",
+    label: "出租",
+    tone: "bg-blue-50 text-blue-700 ring-1 ring-blue-100",
+    amountLabel: "租金",
+    amountSuffix: "/月",
+    amountPlaceholder: "请输入租金，不填则不显示",
+    timePlaceholder: "例：随时入住 / 7月初 / 8月底",
+    aliases: ["supply", "renting", "rental", "for_rent", "房源信息", "房屋出租"],
+  },
+  {
+    value: "sale",
+    label: "出售",
+    tone: "bg-amber-50 text-amber-700 ring-1 ring-amber-100",
+    amountLabel: "售价",
+    amountSuffix: "",
+    amountPlaceholder: "请输入售价，不填则不显示",
+    timePlaceholder: "例：随时看房 / 近期可交易",
+    aliases: ["selling", "sell", "for_sale", "房屋出售"],
+  },
+  {
+    value: "rent_request",
+    label: "求租",
+    tone: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100",
+    amountLabel: "预算",
+    amountSuffix: "/月",
+    amountPlaceholder: "请输入预算，不填则不显示",
+    timePlaceholder: "例：7月前后入住 / 越快越好",
+    aliases: ["demand", "seeking_rent", "wanted_rent", "求租求购"],
+  },
+  {
+    value: "buy_request",
+    label: "求购",
+    tone: "bg-cyan-50 text-cyan-700 ring-1 ring-cyan-100",
+    amountLabel: "购房预算",
+    amountSuffix: "",
+    amountPlaceholder: "请输入购房预算，不填则不显示",
+    timePlaceholder: "例：近期购房 / 半年内",
+    aliases: ["buying", "buy", "seeking_buy", "wanted_buy"],
+  },
+  {
+    value: "other",
+    label: "其它",
+    tone: "bg-zinc-50 text-zinc-600 ring-1 ring-zinc-100",
+    amountLabel: "金额",
+    amountSuffix: "",
+    amountPlaceholder: "请输入金额，不填则不显示",
+    timePlaceholder: "例：时间要求",
+    aliases: ["其他"],
+  },
+] as const;
 
 export const SECONDHAND_MODE_OPTIONS = [
   { value: "selling", label: "出售商品" },
-  { value: "buying", label: "求购信息" },
+  { value: "buying", label: "求购商品" },
 ] as const satisfies readonly PostOption[];
 
 export const SECONDHAND_CATEGORY_OPTIONS = [
@@ -88,9 +144,32 @@ export const SERVICE_CATEGORY_OPTIONS = [
 ] as const satisfies readonly PostOption[];
 
 export type JobMode = (typeof JOB_MODE_OPTIONS)[number]["value"];
-export type HousingMode = (typeof HOUSING_MODE_OPTIONS)[number]["value"];
+export type HousingMode = (typeof HOUSING_TYPE_OPTIONS)[number]["value"];
 export type SecondhandMode = (typeof SECONDHAND_MODE_OPTIONS)[number]["value"];
 
 export function isOptionValue(options: readonly PostOption[], value?: string | null) {
   return Boolean(value && options.some((option) => option.value === value));
+}
+
+export function housingTypeFromValue(value?: string | null): HousingMode | undefined {
+  const normalized = value?.trim().toLowerCase();
+  if (!normalized) return undefined;
+
+  const option = HOUSING_TYPE_OPTIONS.find(
+    (item) =>
+      item.value.toLowerCase() === normalized ||
+      item.label.toLowerCase() === normalized ||
+      item.aliases.some((alias) => alias.toLowerCase() === normalized),
+  );
+
+  return option?.value;
+}
+
+export function normalizeHousingType(value?: string | null): HousingMode {
+  return housingTypeFromValue(value) ?? "other";
+}
+
+export function housingTypeOption(value?: string | null) {
+  const normalized = normalizeHousingType(value);
+  return HOUSING_TYPE_OPTIONS.find((option) => option.value === normalized) ?? HOUSING_TYPE_OPTIONS[HOUSING_TYPE_OPTIONS.length - 1];
 }

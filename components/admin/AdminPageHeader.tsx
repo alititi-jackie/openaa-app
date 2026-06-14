@@ -6,7 +6,11 @@ type AdminPageHeaderProps = {
   children?: ReactNode;
 };
 
-export function AdminPageHeader({ title, description, children }: AdminPageHeaderProps) {
+export function AdminPageHeader({
+  title,
+  description,
+  children,
+}: AdminPageHeaderProps) {
   return (
     <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
       <p className="text-xs font-bold uppercase tracking-wide text-blue-600">Admin</p>

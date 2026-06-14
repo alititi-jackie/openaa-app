@@ -1,16 +1,28 @@
 import { POST_TYPE_TO_ROUTE } from "./constants";
+import {
+  defaultHousingFields,
+  defaultJobFields,
+  defaultMarketplaceFields,
+  defaultServiceFields,
+  housingFieldsFromRecord,
+  jobFieldsFromRecord,
+  marketplaceFieldsFromRecord,
+  serviceFieldsFromRecord,
+  structuredFormLocation,
+} from "./adapters";
 import type { PostFormValues, PublishContactDefaults } from "./formTypes";
 import {
   DEFAULT_LOCATION,
   EMPTY_LOCATION,
-  HOUSING_MODE_OPTIONS,
   JOB_CATEGORY_OPTIONS,
   JOB_MODE_OPTIONS,
   JOB_TYPE_OPTIONS,
+  LOCATION_OPTIONS,
   SECONDHAND_CATEGORY_OPTIONS,
   SECONDHAND_MODE_OPTIONS,
+  SERVICE_CATEGORY_OPTIONS,
+  normalizeHousingType,
   isOptionValue,
-  type HousingMode,
   type JobMode,
   type PostOption,
   type SecondhandMode,
@@ -28,8 +40,12 @@ type ProfilePublishDefaultsSource = {
   publish_email?: string | null;
 };
 
-function fieldValue(post: PostDetailView, label: string) {
+function legacyFieldValue(post: PostDetailView, label: string) {
   return post.fields.find((field) => field.label === label)?.value ?? "";
+}
+
+function legacyMetaValue(post: PostDetailView, label: string) {
+  return post.detailMetaFields.find((field) => field.label === label)?.value ?? "";
 }
 
 function defaultPreferredContactMethod(value?: string | null): "phone" | "wechat" | "email" {
@@ -84,55 +100,15 @@ export function emptyPostFormValues(postType: PostType, contactDefaults: Publish
       preferred_contact_method: defaultPreferredContactMethod(contactDefaults.preferred_contact_method),
     },
     images: [],
-    job: {
-      job_mode: "hiring",
-      company_name: "",
-      job_category: "",
-      job_type: "",
-      salary_min: "",
-      salary_max: "",
-      salary_unit: "hour",
-      work_area: defaultLocation,
-      experience_requirement: "",
-      language_requirement: "",
-      includes_meals: false,
-      includes_housing: false,
-      identity_requirement: "",
-      employer_type: "",
-    },
-    housing: {
-      housing_mode: "supply",
-      price: "",
-      price_unit: "month",
-      deposit: "",
-      room_type: "",
-      lease_type: "",
-      available_from: "",
-      allow_pets: false,
-      utilities_included: false,
-      transit_nearby: "",
-    },
-    marketplace: {
-      marketplace_mode: "selling",
-      category: "",
-      condition: "",
-      price: "",
-      negotiable: false,
-      trade_area: defaultLocation,
-      delivery_method: "",
-    },
-    service: {
-      service_category: "",
-      service_area: defaultLocation,
-      business_hours_text: "",
-      price_range: "",
-      price_note: "",
-      business_profile_user_id: "",
-    },
+    job: defaultJobFields(defaultLocation),
+    housing: defaultHousingFields(),
+    marketplace: defaultMarketplaceFields(defaultLocation),
+    service: defaultServiceFields(defaultLocation),
   };
 }
 
 export function formValuesFromDetail(post: PostDetailView): PostFormValues {
+  const structuredLocation = post.sourceRecord ? structuredFormLocation(post.sourceRecord) : "";
   const values: PostFormValues = {
     ...emptyPostFormValues(post.type),
     mode: "edit" as const,
@@ -140,7 +116,7 @@ export function formValuesFromDetail(post: PostDetailView): PostFormValues {
     title: post.title,
     summary: post.description,
     body: post.body,
-    location_area: post.location ?? DEFAULT_LOCATION,
+    location_area: structuredLocation || post.area || post.location || DEFAULT_LOCATION,
     contact: {
       contact_name: post.contact?.contact_name ?? "",
       phone: post.contact?.phone ?? "",
@@ -152,25 +128,49 @@ export function formValuesFromDetail(post: PostDetailView): PostFormValues {
     images: post.images.map((image) => ({ imageAssetId: image.imageAssetId ?? undefined, url: image.url, caption: image.caption ?? "" })),
   };
 
+  if (post.sourceRecord) {
+    if (post.type === "job") {
+      values.job = jobFieldsFromRecord(post.sourceRecord, values.job!);
+      values.location_area = values.job.work_area || values.location_area;
+    } else if (post.type === "housing") {
+      values.housing = housingFieldsFromRecord(post.sourceRecord, values.housing!);
+      values.location_area = structuredLocation || values.location_area;
+    } else if (post.type === "marketplace") {
+      values.marketplace = marketplaceFieldsFromRecord(post.sourceRecord, values.marketplace!);
+      values.location_area = values.marketplace.trade_area || values.location_area;
+    } else if (post.type === "service") {
+      values.service = serviceFieldsFromRecord(post.sourceRecord, values.service!);
+      values.location_area = values.service.service_area || values.location_area;
+    }
+
+    return values;
+  }
+
+  // Legacy fallback only: current detail mapping provides sourceRecord, so edit forms use structured fields above.
+  const housingArea = optionValueOrEmpty(LOCATION_OPTIONS, legacyFieldValue(post, "区域")) || optionValueOrEmpty(LOCATION_OPTIONS, legacyMetaValue(post, "地区"));
+  const marketplaceArea = optionValueOrEmpty(LOCATION_OPTIONS, legacyFieldValue(post, "交易区域")) || optionValueOrEmpty(LOCATION_OPTIONS, legacyMetaValue(post, "地区"));
+  const serviceArea = optionValueOrEmpty(LOCATION_OPTIONS, legacyFieldValue(post, "区域")) || optionValueOrEmpty(LOCATION_OPTIONS, legacyMetaValue(post, "地区"));
+  values.location_area = housingArea || marketplaceArea || serviceArea || optionValueOrEmpty(LOCATION_OPTIONS, post.location) || EMPTY_LOCATION;
+
   if (post.type === "job") {
-    const category = optionValueOrEmpty(JOB_CATEGORY_OPTIONS, fieldValue(post, "职位分类")) || optionValueOrEmpty(JOB_CATEGORY_OPTIONS, post.tag);
-    const jobType = optionValueOrEmpty(JOB_TYPE_OPTIONS, fieldValue(post, "类型"));
+    const category = optionValueOrEmpty(JOB_CATEGORY_OPTIONS, legacyFieldValue(post, "职位分类")) || optionValueOrEmpty(JOB_CATEGORY_OPTIONS, post.tag);
+    const jobType = optionValueOrEmpty(JOB_TYPE_OPTIONS, legacyFieldValue(post, "类型"));
 
     values.job = {
       ...values.job!,
       job_mode: isOptionValue(JOB_MODE_OPTIONS, post.mode) ? (post.mode as JobMode) : values.job!.job_mode,
       job_category: category || values.job!.job_category,
       job_type: jobType || values.job!.job_type,
-      work_area: fieldValue(post, "区域") || values.location_area,
+      work_area: optionValueOrEmpty(LOCATION_OPTIONS, legacyFieldValue(post, "区域")) || values.location_area,
     };
   }
 
   if (post.type === "housing") {
     values.housing = {
       ...values.housing!,
-      housing_mode: isOptionValue(HOUSING_MODE_OPTIONS, post.mode) ? (post.mode as HousingMode) : values.housing!.housing_mode,
-      room_type: fieldValue(post, "房型"),
-      price: fieldValue(post, "价格").replace(/[$,]/g, ""),
+      housing_mode: normalizeHousingType(post.mode || values.housing!.housing_mode),
+      room_type: legacyFieldValue(post, "房型"),
+      price: legacyFieldValue(post, "价格").replace(/[$,]/g, ""),
     };
   }
 
@@ -178,19 +178,20 @@ export function formValuesFromDetail(post: PostDetailView): PostFormValues {
     values.marketplace = {
       ...values.marketplace!,
       marketplace_mode: isOptionValue(SECONDHAND_MODE_OPTIONS, post.mode) ? (post.mode as SecondhandMode) : values.marketplace!.marketplace_mode,
-      category: optionValueOrEmpty(SECONDHAND_CATEGORY_OPTIONS, post.tag) || values.marketplace!.category,
-      price: fieldValue(post, "价格").replace(/[$,]/g, ""),
-      condition: fieldValue(post, "成色"),
-      trade_area: fieldValue(post, "交易区域") || values.location_area,
+      category: optionValueOrEmpty(SECONDHAND_CATEGORY_OPTIONS, legacyMetaValue(post, "分类")) || optionValueOrEmpty(SECONDHAND_CATEGORY_OPTIONS, post.tag) || values.marketplace!.category,
+      price: legacyFieldValue(post, "价格").replace(/[$,]/g, ""),
+      condition: legacyFieldValue(post, "成色"),
+      trade_area: marketplaceArea || values.location_area,
     };
   }
 
   if (post.type === "service") {
     values.service = {
       ...values.service!,
-      service_category: fieldValue(post, "服务") || values.service!.service_category,
-      service_area: fieldValue(post, "区域") || values.location_area,
-      price_range: fieldValue(post, "价格"),
+      service_category: optionValueOrEmpty(SERVICE_CATEGORY_OPTIONS, legacyMetaValue(post, "服务分类")) || optionValueOrEmpty(SERVICE_CATEGORY_OPTIONS, legacyFieldValue(post, "服务")) || values.service!.service_category,
+      service_area: serviceArea || values.location_area,
+      price_range: legacyFieldValue(post, "价格"),
+      price_note: legacyFieldValue(post, "价格"),
     };
   }
 

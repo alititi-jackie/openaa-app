@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { ScrollText } from "lucide-react";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
+import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import {
@@ -52,6 +54,10 @@ export default function AdminAuditLogsPage({ searchParams }: AdminAuditLogsPageP
 
         return (
           <div className="space-y-4">
+            <Link href="/admin/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+              ← 返回总后台
+            </Link>
+
             <AdminPageHeader title="审计日志" description="查看后台操作记录和关键实体变更，便于上线后追溯。">
               <AdminAuditLogsPermissionBadges canViewAuditLogs={data.canViewAuditLogs} />
             </AdminPageHeader>
@@ -99,6 +105,15 @@ export default function AdminAuditLogsPage({ searchParams }: AdminAuditLogsPageP
                 q={params?.q}
               />
             </AdminCard>
+            <nav aria-label="后台底部导航" className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+              <div className="flex flex-wrap gap-2">
+                <Link href="/admin/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+                  返回总后台
+                </Link>
+                <AdminLogoutButton />
+              </div>
+            </nav>
+
           </div>
         );
       }}

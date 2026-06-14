@@ -23,7 +23,7 @@ export function postsJson<T>(result: PostsQueryResult<T>) {
   }
 
   if (result.state === "error") {
-    return NextResponse.json({ state: result.state, data: result.data, error: result.error ?? "query_error" }, { status: 500 });
+    return NextResponse.json({ state: result.state, data: result.data, error: result.error ?? "请求失败，请稍后再试。" }, { status: 500 });
   }
 
   return NextResponse.json({ state: result.state, data: result.data, pagination: result.pagination });

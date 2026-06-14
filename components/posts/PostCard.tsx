@@ -1,23 +1,55 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Eye, Heart } from "lucide-react";
+import { HOUSING_AMOUNT_TIME_META_LABEL } from "@/features/posts/detailMeta";
+import { formatViewCount } from "@/features/posts/display";
+import type { PostType } from "@/features/posts/types";
+import type { DetailMetaPill } from "./DetailMetaPills";
+import { PostDisplayBody } from "./PostDisplayBody";
+import { DetailMetaPills } from "./DetailMetaPills";
+import { HousingListBody } from "./HousingListBody";
+import { ListingGridCard } from "./ListingGridCard";
+
+export type PostCardVariant = "default" | "detail-list" | "marketplace-grid" | "service-grid";
 
 export type PostCardData = {
   id?: string;
+  type?: PostType;
+  mode?: string | null;
   title: string;
   description: string;
+  displayBody?: string;
   href: string;
   meta: string;
   tag?: string;
+  categoryValue?: string;
   location?: string;
+  area?: string;
+  priceDisplay?: string;
+  footerLine?: string;
+  secondaryTag?: string;
+  createdAt?: string;
+  publishedAt?: string | null;
   authorName?: string;
   imageUrl?: string;
   favoriteCount?: number;
   viewCount?: number;
   fields?: Array<{ label: string; value: string }>;
+  detailMetaFields?: DetailMetaPill[];
+  listingMetaFields?: DetailMetaPill[];
 };
 
-export function PostCard({ post, compact = false }: { post: PostCardData; compact?: boolean }) {
+export function PostCard({ post, compact = false, variant = "default" }: { post: PostCardData; compact?: boolean; variant?: PostCardVariant }) {
+  if (variant === "detail-list") {
+    return <DetailListPostCard post={post} />;
+  }
+  if (variant === "marketplace-grid") {
+    return <ListingGridCard post={post} kind="marketplace" />;
+  }
+  if (variant === "service-grid") {
+    return <ListingGridCard post={post} kind="service" />;
+  }
+
   return (
     <Link href={post.href} className="block rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
       <div className="flex gap-3">
@@ -34,7 +66,8 @@ export function PostCard({ post, compact = false }: { post: PostCardData; compac
             </div>
             <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">{post.meta}</span>
           </div>
-          {!compact ? <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">{post.description}</p> : null}
+          {!compact ? <p className="mt-2 line-clamp-2 break-words text-sm leading-6 text-slate-600 [overflow-wrap:anywhere]">{post.description}</p> : null}
+          {!compact && post.footerLine ? <p className="mt-2 text-sm leading-6 text-zinc-500">{post.footerLine}</p> : null}
           {post.fields?.length ? (
             <div className="mt-3 flex flex-wrap gap-2">
               {post.fields.slice(0, compact ? 2 : 4).map((field) => (
@@ -49,7 +82,7 @@ export function PostCard({ post, compact = false }: { post: PostCardData; compac
             {post.authorName ? <span>{post.authorName}</span> : null}
             <span className="inline-flex items-center gap-1">
               <Eye size={13} aria-hidden="true" />
-              {post.viewCount ?? 0}
+              {formatViewCount(post.viewCount)}
             </span>
             <span className="inline-flex items-center gap-1">
               <Heart size={13} aria-hidden="true" />
@@ -57,6 +90,35 @@ export function PostCard({ post, compact = false }: { post: PostCardData; compac
             </span>
           </div>
         </div>
+      </div>
+    </Link>
+  );
+}
+
+function DetailListPostCard({ post }: { post: PostCardData }) {
+  const metaItems = post.detailMetaFields ?? [];
+  const isHousing = post.type === "housing";
+  const housingMetaLine = isHousing ? metaItems.find((item) => item.label === HOUSING_AMOUNT_TIME_META_LABEL)?.value : undefined;
+  const pillItems = isHousing ? metaItems.filter((item) => item.label !== HOUSING_AMOUNT_TIME_META_LABEL) : metaItems;
+  const body = post.displayBody || post.description;
+  const pillClassName = "mt-3";
+
+  return (
+    <Link href={post.href} className="block rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+      <div className={["flex min-w-0 flex-col", isHousing ? "" : "min-h-[148px]"].filter(Boolean).join(" ")}>
+        <h3 className="line-clamp-1 font-black leading-snug text-slate-950">{post.title}</h3>
+        {isHousing ? (
+          <HousingListBody body={body} metaLine={pillItems.length ? housingMetaLine : undefined} />
+        ) : (
+          <PostDisplayBody body={body} footerLine={post.footerLine} clampLines={2} bodyClassName="mt-2 text-sm leading-6" />
+        )}
+        <DetailMetaPills
+          items={pillItems}
+          postId={post.id ?? post.href}
+          initialViewCount={post.viewCount ?? 0}
+          trackViews={false}
+          className={pillClassName}
+        />
       </div>
     </Link>
   );

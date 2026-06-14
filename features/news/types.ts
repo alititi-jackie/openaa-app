@@ -10,6 +10,7 @@ export type NewsCategory = {
 };
 
 export type NewsImageAsset = {
+  source_type: "storage" | "external" | null;
   public_url: string | null;
   external_url: string | null;
 };
@@ -37,6 +38,7 @@ export type NewsPostRecord = {
   status: NewsStatus;
   is_featured: boolean;
   is_pinned: boolean;
+  pinned_order: number;
   pinned_until?: string | null;
   published_at: string | null;
   seo_title: string | null;
@@ -59,8 +61,10 @@ export type NewsPostCard = {
   publishedAt: string | null;
   updatedAt: string;
   coverImageUrl: string | null;
+  coverImageSource: "storage" | "external" | null;
   isFeatured: boolean;
   isPinned: boolean;
+  pinnedOrder: number;
   pinnedUntil: string | null;
 };
 
@@ -68,6 +72,13 @@ export type NewsPostDetail = NewsPostCard & {
   body: string;
   seoTitle: string | null;
   seoDescription: string | null;
+};
+
+export type NewsDetailContext = {
+  post: NewsPostDetail;
+  previousPost: NewsPostCard | null;
+  nextPost: NewsPostCard | null;
+  relatedPosts: NewsPostCard[];
 };
 
 export type AdminNewsPost = NewsPostDetail & {

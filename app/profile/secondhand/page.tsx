@@ -1,5 +1,7 @@
 import { ProfileManagementPageHeader, ProfilePublishLink } from "@/components/profile/ProfileManagementPageHeader";
+import { ProfilePostFilters } from "@/components/profile/ProfilePostFilters";
 import { ProfileUserPostsList } from "@/components/profile/ProfileUserPostsList";
+import { buildProfilePostStatusOptions, buildProfilePostTypeOptions, filterAndSortProfilePosts, normalizeProfilePostFilters } from "@/features/posts/profileTabs";
 import { getMyPosts } from "@/features/posts/queries";
 import { redirectToAuthRequired } from "@/lib/auth/redirects";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -14,7 +16,9 @@ export const metadata = buildPageMetadata({
   noIndex: true,
 });
 
-export default async function ProfileSecondhandPage() {
+export default async function ProfileSecondhandPage({ searchParams }: { searchParams?: Promise<{ type?: string | string[]; status?: string | string[]; tab?: string | string[] }> }) {
+  const params = await searchParams;
+  const filters = normalizeProfilePostFilters("marketplace", params);
   const user = await getCurrentUser();
 
   if (!user) {
@@ -22,6 +26,7 @@ export default async function ProfileSecondhandPage() {
   }
 
   const posts = await getMyPosts("marketplace");
+  const visiblePosts = filterAndSortProfilePosts(posts.data, filters);
 
   return (
     <div className="space-y-4">
@@ -30,7 +35,14 @@ export default async function ProfileSecondhandPage() {
         description="管理您发布的二手出售与求购信息"
         actions={<ProfilePublishLink href="/secondhand/publish" label="+ 发布商品" />}
       />
-      <ProfileUserPostsList posts={posts.data} />
+      <ProfilePostFilters
+        path="/profile/secondhand"
+        typeOptions={buildProfilePostTypeOptions("marketplace")}
+        statusOptions={buildProfilePostStatusOptions(posts.data)}
+        selectedType={filters.selectedType}
+        selectedStatus={filters.selectedStatus}
+      />
+      <ProfileUserPostsList key={`${filters.selectedType}:${filters.selectedStatus}`} posts={visiblePosts} />
     </div>
   );
 }

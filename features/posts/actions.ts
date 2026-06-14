@@ -2,8 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { detailPayloadForForm, postCategoryForForm, postModeForForm, postPriceForForm, postTitleForForm } from "./adapters";
 import { DEFAULT_CITY_SLUG, POST_TYPE_TO_ROUTE } from "./constants";
 import { postHref } from "./formMappers";
+import { isPostImageEnabled, POST_IMAGE_CONFIG, postImageExtension } from "./imageConfig";
 import type { PostFormActionResult, PostFormValues, UploadedImageInput } from "./formTypes";
 import type { PostStatus, PostType } from "./types";
 import { shouldReviewPost, validatePostForm } from "./validators";
@@ -17,6 +19,11 @@ export type ManagePostActionState = {
   postId?: string;
   action?: ManagePostAction;
 };
+export type DeletePostActionResult = {
+  ok: boolean;
+  message: string;
+  postId?: string;
+};
 type WriteContext =
   | { ok: false; error: string }
   | {
@@ -29,18 +36,9 @@ type WriteContext =
 const allowedPostTypes = new Set<PostType>(["job", "housing", "marketplace", "service"]);
 const manageablePostStatuses = new Set<PostStatus>(["draft", "pending_review", "published", "hidden", "expired", "deleted"]);
 const DEFAULT_DAILY_POST_LIMIT = 10;
-const MAX_POST_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
-const postImageExtensions: Record<string, "jpg" | "png" | "webp"> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-};
 
-function numericOrNull(value: string) {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) ? parsed : null;
+function logPostActionError(scope: string, error: unknown, context?: Record<string, unknown>) {
+  console.error(`[posts] ${scope}`, { ...context, error });
 }
 
 async function getWriteContext(): Promise<WriteContext> {
@@ -145,40 +143,15 @@ async function getOwnPostForManagement(supabase: SupabaseServerClient, userId: s
   };
 }
 
-function revalidatePostSurfaces(type: PostType, postId: string) {
+function revalidatePostSurfaces(type: PostType, postId: string, options: { includeProfile?: boolean } = {}) {
+  const includeProfile = options.includeProfile ?? true;
   const route = POST_TYPE_TO_ROUTE[type];
   revalidatePath(route);
   revalidatePath(postHref(type, postId));
-  revalidatePath("/profile/posts");
-  revalidatePath(`/profile/${route.slice(1)}`);
-}
-
-function categoryFor(values: PostFormValues) {
-  if (values.postType === "job") return values.job?.job_category || null;
-  if (values.postType === "housing") return values.housing?.room_type || null;
-  if (values.postType === "marketplace") return values.marketplace?.category || null;
-  return values.service?.service_category || null;
-}
-
-function modeFor(values: PostFormValues) {
-  if (values.postType === "job") return values.job?.job_mode || null;
-  if (values.postType === "housing") return values.housing?.housing_mode || null;
-  if (values.postType === "marketplace") return values.marketplace?.marketplace_mode || null;
-  return null;
-}
-
-function priceFor(values: PostFormValues) {
-  if (values.postType === "housing") return numericOrNull(values.housing?.price ?? "");
-  if (values.postType === "marketplace") return numericOrNull(values.marketplace?.price ?? "");
-  return null;
-}
-
-function titleFor(values: PostFormValues) {
-  if (values.title.trim()) return values.title.trim();
-  if (values.postType === "job") return values.job?.job_mode === "seeking" ? "求职信息" : "招聘信息";
-  if (values.postType === "housing") return values.housing?.housing_mode === "demand" ? "求租" : "房屋出租";
-  if (values.postType === "marketplace") return values.marketplace?.marketplace_mode === "buying" ? "求购" : "二手商品";
-  return "本地服务";
+  if (includeProfile) {
+    revalidatePath("/profile/posts");
+    revalidatePath(`/profile/${route.slice(1)}`);
+  }
 }
 
 function mainPostPayload(values: PostFormValues, userId: string, cityId: string | null) {
@@ -189,91 +162,31 @@ function mainPostPayload(values: PostFormValues, userId: string, cityId: string 
     post_type: values.postType,
     city_id: cityId,
     author_id: userId,
-    title: titleFor(values),
+    title: postTitleForForm(values),
     summary: values.summary.trim() || null,
     body: values.body.trim(),
-    category: categoryFor(values),
-    subcategory: modeFor(values),
+    category: postCategoryForForm(values),
+    subcategory: postModeForForm(values),
     status,
     visibility: values.visibility,
-    price_amount: priceFor(values),
+    price_amount: postPriceForForm(values),
     published_at: publishedAt,
     updated_at: new Date().toISOString(),
   };
 }
 
 async function upsertDetail(supabase: SupabaseServerClient, postId: string, values: PostFormValues) {
-  if (values.postType === "job") {
-    return supabase.from("post_details_jobs").upsert(
-      {
-        post_id: postId,
-        employment_type: values.job?.job_type || null,
-        wage_min: numericOrNull(values.job?.salary_min ?? ""),
-        wage_max: numericOrNull(values.job?.salary_max ?? ""),
-        wage_unit: values.job?.salary_unit || null,
-        job_category: values.job?.job_category || null,
-        work_area: values.job?.work_area || values.location_area || null,
-        experience_requirement: values.job?.experience_requirement || null,
-        language_requirement: values.job?.language_requirement || null,
-        includes_meals: Boolean(values.job?.includes_meals),
-        includes_housing: Boolean(values.job?.includes_housing),
-        requires_work_authorization: values.job?.identity_requirement ? values.job.identity_requirement !== "none" : null,
-        employer_type: values.job?.employer_type || values.job?.company_name || null,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "post_id" },
-    );
+  const detail = detailPayloadForForm(postId, values);
+  if (detail.table === "post_details_jobs") {
+    return supabase.from("post_details_jobs").upsert(detail.payload, { onConflict: "post_id" });
   }
-
-  if (values.postType === "housing") {
-    return supabase.from("post_details_housing").upsert(
-      {
-        post_id: postId,
-        listing_type: values.housing?.housing_mode || null,
-        housing_type: values.housing?.room_type || null,
-        rent_amount: numericOrNull(values.housing?.price ?? ""),
-        deposit_amount: numericOrNull(values.housing?.deposit ?? ""),
-        available_date: values.housing?.available_from || null,
-        lease_term: values.housing?.lease_type || values.housing?.price_unit || null,
-        pets_allowed: Boolean(values.housing?.allow_pets),
-        utilities_included: Boolean(values.housing?.utilities_included),
-        transit_nearby: values.housing?.transit_nearby || null,
-        address_area: values.location_area || null,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "post_id" },
-    );
+  if (detail.table === "post_details_housing") {
+    return supabase.from("post_details_housing").upsert(detail.payload, { onConflict: "post_id" });
   }
-
-  if (values.postType === "marketplace") {
-    return supabase.from("post_details_marketplace").upsert(
-      {
-        post_id: postId,
-        listing_type: values.marketplace?.marketplace_mode || null,
-        item_category: values.marketplace?.category || null,
-        condition: values.marketplace?.condition || null,
-        price_amount: numericOrNull(values.marketplace?.price ?? ""),
-        negotiable: Boolean(values.marketplace?.negotiable),
-        trade_area: values.marketplace?.trade_area || values.location_area || null,
-        delivery_options: values.marketplace?.delivery_method ? [values.marketplace.delivery_method] : [],
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "post_id" },
-    );
+  if (detail.table === "post_details_marketplace") {
+    return supabase.from("post_details_marketplace").upsert(detail.payload, { onConflict: "post_id" });
   }
-
-  return supabase.from("post_details_services").upsert(
-    {
-      post_id: postId,
-      service_category: values.service?.service_category || null,
-      service_area: values.service?.service_area || values.location_area || null,
-      business_hours: values.service?.business_hours_text ? { text: values.service.business_hours_text } : {},
-      price_range: values.service?.price_range || values.service?.price_note || null,
-      service_status: "active",
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "post_id" },
-  );
+  return supabase.from("post_details_services").upsert(detail.payload, { onConflict: "post_id" });
 }
 
 async function upsertContact(supabase: SupabaseServerClient, postId: string, values: PostFormValues) {
@@ -307,13 +220,22 @@ export async function createPost(values: PostFormValues): Promise<PostFormAction
   const cityId = await getDefaultCityId(context.supabase);
   const { data: post, error: postError } = await context.supabase.from("posts").insert(mainPostPayload(values, context.user.id, cityId)).select("id").single();
 
-  if (postError || !post) return { ok: false, message: postError?.message || "创建内容失败，请稍后再试。" };
+  if (postError || !post) {
+    logPostActionError("create post failed", postError, { postType: values.postType });
+    return { ok: false, message: "创建内容失败，请稍后再试。" };
+  }
 
   const detailResult = await upsertDetail(context.supabase, post.id, values);
-  if (detailResult.error) return { ok: false, message: `内容已创建，但详情保存失败：${detailResult.error.message}` };
+  if (detailResult.error) {
+    logPostActionError("create post detail failed", detailResult.error, { postId: post.id, postType: values.postType });
+    return { ok: false, message: "内容已创建，但详情保存失败，请稍后编辑补充。" };
+  }
 
   const contactResult = await upsertContact(context.supabase, post.id, values);
-  if (contactResult.error) return { ok: false, message: `内容已创建，但联系方式保存失败：${contactResult.error.message}` };
+  if (contactResult.error) {
+    logPostActionError("create post contact failed", contactResult.error, { postId: post.id });
+    return { ok: false, message: "内容已创建，但联系方式保存失败，请稍后编辑补充。" };
+  }
 
   await syncPostImages(context.supabase, context.user.id, values.postType, post.id, values.images);
   revalidatePath(POST_TYPE_TO_ROUTE[values.postType]);
@@ -340,6 +262,7 @@ export async function updatePost(postId: string, values: PostFormValues): Promis
       summary: mainPayload.summary,
       body: mainPayload.body,
       category: mainPayload.category,
+      ...(values.postType === "housing" ? { subcategory: mainPayload.subcategory } : {}),
       visibility: mainPayload.visibility,
       price_amount: mainPayload.price_amount,
       status: editCheck.post.status === "published" ? "published" : editCheck.post.status,
@@ -349,13 +272,22 @@ export async function updatePost(postId: string, values: PostFormValues): Promis
     .eq("id", postId)
     .eq("author_id", context.user.id);
 
-  if (postError) return { ok: false, message: postError.message };
+  if (postError) {
+    logPostActionError("update post failed", postError, { postId, postType: values.postType });
+    return { ok: false, message: "保存失败，请稍后再试。" };
+  }
 
   const detailResult = await upsertDetail(context.supabase, postId, values);
-  if (detailResult.error) return { ok: false, message: detailResult.error.message };
+  if (detailResult.error) {
+    logPostActionError("update post detail failed", detailResult.error, { postId, postType: values.postType });
+    return { ok: false, message: "详情保存失败，请稍后再试。" };
+  }
 
   const contactResult = await upsertContact(context.supabase, postId, values);
-  if (contactResult.error) return { ok: false, message: contactResult.error.message };
+  if (contactResult.error) {
+    logPostActionError("update post contact failed", contactResult.error, { postId });
+    return { ok: false, message: "联系方式保存失败，请稍后再试。" };
+  }
 
   await syncPostImages(context.supabase, context.user.id, values.postType, postId, values.images);
   revalidatePath(postHref(values.postType, postId));
@@ -392,10 +324,12 @@ export async function manageOwnPostStatus(_previousState: ManagePostActionState,
       .from("posts")
       .update({ status: "hidden", hidden_at: now, updated_at: now })
       .eq("id", postId)
-      .eq("author_id", context.user.id);
+      .eq("author_id", context.user.id)
+      .select("id")
+      .single();
 
     if (error) return { ok: false, message: "下架失败，请稍后再试。", postId, action };
-    revalidatePostSurfaces(post.post_type, postId);
+    revalidatePostSurfaces(post.post_type, postId, { includeProfile: false });
     return { ok: true, message: "已下架，其他用户暂时看不到。", postId, action };
   }
 
@@ -415,13 +349,19 @@ export async function manageOwnPostStatus(_previousState: ManagePostActionState,
         published_at: post.published_at ?? now,
         hidden_at: null,
         deleted_at: null,
+        deleted_by: null,
+        deletion_source: null,
+        deletion_error: null,
+        deletion_error_at: null,
         updated_at: now,
       })
       .eq("id", postId)
-      .eq("author_id", context.user.id);
+      .eq("author_id", context.user.id)
+      .select("id")
+      .single();
 
     if (error) return { ok: false, message: "重新发布失败，请稍后再试。", postId, action };
-    revalidatePostSurfaces(post.post_type, postId);
+    revalidatePostSurfaces(post.post_type, postId, { includeProfile: false });
     return { ok: true, message: "已重新发布，内容恢复公开显示。", postId, action };
   }
 
@@ -435,17 +375,71 @@ export async function manageOwnPostStatus(_previousState: ManagePostActionState,
 
   const { error } = await context.supabase
     .from("posts")
-    .update({ status: "deleted", deleted_at: now, updated_at: now })
+    .update({
+      status: "deleted",
+      deleted_at: now,
+      deleted_by: context.user.id,
+      deletion_source: "user",
+      deletion_error: null,
+      deletion_error_at: null,
+      updated_at: now,
+    })
     .eq("id", postId)
-    .eq("author_id", context.user.id);
+    .eq("author_id", context.user.id)
+    .select("id")
+    .single();
 
   if (error) return { ok: false, message: "删除失败，请稍后再试。", postId, action };
   revalidatePostSurfaces(post.post_type, postId);
   return { ok: true, message: "已删除，前台不会再显示。", postId, action };
 }
 
+export async function deleteOwnPostPermanently(postId: string): Promise<DeletePostActionResult> {
+  const safePostId = postId.trim();
+  if (!safePostId) {
+    return { ok: false, message: "操作参数无效。" };
+  }
+
+  const context = await getWriteContext();
+  if (!context.ok) return { ok: false, message: context.error, postId: safePostId };
+  if (context.status === "banned") {
+    return { ok: false, message: "账号禁用时不能管理内容。", postId: safePostId };
+  }
+
+  const postCheck = await getOwnPostForManagement(context.supabase, context.user.id, safePostId);
+  if (!postCheck.ok) return { ok: false, message: postCheck.message, postId: safePostId };
+
+  if (postCheck.post.status === "deleted") {
+    return { ok: false, message: "内容已删除。", postId: safePostId };
+  }
+
+  const now = new Date().toISOString();
+  const { error } = await context.supabase
+    .from("posts")
+    .update({
+      status: "deleted",
+      deleted_at: now,
+      deleted_by: context.user.id,
+      deletion_source: "user",
+      deletion_error: null,
+      deletion_error_at: null,
+      updated_at: now,
+    })
+    .eq("id", safePostId)
+    .eq("author_id", context.user.id)
+    .select("id")
+    .single();
+  if (error) {
+    logPostActionError("delete own post failed", error, { postId: safePostId });
+    return { ok: false, message: "删除失败，请稍后再试。", postId: safePostId };
+  }
+
+  revalidatePostSurfaces(postCheck.post.post_type, safePostId);
+  return { ok: true, message: "已删除。", postId: safePostId };
+}
+
 async function syncPostImages(supabase: SupabaseServerClient, userId: string, postType: PostType, postId: string, images: UploadedImageInput[]) {
-  if (postType === "job") return;
+  if (!isPostImageEnabled(postType)) return;
 
   const keptIds = images.map((image) => image.imageAssetId).filter((id): id is string => Boolean(id));
   const { data: existing } = await supabase.from("post_images").select("image_asset_id").eq("post_id", postId);
@@ -491,12 +485,12 @@ export async function removePostImage(postId: string, imageAssetId: string): Pro
 }
 
 export async function uploadPostImage(postId: string, postType: PostType, file: File, sortOrder = 0): Promise<PostFormActionResult> {
-  if (!allowedPostTypes.has(postType) || postType === "job") {
+  if (!allowedPostTypes.has(postType) || !isPostImageEnabled(postType)) {
     return { ok: false, message: "该类型暂不支持图片上传。" };
   }
 
-  const extension = postImageExtensions[file?.type];
-  if (!file || file.size <= 0 || file.size > MAX_POST_IMAGE_SIZE_BYTES || !extension) {
+  const extension = postImageExtension(file?.type);
+  if (!file || file.size <= 0 || file.size > POST_IMAGE_CONFIG.maxUploadBytes || !extension) {
     return { ok: false, message: "请上传 5MB 以内的 JPG、PNG 或 WebP 图片。" };
   }
 
@@ -515,7 +509,10 @@ export async function uploadPostImage(postId: string, postType: PostType, file: 
     upsert: false,
   });
 
-  if (uploadError) return { ok: false, message: uploadError.message };
+  if (uploadError) {
+    logPostActionError("upload post image failed", uploadError, { postId, postType });
+    return { ok: false, message: "图片上传失败，请稍后再试。" };
+  }
 
   const { data: publicUrlData } = context.supabase.storage.from("post-images").getPublicUrl(path);
   const { data: asset, error: assetError } = await context.supabase
@@ -536,7 +533,10 @@ export async function uploadPostImage(postId: string, postType: PostType, file: 
     .select("id")
     .single();
 
-  if (assetError || !asset) return { ok: false, message: assetError?.message || "图片记录保存失败。" };
+  if (assetError || !asset) {
+    logPostActionError("save uploaded image asset failed", assetError, { postId, postType });
+    return { ok: false, message: "图片记录保存失败，请稍后再试。" };
+  }
 
   await context.supabase.from("post_images").upsert({
     post_id: postId,

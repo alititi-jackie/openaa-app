@@ -1,4 +1,5 @@
 import { ChannelPageChrome } from "@/components/channels/ChannelPageChrome";
+import { detailActionButtonClass } from "@/components/common/detailActionStyles";
 import { DmvHomeClient } from "@/components/dmv/DmvHomeClient";
 import { getDmvQuestionBank } from "@/features/dmv/questions";
 import { getPublishedNewsList } from "@/features/news/queries";
@@ -22,6 +23,7 @@ export default async function DmvPage() {
       path="/dmv"
       title="2026纽约 DMV 中文驾照指南 | Permit笔试模拟・罚单查询・驾照流程 - OpenAA"
       description="纽约 DMV 笔试、罚单查询、驾照申请与车辆服务入口。"
+      topActionButtonClassName={detailActionButtonClass}
     >
       <DmvHomeClient
         questionCount={questionBank.questions.length}

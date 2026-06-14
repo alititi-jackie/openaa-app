@@ -22,6 +22,9 @@ yarn-error.log*
 pnpm-debug.log*
 .next-dev*.log
 
+# local AI/review reports
+.local-reports/
+
 # system
 .DS_Store
 Thumbs.db

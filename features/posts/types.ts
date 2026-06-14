@@ -112,6 +112,14 @@ export type AuthorSummary = {
   avatar_url: string | null;
 };
 
+export type PostListingMetaField = {
+  key?: string;
+  group?: "common" | "business";
+  label: string;
+  tone?: "blue" | "orange" | "gray" | "service";
+  value: string;
+};
+
 export type PostCardView = {
   id: string;
   type: PostType;
@@ -120,15 +128,25 @@ export type PostCardView = {
   href: string;
   title: string;
   description: string;
+  displayBody?: string;
   meta: string;
   createdAt?: string;
+  publishedAt?: string | null;
   tag?: string;
+  categoryValue?: string;
   location?: string;
+  area?: string;
+  priceDisplay?: string;
+  priceValue?: number;
+  footerLine?: string;
+  secondaryTag?: string;
   authorName?: string;
   imageUrl?: string;
   favoriteCount: number;
   viewCount: number;
   fields: Array<{ label: string; value: string }>;
+  detailMetaFields?: PostListingMetaField[];
+  listingMetaFields?: PostListingMetaField[];
 };
 
 export type PostDetailView = PostCardView & {
@@ -137,7 +155,9 @@ export type PostDetailView = PostCardView & {
   publishedAt: string | null;
   createdAt: string;
   images: Array<{ url: string; caption?: string | null; imageAssetId?: string | null }>;
+  detailMetaFields: PostListingMetaField[];
   contact?: PostContactRecord | null;
+  sourceRecord?: PostRecord;
 };
 
 export type PostsQueryResult<T> = {
@@ -174,6 +194,7 @@ export type PostsPagination = {
 export type PublicPostsParams = {
   type: PostType;
   limit?: number;
+  showImageIndicator?: boolean;
   filters?: Partial<PublicPostFilters>;
 };
 

@@ -3,6 +3,7 @@
 import { ImagePlus, X } from "lucide-react";
 import type { ChangeEvent } from "react";
 import type { UploadedImageInput } from "@/features/posts/formTypes";
+import { POST_IMAGE_CONFIG } from "@/features/posts/imageConfig";
 
 type ImageUploaderProps = {
   images: UploadedImageInput[];
@@ -11,6 +12,45 @@ type ImageUploaderProps = {
   maxImages?: number;
   error?: string;
 };
+
+const { compression } = POST_IMAGE_CONFIG;
+
+function filePreview(file: File): UploadedImageInput {
+  return { file, url: URL.createObjectURL(file), sizeBytes: file.size, mimeType: file.type };
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number) {
+  return new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, quality));
+}
+
+async function compressFromImage(image: HTMLImageElement, maxSide: number) {
+  const ratio = Math.min(1, maxSide / Math.max(image.width, image.height));
+  const width = Math.max(1, Math.round(image.width * ratio));
+  const height = Math.max(1, Math.round(image.height * ratio));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    return null;
+  }
+
+  context.drawImage(image, 0, 0, width, height);
+
+  let best: { blob: Blob; width: number; height: number } | null = null;
+  for (const quality of compression.qualitySteps) {
+    const blob = await canvasToBlob(canvas, compression.mimeType, quality);
+    if (!blob) continue;
+    best = { blob, width, height };
+
+    if (blob.size <= compression.targetBytes) {
+      break;
+    }
+  }
+
+  return best;
+}
 
 async function compressImage(file: File): Promise<UploadedImageInput> {
   const objectUrl = URL.createObjectURL(file);
@@ -22,24 +62,33 @@ async function compressImage(file: File): Promise<UploadedImageInput> {
       img.onerror = reject;
       img.src = objectUrl;
     });
-    const maxSide = 1600;
-    const ratio = Math.min(1, maxSide / Math.max(image.width, image.height));
-    const width = Math.max(1, Math.round(image.width * ratio));
-    const height = Math.max(1, Math.round(image.height * ratio));
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    canvas.getContext("2d")?.drawImage(image, 0, 0, width, height);
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 0.82));
-    const output = blob ? new File([blob], `${crypto.randomUUID()}.webp`, { type: "image/webp" }) : file;
 
-    return { file: output, url: URL.createObjectURL(output), width, height, sizeBytes: output.size, mimeType: output.type || file.type };
+    let bestOutput: { blob: Blob; width: number; height: number } | null = null;
+    for (const maxSide of compression.maxSideSteps) {
+      const candidate = await compressFromImage(image, maxSide);
+      if (!candidate) continue;
+      bestOutput = candidate;
+
+      if (candidate.blob.size <= compression.targetBytes || candidate.blob.size <= compression.maxCompressedBytes) {
+        break;
+      }
+    }
+
+    if (!bestOutput || bestOutput.blob.size > Math.min(file.size, compression.maxCompressedBytes)) {
+      return filePreview(file);
+    }
+
+    const output = new File([bestOutput.blob], `${crypto.randomUUID()}.${compression.extension}`, { type: compression.mimeType });
+
+    return { file: output, url: URL.createObjectURL(output), width: bestOutput.width, height: bestOutput.height, sizeBytes: output.size, mimeType: output.type || file.type };
+  } catch {
+    return filePreview(file);
   } finally {
     URL.revokeObjectURL(objectUrl);
   }
 }
 
-export function ImageUploader({ images, onChange, disabled, maxImages = 3, error }: ImageUploaderProps) {
+export function ImageUploader({ images, onChange, disabled, maxImages = POST_IMAGE_CONFIG.maxImages, error }: ImageUploaderProps) {
   const canAdd = images.length < maxImages && !disabled;
 
   async function onFiles(event: ChangeEvent<HTMLInputElement>) {

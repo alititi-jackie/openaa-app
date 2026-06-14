@@ -2,6 +2,7 @@ import "server-only";
 
 import auditedQuestionBank from "@/data/dmv/openaa-ny-dmv-questions-v1.json";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { isRoadSignCategory } from "./questionPredicates";
 import type { DmvQuestion, DmvQuestionBank } from "./types";
 
 type JsonRecord = Record<string, unknown>;
@@ -92,7 +93,7 @@ function mapDatabaseQuestion(row: JsonRecord): DmvQuestion | null {
     explanation: stringOrNull(row.explanation),
     difficulty: stringOrNull(row.difficulty),
     tags,
-    isRoadSign: isRoadSignQuestion(String(row.category), tags),
+    isRoadSign: isRoadSignCategory(String(row.category), tags),
     sortOrder: numberOrZero(row.sort_order),
   };
 }
@@ -110,13 +111,9 @@ function mapAuditedQuestion(question: AuditedQuestion): DmvQuestion {
     explanation: question.explanation ?? null,
     difficulty: question.difficulty ?? null,
     tags: question.tags ?? [],
-    isRoadSign: isRoadSignQuestion(question.category, question.tags ?? []),
+    isRoadSign: isRoadSignCategory(question.category, question.tags ?? []),
     sortOrder: question.id,
   };
-}
-
-function isRoadSignQuestion(category: string, tags: string[]) {
-  return category.includes("sign") || category.includes("road-sign") || tags.some((tag) => tag.toLowerCase().includes("sign"));
 }
 
 function asRecord(value: unknown): JsonRecord {

@@ -13,9 +13,11 @@ import {
   ScrollText,
   Settings,
   Shield,
+  Trash2,
   Users,
 } from "lucide-react";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
+import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -58,6 +60,15 @@ const adminEntryGroups: AdminEntryGroup[] = [
         href: "/admin/posts",
         icon: <ClipboardList size={20} aria-hidden="true" />,
         permissionKeys: ["view_posts", "moderate_posts"],
+        status: "ready",
+      },
+      {
+        id: "recycle-bin",
+        title: "删除管理",
+        description: "管理用户发布内容回收站，支持恢复、异常图片检查和 super_admin 永久删除。",
+        href: "/admin/recycle-bin",
+        icon: <Trash2 size={20} aria-hidden="true" />,
+        permissionKeys: ["super_admin"],
         status: "ready",
       },
       {
@@ -213,6 +224,8 @@ export default function AdminDashboardPage() {
 
         return (
           <div className="space-y-4">
+            <AdminLogoutButton />
+
             <AdminPageHeader title="OpenAA 管理后台" description="集中管理内容、用户、安全反馈和运营配置。已完成模块可直接进入，旧站已有但新站尚未补齐的模块会标记为待补齐。">
               <AdminPermissionBadge allowed={superAdmin} label="super_admin" />
               <AdminPermissionBadge allowed={accessibleReadyCount > 0} label={`可进入 ${accessibleReadyCount}/${readyEntries.length}`} />
@@ -226,9 +239,7 @@ export default function AdminDashboardPage() {
                   <h2 className="mt-1 text-lg font-black text-slate-950">{user.email ?? "未绑定邮箱"}</h2>
                   <p className="mt-1 text-sm leading-6 text-slate-600">角色：{adminRole.role} · 状态：{adminRole.is_active ? "active" : "inactive"}</p>
                 </div>
-                <Link href="/" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
-                  返回首页
-                </Link>
+                <AdminLogoutButton />
               </div>
             </section>
 
@@ -247,6 +258,15 @@ export default function AdminDashboardPage() {
                 </section>
               ))}
             </div>
+
+            <nav aria-label="后台底部导航" className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+              <div className="flex flex-wrap gap-2">
+                <Link href="/admin/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+                  返回总后台
+                </Link>
+                <AdminLogoutButton />
+              </div>
+            </nav>
           </div>
         );
       }}
@@ -256,7 +276,7 @@ export default function AdminDashboardPage() {
 
 async function getDashboardPermissions() {
   const keys = Array.from(new Set(adminEntryGroups.flatMap((group) => group.entries.flatMap((entry) => entry.permissionKeys))));
-  const results = await Promise.all(keys.map(async (key) => [key, await hasAdminPermission(key)] as const));
+  const results = await Promise.all(keys.map(async (key) => [key, key === "super_admin" ? await isSuperAdmin() : await hasAdminPermission(key)] as const));
   return new Map(results);
 }
 

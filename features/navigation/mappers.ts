@@ -22,6 +22,7 @@ export function fallbackNavigationCategories(): NavigationCategory[] {
     description: category.description,
     icon: category.icon,
     sortOrder: category.sort_order,
+    displayLimit: category.display_limit ?? 50,
     isActive: category.is_active,
   }));
 }
@@ -34,6 +35,7 @@ export function mapNavigationCategory(record: NavigationCategoryRecord): Navigat
     description: record.description,
     icon: record.icon,
     sortOrder: record.sort_order,
+    displayLimit: record.display_limit ?? 50,
     isActive: record.is_active,
   };
 }
@@ -64,10 +66,11 @@ export function mapNavigationLink(record: NavigationLinkRecord): NavigationLink 
     url: record.url,
     icon: record.icon,
     imageUrl: imageUrlFor(record),
-    openMode: record.open_mode === "same" ? "same" : "new",
+    openMode: record.open_mode === "same" || record.open_mode === "auto" ? record.open_mode : "new",
     sortOrder: record.sort_order,
     isActive: record.is_active,
     isFeatured: record.is_featured,
+    deletedAt: record.deleted_at,
     createdAt: record.created_at,
     updatedAt: record.updated_at,
   };
@@ -81,7 +84,7 @@ export function mapUserNavigationLink(record: UserNavigationLinkRecord): UserNav
     icon: record.icon,
     sortOrder: record.sort_order,
     isActive: record.is_active !== false,
-    openMode: record.open_mode === "same" ? "same" : "new",
+    openMode: record.open_mode === "same" || record.open_mode === "auto" ? record.open_mode : "new",
     createdAt: record.created_at,
     updatedAt: record.updated_at,
   };

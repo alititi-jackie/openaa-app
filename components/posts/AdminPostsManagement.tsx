@@ -3,7 +3,7 @@ import { AdminActionForm } from "@/components/admin/AdminActionForm";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { setAdminPostStatus } from "@/features/posts/adminActions";
 import type { AdminPostListItem, AdminPostsPermissions as AdminPostsPermissionSet } from "@/features/posts/adminQueries";
-import { POST_STATUS_LABELS } from "@/features/posts/constants";
+import { postStatusLabel, postStatusTone } from "@/features/posts/display";
 import type { PostStatus } from "@/features/posts/types";
 
 const postTypeOptions: Array<{ value: "all" | "jobs" | "housing" | "marketplace" | "services"; label: string }> = [
@@ -24,16 +24,6 @@ const postStatusOptions: Array<{ value: PostStatus | "all"; label: string }> = [
   { value: "expired", label: "已过期" },
   { value: "deleted", label: "已删除" },
 ];
-
-const statusTone: Record<PostStatus, string> = {
-  draft: "bg-slate-100 text-slate-600",
-  pending_review: "bg-amber-50 text-amber-700",
-  published: "bg-emerald-50 text-emerald-700",
-  hidden: "bg-orange-50 text-orange-700",
-  rejected: "bg-red-50 text-red-700",
-  expired: "bg-slate-100 text-slate-600",
-  deleted: "bg-red-50 text-red-700",
-};
 
 export function AdminPostsPermissionBadges({ permissions }: { permissions: AdminPostsPermissionSet }) {
   return (
@@ -101,7 +91,7 @@ export function AdminPostsList({ posts, permissions }: { posts: AdminPostListIte
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-black text-blue-700">{post.typeLabel}</span>
-                <span className={`rounded-full px-2.5 py-1 text-xs font-black ${statusTone[post.status]}`}>{POST_STATUS_LABELS[post.status]}</span>
+                <span className={`rounded-full px-2.5 py-1 text-xs font-black ${postStatusTone(post.status)}`}>{postStatusLabel(post.status)}</span>
                 <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-500">{post.visibility}</span>
               </div>
               <h3 className="mt-2 line-clamp-2 font-black text-slate-950">{post.title}</h3>
@@ -120,7 +110,7 @@ export function AdminPostsList({ posts, permissions }: { posts: AdminPostListIte
               <StatusAction post={post} status="hidden" label="下架" enabled={permissions.moderatePosts} />
               <StatusAction post={post} status="pending_review" label="待审核" enabled={permissions.moderatePosts} />
               <StatusAction post={post} status="rejected" label="拒绝" enabled={permissions.moderatePosts} />
-              <StatusAction post={post} status="deleted" label="软删除" enabled={permissions.moderatePosts} />
+              <StatusAction post={post} status="deleted" label="删除到回收站" enabled={permissions.moderatePosts} />
             </div>
           </div>
         </article>

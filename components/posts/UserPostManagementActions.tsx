@@ -1,79 +1,87 @@
 "use client";
 
-import { useActionState } from "react";
-import { manageOwnPostStatus, type ManagePostActionState } from "@/features/posts/actions";
-import type { PostStatus } from "@/features/posts/types";
+import { useState } from "react";
+import { deleteOwnPostPermanently } from "@/features/posts/actions";
+import type { PostStatus, PostType } from "@/features/posts/types";
+import { ProfilePostConfirmDialog } from "./ProfilePostConfirmDialog";
+import { ProfilePostVisibilityButton } from "./ProfilePostVisibilityButton";
 
-const initialState: ManagePostActionState = { ok: true, message: "" };
-
-const buttonStyles = {
-  hide: "border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100",
-  publish: "border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100",
-  delete: "border-red-200 bg-red-50 text-red-700 hover:bg-red-100",
-};
-
-export function UserPostManagementActions({ postId, status }: { postId: string; status?: PostStatus }) {
-  const [state, formAction, pending] = useActionState(manageOwnPostStatus, initialState);
-  const canHide = status === "published";
-  const canPublish = status === "hidden" || status === "draft" || status === "expired";
+export function UserPostManagementActions({
+  postId,
+  postType,
+  status,
+  onStatusChange,
+  onMessage,
+  onDeleted,
+}: {
+  postId: string;
+  postType: PostType;
+  status?: PostStatus;
+  onStatusChange: (status: PostStatus) => void;
+  onMessage: (state: { ok: boolean; message: string }) => void;
+  onDeleted?: () => void;
+}) {
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletePending, setDeletePending] = useState(false);
+  const canToggleVisibility = status === "published" || status === "hidden";
   const canDelete = status !== "deleted";
 
-  if (!canHide && !canPublish && !canDelete) {
+  if (!canToggleVisibility && !canDelete) {
     return null;
   }
 
   return (
-    <form
-      action={formAction}
-      className="mt-4 space-y-2"
-      onSubmit={(event) => {
-        const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
-        if (submitter?.value === "delete" && !window.confirm("确认删除这条内容？删除后前台不会再显示。")) {
-          event.preventDefault();
-        }
-      }}
-    >
-      <input type="hidden" name="postId" value={postId} />
-      <div className="flex flex-wrap items-center gap-2">
-        {canHide ? (
+    <div className="flex flex-wrap items-center gap-2">
+      {canToggleVisibility ? (
+        <ProfilePostVisibilityButton
+          postId={postId}
+          postType={postType}
+          status={status}
+          onStatusChange={onStatusChange}
+          onMessage={onMessage}
+        />
+      ) : null}
+      {canDelete ? (
+        <>
           <button
-            type="submit"
-            name="action"
-            value="hide"
-            disabled={pending}
-            className={`min-h-9 rounded-full border px-3 py-1.5 text-xs font-black disabled:cursor-not-allowed disabled:opacity-60 ${buttonStyles.hide}`}
-            title="下架后其他用户暂时看不到，你可以稍后重新发布。"
-          >
-            下架
-          </button>
-        ) : null}
-        {canPublish ? (
-          <button
-            type="submit"
-            name="action"
-            value="publish"
-            disabled={pending}
-            className={`min-h-9 rounded-full border px-3 py-1.5 text-xs font-black disabled:cursor-not-allowed disabled:opacity-60 ${buttonStyles.publish}`}
-          >
-            重新发布
-          </button>
-        ) : null}
-        {canDelete ? (
-          <button
-            type="submit"
-            name="action"
-            value="delete"
-            disabled={pending}
-            className={`min-h-9 rounded-full border px-3 py-1.5 text-xs font-black disabled:cursor-not-allowed disabled:opacity-60 ${buttonStyles.delete}`}
+            type="button"
+            onClick={() => setDeleteOpen(true)}
+            disabled={deletePending}
+            className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 ring-1 ring-red-200 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
             删除
           </button>
-        ) : null}
-      </div>
-      {canHide ? <p className="text-xs leading-5 text-slate-500">下架后其他用户暂时看不到，你可以稍后重新发布。</p> : null}
-      {state.message ? (
-        <p className={state.ok ? "text-xs font-bold text-emerald-700" : "text-xs font-bold text-red-600"}>{state.message}</p>
+          <ProfilePostConfirmDialog
+            open={deleteOpen}
+            title="确认删除此信息？"
+            description="删除后内容会进入回收站，暂不公开显示，管理员可在删除管理中恢复或永久删除。"
+            confirmLabel="删除"
+            confirmTone="danger"
+            pending={deletePending}
+            onCancel={() => setDeleteOpen(false)}
+            onConfirm={() => {
+              void deletePost();
+            }}
+          />
+        </>
       ) : null}
-    </form>
+    </div>
   );
+
+  async function deletePost() {
+    setDeletePending(true);
+    try {
+      const result = await deleteOwnPostPermanently(postId);
+      onMessage({ ok: result.ok, message: result.message });
+      if (result.ok) {
+        setDeleteOpen(false);
+        onDeleted?.();
+      }
+    } catch (error) {
+      console.error("[posts] delete own post failed", { postId, error });
+      onMessage({ ok: false, message: "删除失败，请稍后再试。" });
+    } finally {
+      setDeletePending(false);
+    }
+  }
 }

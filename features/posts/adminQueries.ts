@@ -1,6 +1,7 @@
 import "server-only";
 
-import { hasAdminPermission } from "@/lib/permissions/admin";
+import { hasAdminPermission, isSuperAdmin } from "@/lib/permissions/admin";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { POST_TYPE_LABELS, POST_TYPE_TO_ROUTE } from "./constants";
 import type { PostStatus, PostType, QueryState } from "./types";
@@ -66,6 +67,41 @@ export type AdminPostsParams = {
 };
 
 const ADMIN_POSTS_PAGE_SIZE = 20;
+const RECYCLE_BIN_LIMIT = 200;
+const MANAGED_POST_TYPES: PostType[] = ["job", "housing", "marketplace", "service"];
+
+export type RecycleBinFilter = "all" | "job" | "housing" | "marketplace" | "service" | "expired" | "image_error";
+
+export type RecycleBinItem = {
+  id: string;
+  type: PostType;
+  typeLabel: string;
+  title: string;
+  status: PostStatus;
+  deletedAt: string | null;
+  deletedSource: "user" | "admin" | "unknown";
+  imageCount: number;
+  purgeAt: string | null;
+  href: string;
+  hasImageError: boolean;
+  imageError: string | null;
+};
+
+export type RecycleBinHealth = {
+  overdueCount: number;
+  deletedPostsWithImagesCount: number;
+  possibleMissingStorageCount: number;
+  orphanFavoriteCount: number;
+};
+
+export type RecycleBinResult = {
+  state: QueryState;
+  superAdmin: boolean;
+  filter: RecycleBinFilter;
+  items: RecycleBinItem[];
+  health: RecycleBinHealth;
+  error?: string;
+};
 
 export async function getAdminPostsPermissions(): Promise<AdminPostsPermissions> {
   const [viewPosts, moderatePosts, approvePosts, rejectPosts, hidePosts, restorePosts, deletePosts] = await Promise.all([
@@ -109,6 +145,8 @@ export async function getAdminPostsData(params: AdminPostsParams = {}): Promise<
 
   if (params.status && params.status !== "all") {
     query = query.eq("status", params.status);
+  } else {
+    query = query.neq("status", "deleted");
   }
 
   if (params.authorId && isUuid(params.authorId)) {
@@ -139,6 +177,68 @@ export async function getAdminPostsData(params: AdminPostsParams = {}): Promise<
     pageCount,
     posts: ((data ?? []) as AdminPostRecord[]).map(mapAdminPost),
   };
+}
+
+export async function getRecycleBinData(filter: RecycleBinFilter = "all"): Promise<RecycleBinResult> {
+  const superAdmin = await isSuperAdmin();
+  const emptyHealth: RecycleBinHealth = {
+    overdueCount: 0,
+    deletedPostsWithImagesCount: 0,
+    possibleMissingStorageCount: 0,
+    orphanFavoriteCount: 0,
+  };
+
+  if (!superAdmin) {
+    return { state: "ready", superAdmin, filter, items: [], health: emptyHealth };
+  }
+
+  let adminSupabase: ReturnType<typeof createSupabaseAdminClient>;
+  try {
+    adminSupabase = createSupabaseAdminClient();
+  } catch {
+    return {
+      state: "missing_config",
+      superAdmin,
+      filter,
+      items: [],
+      health: emptyHealth,
+      error: "Supabase service role 环境变量未配置，删除管理无法读取完整数据。",
+    };
+  }
+
+  let query = adminSupabase
+    .from("posts")
+    .select("id,post_type,title,status,deleted_at,deletion_source,deletion_error,deletion_error_at,updated_at")
+    .eq("status", "deleted")
+    .in("post_type", MANAGED_POST_TYPES)
+    .order("deleted_at", { ascending: false, nullsFirst: false })
+    .limit(RECYCLE_BIN_LIMIT);
+
+  if (filter === "job" || filter === "housing" || filter === "marketplace" || filter === "service") {
+    query = query.eq("post_type", filter);
+  }
+  if (filter === "image_error") {
+    query = query.not("deletion_error", "is", null);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    return { state: "error", superAdmin, filter, items: [], health: emptyHealth, error: "删除管理读取失败，请稍后再试。" };
+  }
+
+  const postRows = (data ?? []) as RecycleBinPostRecord[];
+  const healthRows = await readAllRecycleBinPosts(adminSupabase);
+  const imageRows = await readRecycleBinImageRows(adminSupabase, healthRows.map((post) => post.id));
+  const imageCounts = countImagesByPost(imageRows);
+  const health = await buildRecycleBinHealth(adminSupabase, healthRows, imageRows);
+
+  let items = postRows.map((post) => mapRecycleBinItem(post, imageCounts.get(post.id) ?? 0));
+  if (filter === "expired") {
+    const now = Date.now();
+    items = items.filter((item) => item.purgeAt ? new Date(item.purgeAt).getTime() <= now : false);
+  }
+
+  return { state: "ready", superAdmin, filter, items, health };
 }
 
 function emptyResult(state: QueryState, permissions: AdminPostsPermissions, page: number): AdminPostsResult {
@@ -174,4 +274,127 @@ function mapAdminPost(record: AdminPostRecord): AdminPostListItem {
     updatedAt: record.updated_at,
     href: `${POST_TYPE_TO_ROUTE[record.post_type]}/${record.id}`,
   };
+}
+
+type RecycleBinPostRecord = {
+  id: string;
+  post_type: PostType;
+  title: string;
+  status: PostStatus;
+  deleted_at: string | null;
+  deletion_source: string | null;
+  deletion_error: string | null;
+  deletion_error_at: string | null;
+  updated_at: string;
+};
+
+type RecycleBinImageRow = {
+  post_id: string | null;
+  image_asset_id: string | null;
+  image_assets?: unknown;
+};
+
+async function readAllRecycleBinPosts(adminSupabase: ReturnType<typeof createSupabaseAdminClient>): Promise<RecycleBinPostRecord[]> {
+  const { data } = await adminSupabase
+    .from("posts")
+    .select("id,post_type,title,status,deleted_at,deletion_source,deletion_error,deletion_error_at,updated_at")
+    .eq("status", "deleted")
+    .in("post_type", MANAGED_POST_TYPES)
+    .limit(5000);
+
+  return (data ?? []) as RecycleBinPostRecord[];
+}
+
+async function readRecycleBinImageRows(adminSupabase: ReturnType<typeof createSupabaseAdminClient>, postIds: string[]): Promise<RecycleBinImageRow[]> {
+  if (postIds.length === 0) return [];
+
+  const { data } = await adminSupabase
+    .from("post_images")
+    .select("post_id,image_asset_id,image_assets(id,source_type,bucket,path,status)")
+    .in("post_id", postIds);
+
+  return (data ?? []) as RecycleBinImageRow[];
+}
+
+function countImagesByPost(rows: RecycleBinImageRow[]) {
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    if (!row.post_id) continue;
+    counts.set(row.post_id, (counts.get(row.post_id) ?? 0) + 1);
+  }
+  return counts;
+}
+
+async function buildRecycleBinHealth(adminSupabase: ReturnType<typeof createSupabaseAdminClient>, posts: RecycleBinPostRecord[], imageRows: RecycleBinImageRow[]): Promise<RecycleBinHealth> {
+  const now = Date.now();
+  const items = posts.map((post) => mapRecycleBinItem(post, 0));
+  const deletedPostsWithImageIds = new Set(imageRows.map((row) => row.post_id).filter((id): id is string => Boolean(id)));
+  const possibleMissingStorageCount = imageRows.filter((row) => {
+    const asset = imageAssetFromRelation(row.image_assets);
+    return asset?.source_type === "storage" && (asset.status === "deleted" || !asset.bucket || !asset.path);
+  }).length;
+
+  return {
+    overdueCount: items.filter((item) => item.purgeAt ? new Date(item.purgeAt).getTime() <= now : false).length,
+    deletedPostsWithImagesCount: deletedPostsWithImageIds.size,
+    possibleMissingStorageCount,
+    orphanFavoriteCount: await countOrphanFavorites(adminSupabase),
+  };
+}
+
+async function countOrphanFavorites(adminSupabase: ReturnType<typeof createSupabaseAdminClient>) {
+  const { data } = await adminSupabase
+    .from("user_favorites")
+    .select("target_id,target_type")
+    .in("target_type", ["job", "housing", "marketplace", "service", "post"])
+    .limit(5000);
+
+  const favorites = (data ?? []) as Array<{ target_id: string | null; target_type: string | null }>;
+  const ids = [
+    ...new Set(
+      favorites.flatMap((favorite) => {
+        const targetId = favorite.target_id;
+        return targetId && isUuid(targetId) ? [targetId] : [];
+      }),
+    ),
+  ];
+  if (ids.length === 0) return 0;
+
+  const { data: posts } = await adminSupabase.from("posts").select("id").in("id", ids);
+  const liveIds = new Set(((posts ?? []) as Array<{ id: string }>).map((post) => post.id));
+  return favorites.filter((favorite) => {
+    const targetId = favorite.target_id;
+    return Boolean(targetId && isUuid(targetId) && !liveIds.has(targetId));
+  }).length;
+}
+
+function mapRecycleBinItem(record: RecycleBinPostRecord, imageCount: number): RecycleBinItem {
+  const source = record.deletion_source === "user" || record.deletion_source === "admin" ? record.deletion_source : "unknown";
+  return {
+    id: record.id,
+    type: record.post_type,
+    typeLabel: POST_TYPE_LABELS[record.post_type],
+    title: record.title,
+    status: record.status,
+    deletedAt: record.deleted_at,
+    deletedSource: source,
+    imageCount,
+    purgeAt: record.deleted_at ? retentionDate(record.deleted_at, source).toISOString() : null,
+    href: `${POST_TYPE_TO_ROUTE[record.post_type]}/${record.id}`,
+    hasImageError: Boolean(record.deletion_error),
+    imageError: record.deletion_error,
+  };
+}
+
+function retentionDate(deletedAt: string, source: "user" | "admin" | "unknown") {
+  const days = source === "admin" ? 90 : 30;
+  const date = new Date(deletedAt);
+  date.setDate(date.getDate() + days);
+  return date;
+}
+
+function imageAssetFromRelation(value: unknown) {
+  if (!value) return null;
+  if (Array.isArray(value)) return (value[0] as Record<string, unknown> | undefined) ?? null;
+  return value as Record<string, unknown>;
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { isRoadSignQuestion } from "@/features/dmv/questionPredicates";
 import type { DmvQuestion } from "@/features/dmv/types";
 
 type DmvQuestionCardProps = {
@@ -24,7 +25,7 @@ export function DmvQuestionCard({
   onSelect,
 }: DmvQuestionCardProps) {
   const displayCategory = categoryLabel ?? question.category;
-  const showRoadSignBadge = question.isRoadSign && displayCategory !== "交通标志";
+  const showRoadSignBadge = isRoadSignQuestion(question) && displayCategory !== "交通标志";
   const showInstantFeedback = feedbackMode === "instant";
   const selectedWrong = !revealAnswer && showInstantFeedback && selectedIndex !== null && selectedIndex !== question.correctAnswerIndex;
   const selectedCorrect = !revealAnswer && showInstantFeedback && selectedIndex !== null && selectedIndex === question.correctAnswerIndex;

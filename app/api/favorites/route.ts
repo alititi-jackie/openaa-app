@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { getMyFavoritePosts } from "@/features/posts/queries";
+import { getMyFavorites } from "@/features/favorites/queries";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { postsJson } from "@/app/api/_utils/posts";
 
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -13,5 +12,19 @@ export async function GET() {
     return NextResponse.json({ state: "unauthenticated", data: [], error: "auth_required" }, { status: 401 });
   }
 
-  return postsJson(await getMyFavoritePosts());
+  const url = new URL(request.url);
+  const result = await getMyFavorites({
+    type: url.searchParams.get("type"),
+    page: url.searchParams.get("page"),
+  });
+
+  if (result.state === "missing_config") {
+    return NextResponse.json({ state: result.state, data: result.data, error: "missing_config" }, { status: 503 });
+  }
+
+  if (result.state === "error") {
+    return NextResponse.json({ state: result.state, data: result.data, error: result.error ?? "request_failed" }, { status: 500 });
+  }
+
+  return NextResponse.json({ state: result.state, data: result.data, pagination: result.pagination });
 }

@@ -1,71 +1,67 @@
-import Image from "next/image";
 import Link from "next/link";
-import { ExternalLink, Globe2, Star } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import type { NavigationLink } from "@/features/navigation/types";
-import { cn } from "@/lib/utils/cn";
+import { OPENAA_INTERNAL_HOSTS } from "@/features/navigation/constants";
 
-function isExternalUrl(url: string) {
-  return url.startsWith("https://");
-}
+function isExternalTarget(url: string, openMode: NavigationLink["openMode"]) {
+  if (openMode === "same") return false;
+  if (openMode === "new") return !url.startsWith("/");
+  if (url.startsWith("/") || url.startsWith("#")) return false;
 
-function displayHost(url: string) {
-  if (!isExternalUrl(url)) return url;
   try {
-    return new URL(url).hostname.replace(/^www\./, "");
+    const hostname = new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+    return !OPENAA_INTERNAL_HOSTS.some((host) => {
+      const normalized = host.toLowerCase().replace(/^www\./, "");
+      return hostname === normalized || hostname.endsWith(`.${normalized}`);
+    });
   } catch {
-    return "外部链接";
+    return false;
   }
 }
 
-export function NavigationLinkCard({ link, featured = false }: { link: NavigationLink; featured?: boolean }) {
-  const external = isExternalUrl(link.url);
-  const iconText = link.icon?.trim().slice(0, 2);
+function safeNavigationHref(url: string) {
+  const value = url.trim();
+  if (!value) return "#";
+  const lower = value.toLowerCase();
+  if (lower.startsWith("javascript:") || lower.startsWith("data:") || lower.startsWith("vbscript:")) return "#";
+  if (value.startsWith("//")) return "#";
+  if (value.startsWith("/") || value.startsWith("#")) return value;
 
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return "#";
+    return parsed.toString();
+  } catch {
+    return "#";
+  }
+}
+
+export function NavigationLinkCard({ link }: { link: NavigationLink }) {
+  const safeHref = safeNavigationHref(link.url);
+  const external = safeHref !== "#" && isExternalTarget(safeHref, link.openMode);
+  const className = "group block rounded-2xl bg-zinc-50 px-3 py-3 ring-1 ring-zinc-100 transition hover:bg-white hover:ring-zinc-200";
   const content = (
-    <article
-      className={cn(
-        "group h-full rounded-2xl border bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md",
-        featured ? "border-blue-100" : "border-slate-100",
-      )}
-    >
-      <div className="flex min-w-0 items-start gap-3">
-        <div className={cn("grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-2xl", featured ? "bg-blue-50 text-blue-700" : "bg-slate-50 text-slate-600")}>
-          {link.imageUrl ? (
-            <Image src={link.imageUrl} alt="" width={40} height={40} className="h-full w-full object-cover" />
-          ) : iconText ? (
-            <span className="text-xs font-black">{iconText}</span>
-          ) : (
-            <Globe2 size={18} aria-hidden="true" />
-          )}
+    <>
+      <div className="flex items-center justify-between gap-2">
+        <div className="truncate text-[12.5px] font-bold text-zinc-900" title={link.title}>
+          {link.title}
         </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 items-start justify-between gap-2">
-            <div className="min-w-0">
-              <h3 className="truncate text-sm font-black text-slate-950">{link.title}</h3>
-              {link.description ? <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{link.description}</p> : null}
-            </div>
-            <span className="mt-0.5 flex shrink-0 items-center gap-1 text-slate-400">
-              {link.isFeatured ? <Star size={14} aria-label="推荐" /> : null}
-              {external ? <ExternalLink size={14} aria-label="外部链接" /> : null}
-            </span>
-          </div>
-          <p className="mt-2 truncate text-[11px] font-semibold text-slate-400">{displayHost(link.url)}</p>
-        </div>
+        {external ? <ExternalLink size={13} className="shrink-0 text-zinc-400" aria-label="外部链接" /> : null}
       </div>
-    </article>
+      {link.description ? <div className="mt-1 line-clamp-2 text-[11px] text-zinc-500">{link.description}</div> : null}
+    </>
   );
 
   if (external) {
     return (
-      <a href={link.url} target="_blank" rel="noopener noreferrer" className="block h-full">
+      <a href={safeHref} target="_blank" rel="noopener noreferrer" className={className}>
         {content}
       </a>
     );
   }
 
   return (
-    <Link href={link.url} className="block h-full">
+    <Link href={safeHref} className={className}>
       {content}
     </Link>
   );

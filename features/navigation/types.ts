@@ -1,4 +1,4 @@
-export type NavigationOpenMode = "same" | "new";
+export type NavigationOpenMode = "auto" | "same" | "new";
 
 export type NavigationQueryState = "ready" | "missing_config" | "error";
 
@@ -15,6 +15,7 @@ export type NavigationCategoryRecord = {
   description: string | null;
   icon: string | null;
   sort_order: number;
+  display_limit: number | null;
   is_active: boolean;
 };
 
@@ -35,6 +36,7 @@ export type NavigationLinkRecord = {
   sort_order: number;
   is_active: boolean;
   is_featured: boolean;
+  deleted_at: string | null;
   metadata: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
@@ -62,6 +64,7 @@ export type NavigationCategory = {
   description: string | null;
   icon: string | null;
   sortOrder: number;
+  displayLimit: number;
   isActive: boolean;
 };
 
@@ -79,6 +82,7 @@ export type NavigationLink = {
   sortOrder: number;
   isActive: boolean;
   isFeatured: boolean;
+  deletedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
