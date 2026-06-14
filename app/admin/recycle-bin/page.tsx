@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminBackNavigation } from "@/components/admin/AdminBackNavigation";
 import { AdminCard } from "@/components/admin/AdminCard";
@@ -48,6 +49,11 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
     <AdminAuthGate>
       {async () => {
         const params = await searchParams;
+        if (params?.tab === "posts") {
+          const query = new URLSearchParams({ tab: "post" });
+          if (params.filter) query.set("filter", params.filter);
+          redirect(`/admin/recycle-bin?${query.toString()}`);
+        }
         const activeTab = normalizeResourceTab(params?.tab);
         const postFilter = activeTab === "post" ? normalizePostFilter(params?.filter) : "all";
         const postData = await getRecycleBinData(activeTab === "news" ? "news" : postFilter);

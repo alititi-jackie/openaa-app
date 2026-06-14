@@ -37,9 +37,14 @@ export default function AdminNewsPage() {
 
         return (
           <div className="space-y-4">
-            <Link href="/admin/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
-              返回总后台
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <Link href="/admin/dashboard" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+                返回总后台
+              </Link>
+              <Link href="/admin/recycle-bin?tab=news" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
+                回收站
+              </Link>
+            </div>
 
             <header className="bg-white">
               <h1 className="text-2xl font-black leading-tight text-slate-950">新闻管理</h1>
