@@ -249,7 +249,7 @@ export async function getRecycleBinData(filter: RecycleBinFilter = "all"): Promi
       items: [],
       health: emptyHealth,
       retentionSettings: DEFAULT_RECYCLE_BIN_RETENTION_SETTINGS,
-      error: "Supabase service role 环境变量未配置，删除管理无法读取完整数据。",
+      error: "Supabase service role 环境变量未配置，回收站无法读取完整数据。",
     };
   }
 
@@ -268,22 +268,19 @@ export async function getRecycleBinData(filter: RecycleBinFilter = "all"): Promi
   }
   const { data, error } = await query;
   if (error) {
-    return { state: "error", superAdmin, filter, items: [], health: emptyHealth, retentionSettings, error: "删除管理读取失败，请稍后再试。" };
+    return { state: "error", superAdmin, filter, items: [], health: emptyHealth, retentionSettings, error: "回收站读取失败，请稍后再试。" };
   }
 
   const postRows = (data ?? []) as RecycleBinPostRecord[];
   const healthRows = await readAllRecycleBinPosts(adminSupabase);
-  const newsRows = await readAllRecycleBinNews(adminSupabase);
   const imageRows = await readRecycleBinImageRows(adminSupabase, healthRows.map((post) => post.id));
   const imageCounts = countImagesByPost(imageRows);
-  const health = await buildRecycleBinHealth(adminSupabase, healthRows, newsRows, imageRows, retentionSettings);
+  const health = await buildRecycleBinHealth(adminSupabase, healthRows, imageRows, retentionSettings);
 
   let items = postRows.map((post) => mapRecycleBinItem(post, imageCounts.get(post.id) ?? 0, retentionSettings));
-  if (filter === "all" || filter === "news" || filter === "expired" || filter === "with_images") {
-    items = [...items, ...newsRows.map((news) => mapRecycleBinNewsItem(news, retentionSettings))].sort(compareRecycleBinItems);
-  }
   if (filter === "news") {
-    items = items.filter((item) => item.type === "news");
+    const newsRows = await readAllRecycleBinNews(adminSupabase);
+    items = newsRows.map((news) => mapRecycleBinNewsItem(news, retentionSettings)).sort(compareRecycleBinItems);
   }
   if (filter === "expired") {
     const now = Date.now();
@@ -321,7 +318,7 @@ export async function getRecycleBinPostDetail(id: string): Promise<{
       state: "missing_config",
       superAdmin,
       post: null,
-      error: "Supabase service role 环境变量未配置，删除管理无法读取完整数据。",
+      error: "Supabase service role 环境变量未配置，回收站无法读取完整数据。",
     };
   }
 
@@ -355,7 +352,7 @@ export async function getRecycleBinPostDetail(id: string): Promise<{
     .maybeSingle();
 
   if (error) {
-    return { state: "error", superAdmin, post: null, error: "删除管理详情读取失败，请稍后再试。" };
+    return { state: "error", superAdmin, post: null, error: "回收站详情读取失败，请稍后再试。" };
   }
 
   if (!data) {
@@ -532,14 +529,12 @@ function countImagesByPost(rows: RecycleBinImageRow[]) {
 async function buildRecycleBinHealth(
   adminSupabase: ReturnType<typeof createSupabaseAdminClient>,
   posts: RecycleBinPostRecord[],
-  news: RecycleBinNewsRecord[],
   imageRows: RecycleBinImageRow[],
   retentionSettings: RecycleBinRetentionSettings,
 ): Promise<RecycleBinHealth> {
   const now = Date.now();
-  const items = [...posts.map((post) => mapRecycleBinItem(post, 0, retentionSettings)), ...news.map((item) => mapRecycleBinNewsItem(item, retentionSettings))];
+  const items = posts.map((post) => mapRecycleBinItem(post, 0, retentionSettings));
   const deletedPostsWithImageIds = new Set(imageRows.map((row) => row.post_id).filter((id): id is string => Boolean(id)));
-  const deletedNewsWithImages = news.filter((item) => Boolean(item.cover_image_asset_id)).length;
   const possibleMissingStorageCount = imageRows.filter((row) => {
     const asset = imageAssetFromRelation(row.image_assets);
     return asset?.source_type === "storage" && (asset.status === "deleted" || !asset.bucket || !asset.path);
@@ -547,7 +542,7 @@ async function buildRecycleBinHealth(
 
   return {
     overdueCount: items.filter((item) => item.purgeAt ? new Date(item.purgeAt).getTime() <= now : false).length,
-    deletedPostsWithImagesCount: deletedPostsWithImageIds.size + deletedNewsWithImages,
+    deletedPostsWithImagesCount: deletedPostsWithImageIds.size,
     possibleMissingStorageCount,
     orphanFavoriteCount: await countOrphanFavorites(adminSupabase),
   };
@@ -592,7 +587,7 @@ function mapRecycleBinItem(record: RecycleBinPostRecord, imageCount: number, ret
     deletedSource: source,
     imageCount,
     purgeAt: record.deleted_at ? retentionDate(record.deleted_at, source, retentionSettings).toISOString() : null,
-    href: `/admin/recycle-bin/${record.id}`,
+    href: `/admin/recycle-bin/post/${record.id}`,
     hasImageError: Boolean(record.deletion_error || record.deletion_error_at),
     imageError: record.deletion_error,
     imageErrorAt: record.deletion_error_at,
@@ -612,7 +607,7 @@ function mapRecycleBinNewsItem(record: RecycleBinNewsRecord, retentionSettings: 
     deletedSource: record.deleted_by ? "admin" : "unknown",
     imageCount: record.cover_image_asset_id || imageUrl ? 1 : 0,
     purgeAt: record.deleted_at ? retentionDate(record.deleted_at, "admin", retentionSettings).toISOString() : null,
-    href: `/admin/recycle-bin/${record.id}`,
+    href: `/admin/recycle-bin/news/${record.id}`,
     hasImageError: false,
     imageError: null,
     imageErrorAt: null,

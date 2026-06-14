@@ -36,10 +36,10 @@ export function RecycleBinHealthSection({ health, activeFilter }: { health: Recy
   return (
     <CollapsibleSection title="健康检查">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <HealthLink label="已超期" value={health.overdueCount} href="/admin/recycle-bin?filter=expired" active={activeFilter === "expired"} />
-        <HealthLink label="带图片" value={health.deletedPostsWithImagesCount} href="/admin/recycle-bin?filter=with_images" active={activeFilter === "with_images"} />
-        <HealthLink label="图片异常" value={health.possibleMissingStorageCount} href="/admin/recycle-bin?filter=image_error" active={activeFilter === "image_error"} />
-        <HealthLink label="收藏孤儿" value={health.orphanFavoriteCount} href="/admin/recycle-bin?filter=orphan_favorites" active={activeFilter === "orphan_favorites"} />
+        <HealthLink label="已超期" value={health.overdueCount} href="/admin/recycle-bin?tab=post&filter=expired" active={activeFilter === "expired"} />
+        <HealthLink label="带图片" value={health.deletedPostsWithImagesCount} href="/admin/recycle-bin?tab=post&filter=with_images" active={activeFilter === "with_images"} />
+        <HealthLink label="图片异常" value={health.possibleMissingStorageCount} href="/admin/recycle-bin?tab=post&filter=image_error" active={activeFilter === "image_error"} />
+        <HealthLink label="收藏孤儿" value={health.orphanFavoriteCount} href="/admin/recycle-bin?tab=post&filter=orphan_favorites" active={activeFilter === "orphan_favorites"} />
       </div>
     </CollapsibleSection>
   );
@@ -156,6 +156,7 @@ function RecycleBinRow({ item }: { item: RecycleBinItem }) {
             <>
               <form action={restoreAction}>
                 <input type="hidden" name="id" value={item.id} />
+                <input type="hidden" name="resource_type" value={item.contentType} />
                 <input type="hidden" name="content_type" value={item.contentType} />
                 <button type="submit" disabled={restorePending} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-emerald-600 px-3 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60">
                   {restorePending ? "恢复中..." : "恢复"}
@@ -163,6 +164,7 @@ function RecycleBinRow({ item }: { item: RecycleBinItem }) {
               </form>
               <form action={deleteAction} className="grid gap-2 rounded-xl bg-white p-2 ring-1 ring-red-100">
                 <input type="hidden" name="id" value={item.id} />
+                <input type="hidden" name="resource_type" value={item.contentType} />
                 <input type="hidden" name="content_type" value={item.contentType} />
                 <label className="inline-flex items-center gap-2 text-sm font-bold text-slate-700">
                   <input name="confirm_permanent_delete" type="checkbox" className="h-4 w-4 rounded border-slate-300" />

@@ -205,6 +205,36 @@ export async function getAdminNavigationRecycleBinData(kind: NavigationRecycleBi
   };
 }
 
+export async function getDeletedNavigationLinkDetail(id: string) {
+  const supabase = await createSupabaseServerClient();
+  const permissions = await getAdminNavigationPermissions();
+
+  if (!supabase) {
+    return { state: "missing_config" as const, permissions, link: null as NavigationLink | null, error: "Supabase 环境变量未配置，暂时无法读取公共导航内容。" };
+  }
+
+  if (!permissions.manageNavigation) {
+    return { state: "ready" as const, permissions, link: null as NavigationLink | null };
+  }
+
+  const { data, error } = await supabase
+    .from("navigation_links")
+    .select(navigationLinkSelect)
+    .eq("id", id)
+    .not("deleted_at", "is", null)
+    .maybeSingle();
+
+  if (error) {
+    return { state: "error" as const, permissions, link: null as NavigationLink | null, error: "公共导航详情读取失败，请稍后再试。" };
+  }
+
+  return {
+    state: "ready" as const,
+    permissions,
+    link: data ? mapNavigationLink(data as unknown as NavigationLinkRecord) : null,
+  };
+}
+
 async function readAdminCategories(supabase: SupabaseServerClient): Promise<NavigationQueryResult<NavigationCategory[]>> {
   const { data, error } = await supabase
     .from("navigation_categories")

@@ -179,13 +179,13 @@ export async function setAdminPostStatus(_state: AdminPostActionState, formData:
 
 export async function restoreDeletedPost(_state: AdminPostActionState, formData: FormData): Promise<AdminPostActionState> {
   const id = readText(formData, "id");
-  const contentType = readText(formData, "content_type");
+  const resourceType = readText(formData, "resource_type") || readText(formData, "content_type");
   if (!id) return fail("操作参数无效。");
 
   const context = await getSuperAdminActionContext();
   if (!context.ok) return fail(context.message);
 
-  if (contentType === "news") return restoreDeletedNews(context, id);
+  if (resourceType === "news") return restoreDeletedNews(context, id);
 
   const before = await readPost(context.adminSupabase, id);
   if (!before) return fail("帖子不存在。");
@@ -213,14 +213,14 @@ export async function restoreDeletedPost(_state: AdminPostActionState, formData:
 
 export async function permanentlyDeletePost(_state: AdminPostActionState, formData: FormData): Promise<AdminPostActionState> {
   const id = readText(formData, "id");
-  const contentType = readText(formData, "content_type");
+  const resourceType = readText(formData, "resource_type") || readText(formData, "content_type");
   if (!id) return fail("操作参数无效。");
   if (formData.get("confirm_permanent_delete") !== "on") return fail("请先勾选确认永久删除。");
 
   const context = await getSuperAdminActionContext();
   if (!context.ok) return fail(context.message);
 
-  if (contentType === "news") return permanentlyDeleteNews(context, id);
+  if (resourceType === "news") return permanentlyDeleteNews(context, id);
 
   const before = await readPost(context.adminSupabase, id);
   if (!before) return fail("帖子不存在。");

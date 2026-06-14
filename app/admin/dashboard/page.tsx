@@ -64,8 +64,8 @@ const adminEntryGroups: AdminEntryGroup[] = [
       },
       {
         id: "recycle-bin",
-        title: "删除管理",
-        description: "管理用户发布内容回收站，支持恢复、异常图片检查和 super_admin 永久删除。",
+        title: "回收站",
+        description: "统一管理发布信息、新闻和公共导航回收站，支持恢复和 super_admin 永久删除。",
         href: "/admin/recycle-bin",
         icon: <Trash2 size={20} aria-hidden="true" />,
         permissionKeys: ["super_admin"],

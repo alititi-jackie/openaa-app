@@ -296,7 +296,7 @@ export async function restoreNavigationLink(_state: NavigationActionState, formD
   }
 
   revalidateNavigation();
-  revalidatePath("/admin/navigation/recycle-bin");
+  revalidatePath("/admin/recycle-bin");
   return ok("导航链接已恢复。");
 }
 
@@ -318,7 +318,7 @@ export async function permanentlyDeleteNavigationLink(_state: NavigationActionSt
   }
 
   revalidateNavigation();
-  revalidatePath("/admin/navigation/recycle-bin");
+  revalidatePath("/admin/recycle-bin");
   return ok("导航链接已永久删除。");
 }
 
