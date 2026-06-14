@@ -15,6 +15,11 @@ type TemplateOption = {
   body: string;
 };
 
+type NotificationPostRef = {
+  id: string;
+  title: string;
+};
+
 const initialActionState: AdminPostActionState = { ok: true, message: "" };
 
 const postTypeOptions: Array<{ value: PostType | "all"; label: string }> = [
@@ -208,15 +213,15 @@ function StatusAction({ post, status, label, enabled }: { post: AdminPostListIte
   if (!enabled || post.status === status) return null;
   const templateKey = statusTemplateDefaults[status];
   if (!templateKey) return null;
-  return <NotifyPostAction action={setAdminPostStatus} post={post} status={status} label={label} defaultTemplateKey={templateKey} />;
+  return <AdminPostNotifyAction action={setAdminPostStatus} post={post} status={status} label={label} defaultTemplateKey={templateKey} />;
 }
 
 function NotifyAuthorAction({ post, enabled }: { post: AdminPostListItem; enabled: boolean }) {
   if (!enabled) return null;
-  return <NotifyPostAction action={sendAdminPostAuthorNotification} post={post} label="通知作者" defaultTemplateKey="content_issue" notifyOnly />;
+  return <AdminPostNotifyAction action={sendAdminPostAuthorNotification} post={post} label="通知作者" defaultTemplateKey="content_issue" notifyOnly />;
 }
 
-function NotifyPostAction({
+export function AdminPostNotifyAction({
   action,
   post,
   status,
@@ -225,7 +230,7 @@ function NotifyPostAction({
   notifyOnly = false,
 }: {
   action: (state: AdminPostActionState, formData: FormData) => Promise<AdminPostActionState>;
-  post: AdminPostListItem;
+  post: NotificationPostRef;
   status?: PostStatus;
   label: string;
   defaultTemplateKey: string;

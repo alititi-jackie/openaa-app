@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { AlertTriangle, CheckCircle2, FileText } from "lucide-react";
 import { AdminActionForm } from "@/components/admin/AdminActionForm";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
+import { AdminPostNotifyAction } from "@/components/posts/AdminPostsManagement";
 import { setAdminPostStatus } from "@/features/posts/adminActions";
 import type { PostStatus } from "@/features/posts/types";
 import { setAdminReportStatus } from "@/features/reports/adminActions";
@@ -230,22 +231,29 @@ function PostModerationActions({ report, permissions }: { report: AdminReportLis
 
   return (
     <>
-      <PostStatusAction report={report} status="hidden" label="隐藏帖子" />
-      <PostStatusAction report={report} status="published" label="恢复发布" />
-      <PostStatusAction report={report} status="pending_review" label="标记待审" />
-      <PostStatusAction report={report} status="deleted" label="软删除帖子" />
+      <PostStatusAction report={report} status="hidden" label="下架" defaultTemplateKey="admin_post_hidden" />
+      <PostStatusAction report={report} status="published" label="恢复显示" defaultTemplateKey="admin_post_published" />
+      <PostStatusAction report={report} status="pending_review" label="标记待审核" defaultTemplateKey="content_issue" />
+      <PostStatusAction report={report} status="deleted" label="删除到回收站" defaultTemplateKey="admin_post_deleted" />
     </>
   );
 }
 
-function PostStatusAction({ report, status, label }: { report: AdminReportListItem; status: PostStatus; label: string }) {
+function PostStatusAction({
+  report,
+  status,
+  label,
+  defaultTemplateKey,
+}: {
+  report: AdminReportListItem;
+  status: PostStatus;
+  label: string;
+  defaultTemplateKey: string;
+}) {
   if (report.postStatus === status) return null;
 
   return (
-    <AdminActionForm action={setAdminPostStatus} submitLabel={label} className="contents">
-      <input type="hidden" name="id" value={report.postId} />
-      <input type="hidden" name="status" value={status} />
-    </AdminActionForm>
+    <AdminPostNotifyAction action={setAdminPostStatus} post={{ id: report.postId, title: report.postTitle }} status={status} label={label} defaultTemplateKey={defaultTemplateKey} />
   );
 }
 
