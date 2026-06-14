@@ -215,13 +215,6 @@ export async function permanentlyDeletePost(_state: AdminPostActionState, formDa
   if (before.status !== "deleted") return fail("只有回收站内容可以永久删除。");
   if (!isManagedPostType(before.post_type)) return fail("回收站第一版只支持招聘、房屋、二手和服务。");
 
-  const { error: favoriteError } = await context.adminSupabase
-    .from("user_favorites")
-    .delete()
-    .in("target_type", ["job", "housing", "marketplace", "service", "post"])
-    .eq("target_id", id);
-  if (favoriteError) return fail("收藏记录清理失败，帖子未永久删除。");
-
   const imageRows = await readPostImagesForPermanentDelete(context.adminSupabase, id);
   if (!imageRows.ok) return fail(imageRows.message);
 
@@ -241,6 +234,13 @@ export async function permanentlyDeletePost(_state: AdminPostActionState, formDa
       return fail("Storage 图片删除失败，帖子未永久删除，已标记为异常图片。");
     }
   }
+
+  const { error: favoriteError } = await context.adminSupabase
+    .from("user_favorites")
+    .delete()
+    .in("target_type", ["job", "housing", "marketplace", "service", "post"])
+    .eq("target_id", id);
+  if (favoriteError) return fail("收藏记录清理失败，帖子未永久删除。");
 
   const assetIds = imageRows.assets.map((asset) => asset.id).filter((assetId): assetId is string => Boolean(assetId));
   const { error: postImagesError } = await context.adminSupabase.from("post_images").delete().eq("post_id", id);

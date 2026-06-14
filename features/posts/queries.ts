@@ -261,6 +261,7 @@ export async function getUserPosts(userId: string, type?: PostType): Promise<Pos
     .from("posts")
     .select(ownPostSelect)
     .eq("author_id", userId)
+    .neq("status", "deleted")
     .order("updated_at", { ascending: false })
     .limit(30);
 

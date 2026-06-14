@@ -145,6 +145,8 @@ export async function getAdminPostsData(params: AdminPostsParams = {}): Promise<
 
   if (params.status && params.status !== "all") {
     query = query.eq("status", params.status);
+  } else {
+    query = query.neq("status", "deleted");
   }
 
   if (params.authorId && isUuid(params.authorId)) {

@@ -46,7 +46,7 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
           return (
             <div className="space-y-4">
               <AdminBackNavigation />
-              <AdminPageHeader title="删除管理" description="当前页面只允许 super_admin 访问。">
+              <AdminPageHeader title="删除管理" description="只有超级管理员可以访问删除管理。">
                 <AdminPermissionBadge allowed={false} label="super_admin" />
               </AdminPageHeader>
             </div>

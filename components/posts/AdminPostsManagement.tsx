@@ -110,7 +110,7 @@ export function AdminPostsList({ posts, permissions }: { posts: AdminPostListIte
               <StatusAction post={post} status="hidden" label="下架" enabled={permissions.moderatePosts} />
               <StatusAction post={post} status="pending_review" label="待审核" enabled={permissions.moderatePosts} />
               <StatusAction post={post} status="rejected" label="拒绝" enabled={permissions.moderatePosts} />
-              <StatusAction post={post} status="deleted" label="软删除" enabled={permissions.moderatePosts} />
+              <StatusAction post={post} status="deleted" label="删除到回收站" enabled={permissions.moderatePosts} />
             </div>
           </div>
         </article>
