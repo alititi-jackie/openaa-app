@@ -174,6 +174,7 @@ export function AdminPostNotifyAction({
   action,
   post,
   status,
+  operation,
   label,
   defaultTemplateKey,
   variant = "primary",
@@ -183,6 +184,7 @@ export function AdminPostNotifyAction({
   action: (state: AdminPostActionState, formData: FormData) => Promise<AdminPostActionState>;
   post: NotificationPostRef;
   status?: PostStatus;
+  operation?: string;
   label: string;
   defaultTemplateKey: string;
   variant?: "neutral" | "primary" | "success" | "warning" | "danger" | "info";
@@ -214,6 +216,7 @@ export function AdminPostNotifyAction({
           <form action={formAction} className="w-full max-w-lg rounded-2xl bg-white p-4 shadow-xl">
             <input type="hidden" name="id" value={post.id} />
             {status ? <input type="hidden" name="status" value={status} /> : null}
+            {operation ? <input type="hidden" name="operation" value={operation} /> : null}
             <input type="hidden" name="notification_template_key" value={templateKey} />
             <input type="hidden" name="notification_action_url" value="/profile/posts" />
             <div className="flex items-start justify-between gap-3">

@@ -4,7 +4,7 @@ import { AlertTriangle, CheckCircle2, FileText } from "lucide-react";
 import { AdminActionForm } from "@/components/admin/AdminActionForm";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { AdminPostNotifyAction } from "@/components/posts/AdminPostsManagement";
-import { setAdminPostStatus } from "@/features/posts/adminActions";
+import { handleAdminPostOperation } from "@/features/posts/adminActions";
 import type { AdminPostNotificationTemplate } from "@/features/posts/adminQueries";
 import type { PostStatus } from "@/features/posts/types";
 import { setAdminReportStatus } from "@/features/reports/adminActions";
@@ -232,10 +232,10 @@ function PostModerationActions({ report, permissions, templates }: { report: Adm
 
   return (
     <>
-      <PostStatusAction report={report} status="hidden" label="下架" defaultTemplateKey="admin_post_hidden" templates={templates} />
-      <PostStatusAction report={report} status="published" label="恢复显示" defaultTemplateKey="admin_post_published" templates={templates} />
-      <PostStatusAction report={report} status="pending_review" label="标记待审核" defaultTemplateKey="content_issue" templates={templates} />
-      <PostStatusAction report={report} status="deleted" label="删除到回收站" defaultTemplateKey="admin_post_deleted" templates={templates} />
+      <PostStatusAction report={report} status="hidden" operation="hidden" label="下架" defaultTemplateKey="admin_post_hidden" templates={templates} />
+      <PostStatusAction report={report} status="published" operation="published" label="恢复显示" defaultTemplateKey="admin_post_published" templates={templates} />
+      <PostStatusAction report={report} status="pending_review" operation="pending" label="标记待审核" defaultTemplateKey="content_issue" templates={templates} />
+      <PostStatusAction report={report} status="deleted" operation="deleted" label="删除到回收站" defaultTemplateKey="admin_post_deleted" templates={templates} />
     </>
   );
 }
@@ -243,12 +243,14 @@ function PostModerationActions({ report, permissions, templates }: { report: Adm
 function PostStatusAction({
   report,
   status,
+  operation,
   label,
   defaultTemplateKey,
   templates,
 }: {
   report: AdminReportListItem;
   status: PostStatus;
+  operation: string;
   label: string;
   defaultTemplateKey: string;
   templates: AdminPostNotificationTemplate[];
@@ -256,7 +258,7 @@ function PostStatusAction({
   if (report.postStatus === status) return null;
 
   return (
-    <AdminPostNotifyAction action={setAdminPostStatus} post={{ id: report.postId, title: report.postTitle }} status={status} label={label} defaultTemplateKey={defaultTemplateKey} templates={templates} />
+    <AdminPostNotifyAction action={handleAdminPostOperation} post={{ id: report.postId, title: report.postTitle }} operation={operation} label={label} defaultTemplateKey={defaultTemplateKey} templates={templates} />
   );
 }
 

@@ -1,6 +1,10 @@
 import type { PostStatus } from "./types";
 
 export type AdminPostOperation =
+  | "hidden"
+  | "published"
+  | "pending"
+  | "deleted"
   | "hide"
   | "restore_display"
   | "approve"
@@ -138,8 +142,51 @@ export const ADMIN_POST_OPERATION_CONFIGS: AdminPostOperationConfig[] = [
   },
 ];
 
+const REPORT_TAB_OPERATION_CONFIGS: AdminPostOperationConfig[] = [
+  {
+    operation: "hidden",
+    label: "下架",
+    eventType: "hidden",
+    defaultTemplateKey: "admin_post_hidden",
+    allowedStatuses: ["published", "pending_review", "rejected"],
+    statusAfter: "hidden",
+    auditAction: "hide_post",
+  },
+  {
+    operation: "published",
+    label: "恢复显示",
+    eventType: "published",
+    defaultTemplateKey: "admin_post_published",
+    allowedStatuses: ["hidden", "pending_review", "rejected"],
+    statusAfter: "published",
+    auditAction: "publish_post",
+  },
+  {
+    operation: "pending",
+    label: "标记待审核",
+    eventType: "pending",
+    defaultTemplateKey: "content_issue",
+    allowedStatuses: ["published", "hidden", "rejected"],
+    statusAfter: "pending_review",
+    auditAction: "mark_post_pending_review",
+  },
+  {
+    operation: "deleted",
+    label: "删除到回收站",
+    eventType: "deleted",
+    defaultTemplateKey: "admin_post_deleted",
+    allowedStatuses: ["published", "hidden", "pending_review", "rejected"],
+    statusAfter: "deleted",
+    auditAction: "delete_post",
+  },
+];
+
 export function getAdminPostOperationConfig(operation: string | null | undefined) {
-  return ADMIN_POST_OPERATION_CONFIGS.find((config) => config.operation === operation) ?? null;
+  return (
+    ADMIN_POST_OPERATION_CONFIGS.find((config) => config.operation === operation) ??
+    REPORT_TAB_OPERATION_CONFIGS.find((config) => config.operation === operation) ??
+    null
+  );
 }
 
 export function getAdminPostOperationOptions(status: PostStatus) {
