@@ -12,13 +12,11 @@ import {
   AdminImageCleanupPagination,
   AdminImageCleanupPermissionBadges,
 } from "@/components/image-cleanup/AdminImageCleanupManagement";
-import { RecycleBinImageSettingsSection } from "@/components/posts/AdminRecycleBinManagement";
 import {
   getAdminImageCleanupData,
   normalizeImageCleanupFilter,
   normalizeImageSourceFilter,
 } from "@/features/image-cleanup/adminQueries";
-import { getRecycleBinImageRetentionSettings } from "@/features/posts/adminQueries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
@@ -46,7 +44,6 @@ export default function AdminImageCleanupPage({ searchParams }: AdminImageCleanu
           q: params?.q,
           page: normalizePage(params?.page),
         });
-        const imageRetentionSettings = await getRecycleBinImageRetentionSettings();
         const canView = data.permissions.viewImages || data.permissions.manageImageAssets;
         const canDelete = data.permissions.manageImageAssets;
 
@@ -77,7 +74,6 @@ export default function AdminImageCleanupPage({ searchParams }: AdminImageCleanu
               </div>
             ) : null}
 
-            <RecycleBinImageSettingsSection settings={imageRetentionSettings} />
             <AdminImageCleanupHealthSection totals={data.totals} activeFilter={activeFilter} />
 
             <AdminCard title="扫描图片资产" description="默认显示未绑定业务内容、也未被帖子图片引用的疑似未使用图片；使用中的图片只读展示。">
