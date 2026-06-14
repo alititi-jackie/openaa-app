@@ -170,7 +170,7 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
             {activeTab === "navigation" ? (
               <>
                 {navigationData?.state === "error" ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">{navigationData.error ?? "公共导航内容读取失败，请稍后再试。"}</div> : null}
-                <AdminCard title="公共导航" description="只管理已软删除的网站；不做健康检查、图片管理或自动清理。">
+                <AdminCard title="公共导航" description="只管理已删除的网站；不做健康检查、图片管理或自动清理。">
                   <NavigationRecycleBinList links={navigationData?.links ?? []} kind="links" />
                 </AdminCard>
               </>

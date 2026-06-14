@@ -329,7 +329,7 @@ function NewsPostCard({
       <AdminConfirmDialog
         open={deleteOpen}
         title="确认删除新闻？"
-        description="删除后不会在前台显示。该操作会软删除记录，并进入回收站。"
+        description="删除后不会在前台显示，并会进入回收站。"
         confirmLabel="确认删除"
         cancelLabel="取消"
         tone="danger"

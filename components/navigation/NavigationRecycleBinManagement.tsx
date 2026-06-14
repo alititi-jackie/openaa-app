@@ -9,7 +9,7 @@ const initialState: NavigationActionState = { ok: true, message: "" };
 
 export function NavigationRecycleBinList({ links, kind }: { links: NavigationLink[]; kind: "links" | "categories" }) {
   if (kind === "categories") {
-    return <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-500">分类回收站入口已预留；当前版本公共导航分类尚未接入软删除。</p>;
+    return <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-500">分类回收站入口已预留；当前版本公共导航分类尚未接入删除后保留记录的流程。</p>;
   }
 
   if (links.length === 0) {

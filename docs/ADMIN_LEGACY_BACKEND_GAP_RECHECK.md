@@ -2,6 +2,16 @@
 
 This is a read-only recheck of the old `openaa-ny` backend against the new `openaa-app` backend.
 
+Historical note: this document started as an old-backend gap check. Since then, the new admin surface has consolidated several routes:
+
+- Old standalone feedback, reports, and notifications admin pages are now under `/admin/messages`:
+  - `/admin/messages?tab=feedback`
+  - `/admin/messages?tab=reports`
+  - `/admin/messages?tab=notifications`
+- User-published content is now managed through `/admin/user-posts`.
+
+Do not use the old standalone new-site paths `/admin/feedback`, `/admin/reports`, `/admin/notifications`, or `/admin/posts`; they are historical references only.
+
 Inputs checked:
 
 - `D:\GitHub\openaa-ny\app\admin`
@@ -92,9 +102,9 @@ New auth pattern:
 | top links management | Complete | New `/admin/top-links` covers header quick links. |
 | home sections | Complete | New `/admin/home` covers home sections, banners, ticker, and home operations. |
 | ads management | Complete with new model | New `/admin/ads` manages placements and external image assets. Old upload/delete image behavior is intentionally not copied one-to-one. |
-| feedback management | Complete | New `/admin/feedback` handles feedback status and notes. |
-| reports management | New app enhancement | Old site centered on feedback; new `/admin/reports` handles post reports from engagement flow. |
-| notifications management | Complete | New `/admin/notifications` covers notifications management. |
+| feedback management | Complete | Current new-site route is `/admin/messages?tab=feedback`; old standalone `/admin/feedback` references are historical only. |
+| reports management | New app enhancement | Current new-site route is `/admin/messages?tab=reports`; old standalone `/admin/reports` references are historical only. |
+| notifications management | Complete | Current new-site route is `/admin/messages?tab=notifications`; old standalone `/admin/notifications` references are historical only. |
 | settings | Complete | New `/admin/settings` covers site settings such as daily post limit. |
 | image cleanup | Complete with safer behavior | New `/admin/image-cleanup` soft-marks records instead of physical deletion. |
 | audit logs | New app enhancement | New `/admin/audit-logs` covers backend traceability. |

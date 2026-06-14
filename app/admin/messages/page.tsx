@@ -143,7 +143,7 @@ async function FeedbackTab({ params }: { params?: Awaited<AdminMessagesPageProps
         <AdminFeedbackFilter status={params?.status} type={params?.type} q={params?.q} />
       </AdminCard>
 
-      <AdminCard title="反馈列表" description="删除反馈只会写入 deleted_at 软删除，不做物理删除，方便后续追溯。">
+      <AdminCard title="反馈列表" description="删除后前台不再显示，后台仍保留处理记录，方便后续追溯。">
         <AdminFeedbackReadHint pageSize={data.pageSize} />
         <AdminFeedbackList feedback={data.feedback} permissions={data.permissions} />
         <AdminFeedbackPagination page={data.page} pageCount={data.pageCount} totalCount={data.totalCount} status={params?.status} type={params?.type} q={params?.q} />
