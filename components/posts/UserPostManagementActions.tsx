@@ -54,7 +54,7 @@ export function UserPostManagementActions({
           <ProfilePostConfirmDialog
             open={deleteOpen}
             title="确认删除此信息？"
-            description="删除后内容会进入回收站，暂不公开显示，管理员可在删除管理中恢复或永久删除。"
+            description="删除后将无法恢复，请确认是否删除。"
             confirmLabel="删除"
             confirmTone="danger"
             pending={deletePending}
