@@ -45,7 +45,7 @@ export function ProfileUserCenterCard({ profile, authLines, unreadNotifications,
 
       <div className="grid grid-cols-4 border-t border-zinc-100">
         <ProfileMetricButton label="我的资料" value={filledItems.length} expanded={expanded} onClick={() => setExpanded((current) => !current)} />
-        <ProfileMetricLink href="/profile/notifications" label="通知" value={unreadNotifications} />
+        <ProfileMetricLink href="/profile/notifications" label="通知" value={unreadNotifications} highlight={unreadNotifications > 0} />
         <ProfileMetricLink href="/profile/favorites" label="收藏" value={favorites} />
         <ProfileMetricLink href="/profile/recent" label="最近浏览" value={recent} />
       </div>
@@ -72,10 +72,10 @@ function ProfileMetricButton({ label, value, expanded, onClick }: { label: strin
   );
 }
 
-function ProfileMetricLink({ href, label, value }: { href: string; label: string; value: number }) {
+function ProfileMetricLink({ href, label, value, highlight = false }: { href: string; label: string; value: number; highlight?: boolean }) {
   return (
     <Link href={href} className="min-w-0 border-r border-zinc-100 px-1.5 py-3 text-center transition last:border-r-0 hover:bg-zinc-50">
-      <div className="text-[18px] font-black leading-none text-zinc-900">{value}</div>
+      <div className={`text-[18px] font-black leading-none ${highlight ? "text-red-600" : "text-zinc-900"}`}>{value}</div>
       <div className="mt-1 truncate text-[11px] font-bold leading-tight text-zinc-600">{label}</div>
     </Link>
   );
