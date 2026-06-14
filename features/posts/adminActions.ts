@@ -198,8 +198,7 @@ export async function restoreDeletedPost(_state: AdminPostActionState, formData:
 
   await writeAuditLog(context, "restore_post_from_recycle_bin", id, before, payload);
   revalidatePost(before.post_type, id);
-  revalidatePath("/admin/recycle-bin");
-  return ok("已恢复为隐藏状态。");
+  return ok("已恢复");
 }
 
 export async function permanentlyDeletePost(_state: AdminPostActionState, formData: FormData): Promise<AdminPostActionState> {

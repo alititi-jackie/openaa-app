@@ -70,7 +70,7 @@ const ADMIN_POSTS_PAGE_SIZE = 20;
 const RECYCLE_BIN_LIMIT = 200;
 const MANAGED_POST_TYPES: PostType[] = ["job", "housing", "marketplace", "service"];
 
-export type RecycleBinFilter = "all" | "job" | "housing" | "marketplace" | "service" | "expired" | "image_error";
+export type RecycleBinFilter = "all" | "job" | "housing" | "marketplace" | "service" | "expired" | "with_images" | "image_error" | "orphan_favorites";
 
 export type RecycleBinItem = {
   id: string;
@@ -85,6 +85,20 @@ export type RecycleBinItem = {
   href: string;
   hasImageError: boolean;
   imageError: string | null;
+  imageErrorAt: string | null;
+};
+
+export type RecycleBinPostDetail = RecycleBinItem & {
+  summary: string;
+  body: string;
+  images: Array<{ url: string; caption?: string | null; imageAssetId?: string | null }>;
+  contact: {
+    contact_name: string | null;
+    phone: string | null;
+    wechat: string | null;
+    email: string | null;
+    preferred_contact_method: string | null;
+  } | null;
 };
 
 export type RecycleBinHealth = {
@@ -217,10 +231,6 @@ export async function getRecycleBinData(filter: RecycleBinFilter = "all"): Promi
   if (filter === "job" || filter === "housing" || filter === "marketplace" || filter === "service") {
     query = query.eq("post_type", filter);
   }
-  if (filter === "image_error") {
-    query = query.not("deletion_error", "is", null);
-  }
-
   const { data, error } = await query;
   if (error) {
     return { state: "error", superAdmin, filter, items: [], health: emptyHealth, error: "删除管理读取失败，请稍后再试。" };
@@ -237,8 +247,109 @@ export async function getRecycleBinData(filter: RecycleBinFilter = "all"): Promi
     const now = Date.now();
     items = items.filter((item) => item.purgeAt ? new Date(item.purgeAt).getTime() <= now : false);
   }
+  if (filter === "with_images") {
+    items = items.filter((item) => item.imageCount > 0);
+  }
+  if (filter === "image_error") {
+    items = items.filter((item) => item.hasImageError);
+  }
+  if (filter === "orphan_favorites") {
+    items = [];
+  }
 
   return { state: "ready", superAdmin, filter, items, health };
+}
+
+export async function getRecycleBinPostDetail(id: string): Promise<{
+  state: QueryState;
+  superAdmin: boolean;
+  post: RecycleBinPostDetail | null;
+  error?: string;
+}> {
+  const superAdmin = await isSuperAdmin();
+  if (!superAdmin) {
+    return { state: "ready", superAdmin, post: null };
+  }
+
+  let adminSupabase: ReturnType<typeof createSupabaseAdminClient>;
+  try {
+    adminSupabase = createSupabaseAdminClient();
+  } catch {
+    return {
+      state: "missing_config",
+      superAdmin,
+      post: null,
+      error: "Supabase service role 环境变量未配置，删除管理无法读取完整数据。",
+    };
+  }
+
+  const { data, error } = await adminSupabase
+    .from("posts")
+    .select(
+      `
+        id,
+        post_type,
+        title,
+        summary,
+        body,
+        status,
+        deleted_at,
+        deletion_source,
+        deletion_error,
+        deletion_error_at,
+        updated_at,
+        post_images(
+          image_asset_id,
+          sort_order,
+          caption,
+          image_assets(public_url, external_url)
+        ),
+        post_contacts(contact_name, phone, email, wechat, preferred_contact_method)
+      `,
+    )
+    .eq("id", id)
+    .eq("status", "deleted")
+    .in("post_type", MANAGED_POST_TYPES)
+    .maybeSingle();
+
+  if (error) {
+    return { state: "error", superAdmin, post: null, error: "删除管理详情读取失败，请稍后再试。" };
+  }
+
+  if (!data) {
+    return { state: "ready", superAdmin, post: null };
+  }
+
+  const record = data as unknown as RecycleBinPostRecord & {
+    summary: string | null;
+    body: string | null;
+    post_images?: Array<{
+      image_asset_id: string | null;
+      sort_order: number | null;
+      caption: string | null;
+      image_assets?: unknown;
+    }> | null;
+    post_contacts?: RecycleBinPostDetail["contact"][] | RecycleBinPostDetail["contact"] | null;
+  };
+  const sortedImages = [...(record.post_images ?? [])].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+  const images = sortedImages.flatMap((image) => {
+    const asset = imageAssetFromRelation(image.image_assets);
+    const url = typeof asset?.public_url === "string" && asset.public_url ? asset.public_url : typeof asset?.external_url === "string" ? asset.external_url : "";
+    return url ? [{ url, caption: image.caption, imageAssetId: image.image_asset_id }] : [];
+  });
+  const contact = Array.isArray(record.post_contacts) ? (record.post_contacts[0] ?? null) : record.post_contacts ?? null;
+
+  return {
+    state: "ready",
+    superAdmin,
+    post: {
+      ...mapRecycleBinItem(record, images.length),
+      summary: record.summary ?? "",
+      body: record.body ?? "",
+      images,
+      contact,
+    },
+  };
 }
 
 function emptyResult(state: QueryState, permissions: AdminPostsPermissions, page: number): AdminPostsResult {
@@ -380,9 +491,10 @@ function mapRecycleBinItem(record: RecycleBinPostRecord, imageCount: number): Re
     deletedSource: source,
     imageCount,
     purgeAt: record.deleted_at ? retentionDate(record.deleted_at, source).toISOString() : null,
-    href: `${POST_TYPE_TO_ROUTE[record.post_type]}/${record.id}`,
-    hasImageError: Boolean(record.deletion_error),
+    href: `/admin/recycle-bin/${record.id}`,
+    hasImageError: Boolean(record.deletion_error || record.deletion_error_at),
     imageError: record.deletion_error,
+    imageErrorAt: record.deletion_error_at,
   };
 }
 
