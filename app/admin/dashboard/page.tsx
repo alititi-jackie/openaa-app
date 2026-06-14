@@ -13,6 +13,7 @@ import {
   ScrollText,
   Settings,
   Shield,
+  Trash2,
   Users,
 } from "lucide-react";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
@@ -59,6 +60,15 @@ const adminEntryGroups: AdminEntryGroup[] = [
         href: "/admin/posts",
         icon: <ClipboardList size={20} aria-hidden="true" />,
         permissionKeys: ["view_posts", "moderate_posts"],
+        status: "ready",
+      },
+      {
+        id: "recycle-bin",
+        title: "删除管理",
+        description: "管理用户发布内容回收站，支持恢复、异常图片检查和 super_admin 永久删除。",
+        href: "/admin/recycle-bin",
+        icon: <Trash2 size={20} aria-hidden="true" />,
+        permissionKeys: ["super_admin"],
         status: "ready",
       },
       {
@@ -266,7 +276,7 @@ export default function AdminDashboardPage() {
 
 async function getDashboardPermissions() {
   const keys = Array.from(new Set(adminEntryGroups.flatMap((group) => group.entries.flatMap((entry) => entry.permissionKeys))));
-  const results = await Promise.all(keys.map(async (key) => [key, await hasAdminPermission(key)] as const));
+  const results = await Promise.all(keys.map(async (key) => [key, key === "super_admin" ? await isSuperAdmin() : await hasAdminPermission(key)] as const));
   return new Map(results);
 }
 

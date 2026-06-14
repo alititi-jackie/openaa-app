@@ -154,60 +154,6 @@ function revalidatePostSurfaces(type: PostType, postId: string, options: { inclu
   }
 }
 
-function imageAssetFromRelation(value: unknown) {
-  if (!value) return null;
-  if (Array.isArray(value)) return (value[0] as Record<string, unknown> | undefined) ?? null;
-  return value as Record<string, unknown>;
-}
-
-async function deletePostImagesPermanently(supabase: SupabaseServerClient, userId: string, postId: string) {
-  const { data, error } = await supabase
-    .from("post_images")
-    .select("image_asset_id,image_assets(id,source_type,bucket,path,owner_id)")
-    .eq("post_id", postId);
-
-  if (error) {
-    return { ok: false as const, message: "读取帖子图片失败，请稍后再试。" };
-  }
-
-  const imageRows = (data ?? []) as Array<{ image_asset_id: string | null; image_assets?: unknown }>;
-  const assetIds = imageRows.map((row) => row.image_asset_id).filter((id): id is string => Boolean(id));
-  const assets = imageRows
-    .map((row) => imageAssetFromRelation(row.image_assets))
-    .filter((asset): asset is Record<string, unknown> => Boolean(asset));
-  const hasUnownedAsset = assets.some((asset) => asset.owner_id !== userId);
-
-  if (hasUnownedAsset) {
-    return { ok: false as const, message: "部分图片记录无法确认归属，请稍后再试。" };
-  }
-
-  const storagePaths = assets
-    .filter((asset) => asset.source_type === "storage" && asset.bucket === "post-images" && typeof asset.path === "string" && asset.path.length > 0)
-    .map((asset) => asset.path as string);
-
-  if (storagePaths.length > 0) {
-    const { error: storageError } = await supabase.storage.from("post-images").remove(storagePaths);
-    if (storageError) {
-      logPostActionError("delete storage images failed", storageError, { postId });
-      return { ok: false as const, message: "图片文件删除失败，请稍后再试。" };
-    }
-  }
-
-  if (assetIds.length > 0) {
-    const { data: deletedAssets, error: assetError } = await supabase.from("image_assets").delete().eq("owner_id", userId).in("id", assetIds).select("id");
-    if (assetError) {
-      logPostActionError("delete image asset rows failed", assetError, { postId });
-      return { ok: false as const, message: "图片记录删除失败，请稍后再试。" };
-    }
-
-    if ((deletedAssets ?? []).length !== assetIds.length) {
-      return { ok: false as const, message: "部分图片记录无法删除，请稍后再试。" };
-    }
-  }
-
-  return { ok: true as const };
-}
-
 function mainPostPayload(values: PostFormValues, userId: string, cityId: string | null) {
   const status = shouldReviewPost(values) ? "pending_review" : "published";
   const publishedAt = status === "published" ? new Date().toISOString() : null;
@@ -403,6 +349,10 @@ export async function manageOwnPostStatus(_previousState: ManagePostActionState,
         published_at: post.published_at ?? now,
         hidden_at: null,
         deleted_at: null,
+        deleted_by: null,
+        deletion_source: null,
+        deletion_error: null,
+        deletion_error_at: null,
         updated_at: now,
       })
       .eq("id", postId)
@@ -425,7 +375,15 @@ export async function manageOwnPostStatus(_previousState: ManagePostActionState,
 
   const { error } = await context.supabase
     .from("posts")
-    .update({ status: "deleted", deleted_at: now, updated_at: now })
+    .update({
+      status: "deleted",
+      deleted_at: now,
+      deleted_by: context.user.id,
+      deletion_source: "user",
+      deletion_error: null,
+      deletion_error_at: null,
+      updated_at: now,
+    })
     .eq("id", postId)
     .eq("author_id", context.user.id)
     .select("id")
@@ -455,14 +413,24 @@ export async function deleteOwnPostPermanently(postId: string): Promise<DeletePo
     return { ok: false, message: "内容已删除。", postId: safePostId };
   }
 
-  const imageDelete = await deletePostImagesPermanently(context.supabase, context.user.id, safePostId);
-  if (!imageDelete.ok) {
-    return { ok: false, message: imageDelete.message, postId: safePostId };
-  }
-
-  const { error } = await context.supabase.from("posts").delete().eq("id", safePostId).eq("author_id", context.user.id);
+  const now = new Date().toISOString();
+  const { error } = await context.supabase
+    .from("posts")
+    .update({
+      status: "deleted",
+      deleted_at: now,
+      deleted_by: context.user.id,
+      deletion_source: "user",
+      deletion_error: null,
+      deletion_error_at: null,
+      updated_at: now,
+    })
+    .eq("id", safePostId)
+    .eq("author_id", context.user.id)
+    .select("id")
+    .single();
   if (error) {
-    logPostActionError("delete own post permanently failed", error, { postId: safePostId });
+    logPostActionError("delete own post failed", error, { postId: safePostId });
     return { ok: false, message: "删除失败，请稍后再试。", postId: safePostId };
   }
 

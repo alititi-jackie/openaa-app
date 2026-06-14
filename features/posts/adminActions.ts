@@ -1,12 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { isSuperAdmin } from "@/lib/permissions/admin";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { POST_TYPE_TO_ROUTE } from "./constants";
 import { postHref } from "./formMappers";
 import type { PostStatus, PostType } from "./types";
 
 type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
+type SupabasePostClient = SupabaseServerClient | ReturnType<typeof createSupabaseAdminClient>;
 
 export type AdminPostActionState = {
   ok: boolean;
@@ -18,6 +21,15 @@ type AdminActionContext =
   | {
       ok: true;
       supabase: SupabaseServerClient;
+      userId: string;
+    };
+
+type SuperAdminActionContext =
+  | { ok: false; message: string }
+  | {
+      ok: true;
+      supabase: SupabaseServerClient;
+      adminSupabase: ReturnType<typeof createSupabaseAdminClient>;
       userId: string;
     };
 
@@ -52,7 +64,7 @@ async function getAdminActionContext(permissionKeys: string[]): Promise<AdminAct
   return { ok: false, message: "当前账号没有执行此操作的后台权限。" };
 }
 
-async function readPost(supabase: SupabaseServerClient, id: string) {
+async function readPost(supabase: SupabasePostClient, id: string) {
   const { data, error } = await supabase
     .from("posts")
     .select("id,post_type,status,title,author_id,published_at")
@@ -103,6 +115,10 @@ export async function setAdminPostStatus(_state: AdminPostActionState, formData:
     published_at?: string | null;
     hidden_at?: string | null;
     deleted_at?: string | null;
+    deleted_by?: string | null;
+    deletion_source?: "admin" | null;
+    deletion_error?: string | null;
+    deletion_error_at?: string | null;
     updated_at: string;
   } = {
     status,
@@ -112,12 +128,25 @@ export async function setAdminPostStatus(_state: AdminPostActionState, formData:
     payload.published_at = before.published_at ?? now;
     payload.hidden_at = null;
     payload.deleted_at = null;
+    payload.deleted_by = null;
+    payload.deletion_source = null;
+    payload.deletion_error = null;
+    payload.deletion_error_at = null;
   }
   if (status === "hidden") {
     payload.hidden_at = now;
+    payload.deleted_at = null;
+    payload.deleted_by = null;
+    payload.deletion_source = null;
+    payload.deletion_error = null;
+    payload.deletion_error_at = null;
   }
   if (status === "deleted") {
     payload.deleted_at = now;
+    payload.deleted_by = context.userId;
+    payload.deletion_source = "admin";
+    payload.deletion_error = null;
+    payload.deletion_error_at = null;
   }
 
   const { error } = await context.supabase.from("posts").update(payload).eq("id", id);
@@ -141,6 +170,139 @@ export async function setAdminPostStatus(_state: AdminPostActionState, formData:
   return ok("帖子状态已更新。");
 }
 
+export async function restoreDeletedPost(_state: AdminPostActionState, formData: FormData): Promise<AdminPostActionState> {
+  const id = readText(formData, "id");
+  if (!id) return fail("操作参数无效。");
+
+  const context = await getSuperAdminActionContext();
+  if (!context.ok) return fail(context.message);
+
+  const before = await readPost(context.adminSupabase, id);
+  if (!before) return fail("帖子不存在。");
+  if (before.status !== "deleted") return fail("只有已删除内容可以恢复。");
+
+  const now = new Date().toISOString();
+  const payload = {
+    status: "hidden" as PostStatus,
+    hidden_at: now,
+    deleted_at: null,
+    deleted_by: null,
+    deletion_source: null,
+    deletion_error: null,
+    deletion_error_at: null,
+    updated_at: now,
+  };
+
+  const { error } = await context.adminSupabase.from("posts").update(payload).eq("id", id);
+  if (error) return fail("恢复失败，请稍后再试。");
+
+  await writeAuditLog(context, "restore_post_from_recycle_bin", id, before, payload);
+  revalidatePost(before.post_type, id);
+  revalidatePath("/admin/recycle-bin");
+  return ok("已恢复为隐藏状态。");
+}
+
+export async function permanentlyDeletePost(_state: AdminPostActionState, formData: FormData): Promise<AdminPostActionState> {
+  const id = readText(formData, "id");
+  if (!id) return fail("操作参数无效。");
+  if (formData.get("confirm_permanent_delete") !== "on") return fail("请先勾选确认永久删除。");
+
+  const context = await getSuperAdminActionContext();
+  if (!context.ok) return fail(context.message);
+
+  const before = await readPost(context.adminSupabase, id);
+  if (!before) return fail("帖子不存在。");
+  if (before.status !== "deleted") return fail("只有回收站内容可以永久删除。");
+  if (!isManagedPostType(before.post_type)) return fail("回收站第一版只支持招聘、房屋、二手和服务。");
+
+  const { error: favoriteError } = await context.adminSupabase
+    .from("user_favorites")
+    .delete()
+    .in("target_type", ["job", "housing", "marketplace", "service", "post"])
+    .eq("target_id", id);
+  if (favoriteError) return fail("收藏记录清理失败，帖子未永久删除。");
+
+  const imageRows = await readPostImagesForPermanentDelete(context.adminSupabase, id);
+  if (!imageRows.ok) return fail(imageRows.message);
+
+  const storagePaths = imageRows.assets
+    .filter((asset) => asset.source_type === "storage" && asset.bucket === "post-images" && typeof asset.path === "string" && asset.path.length > 0)
+    .map((asset) => asset.path as string);
+
+  if (storagePaths.length > 0) {
+    const { error: storageError } = await context.adminSupabase.storage.from("post-images").remove(storagePaths);
+    if (storageError) {
+      const message = storageError.message || "Storage 图片删除失败。";
+      await context.adminSupabase
+        .from("posts")
+        .update({ deletion_error: message, deletion_error_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq("id", id);
+      revalidatePath("/admin/recycle-bin");
+      return fail("Storage 图片删除失败，帖子未永久删除，已标记为异常图片。");
+    }
+  }
+
+  const assetIds = imageRows.assets.map((asset) => asset.id).filter((assetId): assetId is string => Boolean(assetId));
+  const { error: postImagesError } = await context.adminSupabase.from("post_images").delete().eq("post_id", id);
+  if (postImagesError) return fail("帖子图片关联清理失败，帖子未永久删除。");
+
+  if (assetIds.length > 0) {
+    const { error: assetError } = await context.adminSupabase.from("image_assets").delete().in("id", assetIds);
+    if (assetError) return fail("图片资产记录清理失败，帖子未永久删除。");
+  }
+
+  const { error: postError } = await context.adminSupabase.from("posts").delete().eq("id", id);
+  if (postError) return fail("帖子永久删除失败，请稍后再试。");
+
+  await writeAuditLog(context, "permanently_delete_post", id, before, {
+    deleted_post_id: id,
+    deleted_image_count: assetIds.length,
+    deleted_storage_file_count: storagePaths.length,
+  });
+  revalidatePost(before.post_type, id);
+  revalidatePath("/admin/recycle-bin");
+  return ok("已永久删除。");
+}
+
+async function getSuperAdminActionContext(): Promise<SuperAdminActionContext> {
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) return { ok: false, message: "Supabase 环境变量未配置。" };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, message: "请先登录管理员账号。" };
+  if (!(await isSuperAdmin())) return { ok: false, message: "只有 super_admin 可以执行此操作。" };
+
+  try {
+    return { ok: true, supabase, adminSupabase: createSupabaseAdminClient(), userId: user.id };
+  } catch {
+    return { ok: false, message: "Supabase service role 环境变量未配置，无法执行永久删除。" };
+  }
+}
+
+async function readPostImagesForPermanentDelete(adminSupabase: ReturnType<typeof createSupabaseAdminClient>, postId: string) {
+  const { data, error } = await adminSupabase
+    .from("post_images")
+    .select("image_asset_id,image_assets(id,source_type,bucket,path)")
+    .eq("post_id", postId);
+
+  if (error) return { ok: false as const, message: "读取帖子图片失败，帖子未永久删除。" };
+
+  const rows = (data ?? []) as Array<{ image_asset_id: string | null; image_assets?: unknown }>;
+  const assets = rows
+    .map((row) => imageAssetFromRelation(row.image_assets))
+    .filter((asset): asset is Record<string, unknown> => Boolean(asset));
+
+  return { ok: true as const, assets };
+}
+
+function imageAssetFromRelation(value: unknown) {
+  if (!value) return null;
+  if (Array.isArray(value)) return (value[0] as Record<string, unknown> | undefined) ?? null;
+  return value as Record<string, unknown>;
+}
+
 function readText(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value.trim() : "";
@@ -148,6 +310,10 @@ function readText(formData: FormData, key: string) {
 
 function isPostStatus(value: string): value is PostStatus {
   return value === "draft" || value === "pending_review" || value === "published" || value === "hidden" || value === "rejected" || value === "expired" || value === "deleted";
+}
+
+function isManagedPostType(value: PostType) {
+  return value === "job" || value === "housing" || value === "marketplace" || value === "service";
 }
 
 function auditActionForStatus(status: PostStatus) {

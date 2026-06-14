@@ -315,7 +315,7 @@ export async function deleteUserNavigationLink(_state: NavigationActionState, fo
   if (!id) return fail("缺少导航链接 ID。");
   const { error, data } = await context.supabase
     .from("user_navigation_links")
-    .update({ is_active: false, updated_at: new Date().toISOString() })
+    .delete()
     .eq("id", id)
     .eq("user_id", context.userId)
     .select("id")
