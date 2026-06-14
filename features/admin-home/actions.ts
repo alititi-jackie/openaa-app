@@ -609,5 +609,6 @@ function slugKey(value: string) {
 function revalidateAdminHome() {
   revalidatePath("/");
   revalidatePath("/admin/home");
+  revalidatePath("/admin/navigation");
   revalidatePath("/admin/top-links");
 }

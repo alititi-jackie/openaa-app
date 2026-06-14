@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   ClipboardList,
   Database,
-  Home,
   LayoutGrid,
   Megaphone,
   MessageSquareText,
@@ -83,16 +82,7 @@ const adminEntryGroups: AdminEntryGroup[] = [
         description: "管理公共导航分类、链接、推荐状态、启用状态和排序。",
         href: "/admin/navigation",
         icon: <LayoutGrid size={20} aria-hidden="true" />,
-        permissionKeys: ["manage_navigation"],
-        status: "ready",
-      },
-      {
-        id: "top-links",
-        title: "顶部快捷入口",
-        description: "管理 Header 城市入口展开后的快捷导航。",
-        href: "/admin/top-links",
-        icon: <Home size={20} aria-hidden="true" />,
-        permissionKeys: ["manage_top_links"],
+        permissionKeys: ["manage_navigation", "manage_top_links"],
         status: "ready",
       },
       {
@@ -187,12 +177,6 @@ export default function AdminDashboardPage() {
           <div className="space-y-4">
             <AdminTopActions />
 
-            <AdminPageHeader title="OpenAA 管理后台" description="集中管理内容、用户、安全反馈和运营配置。已完成模块可直接进入，旧站已有但新站尚未补齐的模块会标记为待补齐。">
-              <AdminPermissionBadge allowed={superAdmin} label="super_admin" />
-              <AdminPermissionBadge allowed={accessibleReadyCount > 0} label={`可进入 ${accessibleReadyCount}/${readyEntries.length}`} />
-              <AdminPermissionBadge allowed={adminRole.is_active} label={adminRole.role} />
-            </AdminPageHeader>
-
             <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
@@ -202,6 +186,12 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
             </section>
+
+            <AdminPageHeader title="OpenAA 管理后台" description="集中管理内容、用户、安全反馈和运营配置。已完成模块可直接进入，旧站已有但新站尚未补齐的模块会标记为待补齐。">
+              <AdminPermissionBadge allowed={superAdmin} label="super_admin" />
+              <AdminPermissionBadge allowed={accessibleReadyCount > 0} label={`可进入 ${accessibleReadyCount}/${readyEntries.length}`} />
+              <AdminPermissionBadge allowed={adminRole.is_active} label={adminRole.role} />
+            </AdminPageHeader>
 
             <div className="space-y-5">
               {adminEntryGroups.map((group) => (

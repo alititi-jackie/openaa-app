@@ -46,7 +46,7 @@ export default function AdminHomePage({ searchParams }: AdminHomePageProps) {
               <AdminPermissionBadge allowed={data.permissions.manageTopLinks} label="manage_top_links" />
               <AdminPermissionBadge allowed={data.permissions.manageLatestTicker} label="manage_latest_ticker" />
               <AdminPermissionBadge allowed={data.permissions.manageAds} label="manage_ads" />
-              <Link href="/admin/top-links" className="inline-flex min-h-8 items-center rounded-full bg-blue-50 px-3 text-xs font-black text-blue-700">
+              <Link href="/admin/navigation?tab=top-links" className="inline-flex min-h-8 items-center rounded-full bg-blue-50 px-3 text-xs font-black text-blue-700">
                 管理顶部快捷导航
               </Link>
             </AdminPageHeader>
