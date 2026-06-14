@@ -95,6 +95,12 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
                     {tab.label}
                   </Link>
                 ))}
+                <Link
+                  href="/admin/image-cleanup"
+                  className="inline-flex min-h-10 items-center justify-center rounded-xl px-4 py-2 text-sm font-black text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"
+                >
+                  图片清理工具
+                </Link>
               </div>
             </nav>
 
