@@ -7,9 +7,16 @@ import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { NavigationRecycleBinList } from "@/components/navigation/NavigationRecycleBinManagement";
-import { OrphanFavoritesNotice, RecycleBinHealthSection, RecycleBinList, RecycleBinSettingsSection } from "@/components/posts/AdminRecycleBinManagement";
+import {
+  OrphanFavoritesNotice,
+  RecycleBinHealthSection,
+  RecycleBinList,
+  RecycleBinNewsHealthSection,
+  RecycleBinNewsSettingsSection,
+  RecycleBinSettingsSection,
+} from "@/components/posts/AdminRecycleBinManagement";
 import { getAdminNavigationRecycleBinData } from "@/features/navigation/queries";
-import { getRecycleBinData, type RecycleBinFilter } from "@/features/posts/adminQueries";
+import { getRecycleBinData, getRecycleBinNewsData, type RecycleBinFilter, type RecycleBinNewsFilter } from "@/features/posts/adminQueries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +47,13 @@ const postFilterTabs: Array<{ value: RecycleBinFilter; label: string }> = [
   { value: "image_error", label: "图片异常" },
 ];
 
+const newsFilterTabs: Array<{ value: RecycleBinNewsFilter; label: string }> = [
+  { value: "all", label: "全部" },
+  { value: "expired", label: "已超期" },
+  { value: "with_images", label: "带图片" },
+  { value: "image_error", label: "图片异常" },
+];
+
 type RecycleBinPageProps = {
   searchParams?: Promise<{ tab?: string; filter?: string }>;
 };
@@ -56,7 +70,9 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
         }
         const activeTab = normalizeResourceTab(params?.tab);
         const postFilter = activeTab === "post" ? normalizePostFilter(params?.filter) : "all";
-        const postData = await getRecycleBinData(activeTab === "news" ? "news" : postFilter);
+        const newsFilter = activeTab === "news" ? normalizeNewsFilter(params?.filter) : "all";
+        const postData = await getRecycleBinData(postFilter);
+        const newsData = activeTab === "news" ? await getRecycleBinNewsData(newsFilter) : null;
 
         if (!postData.superAdmin) {
           return (
@@ -136,9 +152,28 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
 
             {activeTab === "news" ? (
               <>
-                {postData.error ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">{postData.error}</div> : null}
+                <nav aria-label="新闻回收站筛选" className="max-w-full overflow-x-auto overflow-y-hidden whitespace-nowrap py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <div className="inline-flex gap-2">
+                    {newsFilterTabs.map((tab) => (
+                      <Link
+                        key={tab.value}
+                        href={tab.value === "all" ? "/admin/recycle-bin?tab=news" : `/admin/recycle-bin?tab=news&filter=${tab.value}`}
+                        className={`inline-flex min-h-9 items-center justify-center rounded-xl px-3 py-2 text-xs font-black ring-1 ${
+                          newsData?.filter === tab.value ? "bg-blue-50 text-blue-800 ring-blue-200" : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50"
+                        }`}
+                      >
+                        {tab.label}
+                      </Link>
+                    ))}
+                  </div>
+                </nav>
+
+                {newsData?.error ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">{newsData.error}</div> : null}
+                {newsData ? <RecycleBinNewsSettingsSection settings={newsData.retentionSettings} /> : null}
+                {newsData ? <RecycleBinNewsHealthSection health={newsData.health} activeFilter={newsData.filter} /> : null}
+
                 <AdminCard title="新闻" description="新闻恢复后进入 hidden 状态，不会直接发布。">
-                  <RecycleBinList items={postData.items} />
+                  <RecycleBinList items={newsData?.items ?? []} />
                 </AdminCard>
               </>
             ) : null}
@@ -174,4 +209,8 @@ function normalizePostFilter(value?: string): RecycleBinFilter {
     value === "orphan_favorites"
     ? value
     : "all";
+}
+
+function normalizeNewsFilter(value?: string): RecycleBinNewsFilter {
+  return value === "expired" || value === "with_images" || value === "image_error" ? value : "all";
 }

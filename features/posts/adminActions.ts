@@ -10,7 +10,9 @@ import {
   MAX_RECYCLE_BIN_RETENTION_DAYS,
   MIN_RECYCLE_BIN_RETENTION_DAYS,
   RECYCLE_BIN_ADMIN_RETENTION_KEY,
+  RECYCLE_BIN_NEWS_RETENTION_KEY,
   RECYCLE_BIN_USER_RETENTION_KEY,
+  getRecycleBinNewsRetentionSettings,
   getRecycleBinRetentionSettings,
 } from "./adminQueries";
 import type { PostStatus, PostType } from "./types";
@@ -307,7 +309,15 @@ async function permanentlyDeleteNews(context: Extract<SuperAdminActionContext, {
 
   if (storagePath) {
     const { error: storageError } = await context.adminSupabase.storage.from("news-cover-images").remove([storagePath]);
-    if (storageError) return fail("新闻封面图片删除失败，新闻未永久删除。");
+    if (storageError) {
+      const message = storageError.message || "新闻封面图片删除失败。";
+      await context.adminSupabase
+        .from("news_posts")
+        .update({ deletion_error: message, deletion_error_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq("id", id);
+      revalidatePath("/admin/recycle-bin");
+      return fail("新闻封面图片删除失败，新闻未永久删除，已标记为图片异常。");
+    }
   }
 
   const { error: favoriteError } = await context.adminSupabase.from("user_favorites").delete().eq("target_type", "news").eq("target_id", id);
@@ -368,6 +378,37 @@ export async function updateRecycleBinRetentionSettings(_state: AdminPostActionS
   await writeAuditLog(context, "update_recycle_bin_retention_settings", "recycle_bin_retention", before, {
     userRetentionDays,
     adminRetentionDays,
+  });
+  revalidatePath("/admin/recycle-bin");
+  return ok("删除设置已保存");
+}
+
+export async function updateRecycleBinNewsRetentionSettings(_state: AdminPostActionState, formData: FormData): Promise<AdminPostActionState> {
+  const newsRetentionDays = readPositiveInteger(formData, "news_retention_days");
+
+  if (!isValidRetentionDays(newsRetentionDays)) {
+    return fail("保存失败，请稍后再试");
+  }
+
+  const context = await getSuperAdminActionContext();
+  if (!context.ok) return fail("保存失败，请稍后再试");
+
+  const before = await getRecycleBinNewsRetentionSettings(context.adminSupabase);
+  const now = new Date().toISOString();
+  const payload = {
+    key: RECYCLE_BIN_NEWS_RETENTION_KEY,
+    value: { days: newsRetentionDays },
+    description: "回收站中新闻内容的保留天数。",
+    is_public: false,
+    updated_by: context.userId,
+    updated_at: now,
+  };
+
+  const { error } = await context.adminSupabase.from("site_settings").upsert(payload, { onConflict: "key" });
+  if (error) return fail("保存失败，请稍后再试");
+
+  await writeAuditLog(context, "update_recycle_bin_news_retention_settings", "recycle_bin_news_retention", before, {
+    newsRetentionDays,
   });
   revalidatePath("/admin/recycle-bin");
   return ok("删除设置已保存");
@@ -462,7 +503,7 @@ function revalidateNews(slug?: string | null) {
 async function readNewsPostForRecycleBin(adminSupabase: ReturnType<typeof createSupabaseAdminClient>, id: string) {
   const { data, error } = await adminSupabase
     .from("news_posts")
-    .select("id,slug,title,status,cover_image_asset_id,deleted_at,deleted_by,image_assets(id,source_type,bucket,path)")
+    .select("id,slug,title,status,cover_image_asset_id,deleted_at,deleted_by,deletion_error,deletion_error_at,image_assets(id,source_type,bucket,path)")
     .eq("id", id)
     .maybeSingle();
 

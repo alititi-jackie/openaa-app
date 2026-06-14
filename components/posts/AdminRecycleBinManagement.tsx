@@ -2,8 +2,16 @@
 
 import Link from "next/link";
 import { useActionState, useState, type ReactNode } from "react";
-import { permanentlyDeletePost, restoreDeletedPost, updateRecycleBinRetentionSettings, type AdminPostActionState } from "@/features/posts/adminActions";
-import type { RecycleBinFilter, RecycleBinHealth, RecycleBinItem, RecycleBinRetentionSettings } from "@/features/posts/adminQueries";
+import { permanentlyDeletePost, restoreDeletedPost, updateRecycleBinNewsRetentionSettings, updateRecycleBinRetentionSettings, type AdminPostActionState } from "@/features/posts/adminActions";
+import type {
+  RecycleBinFilter,
+  RecycleBinHealth,
+  RecycleBinItem,
+  RecycleBinNewsFilter,
+  RecycleBinNewsHealth,
+  RecycleBinNewsRetentionSettings,
+  RecycleBinRetentionSettings,
+} from "@/features/posts/adminQueries";
 
 const initialActionState: AdminPostActionState = { ok: true, message: "" };
 
@@ -32,6 +40,30 @@ export function RecycleBinSettingsSection({ settings }: { settings: RecycleBinRe
   );
 }
 
+export function RecycleBinNewsSettingsSection({ settings }: { settings: RecycleBinNewsRetentionSettings }) {
+  const [state, action, pending] = useActionState(updateRecycleBinNewsRetentionSettings, initialActionState);
+
+  return (
+    <CollapsibleSection title="删除设置">
+      <form action={action} className="space-y-3">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <RetentionInput label="新闻删除保留" name="news_retention_days" defaultValue={settings.newsRetentionDays} />
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="submit"
+            disabled={pending}
+            className="inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {pending ? "保存中..." : "保存设置"}
+          </button>
+          {state.message ? <p className={state.ok ? "text-sm font-semibold text-emerald-700" : "text-sm font-semibold text-red-600"}>{state.message}</p> : null}
+        </div>
+      </form>
+    </CollapsibleSection>
+  );
+}
+
 export function RecycleBinHealthSection({ health, activeFilter }: { health: RecycleBinHealth; activeFilter: RecycleBinFilter }) {
   return (
     <CollapsibleSection title="健康检查">
@@ -40,6 +72,18 @@ export function RecycleBinHealthSection({ health, activeFilter }: { health: Recy
         <HealthLink label="带图片" value={health.deletedPostsWithImagesCount} href="/admin/recycle-bin?tab=post&filter=with_images" active={activeFilter === "with_images"} />
         <HealthLink label="图片异常" value={health.possibleMissingStorageCount} href="/admin/recycle-bin?tab=post&filter=image_error" active={activeFilter === "image_error"} />
         <HealthLink label="收藏孤儿" value={health.orphanFavoriteCount} href="/admin/recycle-bin?tab=post&filter=orphan_favorites" active={activeFilter === "orphan_favorites"} />
+      </div>
+    </CollapsibleSection>
+  );
+}
+
+export function RecycleBinNewsHealthSection({ health, activeFilter }: { health: RecycleBinNewsHealth; activeFilter: RecycleBinNewsFilter }) {
+  return (
+    <CollapsibleSection title="健康检查">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+        <HealthLink label="已超期" value={health.overdueCount} href="/admin/recycle-bin?tab=news&filter=expired" active={activeFilter === "expired"} />
+        <HealthLink label="带图片" value={health.newsWithImagesCount} href="/admin/recycle-bin?tab=news&filter=with_images" active={activeFilter === "with_images"} />
+        <HealthLink label="图片异常" value={health.imageErrorCount} href="/admin/recycle-bin?tab=news&filter=image_error" active={activeFilter === "image_error"} />
       </div>
     </CollapsibleSection>
   );
