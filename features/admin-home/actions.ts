@@ -238,6 +238,38 @@ export async function setTopQuickLinkInactive(_state: AdminHomeActionState, form
   return ok("快捷入口已停用。");
 }
 
+export async function setTopQuickLinkVisibility(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
+  const context = await getAdminActionContext("manage_top_links");
+  if (!context.ok) return fail(context.message);
+
+  const id = readText(formData, "id");
+  const isActive = readText(formData, "is_active") === "true";
+  if (!id) return fail("缺少快捷导航 ID。");
+
+  const payload = { is_active: isActive, updated_at: new Date().toISOString() };
+  const { error, data } = await context.supabase.from("top_quick_links").update(payload).eq("id", id).select("id").single();
+  if (error || !data) return fail("快捷导航显示状态更新失败。");
+
+  if (!(await auditLog(context, isActive ? "enable_top_quick_link" : "disable_top_quick_link", "top_quick_links", id, payload))) return auditFailure();
+  revalidateAdminHome();
+  return ok(isActive ? "快捷导航已显示。" : "快捷导航已隐藏。");
+}
+
+export async function deleteTopQuickLink(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
+  const context = await getAdminActionContext("manage_top_links");
+  if (!context.ok) return fail(context.message);
+
+  const id = readText(formData, "id");
+  if (!id) return fail("缺少快捷导航 ID。");
+
+  const { error, data } = await context.supabase.from("top_quick_links").delete().eq("id", id).select("id,title,href").single();
+  if (error || !data) return fail("快捷导航删除失败。");
+
+  if (!(await auditLog(context, "delete_top_quick_link", "top_quick_links", id, data))) return auditFailure();
+  revalidateAdminHome();
+  return ok("快捷导航已删除。");
+}
+
 export async function upsertLatestTicker(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
   const context = await getAdminActionContext("manage_latest_ticker");
   if (!context.ok) return fail(context.message);
