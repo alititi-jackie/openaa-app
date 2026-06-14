@@ -120,6 +120,11 @@ export async function updateAdminUserNote(_state: AdminUserActionState, formData
   const context = await getAdminUserActionContext(["manage_user_status"]);
   if (!context.ok) return { ok: false, message: context.message };
 
+  const { data: canEditNotes } = await context.supabase.rpc("has_admin_permission", { p_permission_key: "edit_user_notes" });
+  if (!canEditNotes) {
+    return { ok: false, message: "当前账号没有编辑用户管理备注的后台权限。" };
+  }
+
   const { data: before, error: readError } = await context.supabase
     .from("profiles")
     .select("id,email,nickname,status,account_type,private_metadata")
