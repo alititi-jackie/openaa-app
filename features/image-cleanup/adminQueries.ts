@@ -1,5 +1,6 @@
 import "server-only";
 
+import { getImageAssetBusinessReferenceMap, type ImageAssetReferenceMap } from "@/features/image-cleanup/referenceGuards";
 import { hasAdminPermission } from "@/lib/permissions/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -96,8 +97,7 @@ export async function getAdminImageCleanupData({
   if (!permissions.viewImages && !permissions.manageImageAssets) return emptyResult("ready", permissions, normalizedPage);
   if (!supabase) return emptyResult("missing_config", permissions, normalizedPage, "Supabase 环境变量未配置，暂时无法读取图片资产。");
 
-  const postImageIds = permissions.manageImageAssets ? await getReferencedPostImageAssetIds(supabase) : new Set<string>();
-  const totals = await getImageAssetTotals(supabase, postImageIds);
+  const totals = await getImageAssetTotals(supabase);
 
   const baseQuery = () =>
     supabase
@@ -108,8 +108,7 @@ export async function getAdminImageCleanupData({
   let query = baseQuery();
   if (source !== "all") query = query.eq("source_type", source);
   if (filter === "deleted") query = query.eq("status", "deleted");
-  if (filter === "protected") query = query.neq("status", "deleted").not("entity_id", "is", null);
-  if (filter === "deletable") query = query.neq("status", "deleted").is("entity_id", null);
+  if (filter === "protected" || filter === "deletable") query = query.neq("status", "deleted");
 
   const search = q?.trim();
   if (search) {
@@ -121,15 +120,17 @@ export async function getAdminImageCleanupData({
     query = query.or(filters.join(","));
   }
 
-  if (filter === "deletable") {
+  if (filter === "deletable" || filter === "protected") {
     const { data, error } = await query.limit(5000);
     if (error) return emptyResult("error", permissions, normalizedPage, "图片资产读取失败，请稍后再试。");
 
-    const allDeletableAssets = ((data ?? []) as RawImageAsset[])
-      .map((row) => mapImageAsset(row, postImageIds))
-      .filter((asset) => asset.isProbablyUnused);
+    const rawAssets = (data ?? []) as RawImageAsset[];
+    const businessReferences = await getImageAssetBusinessReferenceMap(supabase, rawAssets);
+    const allMatchingAssets = rawAssets
+      .map((row) => mapImageAsset(row, businessReferences))
+      .filter((asset) => filter === "deletable" ? asset.isProbablyUnused : !asset.isProbablyUnused);
     const from = (normalizedPage - 1) * PAGE_SIZE;
-    const filteredAssets = allDeletableAssets.slice(from, from + PAGE_SIZE);
+    const filteredAssets = allMatchingAssets.slice(from, from + PAGE_SIZE);
 
     return {
       state: "ready",
@@ -141,8 +142,8 @@ export async function getAdminImageCleanupData({
       },
       page: normalizedPage,
       pageSize: PAGE_SIZE,
-      pageCount: Math.max(1, Math.ceil(allDeletableAssets.length / PAGE_SIZE)),
-      totalCount: allDeletableAssets.length,
+      pageCount: Math.max(1, Math.ceil(allMatchingAssets.length / PAGE_SIZE)),
+      totalCount: allMatchingAssets.length,
     };
   }
 
@@ -151,7 +152,9 @@ export async function getAdminImageCleanupData({
   const { data, error, count } = await query.range(from, to);
   if (error) return emptyResult("error", permissions, normalizedPage, "图片资产读取失败，请稍后再试。");
 
-  const assets = ((data ?? []) as RawImageAsset[]).map((row) => mapImageAsset(row, postImageIds));
+  const rawAssets = (data ?? []) as RawImageAsset[];
+  const businessReferences = await getImageAssetBusinessReferenceMap(supabase, rawAssets);
+  const assets = rawAssets.map((row) => mapImageAsset(row, businessReferences));
   const filteredAssets = assets;
   const totalCount = count ?? 0;
 
@@ -189,25 +192,21 @@ async function getImageCleanupPermissions() {
   return { viewImages, manageImageAssets, deleteImages };
 }
 
-async function getReferencedPostImageAssetIds(supabase: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>) {
-  const { data, error } = await supabase.from("post_images").select("image_asset_id").limit(5000);
-  if (error || !data) return new Set<string>();
-  return new Set(data.map((row) => String(row.image_asset_id)).filter(Boolean));
-}
-
-async function getImageAssetTotals(supabase: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>, postImageIds: Set<string>) {
-  const { data, error } = await supabase.from("image_assets").select("id,entity_id,status").limit(5000);
+async function getImageAssetTotals(supabase: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>) {
+  const { data, error } = await supabase.from("image_assets").select("id,public_url,external_url,entity_id,status").limit(5000);
   if (error || !data) return { total: 0, deletable: 0, protected: 0, deleted: 0 };
 
+  const rows = data as Array<{ id: string; public_url: string | null; external_url: string | null; entity_id: string | null; status: string }>;
+  const businessReferences = await getImageAssetBusinessReferenceMap(supabase, rows);
   let deletable = 0;
   let protectedCount = 0;
   let deleted = 0;
-  for (const row of data as Array<{ id: string; entity_id: string | null; status: string }>) {
+  for (const row of rows) {
     if (row.status === "deleted") {
       deleted += 1;
       continue;
     }
-    if (!row.entity_id && !postImageIds.has(row.id)) {
+    if (!row.entity_id && !businessReferences.has(row.id)) {
       deletable += 1;
     } else {
       protectedCount += 1;
@@ -216,16 +215,16 @@ async function getImageAssetTotals(supabase: NonNullable<Awaited<ReturnType<type
   return { total: data.length, deletable, protected: protectedCount, deleted };
 }
 
-function mapImageAsset(row: RawImageAsset, postImageIds: Set<string>): AdminImageAssetItem {
+function mapImageAsset(row: RawImageAsset, businessReferences: ImageAssetReferenceMap): AdminImageAssetItem {
   const references: string[] = [];
   const protectionReasons: string[] = [];
   if (row.entity_type && row.entity_id) {
     references.push(`${formatEntityType(row.entity_type)}：${row.entity_id}`);
     protectionReasons.push(`已绑定 ${formatEntityType(row.entity_type)} 业务记录`);
   }
-  if (postImageIds.has(row.id)) {
-    references.push("用户帖子图片");
-    protectionReasons.push("仍被用户帖子图片表引用");
+  for (const label of businessReferences.get(row.id) ?? []) {
+    references.push(label);
+    protectionReasons.push(label);
   }
   const isProbablyUnused = row.status !== "deleted" && references.length === 0;
   const cleanupRisk = !isProbablyUnused ? "protected" : row.source_type === "external" ? "low" : "medium";

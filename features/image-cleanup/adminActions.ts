@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import type { AdminHomeActionState } from "@/features/admin-home/types";
+import { getImageAssetBusinessReferenceMap } from "@/features/image-cleanup/referenceGuards";
 import { hasAdminModulePermission } from "@/lib/permissions/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -25,8 +26,8 @@ export async function markImageAssetDeleted(_state: AdminHomeActionState, formDa
   const before = await readImageAsset(context.supabase, id);
   if (!before) return fail("图片资产不存在或无权读取。");
   if (before.status === "deleted") return fail("这张图片已经标记为已删除。");
-  if (before.entity_id) return fail("这张图片仍绑定业务内容，不能在清理工具中删除。");
-  if (await isReferencedByPostImage(context.supabase, id)) return fail("这张图片仍被帖子图片引用，不能在清理工具中删除。");
+  if (before.entity_id) return fail("该图片仍被使用，不能清理。");
+  if (await isImageAssetStillReferenced(context.supabase, before)) return fail("该图片仍被使用，不能清理。");
 
   const payload = {
     status: "deleted",
@@ -96,10 +97,10 @@ async function readImageAsset(supabase: SupabaseServerClient, id: string) {
   };
 }
 
-async function isReferencedByPostImage(supabase: SupabaseServerClient, id: string) {
-  const { data, error } = await supabase.from("post_images").select("id").eq("image_asset_id", id).limit(1);
-  if (error) return true;
-  return Boolean(data && data.length > 0);
+async function isImageAssetStillReferenced(supabase: SupabaseServerClient, asset: Awaited<ReturnType<typeof readImageAsset>>) {
+  if (!asset) return true;
+  const references = await getImageAssetBusinessReferenceMap(supabase, [asset]);
+  return references.has(asset.id);
 }
 
 async function writeAuditLog(
