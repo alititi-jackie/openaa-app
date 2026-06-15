@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { hasAdminModulePermission } from "@/lib/permissions/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { DEFAULT_NEWS_CATEGORIES } from "./constants";
 import { validateNewsCategoryForm, validateNewsForm } from "./validators";
@@ -31,15 +32,14 @@ async function getAdminActionContext(permissionKey: string): Promise<AdminAction
 
   if (!user) return { ok: false, message: "请先登录管理员账号。" };
 
-  const { data: allowed, error } = await supabase.rpc("has_admin_permission", { p_permission_key: permissionKey });
-  if (error || !allowed) return { ok: false, message: "当前账号没有执行此操作的后台权限。" };
+  if (!(await hasAdminModulePermission("news", permissionKey))) return { ok: false, message: "当前账号没有新闻管理模块权限。" };
 
   return { ok: true, supabase, userId: user.id };
 }
 
 async function hasPermission(supabase: SupabaseServerClient, permissionKey: string) {
-  const { data } = await supabase.rpc("has_admin_permission", { p_permission_key: permissionKey });
-  return Boolean(data);
+  void supabase;
+  return hasAdminModulePermission("news", permissionKey);
 }
 
 async function auditLog(

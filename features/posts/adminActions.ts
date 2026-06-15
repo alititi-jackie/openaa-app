@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { isSuperAdmin } from "@/lib/permissions/admin";
+import { hasAdminModule, hasAnyAdminModulePermission, isSuperAdmin } from "@/lib/permissions/admin";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAdminPostOperationConfig } from "./adminOperations";
@@ -44,6 +44,15 @@ type SuperAdminActionContext =
       userId: string;
     };
 
+type RecycleBinActionContext =
+  | { ok: false; message: string }
+  | {
+      ok: true;
+      supabase: SupabaseServerClient;
+      adminSupabase: ReturnType<typeof createSupabaseAdminClient>;
+      userId: string;
+    };
+
 const ok = (message: string): AdminPostActionState => ({ ok: true, message });
 const fail = (message: string): AdminPostActionState => ({ ok: false, message });
 
@@ -67,10 +76,7 @@ async function getAdminActionContext(permissionKeys: string[]): Promise<AdminAct
 
   if (!user) return { ok: false, message: "请先登录管理员账号。" };
 
-  for (const permissionKey of permissionKeys) {
-    const { data: allowed } = await supabase.rpc("has_admin_permission", { p_permission_key: permissionKey });
-    if (allowed) return { ok: true, supabase, userId: user.id };
-  }
+  if (await hasAnyAdminModulePermission("user-posts", permissionKeys)) return { ok: true, supabase, userId: user.id };
 
   return { ok: false, message: "当前账号没有执行此操作的后台权限。" };
 }
@@ -466,7 +472,7 @@ export async function restoreDeletedPost(_state: AdminPostActionState, formData:
   const resourceType = readText(formData, "resource_type") || readText(formData, "content_type");
   if (!id) return fail("操作参数无效。");
 
-  const context = await getSuperAdminActionContext();
+  const context = await getRecycleBinActionContext();
   if (!context.ok) return fail(context.message);
 
   if (resourceType === "news") return restoreDeletedNews(context, id);
@@ -736,6 +742,23 @@ async function getSuperAdminActionContext(): Promise<SuperAdminActionContext> {
     return { ok: true, supabase, adminSupabase: createSupabaseAdminClient(), userId: user.id };
   } catch {
     return { ok: false, message: "Supabase service role 环境变量未配置，无法执行永久删除。" };
+  }
+}
+
+async function getRecycleBinActionContext(): Promise<RecycleBinActionContext> {
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) return { ok: false, message: "Supabase 环境变量未配置。" };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, message: "请先登录管理员账号。" };
+  if (!(await hasAdminModule("recycle-bin"))) return { ok: false, message: "当前账号没有回收站模块权限。" };
+
+  try {
+    return { ok: true, supabase, adminSupabase: createSupabaseAdminClient(), userId: user.id };
+  } catch {
+    return { ok: false, message: "Supabase service role 环境变量未配置，无法执行回收站操作。" };
   }
 }
 

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { hasAdminPermission } from "@/lib/permissions/admin";
+import { hasAnyAdminModulePermission } from "@/lib/permissions/admin";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { PostType } from "@/features/posts/types";
@@ -87,13 +87,11 @@ async function getAdminReportActionContext(permissionKeys: string[]): Promise<Ad
 
   if (!user) return { ok: false, message: "请先登录管理员账号。" };
 
-  for (const permissionKey of permissionKeys) {
-    if (await hasAdminPermission(permissionKey)) {
-      try {
-        return { ok: true, userId: user.id, supabase: createSupabaseAdminClient() };
-      } catch {
-        return { ok: false, message: "Supabase service role 环境变量尚未配置，暂时无法处理举报。" };
-      }
+  if (await hasAnyAdminModulePermission("messages", permissionKeys)) {
+    try {
+      return { ok: true, userId: user.id, supabase: createSupabaseAdminClient() };
+    } catch {
+      return { ok: false, message: "Supabase service role 环境变量尚未配置，暂时无法处理举报。" };
     }
   }
 

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import type { AdminHomeActionState } from "@/features/admin-home/types";
+import { hasAdminModulePermission } from "@/lib/permissions/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { DAILY_POST_LIMIT_KEY, normalizeDailyPostLimit } from "./adminQueries";
 import {
@@ -131,10 +132,9 @@ async function getAdminSettingsActionContext(): Promise<AdminSettingsActionConte
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, message: "请先登录管理员账号。" };
 
-  const { data: allowed, error } = await supabase.rpc("has_admin_permission", {
-    p_permission_key: "manage_settings",
-  });
-  if (error || !allowed) return { ok: false, message: "当前账号没有 manage_settings 权限。" };
+  if (!(await hasAdminModulePermission("settings", "manage_settings"))) {
+    return { ok: false, message: "当前账号没有站点设置模块权限。" };
+  }
 
   return { ok: true, supabase, userId: user.id };
 }

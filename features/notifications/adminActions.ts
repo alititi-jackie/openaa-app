@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { hasAdminPermission, isSuperAdmin } from "@/lib/permissions/admin";
+import { hasAdminModulePermission, isSuperAdmin } from "@/lib/permissions/admin";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
@@ -189,7 +189,7 @@ async function getAdminNotificationActionContext(): Promise<AdminNotificationAct
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, message: "请先登录管理员账号。" };
 
-  if (!(await hasAdminPermission("manage_notifications"))) {
+  if (!(await hasAdminModulePermission("messages", "manage_notifications"))) {
     return { ok: false, message: "当前账号没有 manage_notifications 权限。" };
   }
 

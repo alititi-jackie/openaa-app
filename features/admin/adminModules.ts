@@ -112,7 +112,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     groupTitle: "内容管理",
     groupDescription: "管理前台展示内容、用户发布内容和首页运营模块。",
     icon: Database,
-    permissionKeys: ["manage_home_sections", "manage_latest_ticker", "manage_ads"],
+    permissionKeys: ["manage_home_sections", "manage_latest_ticker"],
   },
   {
     key: "users",

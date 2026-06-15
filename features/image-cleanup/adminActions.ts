@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import type { AdminHomeActionState } from "@/features/admin-home/types";
+import { hasAdminModulePermission } from "@/lib/permissions/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
@@ -61,8 +62,7 @@ async function getImageCleanupActionContext(): Promise<ImageCleanupActionContext
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, message: "请先登录管理员账号。" };
 
-  const { data: canManage, error } = await supabase.rpc("has_admin_permission", { p_permission_key: "manage_image_assets" });
-  if (error || !canManage) {
+  if (!(await hasAdminModulePermission("recycle-bin", "manage_image_assets"))) {
     return { ok: false, message: "当前账号没有 manage_image_assets 权限。" };
   }
 

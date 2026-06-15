@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { hasAdminModulePermission } from "@/lib/permissions/admin";
 import type { AdminHomeActionState } from "@/features/admin-home/types";
 
 type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
@@ -141,8 +142,9 @@ async function getAdminActionContext(): Promise<AdminActionContext> {
 
   if (!user) return { ok: false, message: "请先登录管理员账号。" };
 
-  const { data: allowed } = await supabase.rpc("has_admin_permission", { p_permission_key: "manage_ads" });
-  if (!allowed) return { ok: false, message: "当前账号没有 manage_ads 权限。" };
+  if (!(await hasAdminModulePermission("ads", "manage_ads"))) {
+    return { ok: false, message: "当前账号没有广告管理模块权限。" };
+  }
 
   return { ok: true, supabase, userId: user.id };
 }

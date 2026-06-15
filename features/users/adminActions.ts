@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { hasAnyAdminModulePermission, hasAdminModulePermission } from "@/lib/permissions/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { ProfileStatus } from "@/lib/supabase/types";
 
@@ -43,10 +44,7 @@ async function getAdminUserActionContext(permissionKeys: string[]): Promise<Admi
 
   if (!user) return { ok: false, message: "请先登录管理员账号。" };
 
-  for (const permissionKey of permissionKeys) {
-    const { data: allowed } = await supabase.rpc("has_admin_permission", { p_permission_key: permissionKey });
-    if (allowed) return { ok: true, supabase, userId: user.id };
-  }
+  if (await hasAnyAdminModulePermission("users", permissionKeys)) return { ok: true, supabase, userId: user.id };
 
   return { ok: false, message: "当前账号没有执行此操作的后台权限。" };
 }
@@ -120,8 +118,7 @@ export async function updateAdminUserNote(_state: AdminUserActionState, formData
   const context = await getAdminUserActionContext(["manage_user_status"]);
   if (!context.ok) return { ok: false, message: context.message };
 
-  const { data: canEditNotes } = await context.supabase.rpc("has_admin_permission", { p_permission_key: "edit_user_notes" });
-  if (!canEditNotes) {
+  if (!(await hasAdminModulePermission("users", "edit_user_notes"))) {
     return { ok: false, message: "当前账号没有编辑用户管理备注的后台权限。" };
   }
 

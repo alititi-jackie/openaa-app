@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { isSuperAdmin } from "@/lib/permissions/admin";
+import { hasAdminModule, hasAdminModulePermission, isSuperAdmin } from "@/lib/permissions/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { DEFAULT_NAVIGATION_CATEGORIES } from "./constants";
 import { validateNavigationCategoryForm, validateNavigationLinkForm, validateUserNavigationLinkForm } from "./validators";
@@ -41,8 +41,9 @@ async function getAdminActionContext(): Promise<AdminActionContext> {
 
   if (!user) return { ok: false, message: "请先登录管理员账号。" };
 
-  const { data: allowed, error } = await supabase.rpc("has_admin_permission", { p_permission_key: "manage_navigation" });
-  if (error || !allowed) return { ok: false, message: "当前账号没有 manage_navigation 权限。" };
+  if (!(await hasAdminModulePermission("navigation", "manage_navigation"))) {
+    return { ok: false, message: "当前账号没有导航管理模块权限。" };
+  }
 
   return { ok: true, supabase, userId: user.id };
 }
@@ -57,6 +58,20 @@ async function getSuperAdminNavigationActionContext(): Promise<SuperAdminNavigat
 
   if (!user) return { ok: false, message: "请先登录管理员账号。" };
   if (!(await isSuperAdmin())) return { ok: false, message: "只有超级管理员可以执行此操作。" };
+
+  return { ok: true, supabase, userId: user.id };
+}
+
+async function getRecycleBinNavigationActionContext(): Promise<AdminActionContext> {
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) return { ok: false, message: "Supabase 环境变量未配置，暂时无法管理公共导航内容。" };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { ok: false, message: "请先登录管理员账号。" };
+  if (!(await hasAdminModule("recycle-bin"))) return { ok: false, message: "当前账号没有回收站模块权限。" };
 
   return { ok: true, supabase, userId: user.id };
 }
@@ -298,7 +313,7 @@ export async function deleteNavigationLink(_state: NavigationActionState, formDa
 }
 
 export async function restoreNavigationLink(_state: NavigationActionState, formData: FormData): Promise<NavigationActionState> {
-  const context = await getSuperAdminNavigationActionContext();
+  const context = await getRecycleBinNavigationActionContext();
   if (!context.ok) return fail(context.message);
 
   const id = readText(formData, "id");

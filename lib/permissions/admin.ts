@@ -113,6 +113,28 @@ export async function hasAdminModule(moduleKey: string) {
   return Boolean(data);
 }
 
+export async function hasAdminModulePermission(moduleKey: string, permissionKey: string) {
+  if (!(await hasAdminModule(moduleKey))) {
+    return false;
+  }
+
+  return hasAdminPermission(permissionKey);
+}
+
+export async function hasAnyAdminModulePermission(moduleKey: string, permissionKeys: string[]) {
+  if (!(await hasAdminModule(moduleKey))) {
+    return false;
+  }
+
+  for (const permissionKey of permissionKeys) {
+    if (await hasAdminPermission(permissionKey)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 export async function requireAdminModule(moduleKey: string): Promise<AdminCheckResult> {
   const admin = await requireAdmin();
 

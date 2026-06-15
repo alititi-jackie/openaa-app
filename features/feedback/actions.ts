@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { hasAdminPermission } from "@/lib/permissions/admin";
+import { hasAdminModulePermission } from "@/lib/permissions/admin";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isFeedbackStatus, type FeedbackStatus } from "./types";
@@ -160,7 +160,7 @@ async function getAdminFeedbackActionContext(): Promise<AdminFeedbackActionConte
   } = await serverClient.auth.getUser();
   if (!user) return { ok: false, message: "请先登录管理员账号。" };
 
-  if (!(await hasAdminPermission("handle_feedback"))) {
+  if (!(await hasAdminModulePermission("messages", "handle_feedback"))) {
     return { ok: false, message: "当前账号没有处理反馈的后台权限。" };
   }
 
