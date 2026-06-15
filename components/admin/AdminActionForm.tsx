@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import type { AdminHomeActionState } from "@/features/admin-home/types";
 
 const initialState: AdminHomeActionState = { ok: true, message: "" };
@@ -12,19 +12,32 @@ export function AdminActionForm({
   submitLabel = "保存",
   className = "space-y-3",
   submitClassName = "inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60",
+  footerClassName = "flex flex-wrap items-center gap-3",
+  footerStart,
+  onSuccess,
 }: {
   action: (state: AdminHomeActionState, formData: FormData) => Promise<AdminHomeActionState>;
   children: ReactNode;
   submitLabel?: string;
   className?: string;
   submitClassName?: string;
+  footerClassName?: string;
+  footerStart?: ReactNode;
+  onSuccess?: () => void;
 }) {
   const [state, formAction, pending] = useActionState(action, initialState);
+
+  useEffect(() => {
+    if (state.ok && state.message) {
+      onSuccess?.();
+    }
+  }, [onSuccess, state]);
 
   return (
     <form action={formAction} encType="multipart/form-data" className={className}>
       {children}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className={footerClassName}>
+        {footerStart}
         <button
           type="submit"
           disabled={pending}

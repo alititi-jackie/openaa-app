@@ -6,8 +6,9 @@ import { ChevronDown, ChevronUp, ShieldCheck, ShieldX } from "lucide-react";
 import { AdminActionForm, AdminTextInput } from "@/components/admin/AdminActionForm";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { AdminAdminManageDialog } from "@/components/admins/AdminAdminManageDialog";
+import { ADMIN_MODULES } from "@/features/admin/adminModules";
 import { grantAdminRole } from "@/features/admins/adminActions";
-import { adminRoleLabels, adminRoleOptions } from "@/features/admins/adminRoleConfig";
+import { adminExemptionOptions, adminRoleLabels, adminRoleOptions } from "@/features/admins/adminRoleConfig";
 import type { AdminCandidate, AdminRoleListItem, AdminsData, AdminsPermissions } from "@/features/admins/adminQueries";
 import type { AdminRoleName } from "@/lib/supabase/types";
 
@@ -165,11 +166,49 @@ export function AdminRolesList({ admins, permissions }: { admins: AdminRoleListI
               <p className="mt-1 break-all text-sm text-slate-600">{admin.email || "未绑定邮箱"}</p>
               <p className="mt-1 break-all font-mono text-xs text-slate-400">{admin.userId}</p>
               <p className="mt-2 text-xs font-semibold text-slate-500">授权：{formatDateTime(admin.grantedAt)} · 最近后台登录：{formatDateTime(admin.lastAdminLoginAt)}</p>
+              <AdminGrantSummary admin={admin} />
             </div>
             <AdminAdminManageDialog admin={admin} permissions={permissions} />
           </div>
         </article>
       ))}
+    </div>
+  );
+}
+
+function AdminGrantSummary({ admin }: { admin: AdminRoleListItem }) {
+  const moduleLabels = admin.role === "super_admin"
+    ? ["全部后台功能"]
+    : ADMIN_MODULES.filter((module) => admin.moduleKeys.includes(module.key)).map((module) => module.title);
+  const exemptionLabels = adminExemptionOptions
+    .filter((option) => admin.exemptionKeys.includes(option.key))
+    .map((option) => option.label);
+
+  return (
+    <div className="mt-3 border-t border-slate-200 pt-3">
+      <SummaryRow label="功能授权" emptyLabel="暂无功能授权" items={moduleLabels} />
+      {exemptionLabels.length > 0 ? <SummaryRow label="限制豁免" items={exemptionLabels} /> : null}
+    </div>
+  );
+}
+
+function SummaryRow({ label, items, emptyLabel }: { label: string; items: string[]; emptyLabel?: string }) {
+  return (
+    <div className="mt-2 grid gap-1.5">
+      <p className="text-xs font-black text-slate-500">{label}</p>
+      <div className="flex flex-wrap gap-1.5">
+        {items.length > 0 ? (
+          items.map((item) => (
+            <span key={item} className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-600 ring-1 ring-slate-200">
+              {item}
+            </span>
+          ))
+        ) : (
+          <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-400 ring-1 ring-slate-200">
+            {emptyLabel ?? "暂无"}
+          </span>
+        )}
+      </div>
     </div>
   );
 }

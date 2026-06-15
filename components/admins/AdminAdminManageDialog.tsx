@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { AdminActionButton } from "@/components/admin/AdminActionButton";
 import { AdminActionForm, AdminTextInput } from "@/components/admin/AdminActionForm";
@@ -18,23 +19,25 @@ import type { AdminRoleListItem, AdminsPermissions } from "@/features/admins/adm
 import type { AdminRoleName } from "@/lib/supabase/types";
 
 export function AdminAdminManageDialog({ admin, permissions }: { admin: AdminRoleListItem; permissions: AdminsPermissions }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<AdminRoleName>(admin.role);
   const [selectedModules, setSelectedModules] = useState<AdminModuleKey[]>(admin.moduleKeys);
   const [selectedExemptions, setSelectedExemptions] = useState<AdminExemptionKey[]>(admin.exemptionKeys);
-  const dialogRef = useRef<HTMLDialogElement>(null);
   const canUpdate = permissions.editAdminRoles || permissions.manageAdmins || permissions.superAdmin;
   const canDisable = permissions.disableAdmins || permissions.manageAdmins || permissions.superAdmin;
   const canRestore = permissions.restoreAdmins || permissions.manageAdmins || permissions.superAdmin;
   const superAdminLocked = admin.role === "super_admin" && !permissions.superAdmin;
   const selfLocked = admin.isCurrentUser;
 
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (open && !dialog.open) dialog.showModal();
-    if (!open && dialog.open) dialog.close();
-  }, [open]);
+  const closeDialog = useCallback(() => {
+    setOpen(false);
+  }, []);
+
+  const closeAfterSuccess = useCallback(() => {
+    setOpen(false);
+    router.refresh();
+  }, [router]);
 
   function openDialog() {
     setSelectedRole(admin.role);
@@ -64,19 +67,25 @@ export function AdminAdminManageDialog({ admin, permissions }: { admin: AdminRol
       </AdminActionButton>
 
       {open ? (
-        <dialog ref={dialogRef} onClose={() => setOpen(false)} className="w-[min(92vw,720px)] rounded-2xl p-0 shadow-2xl backdrop:bg-slate-950/40">
-          <div className="max-h-[86vh] overflow-y-auto bg-white p-5">
-            <div className="flex items-start justify-between gap-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-3 py-6 backdrop-blur-sm" role="presentation">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-label="管理员权限管理"
+            className="flex max-h-[85vh] w-full max-w-[760px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-3 border-b border-slate-100 p-5">
               <div className="min-w-0">
                 <p className="text-xs font-black uppercase tracking-wide text-blue-600">管理员管理</p>
                 <h2 className="mt-1 truncate text-lg font-black text-slate-950">{admin.nickname || admin.email || "未命名管理员"}</h2>
                 <p className="mt-1 break-all text-xs font-mono text-slate-400">{admin.userId}</p>
               </div>
-              <button type="button" onClick={() => setOpen(false)} className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 hover:bg-slate-50" aria-label="关闭">
+              <button type="button" onClick={closeDialog} className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 hover:bg-slate-50" aria-label="关闭">
                 <X size={16} aria-hidden="true" />
               </button>
             </div>
 
+          <div className="overflow-y-auto p-5">
           <div className="mt-4 grid gap-2 rounded-xl bg-slate-50 p-3 text-sm text-slate-600 sm:grid-cols-2">
             <Info label="当前状态" value={admin.isActive ? "启用" : "停用"} />
             <Info label="当前角色" value={formatRoleLabel(admin.role)} />
@@ -103,7 +112,14 @@ export function AdminAdminManageDialog({ admin, permissions }: { admin: AdminRol
               <h3 className="text-sm font-black text-slate-950">权限调整</h3>
               <p className="mt-1 text-xs font-semibold text-slate-500">保存后会写入审计日志，并以实际功能授权为准。</p>
               {canUpdate && !superAdminLocked && !selfLocked ? (
-                <AdminActionForm action={updateAdminRole} submitLabel="确认调整权限" className="mt-3 grid gap-4">
+                <AdminActionForm
+                  action={updateAdminRole}
+                  submitLabel="确认调整权限"
+                  className="mt-3 grid gap-4"
+                  footerClassName="sticky bottom-0 -mx-3 -mb-3 flex flex-col gap-2 border-t border-slate-100 bg-white/95 p-3 backdrop-blur sm:flex-row sm:justify-end"
+                  footerStart={<CancelButton onClick={closeDialog} />}
+                  onSuccess={closeAfterSuccess}
+                >
                   <input type="hidden" name="role_id" value={admin.id} />
                   <section className="rounded-xl bg-slate-50 p-3">
                     <RoleSelect name="role" value={selectedRole} allowSuperAdmin={permissions.superAdmin} onChange={onRoleChange} />
@@ -192,13 +208,28 @@ export function AdminAdminManageDialog({ admin, permissions }: { admin: AdminRol
               ) : superAdminLocked ? (
                 <DisabledReason reason="只有 super_admin 可以停用或恢复 super_admin" />
               ) : admin.isActive && canDisable ? (
-                <AdminActionForm action={setAdminRoleActive} submitLabel="确认停用" className="mt-3 grid gap-2">
+                <AdminActionForm
+                  action={setAdminRoleActive}
+                  submitLabel="确认停用"
+                  className="mt-3 grid gap-2"
+                  submitClassName="inline-flex min-h-10 items-center justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
+                  footerClassName="flex flex-col gap-2 sm:flex-row sm:justify-end"
+                  footerStart={<CancelButton onClick={closeDialog} />}
+                  onSuccess={closeAfterSuccess}
+                >
                   <input type="hidden" name="role_id" value={admin.id} />
                   <input type="hidden" name="active" value="false" />
                   <ConfirmInput />
                 </AdminActionForm>
               ) : !admin.isActive && canRestore ? (
-                <AdminActionForm action={setAdminRoleActive} submitLabel="确认恢复" className="mt-3 grid gap-2">
+                <AdminActionForm
+                  action={setAdminRoleActive}
+                  submitLabel="确认恢复"
+                  className="mt-3 grid gap-2"
+                  footerClassName="flex flex-col gap-2 sm:flex-row sm:justify-end"
+                  footerStart={<CancelButton onClick={closeDialog} />}
+                  onSuccess={closeAfterSuccess}
+                >
                   <input type="hidden" name="role_id" value={admin.id} />
                   <input type="hidden" name="active" value="true" />
                   <ConfirmInput />
@@ -209,9 +240,22 @@ export function AdminAdminManageDialog({ admin, permissions }: { admin: AdminRol
             </section>
           </div>
           </div>
-        </dialog>
+          </section>
+        </div>
       ) : null}
     </>
+  );
+}
+
+function CancelButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-600 hover:bg-slate-50"
+    >
+      取消
+    </button>
   );
 }
 
