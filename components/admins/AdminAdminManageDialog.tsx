@@ -197,7 +197,7 @@ export function AdminAdminManageDialog({ admin, permissions }: { admin: AdminRol
                   <ConfirmInput />
                 </AdminActionForm>
               ) : (
-                <DisabledReason reason={selfLocked ? "不能修改自己的管理员权限" : superAdminLocked ? "只有超级管理员可以修改超级管理员" : "没有 edit_admin_roles 或 manage_admins 权限"} />
+                <DisabledReason reason={selfLocked ? "不能修改自己的管理员权限" : superAdminLocked ? "只有超级管理员可以修改超级管理员" : "当前账号不能修改管理员权限"} />
               )}
             </section>
 
@@ -236,7 +236,7 @@ export function AdminAdminManageDialog({ admin, permissions }: { admin: AdminRol
                   <ConfirmInput />
                 </AdminActionForm>
               ) : (
-                <DisabledReason reason={admin.isActive ? "没有 disable_admins 或 manage_admins 权限" : "没有 restore_admins 或 manage_admins 权限"} />
+                <DisabledReason reason={admin.isActive ? "当前账号不能停用管理员" : "当前账号不能恢复管理员"} />
               )}
             </section>
           </div>

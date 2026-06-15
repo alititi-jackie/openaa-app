@@ -6,7 +6,6 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import {
   AdminCandidates,
   AdminRolePagination,
-  AdminRolePermissionBadges,
   AdminRoleSearch,
   AdminRoleStats,
   AdminRolesList,
@@ -43,18 +42,14 @@ export default function AdminAdminsPage({ searchParams }: AdminAdminsPageProps) 
 
         if (!canView) {
           return (
-            <AdminPageHeader title="管理员授权" description="管理员授权页面仅允许超级管理员进入。">
-              <AdminRolePermissionBadges permissions={data.permissions} />
-            </AdminPageHeader>
+            <AdminPageHeader title="管理员授权" description="管理员授权页面仅允许超级管理员进入。" />
           );
         }
 
         return (
           <div className="space-y-4">
             <AdminTopActions />
-            <AdminPageHeader title="管理员授权" description="先搜索真实用户，确认 user id 后再授权后台角色。所有授权、改角色、停用和恢复都需要二次确认。">
-              <AdminRolePermissionBadges permissions={data.permissions} />
-            </AdminPageHeader>
+            <AdminPageHeader title="管理员授权" description="先搜索真实用户，确认 user id 后再授权后台角色。所有授权、改角色、停用和恢复都需要二次确认。" />
 
             {data.state === "error" || data.state === "missing_config" ? (
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
@@ -77,7 +72,7 @@ export default function AdminAdminsPage({ searchParams }: AdminAdminsPageProps) 
               <AdminCandidates candidates={data.candidates} permissions={data.permissions} />
             </AdminCard>
 
-            <AdminCard title="管理员列表" description="支持改角色、停用和恢复。不能停用或降级最后一个启用的超级管理员。">
+            <AdminCard title="其他管理员列表" description="支持改角色、停用和恢复。当前账号在上方单独展示，不在此列表中出现。不能停用或降级最后一个启用的超级管理员。">
               <AdminRolesList admins={data.admins} permissions={data.permissions} />
               <AdminRolePagination page={data.page} pageCount={data.pageCount} totalCount={data.totalCount} q={params?.q} role={params?.role} status={params?.status} />
             </AdminCard>

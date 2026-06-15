@@ -49,6 +49,7 @@ export type AdminsData = {
   state: "ready" | "missing_config" | "error";
   error?: string;
   currentRole: AdminRoleName | null;
+  currentAdmin: AdminRoleListItem | null;
   permissions: AdminsPermissions;
   admins: AdminRoleListItem[];
   candidates: AdminCandidate[];
@@ -101,6 +102,7 @@ export async function getAdminsData({
     .select("id,user_id,role,is_active,note,granted_at,revoked_at,last_admin_login_at", { count: "exact" })
     .order("granted_at", { ascending: false });
 
+  if (currentRole?.user_id) query = query.neq("user_id", currentRole.user_id);
   if (role && role !== "all") query = query.eq("role", role);
   if (status === "active") query = query.eq("is_active", true);
   if (status === "inactive") query = query.eq("is_active", false);
@@ -111,13 +113,16 @@ export async function getAdminsData({
   if (error) return emptyResult("error", permissions, currentRole?.role ?? null, normalizedPage, "管理员列表读取失败，请稍后再试。");
 
   const rows = (data ?? []) as RawAdminRole[];
-  const profileMap = await fetchProfileMap(supabase, rows.map((item) => item.user_id));
-  const userIds = rows.map((item) => item.user_id);
+  const currentRoleRow = currentRole ? { ...currentRole, revoked_at: null } : null;
+  const allRows = currentRoleRow ? [...rows, currentRoleRow] : rows;
+  const profileMap = await fetchProfileMap(supabase, allRows.map((item) => item.user_id));
+  const userIds = allRows.map((item) => item.user_id);
   const [moduleMap, exemptionMap] = await Promise.all([
     fetchAdminModuleMap(supabase, userIds),
     fetchAdminExemptionMap(supabase, userIds),
   ]);
   const admins = rows.map((item) => mapAdminRole(item, profileMap.get(item.user_id), currentRole?.user_id ?? null, moduleMap, exemptionMap));
+  const currentAdmin = currentRoleRow ? mapAdminRole(currentRoleRow, profileMap.get(currentRoleRow.user_id), currentRoleRow.user_id, moduleMap, exemptionMap) : null;
   const search = q?.trim();
   const filteredAdmins = search ? filterAdmins(admins, search) : admins;
   const candidates = search && search.length >= 2 ? await searchCandidates(supabase, search, rows) : [];
@@ -126,6 +131,7 @@ export async function getAdminsData({
   return {
     state: "ready",
     currentRole: currentRole?.role ?? null,
+    currentAdmin,
     permissions,
     admins: filteredAdmins,
     candidates,
@@ -259,6 +265,7 @@ function emptyResult(state: AdminsData["state"], permissions: AdminsPermissions,
     state,
     error,
     currentRole,
+    currentAdmin: null,
     permissions,
     admins: [],
     candidates: [],
