@@ -11,7 +11,7 @@ import type { NavigationLink } from "@/features/navigation/types";
 import { RecycleBinRestoreNotifyForm } from "@/components/posts/RecycleBinRestoreNotifyForm";
 import { permanentlyDeletePost, restoreDeletedPost } from "@/features/posts/adminActions";
 import { getRecycleBinPostDetail, type RecycleBinPostDetail } from "@/features/posts/adminQueries";
-import { isSuperAdmin } from "@/lib/permissions/admin";
+import { hasAdminModule, isSuperAdmin } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
@@ -32,13 +32,14 @@ export default function AdminRecycleBinDetailPage({ params }: { params: Promise<
         const { type, id } = await params;
         const resourceType = normalizeResourceType(type);
         const superAdmin = await isSuperAdmin();
+        const canReadRecycleBin = await hasAdminModule("recycle-bin");
 
-        if (!superAdmin) {
+        if (!canReadRecycleBin) {
           return (
             <div className="space-y-4">
               <AdminTopActions />
-              <AdminPageHeader title="回收站详情" description="只有超级管理员可以访问回收站">
-                <AdminPermissionBadge allowed={false} label="super_admin" />
+              <AdminPageHeader title="回收站详情" description="当前管理员没有回收站模块权限。">
+                <AdminPermissionBadge allowed={false} label="recycle-bin" />
               </AdminPageHeader>
             </div>
           );
@@ -51,7 +52,7 @@ export default function AdminRecycleBinDetailPage({ params }: { params: Promise<
         if (resourceType === "navigation") {
           const data = await getDeletedNavigationLinkDetail(id);
           if (!data.link) return <MissingDetail message={data.error ?? "该公共导航不存在，或当前不在回收站中。"} returnHref="/admin/recycle-bin?tab=navigation" />;
-          return <NavigationRecycleBinDetail link={data.link} />;
+          return <NavigationRecycleBinDetail link={data.link} superAdmin={superAdmin} />;
         }
 
         const data = await getRecycleBinPostDetail(id);
@@ -59,7 +60,7 @@ export default function AdminRecycleBinDetailPage({ params }: { params: Promise<
           return <MissingDetail message={data.error ?? "该内容不存在，或当前不在对应回收站中。"} returnHref={`/admin/recycle-bin?tab=${resourceType}`} />;
         }
 
-        return <ContentRecycleBinDetail item={data.post} resourceType={resourceType} />;
+        return <ContentRecycleBinDetail item={data.post} resourceType={resourceType} superAdmin={superAdmin} />;
       }}
     </AdminAuthGate>
   );
@@ -81,7 +82,7 @@ function MissingDetail({ message, returnHref }: { message: string; returnHref: s
   );
 }
 
-function ContentRecycleBinDetail({ item, resourceType }: { item: RecycleBinPostDetail; resourceType: "post" | "news" }) {
+function ContentRecycleBinDetail({ item, resourceType, superAdmin }: { item: RecycleBinPostDetail; resourceType: "post" | "news"; superAdmin: boolean }) {
   const returnHref = `/admin/recycle-bin?tab=${resourceType}`;
 
   return (
@@ -89,7 +90,8 @@ function ContentRecycleBinDetail({ item, resourceType }: { item: RecycleBinPostD
       <DetailNavigation returnHref={returnHref} />
 
       <AdminPageHeader title={item.title} description="后台专用回收站查看页，可查看已删除内容。">
-        <AdminPermissionBadge allowed label="super_admin" />
+        <AdminPermissionBadge allowed label="recycle-bin" />
+        <AdminPermissionBadge allowed={superAdmin} label="super_admin" />
       </AdminPageHeader>
 
       <AdminCard title="删除信息">
@@ -140,34 +142,39 @@ function ContentRecycleBinDetail({ item, resourceType }: { item: RecycleBinPostD
 
       <AdminCard title="操作">
         <div className="flex flex-wrap items-start gap-3">
-          {resourceType === "post" ? (
+          {superAdmin && resourceType === "post" ? (
             <RecycleBinRestoreNotifyForm id={item.id} resourceType={resourceType} title={item.title} />
-          ) : (
+          ) : superAdmin ? (
             <AdminActionForm action={restoreDeletedPost} submitLabel="恢复" className="contents" submitClassName="inline-flex min-h-10 items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60">
               <input type="hidden" name="id" value={item.id} />
               <input type="hidden" name="resource_type" value={resourceType} />
               <input type="hidden" name="content_type" value={resourceType} />
             </AdminActionForm>
+          ) : null}
+          {superAdmin ? (
+            <AdminActionForm action={permanentlyDeletePost} submitLabel="永久删除" className="grid gap-2 rounded-xl bg-white p-2 ring-1 ring-red-100" submitClassName="inline-flex min-h-10 items-center justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60">
+              <input type="hidden" name="id" value={item.id} />
+              <input type="hidden" name="resource_type" value={resourceType} />
+              <input type="hidden" name="content_type" value={resourceType} />
+              <AdminCheckbox label="永久删除后不可恢复，资料、图片和相关收藏记录都会被删除。" name="confirm_permanent_delete" />
+            </AdminActionForm>
+          ) : (
+            <p className="rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">永久删除和恢复操作仅限超级管理员。</p>
           )}
-          <AdminActionForm action={permanentlyDeletePost} submitLabel="永久删除" className="grid gap-2 rounded-xl bg-white p-2 ring-1 ring-red-100" submitClassName="inline-flex min-h-10 items-center justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60">
-            <input type="hidden" name="id" value={item.id} />
-            <input type="hidden" name="resource_type" value={resourceType} />
-            <input type="hidden" name="content_type" value={resourceType} />
-            <AdminCheckbox label="永久删除后不可恢复，资料、图片和相关收藏记录都会被删除。" name="confirm_permanent_delete" />
-          </AdminActionForm>
         </div>
       </AdminCard>
     </div>
   );
 }
 
-function NavigationRecycleBinDetail({ link }: { link: NavigationLink }) {
+function NavigationRecycleBinDetail({ link, superAdmin }: { link: NavigationLink; superAdmin: boolean }) {
   return (
     <div className="space-y-4">
       <DetailNavigation returnHref="/admin/recycle-bin?tab=navigation" />
 
       <AdminPageHeader title={link.title} description="后台专用公共导航查看页。">
-        <AdminPermissionBadge allowed label="super_admin" />
+        <AdminPermissionBadge allowed label="recycle-bin" />
+        <AdminPermissionBadge allowed={superAdmin} label="super_admin" />
       </AdminPageHeader>
 
       <AdminCard title="导航信息">
@@ -188,12 +195,18 @@ function NavigationRecycleBinDetail({ link }: { link: NavigationLink }) {
 
       <AdminCard title="操作">
         <div className="flex flex-wrap items-start gap-3">
-          <AdminActionForm action={restoreNavigationLink} submitLabel="恢复" className="contents" submitClassName="inline-flex min-h-10 items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60">
-            <input type="hidden" name="id" value={link.id} />
-          </AdminActionForm>
-          <AdminActionForm action={permanentlyDeleteNavigationLink} submitLabel="永久删除" className="contents" submitClassName="inline-flex min-h-10 items-center justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60">
-            <input type="hidden" name="id" value={link.id} />
-          </AdminActionForm>
+          {superAdmin ? (
+            <>
+              <AdminActionForm action={restoreNavigationLink} submitLabel="恢复" className="contents" submitClassName="inline-flex min-h-10 items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60">
+                <input type="hidden" name="id" value={link.id} />
+              </AdminActionForm>
+              <AdminActionForm action={permanentlyDeleteNavigationLink} submitLabel="永久删除" className="contents" submitClassName="inline-flex min-h-10 items-center justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60">
+                <input type="hidden" name="id" value={link.id} />
+              </AdminActionForm>
+            </>
+          ) : (
+            <p className="rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">恢复和永久删除操作仅限超级管理员。</p>
+          )}
         </div>
       </AdminCard>
     </div>

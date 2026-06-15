@@ -11,6 +11,7 @@ import {
   AdminAuditLogsStats,
 } from "@/components/audit-logs/AdminAuditLogsManagement";
 import { getAdminAuditLogsData } from "@/features/audit-logs/adminQueries";
+import { hasAdminModule } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +32,14 @@ export default function AdminAuditLogsPage({ searchParams }: AdminAuditLogsPageP
     <AdminAuthGate>
       {async () => {
         const params = await searchParams;
+        if (!(await hasAdminModule("audit-logs"))) {
+          return (
+            <div className="space-y-4">
+              <AdminTopActions />
+              <AdminPageHeader title="审计日志" description="当前管理员没有审计日志模块权限。" />
+            </div>
+          );
+        }
         const data = await getAdminAuditLogsData({
           action: params?.action,
           entityType: params?.entityType,

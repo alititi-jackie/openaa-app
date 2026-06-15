@@ -6,6 +6,7 @@ import { AdminTopActions } from "@/components/admin/AdminTopActions";
 import { AdminPostManageDialog } from "@/components/posts/AdminPostManageDialog";
 import { getAdminPostDetail, getAdminPostNotificationTemplates, type AdminPostDetail, type AdminPostNotificationTemplate, type AdminPostsPermissions } from "@/features/posts/adminQueries";
 import type { PostStatus } from "@/features/posts/types";
+import { hasAdminModule } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,23 @@ export default function AdminUserPostDetailPage({ params }: { params: Promise<{ 
     <AdminAuthGate>
       {async () => {
         const { id } = await params;
+        if (!(await hasAdminModule("user-posts"))) {
+          return (
+            <div className="space-y-4">
+              <AdminTopActions />
+              <AdminDetailLayout
+                back={<AdminActionButton href="/admin/dashboard">返回后台首页</AdminActionButton>}
+                title="用户发布信息详情"
+                description="当前管理员没有用户发布信息管理模块权限。"
+                badges={<AdminPermissionBadge allowed={false} label="user-posts" />}
+              >
+                <AdminDetailSection title="无权限">
+                  <p className="text-sm font-semibold text-slate-500">请联系超级管理员调整功能授权。</p>
+                </AdminDetailSection>
+              </AdminDetailLayout>
+            </div>
+          );
+        }
         const data = await getAdminPostDetail(id);
 
         if (!data.canRead) {

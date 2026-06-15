@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { hasAdminExemption } from "@/lib/permissions/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { detailPayloadForForm, postCategoryForForm, postModeForForm, postPriceForForm, postTitleForForm } from "./adapters";
 import { DEFAULT_CITY_SLUG, POST_TYPE_TO_ROUTE } from "./constants";
@@ -81,6 +82,10 @@ function normalizeDailyPostLimit(value: unknown) {
 }
 
 async function assertDailyPostLimit(supabase: SupabaseServerClient, userId: string) {
+  if (await hasAdminExemption("daily_post_limit")) {
+    return { ok: true as const };
+  }
+
   const { data: setting } = await supabase.from("site_settings").select("value").eq("key", "daily_post_limit").maybeSingle();
   const limit = normalizeDailyPostLimit((setting as { value?: unknown } | null)?.value);
   const start = new Date();

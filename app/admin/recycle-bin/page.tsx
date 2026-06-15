@@ -26,6 +26,7 @@ import {
   type RecycleBinNewsFilter,
 } from "@/features/posts/adminQueries";
 import type { PostType } from "@/features/posts/types";
+import { hasAdminModule } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
@@ -76,16 +77,17 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
         const newsCategory = activeTab === "news" ? normalizeNewsCategory(params?.category) : "all";
         const newsFilter = activeTab === "news" ? normalizeNewsFilter(params?.filter) : "all";
 
+        const canReadRecycleBin = await hasAdminModule("recycle-bin");
         const postData = await getRecycleBinData(postFilter, postType);
         const newsCategoriesResult = activeTab === "news" ? await getNewsCategories() : null;
         const newsData = activeTab === "news" ? await getRecycleBinNewsData(newsFilter, newsCategory) : null;
 
-        if (!postData.superAdmin) {
+        if (!canReadRecycleBin) {
           return (
             <div className="space-y-4">
               <AdminTopActions />
-              <AdminPageHeader title="回收站" description="只有超级管理员可以访问删除管理">
-                <AdminPermissionBadge allowed={false} label="super_admin" />
+              <AdminPageHeader title="回收站" description="当前管理员没有回收站模块权限。">
+                <AdminPermissionBadge allowed={false} label="recycle-bin" />
               </AdminPageHeader>
             </div>
           );
@@ -98,6 +100,7 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
             <AdminTopActions />
 
             <AdminPageHeader title="回收站" description="统一管理已删除的用户发布信息、新闻和公共导航内容。">
+              <AdminPermissionBadge allowed={canReadRecycleBin} label="recycle-bin" />
               <AdminPermissionBadge allowed={postData.superAdmin} label="super_admin" />
             </AdminPageHeader>
 

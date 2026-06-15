@@ -95,6 +95,56 @@ export async function hasAdminPermission(permissionKey: string) {
   return Boolean(data);
 }
 
+export async function hasAdminModule(moduleKey: string) {
+  const supabase = await createSupabaseServerClient();
+
+  if (!supabase) {
+    return false;
+  }
+
+  const { data, error } = await supabase.rpc("has_admin_module", {
+    p_module_key: moduleKey,
+  });
+
+  if (error) {
+    return false;
+  }
+
+  return Boolean(data);
+}
+
+export async function requireAdminModule(moduleKey: string): Promise<AdminCheckResult> {
+  const admin = await requireAdmin();
+
+  if (admin.status !== "authorized") {
+    return admin;
+  }
+
+  if (!(await hasAdminModule(moduleKey))) {
+    return { status: "forbidden", user: admin.user, adminRole: null };
+  }
+
+  return admin;
+}
+
+export async function hasAdminExemption(exemptionKey: string) {
+  const supabase = await createSupabaseServerClient();
+
+  if (!supabase) {
+    return false;
+  }
+
+  const { data, error } = await supabase.rpc("has_admin_exemption", {
+    p_exemption_key: exemptionKey,
+  });
+
+  if (error) {
+    return false;
+  }
+
+  return Boolean(data);
+}
+
 export async function isSuperAdmin() {
   const role = await getCurrentAdminRole();
   return role?.role === "super_admin";

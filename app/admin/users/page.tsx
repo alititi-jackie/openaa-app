@@ -6,6 +6,7 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminUsersFilter, AdminUsersList, AdminUsersPagination, AdminUsersPermissionBadges, AdminUsersStats } from "@/components/users/AdminUsersManagement";
 import { getAdminUsersData } from "@/features/users/adminQueries";
 import type { ProfileStatus } from "@/lib/supabase/types";
+import { hasAdminModule } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +27,14 @@ export default function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
     <AdminAuthGate>
       {async () => {
         const params = await searchParams;
+        if (!(await hasAdminModule("users"))) {
+          return (
+            <div className="space-y-4">
+              <AdminTopActions />
+              <AdminPageHeader title="用户管理" description="当前管理员没有用户管理模块权限。" />
+            </div>
+          );
+        }
         const data = await getAdminUsersData({
           status: normalizeStatus(params?.status),
           accountType: normalizeAccountType(params?.accountType),

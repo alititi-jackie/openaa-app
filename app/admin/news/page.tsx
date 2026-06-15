@@ -3,6 +3,7 @@ import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminTopActions } from "@/components/admin/AdminTopActions";
 import { NewsAdminManager, NewsAdminPermissions } from "@/components/news/NewsAdminForm";
 import { getAdminNewsData } from "@/features/news/queries";
+import { hasAdminModule } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +19,17 @@ export default function AdminNewsPage() {
   return (
     <AdminAuthGate>
       {async () => {
+        if (!(await hasAdminModule("news"))) {
+          return (
+            <div className="space-y-4">
+              <AdminTopActions />
+              <header className="bg-white">
+                <h1 className="text-2xl font-black leading-tight text-slate-950">新闻管理</h1>
+              </header>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">当前管理员没有新闻管理模块权限。</div>
+            </div>
+          );
+        }
         const data = await getAdminNewsData();
         const canRead = data.permissions.viewNews || data.permissions.createNews || data.permissions.editNews || data.permissions.publishNews || data.permissions.deleteNews;
 

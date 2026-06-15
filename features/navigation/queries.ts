@@ -1,6 +1,6 @@
 import "server-only";
 
-import { hasAdminPermission, isSuperAdmin } from "@/lib/permissions/admin";
+import { hasAdminModule, hasAdminPermission, isSuperAdmin } from "@/lib/permissions/admin";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ADMIN_NAVIGATION_LIMIT, NAVIGATION_PUBLIC_LIMIT } from "./constants";
@@ -183,10 +183,11 @@ export type NavigationRecycleBinKind = "links" | "categories";
 
 export async function getAdminNavigationRecycleBinData(kind: NavigationRecycleBinKind = "links") {
   const superAdmin = await isSuperAdmin();
+  const canReadRecycleBin = superAdmin || await hasAdminModule("recycle-bin");
   const permissions = await getAdminNavigationPermissions();
   const categoriesFallback = fallbackNavigationCategories();
 
-  if (!superAdmin) {
+  if (!canReadRecycleBin) {
     return { state: "ready" as const, permissions, kind, categories: categoriesFallback, links: [] as NavigationLink[] };
   }
 
@@ -216,9 +217,10 @@ export async function getAdminNavigationRecycleBinData(kind: NavigationRecycleBi
 
 export async function getDeletedNavigationLinkDetail(id: string) {
   const superAdmin = await isSuperAdmin();
+  const canReadRecycleBin = superAdmin || await hasAdminModule("recycle-bin");
   const permissions = await getAdminNavigationPermissions();
 
-  if (!superAdmin) {
+  if (!canReadRecycleBin) {
     return { state: "ready" as const, permissions, link: null as NavigationLink | null };
   }
 

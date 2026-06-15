@@ -1,8 +1,9 @@
 import "server-only";
 
+import { ADMIN_MODULES, type AdminModuleKey } from "@/features/admin/adminModules";
 import { getCurrentAdminRole, hasAdminPermission, isSuperAdmin } from "@/lib/permissions/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { adminRoleLabels } from "@/features/admins/adminRoleConfig";
+import { adminExemptionOptions, adminRoleDefaultModules, adminRoleLabels, type AdminExemptionKey } from "@/features/admins/adminRoleConfig";
 import type { AdminRoleName } from "@/lib/supabase/types";
 
 const PAGE_SIZE = 20;
@@ -31,6 +32,8 @@ export type AdminRoleListItem = {
   revokedAt: string | null;
   lastAdminLoginAt: string | null;
   isCurrentUser: boolean;
+  moduleKeys: AdminModuleKey[];
+  exemptionKeys: AdminExemptionKey[];
 };
 
 export type AdminCandidate = {
@@ -90,6 +93,7 @@ export async function getAdminsData({
   const normalizedPage = Math.max(1, page);
 
   if (!permissions.viewAdmins && !permissions.manageAdmins) return emptyResult("ready", permissions, currentRole?.role ?? null, normalizedPage);
+  if (!permissions.superAdmin) return emptyResult("ready", permissions, currentRole?.role ?? null, normalizedPage);
   if (!supabase) return emptyResult("missing_config", permissions, currentRole?.role ?? null, normalizedPage, "Supabase 环境变量未配置，暂时无法读取管理员授权。");
 
   let query = supabase
@@ -108,7 +112,12 @@ export async function getAdminsData({
 
   const rows = (data ?? []) as RawAdminRole[];
   const profileMap = await fetchProfileMap(supabase, rows.map((item) => item.user_id));
-  const admins = rows.map((item) => mapAdminRole(item, profileMap.get(item.user_id), currentRole?.user_id ?? null));
+  const userIds = rows.map((item) => item.user_id);
+  const [moduleMap, exemptionMap] = await Promise.all([
+    fetchAdminModuleMap(supabase, userIds),
+    fetchAdminExemptionMap(supabase, userIds),
+  ]);
+  const admins = rows.map((item) => mapAdminRole(item, profileMap.get(item.user_id), currentRole?.user_id ?? null, moduleMap, exemptionMap));
   const search = q?.trim();
   const filteredAdmins = search ? filterAdmins(admins, search) : admins;
   const candidates = search && search.length >= 2 ? await searchCandidates(supabase, search, rows) : [];
@@ -191,7 +200,37 @@ async function fetchAdminRoleMap(supabase: NonNullable<Awaited<ReturnType<typeof
   return map;
 }
 
-function mapAdminRole(row: RawAdminRole, profile: ProfileSummary | undefined, currentUserId: string | null): AdminRoleListItem {
+async function fetchAdminModuleMap(supabase: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>, userIds: string[]) {
+  const map = new Map<string, AdminModuleKey[]>();
+  const ids = Array.from(new Set(userIds.filter(Boolean)));
+  if (ids.length === 0) return map;
+  const { data } = await supabase.from("admin_user_modules").select("user_id,module_key,is_allowed").in("user_id", ids);
+  for (const row of (data ?? []) as Array<{ user_id: string; module_key: string; is_allowed: boolean }>) {
+    if (!row.is_allowed || !isAdminModuleKey(row.module_key)) continue;
+    map.set(row.user_id, [...(map.get(row.user_id) ?? []), row.module_key]);
+  }
+  return map;
+}
+
+async function fetchAdminExemptionMap(supabase: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>, userIds: string[]) {
+  const map = new Map<string, AdminExemptionKey[]>();
+  const ids = Array.from(new Set(userIds.filter(Boolean)));
+  if (ids.length === 0) return map;
+  const { data } = await supabase.from("admin_user_exemptions").select("user_id,exemption_key,is_enabled").in("user_id", ids);
+  for (const row of (data ?? []) as Array<{ user_id: string; exemption_key: string; is_enabled: boolean }>) {
+    if (!row.is_enabled || !isAdminExemptionKey(row.exemption_key)) continue;
+    map.set(row.user_id, [...(map.get(row.user_id) ?? []), row.exemption_key]);
+  }
+  return map;
+}
+
+function mapAdminRole(
+  row: RawAdminRole,
+  profile: ProfileSummary | undefined,
+  currentUserId: string | null,
+  moduleMap: Map<string, AdminModuleKey[]>,
+  exemptionMap: Map<string, AdminExemptionKey[]>,
+): AdminRoleListItem {
   return {
     id: row.id,
     userId: row.user_id,
@@ -205,6 +244,8 @@ function mapAdminRole(row: RawAdminRole, profile: ProfileSummary | undefined, cu
     revokedAt: row.revoked_at,
     lastAdminLoginAt: row.last_admin_login_at,
     isCurrentUser: row.user_id === currentUserId,
+    moduleKeys: row.role === "super_admin" ? adminRoleDefaultModules.super_admin : (moduleMap.get(row.user_id) ?? []),
+    exemptionKeys: row.role === "super_admin" ? adminExemptionOptions.map((option) => option.key) : (exemptionMap.get(row.user_id) ?? []),
   };
 }
 
@@ -230,4 +271,12 @@ function emptyResult(state: AdminsData["state"], permissions: AdminsPermissions,
 
 function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
+function isAdminModuleKey(value: string): value is AdminModuleKey {
+  return ADMIN_MODULES.some((module) => module.key === value);
+}
+
+function isAdminExemptionKey(value: string): value is AdminExemptionKey {
+  return adminExemptionOptions.some((option) => option.key === value);
 }

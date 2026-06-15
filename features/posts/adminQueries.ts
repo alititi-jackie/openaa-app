@@ -1,6 +1,6 @@
 import "server-only";
 
-import { hasAdminPermission, isSuperAdmin } from "@/lib/permissions/admin";
+import { hasAdminModule, hasAdminPermission, isSuperAdmin } from "@/lib/permissions/admin";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getActiveNotificationTemplates } from "@/features/notifications/service";
@@ -458,6 +458,7 @@ export async function getAdminPostDetail(id: string): Promise<AdminPostDetailRes
 
 export async function getRecycleBinData(filter: RecycleBinFilter = "all", postType: PostType | "all" = "all"): Promise<RecycleBinResult> {
   const superAdmin = await isSuperAdmin();
+  const canReadRecycleBin = superAdmin || await hasAdminModule("recycle-bin");
   const emptyHealth: RecycleBinHealth = {
     overdueCount: 0,
     deletedPostsWithImagesCount: 0,
@@ -465,7 +466,7 @@ export async function getRecycleBinData(filter: RecycleBinFilter = "all", postTy
     orphanFavoriteCount: 0,
   };
 
-  if (!superAdmin) {
+  if (!canReadRecycleBin) {
     return { state: "ready", superAdmin, filter, items: [], health: emptyHealth, retentionSettings: DEFAULT_RECYCLE_BIN_RETENTION_SETTINGS };
   }
 
@@ -537,13 +538,14 @@ export async function getRecycleBinData(filter: RecycleBinFilter = "all", postTy
 
 export async function getRecycleBinNewsData(filter: RecycleBinNewsFilter = "all", categorySlug: string | "all" = "all"): Promise<RecycleBinNewsResult> {
   const superAdmin = await isSuperAdmin();
+  const canReadRecycleBin = superAdmin || await hasAdminModule("recycle-bin");
   const emptyHealth: RecycleBinNewsHealth = {
     overdueCount: 0,
     newsWithImagesCount: 0,
     imageErrorCount: 0,
   };
 
-  if (!superAdmin) {
+  if (!canReadRecycleBin) {
     return { state: "ready", superAdmin, filter, items: [], health: emptyHealth, retentionSettings: DEFAULT_RECYCLE_BIN_NEWS_RETENTION_SETTINGS };
   }
 
@@ -589,7 +591,8 @@ export async function getRecycleBinPostDetail(id: string): Promise<{
   error?: string;
 }> {
   const superAdmin = await isSuperAdmin();
-  if (!superAdmin) {
+  const canReadRecycleBin = superAdmin || await hasAdminModule("recycle-bin");
+  if (!canReadRecycleBin) {
     return { state: "ready", superAdmin, post: null };
   }
 

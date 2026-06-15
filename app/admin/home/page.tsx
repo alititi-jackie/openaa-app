@@ -11,6 +11,7 @@ import { getAdminHomeConfigData } from "@/features/admin-home/queries";
 import type { AdminHomeBannerRow, AdminHomeSectionRow, AdminTickerGlobalSettingsRow, AdminTickerRow, AdminTickerSectionSettingsRow } from "@/features/admin-home/types";
 import { fallbackLatestPostSections } from "@/features/home/fallbacks";
 import { mapLatestPostSections } from "@/features/home/mappers";
+import { hasAdminModule } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +32,14 @@ export default function AdminHomePage({ searchParams }: AdminHomePageProps) {
     <AdminAuthGate>
       {async () => {
         const params = await searchParams;
+        if (!(await hasAdminModule("home"))) {
+          return (
+            <div className="space-y-4">
+              <AdminTopActions />
+              <AdminPageHeader title="首页配置管理" description="当前管理员没有首页配置管理模块权限。" />
+            </div>
+          );
+        }
         const data = await getAdminHomeConfigData(params?.bannerStatus);
         const canManageAny = data.permissions.manageHomeSections || data.permissions.manageTopLinks || data.permissions.manageLatestTicker || data.permissions.manageAds;
 

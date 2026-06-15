@@ -10,6 +10,7 @@ import {
   DefaultPlaceholderImagesForm,
 } from "@/components/settings/AdminSettingsManagement";
 import { getAdminSettingsData } from "@/features/settings/adminQueries";
+import { hasAdminModule } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,14 @@ export default function AdminSettingsPage() {
   return (
     <AdminAuthGate>
       {async () => {
+        if (!(await hasAdminModule("settings"))) {
+          return (
+            <div className="space-y-4">
+              <AdminTopActions />
+              <AdminPageHeader title="站点设置" description="当前管理员没有站点设置模块权限。" />
+            </div>
+          );
+        }
         const data = await getAdminSettingsData();
 
         if (!data.canManageSettings) {

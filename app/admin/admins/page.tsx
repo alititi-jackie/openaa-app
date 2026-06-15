@@ -39,11 +39,11 @@ export default function AdminAdminsPage({ searchParams }: AdminAdminsPageProps) 
           status: normalizeAdminStatus(params?.status),
           page: normalizePage(params?.page),
         });
-        const canView = data.permissions.viewAdmins || data.permissions.manageAdmins;
+        const canView = data.permissions.superAdmin;
 
         if (!canView) {
           return (
-            <AdminPageHeader title="管理员授权" description="当前管理员没有 view_admins 或 manage_admins 权限。">
+            <AdminPageHeader title="管理员授权" description="管理员授权页面仅允许超级管理员进入。">
               <AdminRolePermissionBadges permissions={data.permissions} />
             </AdminPageHeader>
           );

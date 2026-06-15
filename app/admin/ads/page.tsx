@@ -6,6 +6,7 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { AdForm, AdminAdsFilter, AdminAdsList } from "@/components/ads/AdminAdsManagement";
 import { getAdminAdsData } from "@/features/ads/adminQueries";
+import { hasAdminModule } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +27,14 @@ export default function AdminAdsPage({ searchParams }: AdminAdsPageProps) {
     <AdminAuthGate>
       {async () => {
         const params = await searchParams;
+        if (!(await hasAdminModule("ads"))) {
+          return (
+            <div className="space-y-4">
+              <AdminTopActions />
+              <AdminPageHeader title="广告管理" description="当前管理员没有广告管理模块权限。" />
+            </div>
+          );
+        }
         const data = await getAdminAdsData(params?.placement, params?.status);
 
         if (!data.canManageAds) {

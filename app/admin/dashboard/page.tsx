@@ -1,23 +1,11 @@
 import Link from "next/link";
-import {
-  ClipboardList,
-  Database,
-  LayoutGrid,
-  Megaphone,
-  MessageSquareText,
-  Newspaper,
-  ScrollText,
-  Settings,
-  Shield,
-  Trash2,
-  Users,
-} from "lucide-react";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminTopActions } from "@/components/admin/AdminTopActions";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
+import { ADMIN_MODULES, type AdminModule } from "@/features/admin/adminModules";
 import { buildPageMetadata } from "@/lib/seo/metadata";
-import { hasAdminPermission, isSuperAdmin } from "@/lib/permissions/admin";
+import { hasAdminModule, isSuperAdmin } from "@/lib/permissions/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -28,150 +16,22 @@ export const metadata = buildPageMetadata({
   noIndex: true,
 });
 
-type AdminEntry = {
-  id: string;
-  title: string;
-  description: string;
-  href?: string;
-  icon: React.ReactNode;
-  permissionKeys: string[];
-  status: "ready" | "planned";
-};
-
 type AdminEntryGroup = {
   title: string;
   description: string;
-  entries: AdminEntry[];
+  entries: AdminModule[];
 };
 
-const adminEntryGroups: AdminEntryGroup[] = [
-  {
-    title: "内容管理",
-    description: "管理前台展示内容、用户发布内容和首页运营模块。",
-    entries: [
-      {
-        id: "user-posts",
-        title: "用户发布信息管理",
-        description: "统一管理用户发布的招聘、房屋、二手和本地服务信息，支持审核、下架、恢复显示、删除到回收站。",
-        href: "/admin/user-posts",
-        icon: <ClipboardList size={20} aria-hidden="true" />,
-        permissionKeys: ["view_posts", "moderate_posts"],
-        status: "ready",
-      },
-      {
-        id: "recycle-bin",
-        title: "回收站",
-        description: "统一管理发布信息、新闻和公共导航回收站，支持恢复和 super_admin 永久删除。",
-        href: "/admin/recycle-bin",
-        icon: <Trash2 size={20} aria-hidden="true" />,
-        permissionKeys: ["super_admin"],
-        status: "ready",
-      },
-      {
-        id: "news",
-        title: "新闻管理",
-        description: "管理新闻分类、草稿、发布、下架、置顶、封面和 SEO 字段。",
-        href: "/admin/news",
-        icon: <Newspaper size={20} aria-hidden="true" />,
-        permissionKeys: ["view_news", "create_news", "edit_news", "publish_news", "delete_news"],
-        status: "ready",
-      },
-      {
-        id: "navigation",
-        title: "导航管理",
-        description: "管理公共导航分类、链接、推荐状态、启用状态和排序。",
-        href: "/admin/navigation",
-        icon: <LayoutGrid size={20} aria-hidden="true" />,
-        permissionKeys: ["manage_navigation", "manage_top_links"],
-        status: "ready",
-      },
-      {
-        id: "home",
-        title: "首页配置管理",
-        description: "管理首页模块、ticker、Banner 和 home sections。",
-        href: "/admin/home",
-        icon: <Database size={20} aria-hidden="true" />,
-        permissionKeys: ["manage_home_sections", "manage_latest_ticker", "manage_ads"],
-        status: "ready",
-      },
-    ],
-  },
-  {
-    title: "用户与安全",
-    description: "管理用户状态、反馈、举报和站内通知。",
-    entries: [
-      {
-        id: "users",
-        title: "用户管理",
-        description: "查看用户资料状态，管理 active / restricted / banned 等账号状态。",
-        href: "/admin/users",
-        icon: <Users size={20} aria-hidden="true" />,
-        permissionKeys: ["view_users", "manage_user_status"],
-        status: "ready",
-      },
-      {
-        id: "admins",
-        title: "管理员授权",
-        description: "搜索真实用户后授予后台角色，管理管理员角色、停用和恢复。",
-        href: "/admin/admins",
-        icon: <Shield size={20} aria-hidden="true" />,
-        permissionKeys: ["view_admins", "add_admins", "edit_admin_roles", "manage_admins"],
-        status: "ready",
-      },
-      {
-        id: "messages",
-        title: "消息中心",
-        description: "集中处理用户反馈、内容举报和站内通知。",
-        href: "/admin/messages",
-        icon: <MessageSquareText size={20} aria-hidden="true" />,
-        permissionKeys: ["view_feedback", "handle_feedback", "view_reports", "handle_reports", "manage_notifications", "super_admin"],
-        status: "ready",
-      },
-    ],
-  },
-  {
-    title: "运营设置",
-    description: "管理广告、站点规则、图片维护和审计记录。",
-    entries: [
-      {
-        id: "ads",
-        title: "广告管理",
-        description: "管理首页和频道页广告位、图片外链、跳转链接、起止时间和启用状态。",
-        href: "/admin/ads",
-        icon: <Megaphone size={20} aria-hidden="true" />,
-        permissionKeys: ["manage_ads"],
-        status: "ready",
-      },
-      {
-        id: "settings",
-        title: "站点设置",
-        description: "管理每日发帖上限等基础站点规则，使用新站 admin_roles 权限和审计日志。",
-        href: "/admin/settings",
-        icon: <Settings size={20} aria-hidden="true" />,
-        permissionKeys: ["manage_settings"],
-        status: "ready",
-      },
-      {
-        id: "audit-logs",
-        title: "审计日志",
-        description: "查看后台操作记录和关键实体变更，方便上线后追溯。",
-        href: "/admin/audit-logs",
-        icon: <ScrollText size={20} aria-hidden="true" />,
-        permissionKeys: ["view_admin_audit_logs", "view_audit_logs"],
-        status: "ready",
-      },
-    ],
-  },
-];
+const groupOrder = ["content", "users-security", "operations"] as const;
 
 export default function AdminDashboardPage() {
   return (
     <AdminAuthGate>
       {async ({ user, adminRole }) => {
-        const permissions = await getDashboardPermissions();
         const superAdmin = await isSuperAdmin();
-        const readyEntries = adminEntryGroups.flatMap((group) => group.entries).filter((entry) => entry.status === "ready");
-        const accessibleReadyCount = readyEntries.filter((entry) => canAccessEntry(entry, permissions)).length;
+        const moduleAccess = await getDashboardModuleAccess();
+        const visibleModules = ADMIN_MODULES.filter((module) => moduleAccess.get(module.key));
+        const adminEntryGroups = groupVisibleModules(visibleModules);
 
         return (
           <div className="space-y-4">
@@ -189,12 +49,13 @@ export default function AdminDashboardPage() {
 
             <AdminPageHeader title="OpenAA 管理后台" description="集中管理内容、用户、安全反馈和运营配置。已完成模块可直接进入，旧站已有但新站尚未补齐的模块会标记为待补齐。">
               <AdminPermissionBadge allowed={superAdmin} label="super_admin" />
-              <AdminPermissionBadge allowed={accessibleReadyCount > 0} label={`可进入 ${accessibleReadyCount}/${readyEntries.length}`} />
+              <AdminPermissionBadge allowed={visibleModules.length > 0} label={`可进入 ${visibleModules.length}/${ADMIN_MODULES.length}`} />
               <AdminPermissionBadge allowed={adminRole.is_active} label={adminRole.role} />
             </AdminPageHeader>
 
-            <div className="space-y-5">
-              {adminEntryGroups.map((group) => (
+            {adminEntryGroups.length > 0 ? (
+              <div className="space-y-5">
+                {adminEntryGroups.map((group) => (
                 <section key={group.title} className="space-y-3">
                   <div>
                     <h2 className="text-lg font-black text-slate-950">{group.title}</h2>
@@ -202,12 +63,17 @@ export default function AdminDashboardPage() {
                   </div>
                   <div className="grid gap-3 md:grid-cols-2">
                     {group.entries.map((entry) => (
-                      <AdminEntryCard key={entry.id} entry={entry} allowed={canAccessEntry(entry, permissions)} />
+                      <AdminEntryCard key={entry.key} entry={entry} />
                     ))}
                   </div>
                 </section>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <section className="rounded-2xl border border-slate-100 bg-white p-4 text-sm font-semibold leading-6 text-slate-500 shadow-sm">
+                当前账号尚未被授予可进入的后台模块，请联系超级管理员调整功能授权。
+              </section>
+            )}
 </div>
         );
       }}
@@ -215,45 +81,46 @@ export default function AdminDashboardPage() {
   );
 }
 
-async function getDashboardPermissions() {
-  const keys = Array.from(new Set(adminEntryGroups.flatMap((group) => group.entries.flatMap((entry) => entry.permissionKeys))));
-  const results = await Promise.all(keys.map(async (key) => [key, key === "super_admin" ? await isSuperAdmin() : await hasAdminPermission(key)] as const));
+async function getDashboardModuleAccess() {
+  const results = await Promise.all(ADMIN_MODULES.map(async (module) => [module.key, await hasAdminModule(module.key)] as const));
   return new Map(results);
 }
 
-function canAccessEntry(entry: AdminEntry, permissions: Map<string, boolean>) {
-  return entry.permissionKeys.some((key) => permissions.get(key));
+function groupVisibleModules(modules: AdminModule[]): AdminEntryGroup[] {
+  return groupOrder
+    .map((group) => {
+      const entries = modules.filter((module) => module.group === group);
+      const first = entries[0];
+      return first
+        ? {
+            title: first.groupTitle,
+            description: first.groupDescription,
+            entries,
+          }
+        : null;
+    })
+    .filter((group): group is AdminEntryGroup => Boolean(group));
 }
 
-function AdminEntryCard({ entry, allowed }: { entry: AdminEntry; allowed: boolean }) {
-  const ready = entry.status === "ready";
-  const enabled = ready && allowed && entry.href;
+function AdminEntryCard({ entry }: { entry: AdminModule }) {
+  const Icon = entry.icon;
 
   return (
     <article className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
       <div className="flex items-start gap-3">
-        <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${ready ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-500"}`}>
-          {entry.icon}
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700">
+          <Icon size={20} aria-hidden="true" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-black text-slate-950">{entry.title}</h3>
-            <span className={`rounded-full px-2.5 py-1 text-xs font-black ${ready ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
-              {ready ? "已可用" : "待补齐"}
-            </span>
-            {ready && !allowed ? <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-500">无权限</span> : null}
+            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700">已授权</span>
           </div>
           <p className="mt-2 text-sm leading-6 text-slate-600">{entry.description}</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            {enabled ? (
-              <Link href={entry.href ?? "#"} className="inline-flex min-h-9 items-center justify-center rounded-xl bg-slate-950 px-3 py-2 text-xs font-black text-white hover:bg-slate-800">
+            <Link href={entry.href} className="inline-flex min-h-9 items-center justify-center rounded-xl bg-slate-950 px-3 py-2 text-xs font-black text-white hover:bg-slate-800">
                 进入
-              </Link>
-            ) : (
-              <span className="inline-flex min-h-9 items-center justify-center rounded-xl bg-slate-100 px-3 py-2 text-xs font-black text-slate-500">
-                {ready ? "需要权限" : "后续补齐"}
-              </span>
-            )}
+            </Link>
             <span className="inline-flex min-h-9 items-center rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">
               {entry.permissionKeys.join(" / ")}
             </span>

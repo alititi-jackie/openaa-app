@@ -38,7 +38,7 @@ import {
 import { getAdminPostNotificationTemplates } from "@/features/posts/adminQueries";
 import type { PostType } from "@/features/posts/types";
 import { getAdminReportsData, type ReportFilterStatus, type ReportReason } from "@/features/reports/adminQueries";
-import { hasAdminPermission, isSuperAdmin } from "@/lib/permissions/admin";
+import { hasAdminModule, hasAdminPermission, isSuperAdmin } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
@@ -75,6 +75,14 @@ export default function AdminMessagesPage({ searchParams }: AdminMessagesPagePro
     <AdminAuthGate>
       {async () => {
         const params = await searchParams;
+        if (!(await hasAdminModule("messages"))) {
+          return (
+            <div className="space-y-4">
+              <AdminTopActions />
+              <AdminPageHeader title="消息中心" description="当前管理员没有消息中心模块权限。" />
+            </div>
+          );
+        }
         const permissions = await getMessageCenterPermissions();
         const visibleTabs = getVisibleTabs(permissions);
         const requestedTab = normalizeMessageTab(params?.tab);

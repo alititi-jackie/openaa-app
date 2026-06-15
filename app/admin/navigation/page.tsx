@@ -6,6 +6,7 @@ import { TopQuickLinksManagement } from "@/components/admin/TopQuickLinksManagem
 import { NavigationAdminPermissions, NavigationLinkAdminList } from "@/components/navigation/NavigationAdminForm";
 import { getAdminTopLinksData } from "@/features/admin-home/queries";
 import { getAdminNavigationData } from "@/features/navigation/queries";
+import { hasAdminModule } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +27,17 @@ export default function AdminNavigationPage({ searchParams }: AdminNavigationPag
     <AdminAuthGate>
       {async () => {
         const params = await searchParams;
+        if (!(await hasAdminModule("navigation"))) {
+          return (
+            <div className="space-y-4">
+              <AdminTopActions />
+              <header className="bg-white">
+                <h1 className="text-2xl font-black leading-tight text-slate-950">导航管理</h1>
+              </header>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">当前管理员没有导航管理模块权限。</div>
+            </div>
+          );
+        }
         const activeTab = normalizeNavigationTab(params?.tab);
         const [data, topLinksData] = await Promise.all([getAdminNavigationData(), getAdminTopLinksData()]);
 

@@ -16,6 +16,7 @@ import {
   normalizeImageCleanupFilter,
   normalizeImageSourceFilter,
 } from "@/features/image-cleanup/adminQueries";
+import { hasAdminModule } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +37,14 @@ export default function AdminImageCleanupPage({ searchParams }: AdminImageCleanu
     <AdminAuthGate>
       {async () => {
         const params = await searchParams;
+        if (!(await hasAdminModule("recycle-bin"))) {
+          return (
+            <div className="space-y-4">
+              <AdminTopActions />
+              <AdminPageHeader title="图片清理工具" description="当前管理员没有回收站模块权限。" />
+            </div>
+          );
+        }
         const activeFilter = normalizeImageCleanupFilter(params?.filter);
         const data = await getAdminImageCleanupData({
           filter: activeFilter,
