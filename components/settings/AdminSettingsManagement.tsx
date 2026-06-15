@@ -108,7 +108,7 @@ function PlaceholderImageForm({
   const [saveState, setSaveState] = useState({ ok: true, message: "" });
   const [saving, startSaving] = useTransition();
   const externalPreview = useMemo(() => normalizePreviewUrl(externalUrl), [externalUrl]);
-  const frameClass = settingKey === "default_service_placeholder_image" ? "h-36 w-full sm:h-40" : "aspect-[3/2] w-full";
+  const frameClass = "h-[180px] w-full";
   const displayPreviewUrl = editing
     ? sourceMode === "storage"
       ? selectedFilePreview || value.url
