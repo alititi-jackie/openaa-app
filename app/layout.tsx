@@ -1,6 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { BackToTopButton } from "@/components/BackToTopButton";
-import { AppShell } from "@/components/layout/AppShell";
 import { canonicalUrl, siteConfig } from "@/lib/seo/siteConfig";
 import "./globals.css";
 
@@ -68,10 +66,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN">
-      <body>
-        <AppShell>{children}</AppShell>
-        <BackToTopButton />
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
