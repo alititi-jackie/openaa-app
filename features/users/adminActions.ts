@@ -27,9 +27,9 @@ const statusPermissions: Record<ProfileStatus, string[]> = {
 };
 
 const statusLabels: Record<ProfileStatus, string> = {
-  active: "正常",
+  active: "启用",
   restricted: "受限",
-  banned: "禁用",
+  banned: "封禁",
   pending: "待完善",
 };
 

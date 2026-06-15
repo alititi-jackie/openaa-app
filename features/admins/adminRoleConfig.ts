@@ -9,6 +9,26 @@ export const adminRoleLabels: Record<AdminRoleName, string> = {
   support: "客服",
 };
 
+const adminStatusLabels: Record<string, string> = {
+  active: "启用",
+  disabled: "停用",
+  inactive: "停用",
+  restricted: "受限",
+  banned: "封禁",
+  pending: "待完善",
+};
+
+export function getAdminRoleLabel(role: AdminRoleName | string | null | undefined) {
+  if (!role) return "未授权";
+  return role in adminRoleLabels ? adminRoleLabels[role as AdminRoleName] : role;
+}
+
+export function getAdminStatusLabel(status: string | boolean | null | undefined) {
+  if (typeof status === "boolean") return status ? "启用" : "停用";
+  if (!status) return "未知";
+  return adminStatusLabels[status] ?? status;
+}
+
 export const adminRoleOptions: Array<{ value: AdminRoleName; label: string }> = [
   { value: "support", label: adminRoleLabels.support },
   { value: "moderator", label: adminRoleLabels.moderator },
@@ -53,8 +73,8 @@ export const adminExemptionOptions = [
   },
   {
     key: "rename_limit",
-    label: "取消改名限制",
-    description: "当前仅保留配置，普通用户改名次数/间隔限制上线后生效。",
+    label: "允许使用保留用户名",
+    description: "允许该管理员使用普通用户不能使用的保留用户名或保留昵称。",
   },
 ] as const;
 

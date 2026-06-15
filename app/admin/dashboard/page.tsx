@@ -4,6 +4,7 @@ import { AdminTopActions } from "@/components/admin/AdminTopActions";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { ADMIN_MODULES, type AdminModule } from "@/features/admin/adminModules";
+import { getAdminRoleLabel, getAdminStatusLabel } from "@/features/admins/adminRoleConfig";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { hasAdminModule, isSuperAdmin } from "@/lib/permissions/admin";
 
@@ -42,15 +43,15 @@ export default function AdminDashboardPage() {
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wide text-blue-600">Current Admin</p>
                   <h2 className="mt-1 text-lg font-black text-slate-950">{user.email ?? "未绑定邮箱"}</h2>
-                  <p className="mt-1 text-sm leading-6 text-slate-600">角色：{adminRole.role} · 状态：{adminRole.is_active ? "active" : "inactive"}</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">角色：{getAdminRoleLabel(adminRole.role)} · 状态：{getAdminStatusLabel(adminRole.is_active)}</p>
                 </div>
               </div>
             </section>
 
             <AdminPageHeader title="OpenAA 管理后台" description="集中管理内容、用户、安全反馈和运营配置。已完成模块可直接进入，旧站已有但新站尚未补齐的模块会标记为待补齐。">
-              <AdminPermissionBadge allowed={superAdmin} label="super_admin" />
+              <AdminPermissionBadge allowed={superAdmin} label="超级管理员" />
               <AdminPermissionBadge allowed={visibleModules.length > 0} label={`可进入 ${visibleModules.length}/${ADMIN_MODULES.length}`} />
-              <AdminPermissionBadge allowed={adminRole.is_active} label={adminRole.role} />
+              <AdminPermissionBadge allowed={adminRole.is_active} label={getAdminRoleLabel(adminRole.role)} />
             </AdminPageHeader>
 
             {adminEntryGroups.length > 0 ? (
@@ -122,11 +123,16 @@ function AdminEntryCard({ entry }: { entry: AdminModule }) {
                 进入
             </Link>
             <span className="inline-flex min-h-9 items-center rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">
-              {entry.permissionKeys.join(" / ")}
+              {entry.permissionKeys.map(formatPermissionLabel).join(" / ")}
             </span>
           </div>
         </div>
       </div>
     </article>
   );
+}
+
+function formatPermissionLabel(key: string) {
+  if (key === "super_admin") return "超级管理员";
+  return key;
 }

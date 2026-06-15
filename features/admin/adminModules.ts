@@ -67,7 +67,7 @@ export const ADMIN_MODULES: AdminModule[] = [
   {
     key: "recycle-bin",
     title: "回收站",
-    description: "统一管理发布信息、新闻和公共导航回收站，支持恢复和 super_admin 永久删除。",
+    description: "统一管理发布信息、新闻和公共导航回收站，支持恢复和超级管理员永久删除。",
     href: "/admin/recycle-bin",
     group: "content",
     groupTitle: "内容管理",
@@ -117,7 +117,7 @@ export const ADMIN_MODULES: AdminModule[] = [
   {
     key: "users",
     title: "用户管理",
-    description: "查看用户资料状态，管理 active / restricted / banned 等账号状态。",
+    description: "查看用户资料状态，管理启用、受限、封禁等账号状态。",
     href: "/admin/users",
     group: "users-security",
     groupTitle: "用户与安全",

@@ -17,7 +17,7 @@ type ProfileEditFormProps = {
   userId: string;
   initialProfile: Profile;
   initialBusinessProfile: BusinessProfile | null;
-  canUseReservedOpenAANickname?: boolean;
+  canUseReservedNickname?: boolean;
 };
 
 async function compressAvatar(file: File) {
@@ -46,7 +46,7 @@ async function compressAvatar(file: File) {
   }
 }
 
-export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile, canUseReservedOpenAANickname = false }: ProfileEditFormProps) {
+export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile, canUseReservedNickname = false }: ProfileEditFormProps) {
   const router = useRouter();
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -78,7 +78,7 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
     business_address_text: initialBusinessProfile?.service_area ?? "",
   });
   const liveNicknameResult = profile.nickname.trim()
-    ? validateNickname(profile.nickname, { allowReservedOpenAANames: canUseReservedOpenAANickname })
+    ? validateNickname(profile.nickname, { allowReservedNicknames: canUseReservedNickname })
     : null;
   const showProfileCompletionHint = profileNeedsPublishDefaultsTip({
     default_publish_contact_name: profile.default_publish_contact_name,
@@ -111,7 +111,7 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
     setMessage("");
     setIsSaved(false);
     setIsSubmitting(true);
-    const nicknameResult = validateNickname(profile.nickname, { allowReservedOpenAANames: canUseReservedOpenAANickname });
+    const nicknameResult = validateNickname(profile.nickname, { allowReservedNicknames: canUseReservedNickname });
 
     if (!nicknameResult.ok) {
       setMessage(nicknameResult.message);
@@ -120,7 +120,7 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
     }
 
     try {
-      const serverNicknameResult = await validateNicknameForSave(profile.nickname, { allowCurrentAdminReservedName: true });
+      const serverNicknameResult = await validateNicknameForSave(profile.nickname, { allowCurrentAdminReservedNickname: true });
 
       if (!serverNicknameResult.ok) {
         setMessage(serverNicknameResult.message);

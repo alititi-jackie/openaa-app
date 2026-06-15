@@ -11,8 +11,9 @@ import {
   adminExemptionOptions,
   adminRoleDefaultModules,
   adminRoleDescriptions,
-  adminRoleLabels,
   adminRoleOptions,
+  getAdminRoleLabel,
+  getAdminStatusLabel,
   type AdminExemptionKey,
 } from "@/features/admins/adminRoleConfig";
 import type { AdminRoleListItem, AdminsPermissions } from "@/features/admins/adminQueries";
@@ -87,7 +88,7 @@ export function AdminAdminManageDialog({ admin, permissions }: { admin: AdminRol
 
           <div className="overflow-y-auto p-5">
           <div className="mt-4 grid gap-2 rounded-xl bg-slate-50 p-3 text-sm text-slate-600 sm:grid-cols-2">
-            <Info label="当前状态" value={admin.isActive ? "启用" : "停用"} />
+            <Info label="当前状态" value={getAdminStatusLabel(admin.isActive)} />
             <Info label="当前角色" value={formatRoleLabel(admin.role)} />
             <Info label="授权时间" value={formatDateTime(admin.grantedAt)} />
             <Info label="最近后台登录" value={formatDateTime(admin.lastAdminLoginAt)} />
@@ -103,7 +104,7 @@ export function AdminAdminManageDialog({ admin, permissions }: { admin: AdminRol
           <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50/40 p-3">
             <p className="text-sm font-black text-slate-950">危险提示</p>
             <p className="mt-1 text-sm leading-6 text-slate-600">
-              管理员权限调整会立即影响该账号可进入的后台功能，请确认角色、功能授权和限制豁免均无误。必须输入 CONFIRM 完成二次确认。不能停用或降级最后一个启用的 super_admin，也不能修改或停用自己的管理员账号。
+              管理员权限调整会立即影响该账号可进入的后台功能，请确认角色、功能授权和限制豁免均无误。必须输入 CONFIRM 完成二次确认。不能停用或降级最后一个启用的超级管理员，也不能修改或停用自己的管理员账号。
             </p>
           </div>
 
@@ -196,7 +197,7 @@ export function AdminAdminManageDialog({ admin, permissions }: { admin: AdminRol
                   <ConfirmInput />
                 </AdminActionForm>
               ) : (
-                <DisabledReason reason={selfLocked ? "不能修改自己的管理员权限" : superAdminLocked ? "只有 super_admin 可以修改 super_admin" : "没有 edit_admin_roles 或 manage_admins 权限"} />
+                <DisabledReason reason={selfLocked ? "不能修改自己的管理员权限" : superAdminLocked ? "只有超级管理员可以修改超级管理员" : "没有 edit_admin_roles 或 manage_admins 权限"} />
               )}
             </section>
 
@@ -206,7 +207,7 @@ export function AdminAdminManageDialog({ admin, permissions }: { admin: AdminRol
               {selfLocked ? (
                 <DisabledReason reason="不能停用或恢复自己的管理员账号" />
               ) : superAdminLocked ? (
-                <DisabledReason reason="只有 super_admin 可以停用或恢复 super_admin" />
+                <DisabledReason reason="只有超级管理员可以停用或恢复超级管理员" />
               ) : admin.isActive && canDisable ? (
                 <AdminActionForm
                   action={setAdminRoleActive}
@@ -291,7 +292,7 @@ function RoleSelect({
         {adminRoleOptions.map((option) => (
           <option key={option.value} value={option.value} disabled={option.value === "super_admin" && !allowSuperAdmin}>
             {formatRoleLabel(option.value)}
-            {option.value === "super_admin" && !allowSuperAdmin ? "（仅 super_admin）" : ""}
+            {option.value === "super_admin" && !allowSuperAdmin ? "（仅超级管理员）" : ""}
           </option>
         ))}
       </select>
@@ -308,7 +309,7 @@ function DisabledReason({ reason }: { reason: string }) {
 }
 
 function formatRoleLabel(role: AdminRoleName) {
-  return `${adminRoleLabels[role]}（${role}）`;
+  return getAdminRoleLabel(role);
 }
 
 function formatDateTime(value: string | null) {

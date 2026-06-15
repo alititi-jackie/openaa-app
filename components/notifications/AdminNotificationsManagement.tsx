@@ -115,7 +115,7 @@ export function AdminNotificationSendForms({
         </AdminActionForm>
       ) : (
         <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm font-semibold leading-6 text-slate-600">
-          群发通知仅 super_admin 可用。当前账号仍可按用户发送通知。
+          群发通知仅超级管理员可用。当前账号仍可按用户发送通知。
         </div>
       )}
     </div>

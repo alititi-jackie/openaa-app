@@ -11,9 +11,9 @@ import type { ProfileStatus } from "@/lib/supabase/types";
 const initialState: AdminUserActionState = { ok: true, message: "" };
 
 const statusLabels: Record<ProfileStatus, string> = {
-  active: "正常",
+  active: "启用",
   restricted: "受限",
-  banned: "禁用",
+  banned: "封禁",
   pending: "待完善",
 };
 
@@ -41,9 +41,9 @@ export function AdminUsersPermissionBadges({ permissions }: { permissions: Admin
 export function AdminUsersStats({ totals }: { totals: { total: number; active: number; restricted: number; banned: number; pending: number } }) {
   const items = [
     { label: "用户总数", value: totals.total },
-    { label: "正常", value: totals.active },
+    { label: "启用", value: totals.active },
     { label: "受限", value: totals.restricted },
-    { label: "禁用", value: totals.banned },
+    { label: "封禁", value: totals.banned },
     { label: "待完善", value: totals.pending },
   ];
 
@@ -79,9 +79,9 @@ export function AdminUsersFilter({
         <span>状态</span>
         <select name="status" defaultValue={status ?? "all"} className="min-h-10 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-500">
           <option value="all">全部</option>
-          <option value="active">正常</option>
+          <option value="active">启用</option>
           <option value="restricted">受限</option>
-          <option value="banned">禁用</option>
+          <option value="banned">封禁</option>
           <option value="pending">待完善</option>
         </select>
       </label>
@@ -191,7 +191,7 @@ function AdminUserCard({ user, permissions, currentAdminId }: { user: AdminUserL
             <div className="mt-4 rounded-xl bg-slate-50 p-3">
               <p className="text-xs font-black uppercase tracking-wide text-slate-400">Admin Note</p>
               {user.adminNote ? <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">{user.adminNote}</p> : null}
-              {user.bannedReason ? <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-red-700">禁用原因：{user.bannedReason}</p> : null}
+              {user.bannedReason ? <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-red-700">封禁原因：{user.bannedReason}</p> : null}
               {canEditUserNotes(permissions) ? <UserNoteForm user={user} /> : null}
             </div>
           ) : null}
@@ -228,7 +228,7 @@ function UserNoteForm({ user }: { user: AdminUserListItem }) {
         />
       </label>
       <label className="grid gap-1 text-xs font-bold text-slate-600">
-        <span>禁用原因</span>
+        <span>封禁原因</span>
         <input
           name="banned_reason"
           defaultValue={user.bannedReason ?? ""}
@@ -324,11 +324,11 @@ function confirmStatusChange(event: FormEvent<HTMLFormElement>, user: AdminUserL
 
   const message =
     nextStatus === "banned"
-      ? `确定禁用用户“${user.nickname || user.email || user.id}”吗？禁用后该用户不能继续正常使用发布和编辑能力。`
+      ? `确定封禁用户“${user.nickname || user.email || user.id}”吗？封禁后该用户不能继续正常使用发布和编辑能力。`
       : nextStatus === "restricted"
         ? `确定限制用户“${user.nickname || user.email || user.id}”吗？受限后该用户不能发布新内容或恢复公开。`
         : nextStatus === "active"
-          ? `确定恢复用户“${user.nickname || user.email || user.id}”为正常状态吗？`
+          ? `确定恢复用户“${user.nickname || user.email || user.id}”为启用状态吗？`
           : `确定将用户“${user.nickname || user.email || user.id}”标记为待完善吗？`;
 
   if (!window.confirm(message)) {

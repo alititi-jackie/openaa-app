@@ -239,7 +239,7 @@ async function NotificationsTab({ params }: { params?: Awaited<AdminMessagesPage
 
       <AdminNotificationsStats totals={data.totals} />
 
-      <AdminCard title="发送通知" description="按用户发送站内通知，super_admin 可进行简单群发。">
+      <AdminCard title="发送通知" description="按用户发送站内通知，超级管理员可进行简单群发。">
         <AdminNotificationSendForms templates={data.templates} canSendBulkNotifications={data.canSendBulkNotifications} />
       </AdminCard>
 

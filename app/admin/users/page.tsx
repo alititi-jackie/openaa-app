@@ -53,7 +53,7 @@ export default function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
         return (
           <div className="space-y-4">
             <AdminTopActions />
-            <AdminPageHeader title="用户管理" description="查看用户资料状态，并管理 restricted / banned / active 等账号状态。">
+            <AdminPageHeader title="用户管理" description="查看用户资料状态，并管理受限、封禁、启用等账号状态。">
               <AdminUsersPermissionBadges permissions={data.permissions} />
             </AdminPageHeader>
 

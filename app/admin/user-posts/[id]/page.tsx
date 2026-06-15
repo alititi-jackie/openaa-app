@@ -53,7 +53,7 @@ export default function AdminUserPostDetailPage({ params }: { params: Promise<{ 
                 badges={<AdminPermissionBadge allowed={false} label="view_posts / moderate_posts" />}
               >
                 <AdminDetailSection title="无权限">
-                  <p className="text-sm font-semibold text-slate-500">请联系 super_admin 调整后台权限。</p>
+                  <p className="text-sm font-semibold text-slate-500">请联系超级管理员调整后台权限。</p>
                 </AdminDetailSection>
               </AdminDetailLayout>
             </div>

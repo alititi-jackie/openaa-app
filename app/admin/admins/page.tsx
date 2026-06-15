@@ -72,12 +72,12 @@ export default function AdminAdminsPage({ searchParams }: AdminAdminsPageProps) 
             <AdminCard title="候选用户" description="从搜索结果中确认 user id 后，再选择角色授权。">
               <div className="mb-4 flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">
                 <UserPlus size={15} aria-hidden="true" />
-                授权 admin / super_admin 等高权限角色前，请再次核对邮箱和 user id。
+                授权管理员 / 超级管理员等高权限角色前，请再次核对邮箱和 user id。
               </div>
               <AdminCandidates candidates={data.candidates} permissions={data.permissions} />
             </AdminCard>
 
-            <AdminCard title="管理员列表" description="支持改角色、停用和恢复。不能停用或降级最后一个启用的 super_admin。">
+            <AdminCard title="管理员列表" description="支持改角色、停用和恢复。不能停用或降级最后一个启用的超级管理员。">
               <AdminRolesList admins={data.admins} permissions={data.permissions} />
               <AdminRolePagination page={data.page} pageCount={data.pageCount} totalCount={data.totalCount} q={params?.q} role={params?.role} status={params?.status} />
             </AdminCard>

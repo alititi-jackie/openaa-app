@@ -730,7 +730,7 @@ async function getSuperAdminActionContext(): Promise<SuperAdminActionContext> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, message: "请先登录管理员账号。" };
-  if (!(await isSuperAdmin())) return { ok: false, message: "只有 super_admin 可以执行此操作。" };
+  if (!(await isSuperAdmin())) return { ok: false, message: "只有超级管理员可以执行此操作。" };
 
   try {
     return { ok: true, supabase, adminSupabase: createSupabaseAdminClient(), userId: user.id };

@@ -101,7 +101,7 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
 
             <AdminPageHeader title="回收站" description="统一管理已删除的用户发布信息、新闻和公共导航内容。">
               <AdminPermissionBadge allowed={canReadRecycleBin} label="recycle-bin" />
-              <AdminPermissionBadge allowed={postData.superAdmin} label="super_admin" />
+              <AdminPermissionBadge allowed={postData.superAdmin} label="超级管理员" />
             </AdminPageHeader>
 
             <RecycleBinResourceNav active={activeTab} />

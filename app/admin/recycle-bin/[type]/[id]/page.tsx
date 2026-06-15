@@ -73,7 +73,7 @@ function MissingDetail({ message, returnHref }: { message: string; returnHref: s
       <AdminTopActions />
       </div>
       <AdminPageHeader title="回收站详情" description={message}>
-        <AdminPermissionBadge allowed label="super_admin" />
+        <AdminPermissionBadge allowed label="超级管理员" />
       </AdminPageHeader>
       <Link href={returnHref} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white">
         返回回收站
@@ -91,7 +91,7 @@ function ContentRecycleBinDetail({ item, resourceType, superAdmin }: { item: Rec
 
       <AdminPageHeader title={item.title} description="后台专用回收站查看页，可查看已删除内容。">
         <AdminPermissionBadge allowed label="recycle-bin" />
-        <AdminPermissionBadge allowed={superAdmin} label="super_admin" />
+        <AdminPermissionBadge allowed={superAdmin} label="超级管理员" />
       </AdminPageHeader>
 
       <AdminCard title="删除信息">
@@ -174,7 +174,7 @@ function NavigationRecycleBinDetail({ link, superAdmin }: { link: NavigationLink
 
       <AdminPageHeader title={link.title} description="后台专用公共导航查看页。">
         <AdminPermissionBadge allowed label="recycle-bin" />
-        <AdminPermissionBadge allowed={superAdmin} label="super_admin" />
+        <AdminPermissionBadge allowed={superAdmin} label="超级管理员" />
       </AdminPageHeader>
 
       <AdminCard title="导航信息">
@@ -182,7 +182,7 @@ function NavigationRecycleBinDetail({ link, superAdmin }: { link: NavigationLink
           <MetaItem label="网站名称" value={link.title} />
           <MetaItem label="网址" value={link.url} />
           <MetaItem label="分类" value={link.categoryName} />
-          <MetaItem label="状态" value={link.deletedAt ? "deleted" : "active"} />
+          <MetaItem label="状态" value={link.deletedAt ? "已删除" : "启用"} />
           <MetaItem label="删除时间" value={formatDateTime(link.deletedAt)} />
           <MetaItem label="删除人" value={link.deletedBy ?? "未记录"} />
           <MetaItem label="ID" value={link.id} />

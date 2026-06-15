@@ -112,7 +112,7 @@ export async function sendAdminNotification(_state: AdminNotificationActionState
 export async function sendBulkAdminNotification(_state: AdminNotificationActionState, formData: FormData): Promise<AdminNotificationActionState> {
   const context = await getAdminNotificationActionContext();
   if (!context.ok) return fail(context.message);
-  if (!(await isSuperAdmin())) return fail("只有 super_admin 可以群发通知。");
+  if (!(await isSuperAdmin())) return fail("只有超级管理员可以群发通知。");
 
   const scope = readText(formData, "recipient_scope") === "all" ? "all" : "active";
   const templateKey = readText(formData, "template_key");

@@ -83,7 +83,7 @@ export async function updateAdminRole(_state: AdminHomeActionState, formData: Fo
 
   const payload = { role, note, updated_at: new Date().toISOString() };
   const { error } = await context.supabase.from("admin_roles").update(payload).eq("id", roleId);
-  if (error) return fail("管理员角色更新失败，请确认不会降级最后一个 super_admin。");
+  if (error) return fail("管理员角色更新失败，请确认不会降级最后一个超级管理员。");
   const grantsSaved = await saveAdminGrants(context, before.user_id, modules, exemptions);
   if (!grantsSaved) return fail("角色已更新，但功能授权保存失败，请稍后再试。");
   if (!(await auditLog(context, "change_admin_role", "admin_roles", roleId, { role: before, modules: beforeModules, exemptions: beforeExemptions }, { ...payload, modules, exemptions }))) {
@@ -113,7 +113,7 @@ export async function setAdminRoleActive(_state: AdminHomeActionState, formData:
     : { is_active: false, revoked_by: context.userId, revoked_at: new Date().toISOString(), updated_at: new Date().toISOString() };
 
   const { error } = await context.supabase.from("admin_roles").update(payload).eq("id", roleId);
-  if (error) return fail("管理员状态更新失败，请确认不会停用最后一个 super_admin。");
+  if (error) return fail("管理员状态更新失败，请确认不会停用最后一个超级管理员。");
   if (!(await auditLog(context, active ? "restore_admin" : "disable_admin", "admin_roles", roleId, before, payload))) return fail("状态已更新，但审计日志写入失败。");
 
   revalidatePath("/admin/admins");

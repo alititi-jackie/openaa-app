@@ -29,23 +29,12 @@ const reservedNicknameKeywords = [
   "helpdesk",
 ];
 
-const allowedReservedOpenAANicknames = ["openaa", "openaa 管理员"];
-
 type NicknameValidationOptions = {
-  allowReservedOpenAANames?: boolean;
+  allowReservedNicknames?: boolean;
 };
 
 export function normalizeNickname(value: string) {
   return value.trim();
-}
-
-function normalizeReservedNickname(value: string) {
-  return normalizeNickname(value).toLowerCase().replace(/\s+/g, " ");
-}
-
-export function isAllowedReservedOpenAANickname(value: string) {
-  const normalized = normalizeReservedNickname(value);
-  return allowedReservedOpenAANicknames.includes(normalized);
 }
 
 export function isReservedNickname(value: string) {
@@ -61,9 +50,7 @@ export function validateNickname(value: string, options: NicknameValidationOptio
     return { ok: false as const, message: "昵称至少需要 4 个字符" };
   }
 
-  const canUseAllowedReservedName = options.allowReservedOpenAANames && isAllowedReservedOpenAANickname(nickname);
-
-  if (isReservedNickname(nickname) && !canUseAllowedReservedName) {
+  if (isReservedNickname(nickname) && !options.allowReservedNicknames) {
     return { ok: false as const, message: unavailableNicknameMessage };
   }
 

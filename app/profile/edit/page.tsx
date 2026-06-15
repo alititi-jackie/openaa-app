@@ -1,6 +1,6 @@
 import { PageShell } from "@/components/layout/PageShell";
 import { ProfileEditForm } from "@/components/profile/ProfileEditForm";
-import { canCurrentUserUseReservedOpenAANickname } from "@/features/auth/actions";
+import { canCurrentUserUseReservedNickname } from "@/features/auth/actions";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { ensureProfileForUser } from "@/lib/supabase/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -42,7 +42,7 @@ export default async function ProfileEditPage() {
     .select("*")
     .eq("user_id", user.id)
     .maybeSingle();
-  const canUseReservedOpenAANickname = await canCurrentUserUseReservedOpenAANickname();
+  const canUseReservedNickname = await canCurrentUserUseReservedNickname();
 
   return (
     <PageShell title="编辑资料" description="只更新当前登录用户自己的资料。">
@@ -50,7 +50,7 @@ export default async function ProfileEditPage() {
         userId={user.id}
         initialProfile={profile}
         initialBusinessProfile={(businessProfile as BusinessProfile | null) ?? null}
-        canUseReservedOpenAANickname={canUseReservedOpenAANickname}
+        canUseReservedNickname={canUseReservedNickname}
       />
     </PageShell>
   );

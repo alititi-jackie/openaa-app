@@ -8,7 +8,7 @@ import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { AdminAdminManageDialog } from "@/components/admins/AdminAdminManageDialog";
 import { ADMIN_MODULES } from "@/features/admin/adminModules";
 import { grantAdminRole } from "@/features/admins/adminActions";
-import { adminExemptionOptions, adminRoleLabels, adminRoleOptions } from "@/features/admins/adminRoleConfig";
+import { adminExemptionOptions, adminRoleOptions, getAdminRoleLabel, getAdminStatusLabel } from "@/features/admins/adminRoleConfig";
 import type { AdminCandidate, AdminRoleListItem, AdminsData, AdminsPermissions } from "@/features/admins/adminQueries";
 import type { AdminRoleName } from "@/lib/supabase/types";
 
@@ -20,7 +20,7 @@ export function AdminRolePermissionBadges({ permissions }: { permissions: Admins
       <AdminPermissionBadge allowed={permissions.editAdminRoles || permissions.manageAdmins} label="edit_admin_roles" />
       <AdminPermissionBadge allowed={permissions.disableAdmins || permissions.manageAdmins} label="disable_admins" />
       <AdminPermissionBadge allowed={permissions.restoreAdmins || permissions.manageAdmins} label="restore_admins" />
-      <AdminPermissionBadge allowed={permissions.superAdmin} label="super_admin" />
+      <AdminPermissionBadge allowed={permissions.superAdmin} label="超级管理员" />
     </>
   );
 }
@@ -28,8 +28,8 @@ export function AdminRolePermissionBadges({ permissions }: { permissions: Admins
 export function CurrentAdminCapabilityPanel({ data }: { data: AdminsData }) {
   const capabilities = [
     { label: "查看管理员", allowed: data.permissions.viewAdmins || data.permissions.manageAdmins },
-    { label: "授权 support / moderator / editor / admin", allowed: data.permissions.addAdmins || data.permissions.manageAdmins },
-    { label: "授权 super_admin", allowed: data.permissions.superAdmin },
+    { label: "授权客服 / 审核员 / 编辑 / 管理员", allowed: data.permissions.addAdmins || data.permissions.manageAdmins },
+    { label: "授权超级管理员", allowed: data.permissions.superAdmin },
     { label: "修改管理员角色", allowed: data.permissions.editAdminRoles || data.permissions.manageAdmins },
     { label: "停用管理员", allowed: data.permissions.disableAdmins || data.permissions.manageAdmins },
     { label: "恢复管理员", allowed: data.permissions.restoreAdmins || data.permissions.manageAdmins },
@@ -42,7 +42,7 @@ export function CurrentAdminCapabilityPanel({ data }: { data: AdminsData }) {
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-bold uppercase tracking-wide text-blue-600">当前权限</p>
-          <h2 className="mt-1 truncate text-lg font-black text-slate-950">当前角色：{data.currentRole ? adminRoleLabels[data.currentRole] : "未授权"}</h2>
+          <h2 className="mt-1 truncate text-lg font-black text-slate-950">当前角色：{getAdminRoleLabel(data.currentRole)}</h2>
         </div>
         <button type="button" onClick={() => setOpen((value) => !value)} className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-black text-blue-700 hover:bg-blue-100" aria-expanded={open}>
           {open ? "收起" : "展开"}
@@ -134,7 +134,7 @@ export function AdminCandidates({ candidates, permissions }: { candidates: Admin
               <p className="mt-1 break-all font-mono text-xs text-slate-400">{candidate.id}</p>
               {candidate.existingAdminRole ? (
                 <p className="mt-2 text-xs font-bold text-amber-700">
-                  已有后台角色：{formatRoleLabel(candidate.existingAdminRole)} · {candidate.existingAdminActive ? "启用" : "停用"}
+                  已有后台角色：{formatRoleLabel(candidate.existingAdminRole)} · {getAdminStatusLabel(candidate.existingAdminActive)}
                 </p>
               ) : null}
             </div>
@@ -158,7 +158,7 @@ export function AdminRolesList({ admins, permissions }: { admins: AdminRoleListI
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className={`rounded-full px-2.5 py-1 text-xs font-black ${admin.isActive ? "bg-emerald-50 text-emerald-700" : "bg-slate-200 text-slate-600"}`}>{admin.isActive ? "启用" : "停用"}</span>
+                <span className={`rounded-full px-2.5 py-1 text-xs font-black ${admin.isActive ? "bg-emerald-50 text-emerald-700" : "bg-slate-200 text-slate-600"}`}>{getAdminStatusLabel(admin.isActive)}</span>
                 <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-black text-blue-700">{formatRoleLabel(admin.role)}</span>
                 {admin.isCurrentUser ? <span className="rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-700">当前账号</span> : null}
               </div>
@@ -250,7 +250,7 @@ export function RoleSelect({ name, defaultValue, allowSuperAdmin }: { name: stri
         {adminRoleOptions.map((option) => (
           <option key={option.value} value={option.value} disabled={option.value === "super_admin" && !allowSuperAdmin}>
             {formatRoleLabel(option.value)}
-            {option.value === "super_admin" && !allowSuperAdmin ? "（仅 super_admin）" : ""}
+            {option.value === "super_admin" && !allowSuperAdmin ? "（仅超级管理员）" : ""}
           </option>
         ))}
       </select>
@@ -267,7 +267,7 @@ export function DisabledReason({ reason }: { reason: string }) {
 }
 
 export function formatRoleLabel(role: AdminRoleName) {
-  return `${adminRoleLabels[role]}（${role}）`;
+  return getAdminRoleLabel(role);
 }
 
 export function formatDateTime(value: string | null) {
