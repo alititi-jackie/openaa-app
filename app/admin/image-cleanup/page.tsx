@@ -16,6 +16,7 @@ import {
   normalizeImageCleanupFilter,
   normalizeImageSourceFilter,
 } from "@/features/image-cleanup/adminQueries";
+import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { hasAdminModule } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -57,7 +58,7 @@ export default function AdminImageCleanupPage({ searchParams }: AdminImageCleanu
 
         if (!canView) {
           return (
-            <AdminPageHeader title="图片清理工具" description="当前管理员没有 view_images 或 manage_image_assets 权限。">
+            <AdminPageHeader title="图片清理工具" description={`当前管理员没有 ${getAdminPermissionLabel("view_images")} 或 ${getAdminPermissionLabel("manage_image_assets")} 权限。`}>
               <AdminImageCleanupPermissionBadges permissions={data.permissions} />
             </AdminPageHeader>
           );

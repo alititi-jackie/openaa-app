@@ -5,7 +5,7 @@ import { AdminTopActions } from "@/components/admin/AdminTopActions";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { ADMIN_MODULES, type AdminModule } from "@/features/admin/adminModules";
-import { getAdminRoleLabel } from "@/features/admins/adminRoleConfig";
+import { getAdminPermissionLabel, getAdminRoleLabel } from "@/features/admins/adminRoleConfig";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { hasAdminModule, isSuperAdmin } from "@/lib/permissions/admin";
 
@@ -127,5 +127,5 @@ function AdminEntryCard({ entry }: { entry: AdminModule }) {
 
 function formatPermissionLabel(key: string) {
   if (key === "super_admin") return "超级管理员";
-  return key;
+  return getAdminPermissionLabel(key);
 }

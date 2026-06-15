@@ -38,6 +38,7 @@ import {
 import { getAdminPostNotificationTemplates } from "@/features/posts/adminQueries";
 import type { PostType } from "@/features/posts/types";
 import { getAdminReportsData, type ReportFilterStatus, type ReportReason } from "@/features/reports/adminQueries";
+import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { hasAdminModule, hasAdminPermission, isSuperAdmin } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -128,7 +129,7 @@ async function FeedbackTab({ params }: { params?: Awaited<AdminMessagesPageProps
 
   if (!data.permissions.viewFeedback) {
     return (
-      <NoPermissionPanel message="当前管理员没有 view_feedback 或 handle_feedback 权限。">
+      <NoPermissionPanel message={`当前管理员没有 ${getAdminPermissionLabel("view_feedback")} 或 ${getAdminPermissionLabel("handle_feedback")} 权限。`}>
         <AdminFeedbackPermissionBadges permissions={data.permissions} />
       </NoPermissionPanel>
     );
@@ -173,7 +174,7 @@ async function ReportsTab({ params }: { params?: Awaited<AdminMessagesPageProps[
 
   if (!data.permissions.viewReports) {
     return (
-      <NoPermissionPanel message="当前管理员没有 view_reports、handle_reports 或 moderate_posts 权限。">
+      <NoPermissionPanel message={`当前管理员没有 ${getAdminPermissionLabel("view_reports")}、${getAdminPermissionLabel("handle_reports")} 或 ${getAdminPermissionLabel("moderate_posts")} 权限。`}>
         <AdminReportsPermissionBadges permissions={data.permissions} />
       </NoPermissionPanel>
     );
@@ -223,7 +224,7 @@ async function NotificationsTab({ params }: { params?: Awaited<AdminMessagesPage
 
   if (!data.canManageNotifications) {
     return (
-      <NoPermissionPanel message="当前管理员没有 manage_notifications 权限。">
+      <NoPermissionPanel message={`当前管理员没有 ${getAdminPermissionLabel("manage_notifications")} 权限。`}>
         <AdminNotificationsPermissionBadges canManageNotifications={data.canManageNotifications} />
       </NoPermissionPanel>
     );

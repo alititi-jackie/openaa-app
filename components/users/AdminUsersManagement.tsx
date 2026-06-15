@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { FormEvent } from "react";
 import { useActionState, useState } from "react";
 import { ChevronDown, ChevronUp, Search, ShieldCheck, UserRound } from "lucide-react";
+import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { setAdminUserStatus, updateAdminUserNote, type AdminUserActionState } from "@/features/users/adminActions";
 import type { AdminUserListItem, AdminUsersPermissions } from "@/features/users/adminQueries";
 import type { ProfileStatus } from "@/lib/supabase/types";
@@ -183,7 +184,7 @@ function AdminUserCard({ user, permissions, currentAdminId }: { user: AdminUserL
                 <InfoRow label="偏好方式" value={formatContactMethod(user.preferredContactMethod)} />
               </dl>
             ) : (
-              <p className="mt-2 text-sm font-bold text-slate-500">当前管理员没有 view_user_contacts 权限，联系方式已隐藏。</p>
+              <p className="mt-2 text-sm font-bold text-slate-500">当前管理员没有{getAdminPermissionLabel("view_user_contacts")}权限，联系方式已隐藏。</p>
             )}
           </div>
 
@@ -368,8 +369,8 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 function formatPostCounts(postCounts: AdminUserListItem["postCounts"], permissions: AdminUsersPermissions) {
-  if (!permissions.viewUserPosts) return "无 view_user_posts 权限";
-  if (!postCounts) return "需要 view_posts 或 moderate_posts 权限";
+  if (!permissions.viewUserPosts) return `无${getAdminPermissionLabel("view_user_posts")}权限`;
+  if (!postCounts) return `需要${getAdminPermissionLabel("view_posts")}或${getAdminPermissionLabel("moderate_posts")}权限`;
   return `总 ${postCounts.total} · 招聘 ${postCounts.job} · 房屋 ${postCounts.housing} · 二手 ${postCounts.marketplace} · 服务 ${postCounts.service}`;
 }
 
@@ -385,7 +386,7 @@ function Badge({ allowed, label }: { allowed: boolean; label: string }) {
   return (
     <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-black ${allowed ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
       <ShieldCheck size={13} aria-hidden="true" />
-      {label}
+      {getAdminPermissionLabel(label)}
     </span>
   );
 }

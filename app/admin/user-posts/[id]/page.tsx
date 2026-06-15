@@ -6,6 +6,7 @@ import { AdminTopActions } from "@/components/admin/AdminTopActions";
 import { AdminPostManageDialog } from "@/components/posts/AdminPostManageDialog";
 import { getAdminPostDetail, getAdminPostNotificationTemplates, type AdminPostDetail, type AdminPostNotificationTemplate, type AdminPostsPermissions } from "@/features/posts/adminQueries";
 import type { PostStatus } from "@/features/posts/types";
+import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { hasAdminModule } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -49,7 +50,7 @@ export default function AdminUserPostDetailPage({ params }: { params: Promise<{ 
               <AdminDetailLayout
                 back={<AdminActionButton href="/admin/user-posts">返回用户发布信息管理</AdminActionButton>}
                 title="用户发布信息详情"
-                description="当前管理员没有 view_posts 或 moderate_posts 权限。"
+                description={`当前管理员没有 ${getAdminPermissionLabel("view_posts")} 或 ${getAdminPermissionLabel("moderate_posts")} 权限。`}
                 badges={<AdminPermissionBadge allowed={false} label="view_posts / moderate_posts" />}
               >
                 <AdminDetailSection title="无权限">
@@ -144,7 +145,9 @@ function AdminUserPostDetail({ post, permissions, templates }: { post: AdminPost
 
         <AdminDetailSection title="联系方式">
           {!post.canViewContact ? (
-            <p className="rounded-xl bg-slate-50 p-3 text-sm font-semibold text-slate-500">当前管理员没有 view_post_contacts 或 moderate_posts 权限。</p>
+            <p className="rounded-xl bg-slate-50 p-3 text-sm font-semibold text-slate-500">
+              当前管理员没有 {getAdminPermissionLabel("view_post_contacts")} 或 {getAdminPermissionLabel("moderate_posts")} 权限。
+            </p>
           ) : post.contact ? (
             <div className="grid gap-3 text-sm md:grid-cols-2">
               <MetaItem label="联系人" value={post.contact.contact_name || "未填写"} />
@@ -229,7 +232,7 @@ function adminActionLabel(action: string, templateKey?: string | null, reason?: 
   if (action === "delete_post") return "删除到回收站";
   if (action === "mark_post_pending_review") return "标记待审核";
   if (action === "notify_author") return "通知作者";
-  return action;
+  return "未命名操作";
 }
 
 function templateLabel(key: string) {
@@ -241,7 +244,7 @@ function templateLabel(key: string) {
   if (key === "missing_info") return "信息需要补充";
   if (key === "wrong_category") return "分类需要修改";
   if (key === "duplicate_post") return "重复发布提醒";
-  return key;
+  return "未命名模板";
 }
 
 function formatDateTime(value: string | null) {

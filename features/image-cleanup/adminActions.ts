@@ -63,7 +63,7 @@ async function getImageCleanupActionContext(): Promise<ImageCleanupActionContext
   if (!user) return { ok: false, message: "请先登录管理员账号。" };
 
   if (!(await hasAdminModulePermission("recycle-bin", "manage_image_assets"))) {
-    return { ok: false, message: "当前账号没有 manage_image_assets 权限。" };
+    return { ok: false, message: "当前账号没有图片资产管理权限。" };
   }
 
   return { ok: true, supabase, userId: user.id };

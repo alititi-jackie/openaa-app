@@ -10,6 +10,7 @@ import {
   AdminAuditLogsPermissionBadges,
   AdminAuditLogsStats,
 } from "@/components/audit-logs/AdminAuditLogsManagement";
+import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { getAdminAuditLogsData } from "@/features/audit-logs/adminQueries";
 import { hasAdminModule } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -54,7 +55,7 @@ export default function AdminAuditLogsPage({ searchParams }: AdminAuditLogsPageP
 
         if (!data.canViewAuditLogs) {
           return (
-            <AdminPageHeader title="审计日志" description="当前管理员没有 view_admin_audit_logs 或 view_audit_logs 权限。">
+            <AdminPageHeader title="审计日志" description={`当前管理员没有 ${getAdminPermissionLabel("view_admin_audit_logs")} 或 ${getAdminPermissionLabel("view_audit_logs")} 权限。`}>
               <AdminAuditLogsPermissionBadges canViewAuditLogs={data.canViewAuditLogs} />
             </AdminPageHeader>
           );

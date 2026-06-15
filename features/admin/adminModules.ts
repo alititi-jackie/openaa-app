@@ -195,7 +195,7 @@ export const ADMIN_MODULES: AdminModule[] = [
   {
     key: "settings",
     title: "站点设置",
-    description: "管理每日发帖上限等基础站点规则，使用新站 admin_roles 权限和审计日志。",
+    description: "管理每日发帖上限等基础站点规则，使用新站后台权限和审计日志。",
     href: "/admin/settings",
     group: "operations",
     groupTitle: "运营设置",

@@ -5,6 +5,7 @@ import { AdminTopActions } from "@/components/admin/AdminTopActions";
 import { TopQuickLinksManagement } from "@/components/admin/TopQuickLinksManagement";
 import { NavigationAdminPermissions, NavigationLinkAdminList } from "@/components/navigation/NavigationAdminForm";
 import { getAdminTopLinksData } from "@/features/admin-home/queries";
+import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { getAdminNavigationData } from "@/features/navigation/queries";
 import { hasAdminModule } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -54,7 +55,7 @@ export default function AdminNavigationPage({ searchParams }: AdminNavigationPag
                 </div>
               </header>
               <NavigationAdminTabs active={activeTab} />
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">当前管理员没有 manage_navigation 权限。</div>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">当前管理员没有 {getAdminPermissionLabel("manage_navigation")} 权限。</div>
             </div>
           );
         }
@@ -72,7 +73,7 @@ export default function AdminNavigationPage({ searchParams }: AdminNavigationPag
                 </div>
               </header>
               <NavigationAdminTabs active={activeTab} />
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">当前管理员没有 manage_top_links 权限。</div>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">当前管理员没有 {getAdminPermissionLabel("manage_top_links")} 权限。</div>
             </div>
           );
         }

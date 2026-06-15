@@ -6,6 +6,7 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPostsFilter, AdminPostsList, AdminPostsPagination, AdminPostsPermissionBadges } from "@/components/posts/AdminPostsManagement";
 import { getAdminPostNotificationTemplates, getAdminPostsData } from "@/features/posts/adminQueries";
 import type { PostStatus, PostType } from "@/features/posts/types";
+import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { hasAdminModule } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -49,7 +50,7 @@ export default function AdminUserPostsPage({ searchParams }: AdminUserPostsPageP
           return (
             <div className="space-y-4">
               <AdminTopActions />
-              <AdminPageHeader title="用户发布信息管理" description="当前管理员没有 view_posts 或 moderate_posts 权限。">
+              <AdminPageHeader title="用户发布信息管理" description={`当前管理员没有 ${getAdminPermissionLabel("view_posts")} 或 ${getAdminPermissionLabel("moderate_posts")} 权限。`}>
                 <AdminPostsPermissionBadges permissions={data.permissions} />
               </AdminPageHeader>
             </div>

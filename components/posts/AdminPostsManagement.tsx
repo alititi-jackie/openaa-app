@@ -301,7 +301,7 @@ function adminActionLabel(action: string, templateKey?: string | null, reason?: 
   if (action === "delete_post") return "删除到回收站";
   if (action === "mark_post_pending_review") return "标记待审核";
   if (action === "notify_author") return "通知作者";
-  return action;
+  return "未命名操作";
 }
 
 function templateLabel(key: string) {
@@ -313,7 +313,7 @@ function templateLabel(key: string) {
   if (key === "missing_info") return "信息需要补充";
   if (key === "wrong_category") return "分类需要修改";
   if (key === "duplicate_post") return "重复发布提醒";
-  return key;
+  return "未命名模板";
 }
 
 function buildPageHref({ page, type, status, q, author }: { page: number; type?: string; status?: string; q?: string; author?: string }) {

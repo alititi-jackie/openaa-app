@@ -7,6 +7,7 @@ import { Eye, Pencil, Pin, PinOff, Plus, Trash2 } from "lucide-react";
 import { AdminActionForm, AdminCheckbox, AdminTextInput } from "@/components/admin/AdminActionForm";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
+import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { createDefaultNewsCategories, setNewsPostStatus, toggleNewsPin, upsertNewsCategory, upsertNewsPost, type NewsActionState } from "@/features/news/actions";
 import { formatNewsDate } from "@/features/news/mappers";
 import type { AdminNewsPermissions, AdminNewsPost, NewsCategory, NewsStatus } from "@/features/news/types";
@@ -535,7 +536,7 @@ function NewsPostEditor({
 
 export function NewsCategoryManager({ categories, canManage }: { categories: NewsCategory[]; canManage: boolean }) {
   if (!canManage) {
-    return <p className="text-sm leading-6 text-slate-600">当前账号没有 manage_news_categories 权限。</p>;
+    return <p className="text-sm leading-6 text-slate-600">当前账号没有 {getAdminPermissionLabel("manage_news_categories")} 权限。</p>;
   }
 
   return (

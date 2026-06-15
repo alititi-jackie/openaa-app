@@ -9,6 +9,7 @@ import {
   DailyPostLimitForm,
   DefaultPlaceholderImagesForm,
 } from "@/components/settings/AdminSettingsManagement";
+import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { getAdminSettingsData } from "@/features/settings/adminQueries";
 import { hasAdminModule } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -38,7 +39,7 @@ export default function AdminSettingsPage() {
 
         if (!data.canManageSettings) {
           return (
-            <AdminPageHeader title="站点设置" description="当前管理员没有 manage_settings 权限。">
+            <AdminPageHeader title="站点设置" description={`当前管理员没有 ${getAdminPermissionLabel("manage_settings")} 权限。`}>
               <AdminSettingsPermissionBadges canManageSettings={data.canManageSettings} />
             </AdminPageHeader>
           );

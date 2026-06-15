@@ -15,7 +15,7 @@ export async function AdminAuthGate({ children }: AdminAuthGateProps) {
   if (admin.status === "missing_config") {
     return (
       <AdminPageFrame>
-        <AdminPageHeader title="后台" description="Supabase 环境变量尚未配置。配置新 Supabase 后，后台会在服务端检查 admin_roles。" />
+        <AdminPageHeader title="后台" description="Supabase 环境变量尚未配置。配置新 Supabase 后，后台会在服务端检查管理员授权记录。" />
       </AdminPageFrame>
     );
   }
@@ -42,7 +42,7 @@ export async function AdminAuthGate({ children }: AdminAuthGateProps) {
         <AdminAccessMessage
           icon={<ShieldAlert size={22} aria-hidden="true" />}
           title="无后台权限"
-          description="当前账号没有 active admin_roles 记录。后台权限只从 admin_roles 和权限表读取。"
+          description="当前账号没有启用的管理员授权记录。后台权限只从管理员授权和权限表读取。"
           secondaryHref="/"
           secondaryLabel="取消"
         />

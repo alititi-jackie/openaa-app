@@ -4,6 +4,7 @@ import { AdminTopActions } from "@/components/admin/AdminTopActions";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminUsersFilter, AdminUsersList, AdminUsersPagination, AdminUsersPermissionBadges, AdminUsersStats } from "@/components/users/AdminUsersManagement";
+import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { getAdminUsersData } from "@/features/users/adminQueries";
 import type { ProfileStatus } from "@/lib/supabase/types";
 import { hasAdminModule } from "@/lib/permissions/admin";
@@ -44,7 +45,7 @@ export default function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
 
         if (!data.permissions.viewUsers) {
           return (
-            <AdminPageHeader title="用户管理" description="当前管理员没有 view_users 权限。">
+            <AdminPageHeader title="用户管理" description={`当前管理员没有 ${getAdminPermissionLabel("view_users")} 权限。`}>
               <AdminUsersPermissionBadges permissions={data.permissions} />
             </AdminPageHeader>
           );

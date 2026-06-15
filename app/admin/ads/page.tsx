@@ -5,6 +5,7 @@ import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { AdForm, AdminAdsFilter, AdminAdsList } from "@/components/ads/AdminAdsManagement";
+import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { getAdminAdsData } from "@/features/ads/adminQueries";
 import { hasAdminModule } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -39,7 +40,7 @@ export default function AdminAdsPage({ searchParams }: AdminAdsPageProps) {
 
         if (!data.canManageAds) {
           return (
-            <AdminPageHeader title="广告管理" description="当前管理员没有 manage_ads 权限。">
+            <AdminPageHeader title="广告管理" description={`当前管理员没有 ${getAdminPermissionLabel("manage_ads")} 权限。`}>
               <AdminPermissionBadge allowed={data.canManageAds} label="manage_ads" />
             </AdminPageHeader>
           );

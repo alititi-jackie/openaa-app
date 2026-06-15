@@ -124,10 +124,7 @@ export function LoginForm() {
 
     try {
       const supabase = createSupabaseBrowserClient();
-      const {
-        data: signInData,
-        error,
-      } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
@@ -141,27 +138,16 @@ export function LoginForm() {
         return;
       }
 
-      console.info("[auth/login] password login success", {
-        hasUser: Boolean(signInData.user),
-        hasSession: Boolean(signInData.session),
-      });
-
       const {
         data: { session },
         error: sessionError,
       } = await supabase.auth.getSession();
-
-      console.info("[auth/login] session exists after login", {
-        hasSession: Boolean(session),
-        hasSessionError: Boolean(sessionError),
-      });
 
       if (sessionError || !session) {
         setMessage(loginFallbackMessage(isConfigured));
         return;
       }
 
-      console.info("[auth/login] redirect target", { returnTo });
       setMessage(loginSuccessMessage);
       setIsLoginSuccess(true);
     } catch (error) {

@@ -190,7 +190,7 @@ async function getAdminNotificationActionContext(): Promise<AdminNotificationAct
   if (!user) return { ok: false, message: "请先登录管理员账号。" };
 
   if (!(await hasAdminModulePermission("messages", "manage_notifications"))) {
-    return { ok: false, message: "当前账号没有 manage_notifications 权限。" };
+    return { ok: false, message: "当前账号没有站内通知管理权限。" };
   }
 
   try {

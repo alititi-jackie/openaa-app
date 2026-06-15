@@ -1,7 +1,9 @@
 import { ShieldCheck, ShieldX } from "lucide-react";
+import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 
 export function AdminPermissionBadge({ allowed, label }: { allowed: boolean; label: string }) {
   const Icon = allowed ? ShieldCheck : ShieldX;
+  const displayLabel = getAdminPermissionLabel(label);
 
   return (
     <span
@@ -12,7 +14,7 @@ export function AdminPermissionBadge({ allowed, label }: { allowed: boolean; lab
       }
     >
       <Icon size={13} aria-hidden="true" />
-      {label}
+      {displayLabel}
     </span>
   );
 }

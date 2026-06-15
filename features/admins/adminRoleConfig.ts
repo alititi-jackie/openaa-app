@@ -18,15 +18,102 @@ const adminStatusLabels: Record<string, string> = {
   pending: "待完善",
 };
 
+const adminPermissionLabels: Record<string, string> = {
+  super_admin: "超级管理员权限",
+  "user-posts": "用户发布信息模块",
+  messages: "消息中心模块",
+  news: "新闻管理模块",
+  navigation: "导航管理模块",
+  home: "首页配置模块",
+  ads: "广告管理模块",
+  "recycle-bin": "回收站模块",
+  users: "用户管理模块",
+  settings: "站点设置模块",
+  "audit-logs": "审计日志模块",
+  "admin-access": "管理员授权模块",
+  view_posts: "查看发布信息",
+  view_post_contacts: "查看发布联系方式",
+  moderate_posts: "审核发布信息",
+  approve_posts: "通过发布审核",
+  reject_posts: "拒绝发布审核",
+  hide_posts: "下架发布信息",
+  restore_posts: "恢复发布信息",
+  delete_posts: "删除发布信息",
+  view_feedback: "查看反馈",
+  handle_feedback: "处理反馈",
+  view_reports: "查看举报",
+  handle_reports: "处理举报",
+  view_post_reports: "查看内容举报",
+  handle_post_reports: "处理内容举报",
+  manage_system_announcements: "管理系统公告",
+  manage_notifications: "管理站内通知",
+  view_news: "查看新闻",
+  create_news: "新增新闻",
+  edit_news: "编辑新闻",
+  publish_news: "发布新闻",
+  delete_news: "删除新闻",
+  manage_news_categories: "管理新闻分类",
+  manage_navigation: "管理公共导航",
+  manage_top_links: "管理顶部快捷链接",
+  manage_home_sections: "管理首页模块",
+  manage_latest_ticker: "管理首页滚动信息",
+  manage_ads: "管理广告",
+  view_users: "查看用户",
+  view_user_contacts: "查看用户联系方式",
+  edit_user_notes: "编辑用户备注",
+  restrict_users: "限制用户",
+  ban_users: "封禁用户",
+  restore_users: "恢复用户",
+  manage_user_status: "管理用户状态",
+  view_user_posts: "查看用户发布",
+  view_settings: "查看站点设置",
+  manage_settings: "管理站点设置",
+  manage_rate_limits: "管理频率限制",
+  manage_sensitive_words: "管理敏感词",
+  view_search_logs: "查看搜索日志",
+  view_images: "查看图片资产",
+  delete_images: "删除图片资产",
+  manage_image_assets: "管理图片资产",
+  view_admin_audit_logs: "查看管理员审计日志",
+  view_audit_logs: "查看审计日志",
+  view_admins: "查看管理员",
+  add_admins: "新增管理员",
+  edit_admin_roles: "调整管理员角色",
+  edit_admin_permissions: "调整管理员权限",
+  disable_admins: "停用管理员",
+  restore_admins: "恢复管理员",
+  manage_admins: "管理管理员",
+  view_dmv_questions: "查看 DMV 题库",
+  import_dmv_questions: "导入 DMV 题库",
+  edit_dmv_questions: "编辑 DMV 题库",
+  disable_dmv_questions: "停用 DMV 题目",
+  manage_dmv_questions: "管理 DMV 题库",
+};
+
 export function getAdminRoleLabel(role: AdminRoleName | string | null | undefined) {
   if (!role) return "未授权";
-  return role in adminRoleLabels ? adminRoleLabels[role as AdminRoleName] : role;
+  return role in adminRoleLabels ? adminRoleLabels[role as AdminRoleName] : "未命名角色";
 }
 
 export function getAdminStatusLabel(status: string | boolean | null | undefined) {
   if (typeof status === "boolean") return status ? "启用" : "停用";
   if (!status) return "未知";
-  return adminStatusLabels[status] ?? status;
+  return adminStatusLabels[status] ?? "未知状态";
+}
+
+export function getAdminPermissionLabel(permissionKey: string | null | undefined): string {
+  if (!permissionKey) return "未命名权限";
+  const trimmed = permissionKey.trim();
+  if (!trimmed) return "未命名权限";
+  if (trimmed.includes("/")) {
+    return trimmed
+      .split("/")
+      .map((part) => getAdminPermissionLabel(part))
+      .join(" / ");
+  }
+  if (adminPermissionLabels[trimmed]) return adminPermissionLabels[trimmed];
+  if (/^[a-z][a-z0-9_-]*$/.test(trimmed)) return "未命名权限";
+  return trimmed;
 }
 
 export const adminRoleOptions: Array<{ value: AdminRoleName; label: string }> = [
