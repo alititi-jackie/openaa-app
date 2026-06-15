@@ -133,12 +133,6 @@ export default async function ProfilePage() {
           >
             <p className="text-[14px] font-bold text-blue-700">关于 OpenAA</p>
           </Link>
-          <Link
-            href="/contact"
-            className="block rounded-2xl border border-blue-100 bg-blue-50 px-4 py-4 text-center transition hover:bg-blue-100"
-          >
-            <p className="text-[14px] font-bold text-blue-700">联系我们</p>
-          </Link>
         </section>
       </div>
     </div>
