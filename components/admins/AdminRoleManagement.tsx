@@ -13,32 +13,33 @@ export function CurrentAdminCapabilityPanel({ data }: { data: AdminsData }) {
   const currentAdmin = data.currentAdmin;
 
   return (
-    <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-      <div className="min-w-0">
-        <p className="text-xs font-bold uppercase tracking-wide text-blue-600">当前账号</p>
-        <h2 className="mt-1 truncate text-lg font-black text-slate-950">{currentAdmin?.nickname || currentAdmin?.email || "当前管理员"}</h2>
-      </div>
-
+    <section className="rounded-xl border border-slate-100 bg-white px-3 py-2.5 shadow-sm">
       {currentAdmin ? (
-        <div className="mt-3 grid gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className={`rounded-full px-2.5 py-1 text-xs font-black ${currentAdmin.isActive ? "bg-emerald-50 text-emerald-700" : "bg-slate-200 text-slate-600"}`}>{getAdminStatusLabel(currentAdmin.isActive)}</span>
-            <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-black text-blue-700">{formatRoleLabel(currentAdmin.role)}</span>
-            <span className="rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-700 ring-1 ring-slate-200">当前账号</span>
-            {currentAdmin.role === "super_admin" ? <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700">所有权限</span> : null}
+        <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+            <span className="shrink-0 font-black text-slate-500">当前账号：</span>
+            <span className="min-w-0 truncate font-black text-slate-950">{currentAdmin.nickname || "当前管理员"}</span>
+            <span className="text-slate-300">|</span>
+            <span className="font-bold text-slate-700">{formatRoleLabel(currentAdmin.role)}</span>
+            <span className="text-slate-300">|</span>
+            <span className="font-bold text-slate-700">{getAdminStatusLabel(currentAdmin.isActive)}</span>
+            {currentAdmin.role === "super_admin" ? (
+              <>
+                <span className="text-slate-300">|</span>
+                <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-black text-emerald-700">所有权限</span>
+              </>
+            ) : null}
           </div>
-
-          <div className="grid gap-2 text-sm sm:grid-cols-2">
-            <Info label="邮箱" value={currentAdmin.email || "未绑定邮箱"} />
-            <Info label="user id" value={currentAdmin.userId} />
-            <Info label="授权时间" value={formatDateTime(currentAdmin.grantedAt)} />
-            <Info label="最后后台登录" value={formatDateTime(currentAdmin.lastAdminLoginAt)} />
-          </div>
-
-          <AdminGrantSummary admin={currentAdmin} />
+          {currentAdmin.email ? (
+            <a href={`mailto:${currentAdmin.email}`} className="min-w-0 truncate text-xs font-bold text-blue-700 hover:text-blue-800">
+              {currentAdmin.email}
+            </a>
+          ) : (
+            <span className="text-xs font-bold text-slate-400">未绑定邮箱</span>
+          )}
         </div>
       ) : (
-        <p className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-500">当前角色：{getAdminRoleLabel(data.currentRole)}</p>
+        <p className="text-sm font-semibold text-slate-500">当前账号：{getAdminRoleLabel(data.currentRole)}</p>
       )}
     </section>
   );
@@ -187,15 +188,6 @@ function SummaryRow({ label, items, emptyLabel }: { label: string; items: string
           </span>
         )}
       </div>
-    </div>
-  );
-}
-
-function Info({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl bg-slate-50 px-3 py-2">
-      <span className="block text-xs font-black text-slate-400">{label}</span>
-      <span className="mt-1 block min-w-0 break-all text-sm font-semibold text-slate-700">{value}</span>
     </div>
   );
 }
