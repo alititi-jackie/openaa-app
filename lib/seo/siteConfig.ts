@@ -97,6 +97,7 @@ export const staticSitemapRoutes = [
   "/news",
   "/dmv",
   "/navigation",
+  "/about",
   "/privacy",
   "/terms",
   "/community-guidelines",
