@@ -53,6 +53,11 @@ export default async function NavigationPage({ searchParams }: NavigationPagePro
           <p>
             页面中的链接会按照后台启用的分类和显示数量展示，分类可能覆盖政府服务、银行金融、购物平台、通讯网络、AI 工具、视频娱乐、社交媒体、生活服务和其它常用资源。OpenAA 不承诺第三方网站内容一定准确或持续可用，也不会替用户完成任何官方申请；涉及 DMV、USCIS、IRS、银行金融或法律税务事项时，仍应以对应官方网站和专业意见为准。本页会尽量保持结构清晰、白底轻量、移动端友好，让美国华人用户在手机和电脑上都能快速浏览常用入口。
           </p>
+          <ul className="space-y-1 font-bold text-slate-700">
+            <li>适合用户：纽约华人、在美华人、新移民、留学生、日常办事和生活查询用户</li>
+            <li>核心入口：政府服务、交通出行、银行金融、购物通讯、AI 工具、生活服务和华人常用导航</li>
+            <li>使用建议：先按分类筛选常用网站，再把高频入口加入“我的导航”方便下次打开</li>
+          </ul>
         </div>
       </ChannelSeoCard>
     </ChannelPageChrome>

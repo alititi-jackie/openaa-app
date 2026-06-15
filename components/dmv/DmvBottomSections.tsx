@@ -17,6 +17,7 @@ type DmvCardProps = {
 type DmvSeoContentSectionProps = {
   title: string;
   paragraphs: string[];
+  highlights?: string[];
 };
 
 export function DmvFaqSection({ items }: DmvFaqSectionProps) {
@@ -64,13 +65,20 @@ export function DmvTicketDisclaimerCard() {
   );
 }
 
-export function DmvSeoContentSection({ title, paragraphs }: DmvSeoContentSectionProps) {
+export function DmvSeoContentSection({ title, paragraphs, highlights = [] }: DmvSeoContentSectionProps) {
   return (
     <SeoInfoCard title={title}>
       <div className="space-y-3">
         {paragraphs.map((paragraph) => (
           <p key={paragraph}>{paragraph}</p>
         ))}
+        {highlights.length > 0 ? (
+          <ul className="space-y-1 font-bold text-slate-700">
+            {highlights.map((highlight) => (
+              <li key={highlight}>{highlight}</li>
+            ))}
+          </ul>
+        ) : null}
       </div>
     </SeoInfoCard>
   );

@@ -3,6 +3,7 @@ export type DmvSeoContentKey = "home" | "questions" | "practice" | "mockTest" | 
 export type DmvSeoContent = {
   title: string;
   paragraphs: string[];
+  highlights?: string[];
 };
 
 export const dmvSeoContent: Record<DmvSeoContentKey, DmvSeoContent> = {
@@ -15,6 +16,11 @@ export const dmvSeoContent: Record<DmvSeoContentKey, DmvSeoContent> = {
       "对刚到纽约的人来说，DMV 相关任务常常不是单一步骤，而是一串连续流程：先确认身份证明和地址证明，再准备 Permit 笔试，随后安排练车、5 小时课程和 Road Test；有车以后还可能遇到车辆注册、保险、地址更新、停车罚单或过路费问题。本页把这些高频场景放在同一频道里，减少用户在多个英文入口之间反复搜索的时间。",
       "如果你只是临时查询某个入口，可以从快捷工具进入；如果你正在系统备考，可以按照题库、练习、模拟考试、错题、交通标志专项的顺序推进。这样的结构既适合手机上快速查看，也适合在正式预约前做一次完整检查。",
       "纽约 DMV 规则会随着时间更新，不同身份、年龄、驾照类型和办事地点也可能有细微差异。建议用户把 OpenAA 当作中文导航和学习辅助：用它建立知识框架、安排复习顺序、找到对应官方入口；涉及正式提交、缴费、考试预约、罚单申诉或车辆记录查询时，仍以 New York DMV、NYC Finance、法院或相关政府机构网站为准。",
+    ],
+    highlights: [
+      "适合用户：纽约考驾照用户、新移民、留学生、新手司机和需要处理车辆事务的华人用户",
+      "核心内容：Permit 题库、Practice Test、模拟考试、交通标志、罚单入口、Road Test 和 DMV 办证流程",
+      "使用建议：先用中文理解流程和规则，再前往 New York DMV 或相关官方入口核对最新要求",
     ],
   },
   questions: {
