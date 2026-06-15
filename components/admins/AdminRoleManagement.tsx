@@ -6,44 +6,8 @@ import { AdminAdminManageDialog } from "@/components/admins/AdminAdminManageDial
 import { ADMIN_MODULES } from "@/features/admin/adminModules";
 import { grantAdminRole } from "@/features/admins/adminActions";
 import { adminExemptionOptions, adminRoleOptions, getAdminRoleLabel, getAdminStatusLabel } from "@/features/admins/adminRoleConfig";
-import type { AdminCandidate, AdminRoleListItem, AdminsData, AdminsPermissions } from "@/features/admins/adminQueries";
+import type { AdminCandidate, AdminRoleListItem, AdminsPermissions } from "@/features/admins/adminQueries";
 import type { AdminRoleName } from "@/lib/supabase/types";
-
-export function CurrentAdminCapabilityPanel({ data }: { data: AdminsData }) {
-  const currentAdmin = data.currentAdmin;
-
-  return (
-    <section className="rounded-xl border border-slate-100 bg-white px-3 py-2.5 shadow-sm">
-      {currentAdmin ? (
-        <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-            <span className="shrink-0 font-black text-slate-500">当前账号：</span>
-            <span className="min-w-0 truncate font-black text-slate-950">{currentAdmin.nickname || "当前管理员"}</span>
-            <span className="text-slate-300">|</span>
-            <span className="font-bold text-slate-700">{formatRoleLabel(currentAdmin.role)}</span>
-            <span className="text-slate-300">|</span>
-            <span className="font-bold text-slate-700">{getAdminStatusLabel(currentAdmin.isActive)}</span>
-            {currentAdmin.role === "super_admin" ? (
-              <>
-                <span className="text-slate-300">|</span>
-                <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-black text-emerald-700">所有权限</span>
-              </>
-            ) : null}
-          </div>
-          {currentAdmin.email ? (
-            <a href={`mailto:${currentAdmin.email}`} className="min-w-0 truncate text-xs font-bold text-blue-700 hover:text-blue-800">
-              {currentAdmin.email}
-            </a>
-          ) : (
-            <span className="text-xs font-bold text-slate-400">未绑定邮箱</span>
-          )}
-        </div>
-      ) : (
-        <p className="text-sm font-semibold text-slate-500">当前账号：{getAdminRoleLabel(data.currentRole)}</p>
-      )}
-    </section>
-  );
-}
 
 export function AdminRoleStats({ admins }: { admins: AdminRoleListItem[] }) {
   const active = admins.filter((admin) => admin.isActive).length;

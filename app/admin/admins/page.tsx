@@ -2,6 +2,7 @@ import { UserPlus } from "lucide-react";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminTopActions } from "@/components/admin/AdminTopActions";
 import { AdminCard } from "@/components/admin/AdminCard";
+import { AdminCurrentAccountCard } from "@/components/admin/AdminCurrentAccountCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import {
   AdminCandidates,
@@ -9,7 +10,6 @@ import {
   AdminRoleSearch,
   AdminRoleStats,
   AdminRolesList,
-  CurrentAdminCapabilityPanel,
 } from "@/components/admins/AdminRoleManagement";
 import { getAdminsData, normalizeAdminRole, normalizeAdminStatus } from "@/features/admins/adminQueries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -57,7 +57,13 @@ export default function AdminAdminsPage({ searchParams }: AdminAdminsPageProps) 
               </div>
             ) : null}
 
-            <CurrentAdminCapabilityPanel data={data} />
+            {data.currentAdmin ? (
+              <AdminCurrentAccountCard
+                displayName={data.currentAdmin.email ?? data.currentAdmin.nickname}
+                role={data.currentAdmin.role}
+                isActive={data.currentAdmin.isActive}
+              />
+            ) : null}
             <AdminRoleStats admins={data.admins} />
 
             <AdminCard title="搜索真实用户" description="授权前必须先查到 profiles 中真实存在的用户，避免输错邮箱写入脏记录。">
