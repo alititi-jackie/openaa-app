@@ -1,5 +1,6 @@
 import "server-only";
 
+import { writeAdminAuditLog } from "@/lib/permissions/adminAuditLog";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { POST_TYPE_TO_ROUTE } from "@/features/posts/constants";
 import type { PostType } from "@/features/posts/types";
@@ -202,15 +203,16 @@ export async function writeNotificationAuditLog(
     afterData?: unknown;
   },
 ) {
-  const { error } = await supabase.from("admin_audit_logs").insert({
-    actor_id: actorId ?? null,
+  void supabase;
+
+  return writeAdminAuditLog({
+    actorId: actorId ?? null,
     action,
-    entity_type: "notifications",
-    entity_id: entityId,
-    before_data: beforeData ?? null,
-    after_data: afterData ?? null,
+    entityType: "notifications",
+    entityId,
+    beforeData,
+    afterData,
   });
-  return !error;
 }
 
 function normalizeNotificationInput(input: NotificationInput) {

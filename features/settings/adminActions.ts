@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import type { AdminHomeActionState } from "@/features/admin-home/types";
 import { hasAdminModulePermission } from "@/lib/permissions/admin";
+import { writeAdminAuditLog } from "@/lib/permissions/adminAuditLog";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { DAILY_POST_LIMIT_KEY, normalizeDailyPostLimit } from "./adminQueries";
 import {
@@ -292,14 +293,12 @@ async function writeAuditLog(
   beforeData: unknown,
   afterData: unknown,
 ) {
-  const { error } = await context.supabase.from("admin_audit_logs").insert({
-    actor_id: context.userId,
+  return writeAdminAuditLog({
+    actorId: context.userId,
     action,
-    entity_type: "site_settings",
-    entity_id: entityId,
-    before_data: beforeData ?? null,
-    after_data: afterData ?? null,
+    entityType: "site_settings",
+    entityId,
+    beforeData,
+    afterData,
   });
-
-  return !error;
 }

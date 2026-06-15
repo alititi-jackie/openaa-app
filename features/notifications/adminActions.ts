@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { hasAdminModulePermission, isSuperAdmin } from "@/lib/permissions/admin";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { writeAdminAuditLog } from "@/lib/permissions/adminAuditLog";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   getNotificationRecipients,
@@ -228,15 +229,14 @@ async function writeAuditLog(
   beforeData: unknown,
   afterData: unknown,
 ) {
-  const { error } = await context.supabase.from("admin_audit_logs").insert({
-    actor_id: context.userId,
+  return writeAdminAuditLog({
+    actorId: context.userId,
     action,
-    entity_type: "notifications",
-    entity_id: entityId,
-    before_data: beforeData ?? null,
-    after_data: afterData ?? null,
+    entityType: "notifications",
+    entityId,
+    beforeData,
+    afterData,
   });
-  return !error;
 }
 
 function readText(formData: FormData, key: string) {

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { hasAdminModulePermission } from "@/lib/permissions/admin";
+import { writeAdminAuditLog } from "@/lib/permissions/adminAuditLog";
 import type { AdminHomeActionState } from "@/features/admin-home/types";
 
 type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
@@ -155,16 +156,14 @@ async function readAd(supabase: SupabaseServerClient, id: string) {
 }
 
 async function auditLog(context: Extract<AdminActionContext, { ok: true }>, action: string, entityType: string, entityId: string | null, beforeData?: unknown, afterData?: unknown) {
-  const { error } = await context.supabase.from("admin_audit_logs").insert({
-    actor_id: context.userId,
+  return writeAdminAuditLog({
+    actorId: context.userId,
     action,
-    entity_type: entityType,
-    entity_id: entityId,
-    before_data: beforeData ?? null,
-    after_data: afterData ?? null,
+    entityType,
+    entityId,
+    beforeData,
+    afterData,
   });
-
-  return !error;
 }
 
 async function upsertExternalImageAsset(context: Extract<AdminActionContext, { ok: true }>, imageUrl: string, entityId: string | null) {

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { hasAdminModulePermission } from "@/lib/permissions/admin";
+import { writeAdminAuditLog } from "@/lib/permissions/adminAuditLog";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { defaultHomeSections, defaultLatestTicker, defaultTopQuickLinks } from "./defaults";
 import { fallbackLatestPostSections } from "@/features/home/fallbacks";
@@ -43,15 +44,13 @@ async function getAdminActionContext(permissionKey: string): Promise<AdminAction
 }
 
 async function auditLog(context: Extract<AdminActionContext, { ok: true }>, action: string, entityType: string, entityId: string | null, afterData?: unknown) {
-  const { error } = await context.supabase.from("admin_audit_logs").insert({
-    actor_id: context.userId,
+  return writeAdminAuditLog({
+    actorId: context.userId,
     action,
-    entity_type: entityType,
-    entity_id: entityId,
-    after_data: afterData ?? null,
+    entityType,
+    entityId,
+    afterData,
   });
-
-  return !error;
 }
 
 export async function createDefaultHomeConfig(state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {

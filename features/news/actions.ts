@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { hasAdminModulePermission } from "@/lib/permissions/admin";
+import { writeAdminAuditLog } from "@/lib/permissions/adminAuditLog";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { DEFAULT_NEWS_CATEGORIES } from "./constants";
 import { validateNewsCategoryForm, validateNewsForm } from "./validators";
@@ -49,15 +50,13 @@ async function auditLog(
   entityId: string | null,
   afterData?: unknown,
 ) {
-  const { error } = await context.supabase.from("admin_audit_logs").insert({
-    actor_id: context.userId,
+  return writeAdminAuditLog({
+    actorId: context.userId,
     action,
-    entity_type: entityType,
-    entity_id: entityId,
-    after_data: afterData ?? null,
+    entityType,
+    entityId,
+    afterData,
   });
-
-  return !error;
 }
 
 async function upsertExternalImageAsset(context: Extract<AdminActionContext, { ok: true }>, imageUrl: string, entityId: string | null) {

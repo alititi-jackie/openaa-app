@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { hasAdminModulePermission } from "@/lib/permissions/admin";
+import { writeAdminAuditLog } from "@/lib/permissions/adminAuditLog";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isFeedbackStatus, type FeedbackStatus } from "./types";
@@ -212,15 +213,14 @@ async function writeAuditLog(
   beforeData: unknown,
   afterData: unknown,
 ) {
-  const { error } = await context.supabase.from("admin_audit_logs").insert({
-    actor_id: context.userId,
+  return writeAdminAuditLog({
+    actorId: context.userId,
     action,
-    entity_type: "feedback_posts",
-    entity_id: entityId,
-    before_data: beforeData ?? null,
-    after_data: afterData ?? null,
+    entityType: "feedback_posts",
+    entityId,
+    beforeData,
+    afterData,
   });
-  return !error;
 }
 
 function auditActionForStatus(status: FeedbackStatus) {

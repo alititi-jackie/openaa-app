@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { ADMIN_MODULES, type AdminModuleKey } from "@/features/admin/adminModules";
 import type { AdminHomeActionState } from "@/features/admin-home/types";
 import { adminExemptionOptions, adminRoleDefaultModules, type AdminExemptionKey } from "@/features/admins/adminRoleConfig";
+import { writeAdminAuditLog } from "@/lib/permissions/adminAuditLog";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { AdminRoleName } from "@/lib/supabase/types";
 
@@ -229,15 +230,14 @@ async function saveAdminGrants(context: Extract<AdminActionContext, { ok: true }
 }
 
 async function auditLog(context: Extract<AdminActionContext, { ok: true }>, action: string, entityType: string, entityId: string, beforeData: unknown, afterData: unknown) {
-  const { error } = await context.supabase.from("admin_audit_logs").insert({
-    actor_id: context.userId,
+  return writeAdminAuditLog({
+    actorId: context.userId,
     action,
-    entity_type: entityType,
-    entity_id: entityId,
-    before_data: beforeData ?? null,
-    after_data: afterData ?? null,
+    entityType,
+    entityId,
+    beforeData,
+    afterData,
   });
-  return !error;
 }
 
 function readText(formData: FormData, key: string) {

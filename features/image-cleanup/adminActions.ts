@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { AdminHomeActionState } from "@/features/admin-home/types";
 import { getImageAssetBusinessReferenceMap } from "@/features/image-cleanup/referenceGuards";
 import { hasAdminModulePermission } from "@/lib/permissions/admin";
+import { writeAdminAuditLog } from "@/lib/permissions/adminAuditLog";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
@@ -110,15 +111,14 @@ async function writeAuditLog(
   beforeData: unknown,
   afterData: unknown,
 ) {
-  const { error } = await context.supabase.from("admin_audit_logs").insert({
-    actor_id: context.userId,
+  return writeAdminAuditLog({
+    actorId: context.userId,
     action,
-    entity_type: "image_assets",
-    entity_id: entityId,
-    before_data: beforeData ?? null,
-    after_data: afterData ?? null,
+    entityType: "image_assets",
+    entityId,
+    beforeData,
+    afterData,
   });
-  return !error;
 }
 
 function readText(formData: FormData, key: string) {
