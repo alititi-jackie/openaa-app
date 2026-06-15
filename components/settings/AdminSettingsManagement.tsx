@@ -108,7 +108,7 @@ function PlaceholderImageForm({
   const [saveState, setSaveState] = useState({ ok: true, message: "" });
   const [saving, startSaving] = useTransition();
   const externalPreview = useMemo(() => normalizePreviewUrl(externalUrl), [externalUrl]);
-  const frameClass = "h-[180px] w-full";
+  const frameClass = "h-[180px] w-full overflow-hidden rounded-2xl border border-slate-200 bg-white";
   const displayPreviewUrl = editing
     ? sourceMode === "storage"
       ? selectedFilePreview || value.url
@@ -178,12 +178,12 @@ function PlaceholderImageForm({
       </div>
 
       {displayPreviewUrl ? (
-        <div className="mt-3 overflow-hidden rounded-xl border border-slate-100 bg-white">
+        <div className={`mt-3 ${frameClass}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={displayPreviewUrl}
             alt={previewAlt}
-            className={`${frameClass} object-cover`}
+            className="h-full w-full object-cover"
             onLoad={() => setPreviewFailed(false)}
             onError={() => setPreviewFailed(true)}
           />
