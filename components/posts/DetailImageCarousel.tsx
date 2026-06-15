@@ -41,7 +41,7 @@ export function DetailImageCarousel({ images, title }: DetailImageCarouselProps)
       >
         {visibleImages.map((image, index) => (
           <SwiperSlide key={`${image.url}-${index}`}>
-            <button type="button" onClick={() => setLightboxIndex(index)} className="relative block h-[180px] w-full bg-slate-100 text-left sm:h-[200px] md:h-[320px]" aria-label="查看大图">
+            <button type="button" onClick={() => setLightboxIndex(index)} className="relative block h-[220px] w-full bg-slate-100 text-left sm:h-[250px] md:h-[380px]" aria-label="查看大图">
               {canUseNextImage(image.url) ? (
                 <Image
                   src={image.url}
