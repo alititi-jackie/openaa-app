@@ -1,3 +1,5 @@
+import { SeoInfoCard } from "@/components/common/SeoInfoCard";
+
 type SeoContentCardProps = {
   title?: string;
   content?: string;
@@ -50,22 +52,19 @@ export function SeoContentCard({
   const renderedTitle = renderedContent.title ?? title;
 
   return (
-    <section className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-      <h2 className="text-lg font-black text-slate-950">{renderedTitle}</h2>
-      <div className="mt-2 text-sm leading-6 text-slate-600">
-        <div className="space-y-3">
-          {renderedContent.paragraphs.map((paragraph) => (
-            <p key={paragraph}>{paragraph}</p>
-          ))}
-          {renderedContent.highlights.length > 0 ? (
-            <ul className="space-y-1 font-bold text-slate-700">
-              {renderedContent.highlights.map((highlight) => (
-                <li key={highlight}>{highlight}</li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
+    <SeoInfoCard title={renderedTitle}>
+      <div className="space-y-3">
+        {renderedContent.paragraphs.map((paragraph) => (
+          <p key={paragraph}>{paragraph}</p>
+        ))}
+        {renderedContent.highlights.length > 0 ? (
+          <ul className="space-y-1 font-bold text-slate-700">
+            {renderedContent.highlights.map((highlight) => (
+              <li key={highlight}>{highlight}</li>
+            ))}
+          </ul>
+        ) : null}
       </div>
-    </section>
+    </SeoInfoCard>
   );
 }

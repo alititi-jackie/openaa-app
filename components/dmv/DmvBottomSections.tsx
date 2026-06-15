@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { SeoInfoCard } from "@/components/common/SeoInfoCard";
 
 export type DmvFaqItem = {
   question: ReactNode;
@@ -65,13 +66,12 @@ export function DmvTicketDisclaimerCard() {
 
 export function DmvSeoContentSection({ title, paragraphs }: DmvSeoContentSectionProps) {
   return (
-    <section className="rounded-2xl border border-slate-100 bg-white p-4 text-sm leading-6 text-slate-600 shadow-sm">
-      <h2 className="text-base font-black text-slate-950">{title}</h2>
-      <div className="mt-3 space-y-3">
+    <SeoInfoCard title={title}>
+      <div className="space-y-3">
         {paragraphs.map((paragraph) => (
           <p key={paragraph}>{paragraph}</p>
         ))}
       </div>
-    </section>
+    </SeoInfoCard>
   );
 }
