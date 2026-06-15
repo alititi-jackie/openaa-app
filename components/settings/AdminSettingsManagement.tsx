@@ -1,7 +1,7 @@
 "use client";
 
 import { Gauge, Globe, Settings2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { AdminActionForm, AdminCheckbox, AdminTextInput } from "@/components/admin/AdminActionForm";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { updateDailyPostLimit, updateDefaultPlaceholderImage } from "@/features/settings/adminActions";
@@ -97,12 +97,71 @@ function PlaceholderImageForm({
   description: string;
   value: DefaultPlaceholderImageValue;
 }) {
-  const [externalUrl, setExternalUrl] = useState(value.sourceType === "external" ? value.url ?? "" : "");
+  const [editing, setEditing] = useState(false);
+  const [sourceMode, setSourceMode] = useState<"storage" | "external">("storage");
+  const [externalUrl, setExternalUrl] = useState("");
   const [previewFailed, setPreviewFailed] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState("");
+  const [selectedFilePreview, setSelectedFilePreview] = useState("");
+  const [fileInputKey, setFileInputKey] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [saveState, setSaveState] = useState({ ok: true, message: "" });
+  const [saving, startSaving] = useTransition();
   const externalPreview = useMemo(() => normalizePreviewUrl(externalUrl), [externalUrl]);
-  const displayPreviewUrl = externalPreview.ok ? externalPreview.url : !externalUrl.trim() ? value.url : null;
+  const frameClass = settingKey === "default_service_placeholder_image" ? "h-36 w-full sm:h-40" : "aspect-[3/2] w-full";
+  const displayPreviewUrl = editing
+    ? sourceMode === "storage"
+      ? selectedFilePreview || value.url
+      : externalPreview.ok
+        ? externalPreview.url
+        : null
+    : value.url;
   const previewAlt = externalPreview.ok ? `${label}外链预览` : label;
+
+  function resetDraft() {
+    setSourceMode("storage");
+    setExternalUrl("");
+    setPreviewFailed(false);
+    setSelectedFileName("");
+    if (selectedFilePreview) URL.revokeObjectURL(selectedFilePreview);
+    setSelectedFilePreview("");
+    setFileInputKey((current) => current + 1);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function openEditor() {
+    resetDraft();
+    setEditing(true);
+  }
+
+  function cancelEditor() {
+    resetDraft();
+    setEditing(false);
+  }
+
+  function onFileChange(file: File | null) {
+    if (selectedFilePreview) URL.revokeObjectURL(selectedFilePreview);
+    if (!file) {
+      setSelectedFileName("");
+      setSelectedFilePreview("");
+      return;
+    }
+    setSelectedFileName(file.name);
+    setSelectedFilePreview(URL.createObjectURL(file));
+    setExternalUrl("");
+    setPreviewFailed(false);
+  }
+
+  function savePlaceholder(formData: FormData) {
+    startSaving(async () => {
+      const result = await updateDefaultPlaceholderImage({ ok: true, message: "" }, formData);
+      setSaveState(result);
+      if (result.ok) {
+        setEditing(false);
+        resetDraft();
+      }
+    });
+  }
 
   return (
     <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
@@ -124,7 +183,7 @@ function PlaceholderImageForm({
           <img
             src={displayPreviewUrl}
             alt={previewAlt}
-            className="aspect-[4/3] w-full object-cover"
+            className={`${frameClass} object-cover`}
             onLoad={() => setPreviewFailed(false)}
             onError={() => setPreviewFailed(true)}
           />
@@ -145,40 +204,110 @@ function PlaceholderImageForm({
         </p>
       ) : null}
 
-      <AdminActionForm action={updateDefaultPlaceholderImage} submitLabel="保存默认图片" className="mt-3 grid gap-3">
-        <input type="hidden" name="setting_key" value={settingKey} />
-        <label className="grid gap-1.5 text-sm font-bold text-slate-700">
-          <span>外部图片链接</span>
-          <input
-            name="image_url"
-            value={externalUrl}
-            onChange={(event) => {
-              setExternalUrl(event.target.value);
-              setPreviewFailed(false);
-            }}
-            placeholder="https://img.openaa.com/..."
-            className="min-h-10 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-500"
-          />
-        </label>
-        <label className="grid gap-1.5 text-sm font-bold text-slate-700">
-          <span>上传图片</span>
-          <input
-            name="image_file"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={(event) => setSelectedFileName(event.target.files?.[0]?.name ?? "")}
-            className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 outline-none file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-black file:text-slate-700 focus:border-blue-500"
-          />
-        </label>
-        {selectedFileName ? (
-          <p className="rounded-xl bg-blue-50 px-3 py-2 text-xs font-semibold leading-5 text-blue-700">
-            已选择上传文件：{selectedFileName}。保存时会优先使用上传图片，外部链接将被忽略。
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={openEditor}
+          className="inline-flex min-h-10 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-black text-blue-700 hover:bg-blue-100"
+        >
+          {value.url ? "更换图片" : "上传图片"}
+        </button>
+      </div>
+
+      {editing ? (
+        <form action={savePlaceholder} encType="multipart/form-data" className="mt-3 rounded-2xl border border-blue-100 bg-white p-3">
+          <input type="hidden" name="setting_key" value={settingKey} />
+          <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-1">
+            <button
+              type="button"
+              onClick={() => {
+                setSourceMode("storage");
+                setExternalUrl("");
+                setPreviewFailed(false);
+              }}
+              className={`min-h-10 rounded-lg px-3 text-sm font-black ${sourceMode === "storage" ? "bg-slate-950 text-white" : "bg-white text-slate-700 ring-1 ring-slate-200"}`}
+            >
+              直接上传
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSourceMode("external");
+                onFileChange(null);
+              }}
+              className={`min-h-10 rounded-lg px-3 text-sm font-black ${sourceMode === "external" ? "bg-slate-950 text-white" : "bg-white text-slate-700 ring-1 ring-slate-200"}`}
+            >
+              使用外链
+            </button>
+          </div>
+
+          {sourceMode === "storage" ? (
+            <div className="mt-3 space-y-2">
+              <label className="grid gap-1.5 text-sm font-bold text-slate-700">
+                <span>上传图片</span>
+                <input
+                  key={fileInputKey}
+                  ref={fileInputRef}
+                  name="image_file"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(event) => onFileChange(event.target.files?.[0] ?? null)}
+                  className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 outline-none file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-black file:text-slate-700 focus:border-blue-500"
+                />
+              </label>
+              {selectedFileName ? (
+                <p className="rounded-xl bg-blue-50 px-3 py-2 text-xs font-semibold leading-5 text-blue-700">
+                  已选择上传文件：{selectedFileName}
+                </p>
+              ) : null}
+            </div>
+          ) : (
+            <div className="mt-3 space-y-2">
+              <label className="grid gap-1.5 text-sm font-bold text-slate-700">
+                <span>外部图片链接</span>
+                <input
+                  name="image_url"
+                  value={externalUrl}
+                  onChange={(event) => {
+                    setExternalUrl(event.target.value);
+                    setPreviewFailed(false);
+                  }}
+                  placeholder="https://img.openaa.com/..."
+                  className="min-h-10 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-500"
+                />
+              </label>
+              <p className="rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold leading-5 text-slate-500">
+                外链只支持 https://img.openaa.com/ 下的 png、jpg、jpeg、webp 图片。
+              </p>
+            </div>
+          )}
+
+          <p className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold leading-5 text-slate-500">
+            只能保留一张默认图片。保存后会替换当前图片；取消不会保存本次选择。
           </p>
-        ) : null}
-        <p className="rounded-xl bg-white px-3 py-2 text-xs font-semibold leading-5 text-slate-500">
-          上传图片和外链二选一；如果同时填写，优先使用上传图片。外链第一版只支持 https://img.openaa.com/。
-        </p>
-      </AdminActionForm>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={cancelEditor}
+              disabled={saving}
+              className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              disabled={saving || (sourceMode === "storage" ? !selectedFileName : !externalPreview.ok)}
+              className="inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {saving ? "保存中..." : "保存"}
+            </button>
+            {saveState.message ? (
+              <p className={saveState.ok ? "text-sm font-semibold text-emerald-700" : "text-sm font-semibold text-red-600"}>{saveState.message}</p>
+            ) : null}
+          </div>
+        </form>
+      ) : null}
 
       {value.url ? (
         <AdminActionForm action={updateDefaultPlaceholderImage} submitLabel="清除默认图片" className="mt-3">
