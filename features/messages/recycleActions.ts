@@ -22,13 +22,15 @@ export async function restoreMessageRecycleItem(_state: AdminHomeActionState, fo
   if (!id) return fail("缺少记录。");
 
   if (type === "reports") {
-    const before = await context.supabase.from("post_reports").select("*").eq("id", id).maybeSingle();
-    const { error } = await context.supabase.from("post_reports").update({ deleted_at: null, deleted_by: null, updated_at: new Date().toISOString() }).eq("id", id);
+    const before = await context.supabase.from("post_reports").select("*").eq("id", id).not("deleted_at", "is", null).maybeSingle();
+    if (!before.data) return fail("只能恢复回收站内的举报。");
+    const { error } = await context.supabase.from("post_reports").update({ deleted_at: null, deleted_by: null, updated_at: new Date().toISOString() }).eq("id", id).not("deleted_at", "is", null);
     if (error) return fail("恢复举报失败。");
     await writeAdminAuditLog({ actorId: context.userId, action: "restore_report", entityType: "post_reports", entityId: id, beforeData: before.data, afterData: { deleted_at: null } });
   } else if (type === "feedback") {
-    const before = await context.supabase.from("support_tickets").select("*").eq("id", id).maybeSingle();
-    const { error } = await context.supabase.from("support_tickets").update({ deleted_at: null, status: "viewed", updated_at: new Date().toISOString() }).eq("id", id);
+    const before = await context.supabase.from("support_tickets").select("*").eq("id", id).not("deleted_at", "is", null).maybeSingle();
+    if (!before.data) return fail("只能恢复回收站内的线索与建议。");
+    const { error } = await context.supabase.from("support_tickets").update({ deleted_at: null, status: "viewed", updated_at: new Date().toISOString() }).eq("id", id).not("deleted_at", "is", null);
     if (error) return fail("恢复线索与建议失败。");
     await writeAdminAuditLog({ actorId: context.userId, action: "restore_feedback", entityType: "support_tickets", entityId: id, beforeData: before.data, afterData: { deleted_at: null, status: "viewed" } });
   } else {

@@ -77,7 +77,7 @@ export const ADMIN_MODULES: AdminModule[] = [
   {
     key: "recycle-bin",
     title: "回收站",
-    description: "统一管理发布信息、新闻和公共导航回收站，支持恢复和超级管理员永久删除。",
+    description: "统一管理发布信息、新闻、公共导航、举报和线索与建议回收站，支持恢复和永久删除。",
     href: "/admin/recycle-bin",
     group: "content",
     groupTitle: "内容管理",
@@ -88,6 +88,8 @@ export const ADMIN_MODULES: AdminModule[] = [
       { key: "post", title: "用户发布信息", href: "/admin/recycle-bin?tab=post" },
       { key: "news", title: "新闻", href: "/admin/recycle-bin?tab=news" },
       { key: "navigation", title: "公共导航", href: "/admin/recycle-bin?tab=navigation" },
+      { key: "reports", title: "举报", href: "/admin/recycle-bin?tab=reports" },
+      { key: "feedback", title: "线索与建议", href: "/admin/recycle-bin?tab=feedback" },
       { key: "image-cleanup", title: "图片清理工具", href: "/admin/image-cleanup" },
     ],
   },
@@ -170,7 +172,7 @@ export const ADMIN_MODULES: AdminModule[] = [
   {
     key: "messages",
     title: "消息中心",
-    description: "集中处理内容举报和站内通知。平台反馈与举报工单请进入“反馈与举报管理”。",
+    description: "集中处理内容举报、线索与建议，并主动联系用户。",
     href: "/admin/messages",
     group: "users-security",
     groupTitle: "用户与安全",
@@ -187,7 +189,8 @@ export const ADMIN_MODULES: AdminModule[] = [
     ],
     children: [
       { key: "reports", title: "举报", href: "/admin/messages?tab=reports" },
-      { key: "notifications", title: "通知", href: "/admin/messages?tab=notifications" },
+      { key: "feedback", title: "线索与建议", href: "/admin/messages?tab=feedback" },
+      { key: "contact-users", title: "联系用户", href: "/admin/messages?tab=contact-users" },
     ],
   },
   {

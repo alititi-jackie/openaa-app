@@ -35,6 +35,8 @@ export async function handleMessageReport(_state: AdminHomeActionState, formData
 
   const before = await readReport(context.supabase, id);
   if (!before) return fail("举报不存在或已被删除。");
+  if (before.deleted_at) return fail("该举报已在回收站中，不能重复处理。");
+  if (before.status !== "open" && before.status !== "in_review") return fail("该举报已处理，不能重复处理。");
   const post = relationOne(before.posts);
   if (!post) return fail("被举报的信息不存在。");
 
@@ -52,7 +54,12 @@ export async function handleMessageReport(_state: AdminHomeActionState, formData
     updated_at: now,
   };
 
-  const { error: reportError } = await context.supabase.from("post_reports").update(reportPayload).eq("id", id);
+  const { error: reportError } = await context.supabase
+    .from("post_reports")
+    .update(reportPayload)
+    .eq("id", id)
+    .in("status", ["open", "in_review"])
+    .is("deleted_at", null);
   if (reportError) return fail("举报处理失败，请稍后再试。");
 
   if (postAction === "hide" || postAction === "delete") {
@@ -64,6 +71,7 @@ export async function handleMessageReport(_state: AdminHomeActionState, formData
   }
 
   let notificationId: string | null = null;
+  let notificationFailed = false;
   if (notifyAuthor && post.author_id) {
     const message = `${reportPayload.admin_message_editable}\n\n${fixedMessage}`;
     const result = await sendNotificationToUser(
@@ -80,8 +88,11 @@ export async function handleMessageReport(_state: AdminHomeActionState, formData
       },
       context.supabase,
     );
-    if (!result.ok) return fail("举报已处理，但通知作者失败。");
-    notificationId = result.notificationIds[0] ?? null;
+    if (result.ok) {
+      notificationId = result.notificationIds[0] ?? null;
+    } else {
+      notificationFailed = true;
+    }
   }
 
   await writeAdminAuditLog({
@@ -90,12 +101,12 @@ export async function handleMessageReport(_state: AdminHomeActionState, formData
     entityType: "post_reports",
     entityId: id,
     beforeData: before,
-    afterData: { ...reportPayload, notification_id: notificationId },
+    afterData: { ...reportPayload, notification_id: notificationId, notification_failed: notificationFailed },
   });
 
   revalidateMessages();
   revalidatePost(post.post_type, post.id);
-  return ok("举报已处理。");
+  return ok(notificationFailed ? "举报已处理，但通知作者失败，请到联系用户中手动补发。" : "举报已处理。");
 }
 
 export async function softDeleteMessageReport(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
@@ -106,7 +117,9 @@ export async function softDeleteMessageReport(_state: AdminHomeActionState, form
 
   const now = new Date().toISOString();
   const before = await readReport(context.supabase, id);
-  const { error } = await context.supabase.from("post_reports").update({ deleted_at: now, deleted_by: context.userId, updated_at: now }).eq("id", id);
+  if (!before || before.deleted_at) return fail("只能删除已处理且不在回收站中的举报。");
+  if (before.status !== "resolved") return fail("请先处理举报，再删除到回收站。");
+  const { error } = await context.supabase.from("post_reports").update({ deleted_at: now, deleted_by: context.userId, updated_at: now }).eq("id", id).eq("status", "resolved").is("deleted_at", null);
   if (error) return fail("删除举报失败，请稍后再试。");
   await writeAdminAuditLog({ actorId: context.userId, action: "soft_delete_report", entityType: "post_reports", entityId: id, beforeData: before, afterData: { deleted_at: now } });
   revalidateMessages();
@@ -125,7 +138,8 @@ export async function softDeleteFeedback(_state: AdminHomeActionState, formData:
   if (!id) return fail("缺少反馈记录。");
   const now = new Date().toISOString();
   const before = await readFeedback(context.supabase, id);
-  const { error } = await context.supabase.from("support_tickets").update({ status: "deleted", deleted_at: now, handled_by: context.userId, handled_at: now, updated_at: now }).eq("id", id);
+  if (!before || before.deleted_at) return fail("只能删除不在回收站中的线索与建议。");
+  const { error } = await context.supabase.from("support_tickets").update({ status: "deleted", deleted_at: now, handled_by: context.userId, handled_at: now, updated_at: now }).eq("id", id).is("deleted_at", null);
   if (error) return fail("删除失败，请稍后再试。");
   await writeAdminAuditLog({ actorId: context.userId, action: "soft_delete_feedback", entityType: "support_tickets", entityId: id, beforeData: before, afterData: { deleted_at: now } });
   revalidateMessages();
@@ -171,7 +185,8 @@ async function updateFeedbackStatus(formData: FormData, status: "viewed", messag
   if (!id) return fail("缺少反馈记录。");
   const now = new Date().toISOString();
   const before = await readFeedback(context.supabase, id);
-  const { error } = await context.supabase.from("support_tickets").update({ status, handled_by: context.userId, handled_at: now, updated_at: now }).eq("id", id);
+  if (!before || before.deleted_at) return fail("只能查看不在回收站中的线索与建议。");
+  const { error } = await context.supabase.from("support_tickets").update({ status, handled_by: context.userId, handled_at: now, updated_at: now }).eq("id", id).is("deleted_at", null);
   if (error) return fail("更新失败，请稍后再试。");
   await writeAdminAuditLog({ actorId: context.userId, action: "mark_feedback_viewed", entityType: "support_tickets", entityId: id, beforeData: before, afterData: { status } });
   revalidateMessages();
@@ -201,6 +216,8 @@ async function readReport(supabase: ReturnType<typeof createSupabaseAdminClient>
     .maybeSingle();
   return data as null | {
     id: string;
+    status: string;
+    deleted_at: string | null;
     posts?: { id: string; post_type: PostType; title: string; status: string; author_id: string | null }[] | { id: string; post_type: PostType; title: string; status: string; author_id: string | null } | null;
   };
 }

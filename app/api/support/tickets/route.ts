@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
@@ -134,6 +135,8 @@ export async function POST(request: NextRequest) {
       target_id: targetId || null,
     },
   });
+
+  revalidatePath("/admin/messages");
 
   return NextResponse.json({ success: true, ticket_no: data.ticket_no }, { status: 201 });
 }
