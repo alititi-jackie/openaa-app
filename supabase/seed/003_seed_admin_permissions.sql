@@ -16,8 +16,8 @@ values
   ('manage_ads', 'Manage ads', 'operations'),
   ('manage_navigation', 'Manage navigation', 'operations'),
   ('manage_home_sections', 'Manage home sections', 'operations'),
-  ('view_feedback', 'View feedback', 'support'),
-  ('handle_feedback', 'Handle feedback', 'support'),
+  ('view_support_tickets', 'View support tickets', 'support'),
+  ('handle_support_tickets', 'Handle support tickets', 'support'),
   ('manage_image_assets', 'Manage image assets', 'media'),
   ('manage_dmv_questions', 'Manage DMV questions', 'dmv'),
   ('manage_settings', 'Manage settings', 'system')

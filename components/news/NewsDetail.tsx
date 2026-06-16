@@ -5,6 +5,7 @@ import { PageShareButton } from "@/components/common/PageShareButton";
 import { DetailShareCard } from "@/components/posts/DetailShareCard";
 import { formatNewsDate } from "@/features/news/mappers";
 import type { NewsPostCard, NewsPostDetail } from "@/features/news/types";
+import { appUrl } from "@/lib/seo/siteConfig";
 import { NewsCover } from "./NewsCover";
 
 type NewsDetailProps = {
@@ -19,7 +20,14 @@ function visibleParagraphs(body: string) {
   return body.split(/\n+/).map((part) => part.trim()).filter(Boolean);
 }
 
-function NewsSuggestionCard() {
+function NewsSuggestionCard({ post }: { post: NewsPostDetail }) {
+  const feedbackHref = `/feedback?${new URLSearchParams({
+    type: "feature_suggestion",
+    related_url: appUrl(post.href),
+    target_type: "news",
+    target_id: post.id,
+  }).toString()}`;
+
   return (
     <section className="mt-6 rounded-2xl border border-blue-100 bg-blue-50/40 p-4">
       <h2 className="text-base font-bold text-zinc-900">有新闻线索或投稿建议？</h2>
@@ -28,7 +36,7 @@ function NewsSuggestionCard() {
       </p>
       <div className="mt-3">
         <Link
-          href="/feedback?type=%E6%96%B0%E9%97%BB%E7%BA%BF%E7%B4%A2%20%2F%20%E6%8A%95%E7%A8%BF%E5%BB%BA%E8%AE%AE"
+          href={feedbackHref}
           className="inline-flex items-center justify-center rounded-xl border border-blue-200 bg-white px-3 py-1.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-50"
         >
           提交新闻线索 / 建议
@@ -152,7 +160,7 @@ export function NewsDetail({ post, previousPost, nextPost, relatedPosts, initial
       </div>
 
       <DetailShareCard path={post.href} title={post.title} text={shareText} className="mt-6" />
-      <NewsSuggestionCard />
+      <NewsSuggestionCard post={post} />
       <ContinueReading previousPost={previousPost} nextPost={nextPost} />
       <RelatedNews posts={relatedPosts} />
       <div className="mt-6">

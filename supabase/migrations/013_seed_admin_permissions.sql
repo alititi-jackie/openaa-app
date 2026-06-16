@@ -41,6 +41,8 @@ values
   ('manage_notifications', 'Manage notifications', 'Send and manage notifications.', 'operations'),
   ('view_feedback', 'View feedback', 'View submitted feedback.', 'support'),
   ('handle_feedback', 'Handle feedback', 'Handle submitted feedback.', 'support'),
+  ('view_support_tickets', 'View support tickets', 'View support ticket list and details.', 'support'),
+  ('handle_support_tickets', 'Handle support tickets', 'Update support ticket status, priority, replies, notes, and settings.', 'support'),
   ('view_reports', 'View reports', 'View reports.', 'support'),
   ('handle_reports', 'Handle reports', 'Handle reports.', 'support'),
   ('view_images', 'View images', 'View image assets.', 'media'),
@@ -106,12 +108,14 @@ where permission_key in (
   'view_reports',
   'handle_reports',
   'view_feedback',
-  'handle_feedback'
+  'handle_feedback',
+  'view_support_tickets',
+  'handle_support_tickets'
 )
 on conflict (role, permission_key) do update set allowed = excluded.allowed, updated_at = now();
 
 insert into public.admin_role_permissions (role, permission_key, allowed)
 select 'support'::public.admin_role, permission_key, true
 from public.admin_permissions
-where permission_key in ('view_feedback', 'handle_feedback', 'view_reports', 'view_users')
+where permission_key in ('view_feedback', 'handle_feedback', 'view_support_tickets', 'handle_support_tickets', 'view_reports', 'view_users')
 on conflict (role, permission_key) do update set allowed = excluded.allowed, updated_at = now();

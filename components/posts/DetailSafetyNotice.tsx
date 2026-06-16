@@ -9,11 +9,11 @@ type DetailSafetyNoticeProps = {
   className?: string;
 };
 
-export function DetailSafetyNotice({ returnTo, className }: DetailSafetyNoticeProps) {
+export function DetailSafetyNotice({ postId, returnTo, className }: DetailSafetyNoticeProps) {
   const router = useRouter();
 
   function submitFeedbackReport() {
-    const params = new URLSearchParams({ type: "信息举报" });
+    const params = new URLSearchParams({ type: "report_content", target_type: "post", target_id: postId });
     if (typeof window !== "undefined") {
       params.set("related_url", window.location.href);
     } else {

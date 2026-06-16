@@ -75,7 +75,14 @@ Automatic first-version system notifications are created for admin post deletion
 Anonymous insert is allowed only for controlled public intake:
 
 - post views with `visitor_id`
-- post reports with `visitor_id`
-- feedback without `user_id`
+- support tickets without `user_id`
 
 These paths still require server-side rate limiting before production use.
+
+## Support Tickets
+
+`support_tickets` is the platform feedback and support intake table. Anonymous users may insert tickets only when `user_id` is null, `visitor_id` is present, and both `contact_info` and `content` are non-empty. Authenticated users may insert tickets only for `auth.uid()`; if their profile has no `email`, `phone`, `wechat_id`, or `whatsapp`, `contact_info` is required.
+
+The first version does not expose user self-service ticket reads. Future "my feedback records" UI should use a server action or safe view that returns `admin_reply` but never returns `admin_note`.
+
+Admins with `view_support_tickets` can read non-deleted tickets and settings. Admins with `handle_support_tickets` can update status, priority, public reply, internal note, handling fields, and settings. Support ticket event writes are server-controlled; ordinary users cannot directly insert or read event rows.

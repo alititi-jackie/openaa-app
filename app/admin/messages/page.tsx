@@ -6,15 +6,6 @@ import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import {
-  AdminFeedbackFilter,
-  AdminFeedbackList,
-  AdminFeedbackPagination,
-  AdminFeedbackPermissionBadges,
-  AdminFeedbackReadHint,
-  AdminFeedbackSettingsForm,
-  AdminFeedbackStats,
-} from "@/components/feedback/AdminFeedbackManagement";
-import {
   AdminNotificationsFilter,
   AdminNotificationsList,
   AdminNotificationsPagination,
@@ -29,7 +20,6 @@ import {
   AdminReportsPermissionBadges,
   AdminReportsStats,
 } from "@/components/reports/AdminReportsManagement";
-import { getAdminFeedbackData, normalizeFeedbackStatus, normalizeFeedbackTypeFilter } from "@/features/feedback/adminQueries";
 import {
   getAdminNotificationsData,
   normalizeNotificationReadFilter,
@@ -51,7 +41,7 @@ export const metadata = buildPageMetadata({
   noIndex: true,
 });
 
-type MessageTab = "feedback" | "reports" | "notifications";
+type MessageTab = "reports" | "notifications";
 
 type AdminMessagesPageProps = {
   searchParams?: Promise<{
@@ -66,7 +56,6 @@ type AdminMessagesPageProps = {
 };
 
 const tabMeta: Record<MessageTab, { label: string; href: string }> = {
-  feedback: { label: "反馈", href: "/admin/messages?tab=feedback" },
   reports: { label: "举报", href: "/admin/messages?tab=reports" },
   notifications: { label: "通知", href: "/admin/messages?tab=notifications" },
 };
@@ -87,14 +76,13 @@ export default function AdminMessagesPage({ searchParams }: AdminMessagesPagePro
         const permissions = await getMessageCenterPermissions();
         const visibleTabs = getVisibleTabs(permissions);
         const requestedTab = normalizeMessageTab(params?.tab);
-        const activeTab = requestedTab ?? visibleTabs[0] ?? "feedback";
+        const activeTab = requestedTab ?? visibleTabs[0] ?? "reports";
 
         return (
           <div className="space-y-4">
             <AdminTopActions />
 
             <AdminPageHeader title="消息中心" description="集中处理用户反馈、内容举报和站内通知。">
-              <AdminPermissionBadge allowed={permissions.canViewFeedback} label="view_feedback / handle_feedback" />
               <AdminPermissionBadge allowed={permissions.canViewReports} label="view_reports / handle_reports" />
               <AdminPermissionBadge allowed={permissions.canManageNotifications} label="manage_notifications" />
             </AdminPageHeader>
@@ -105,8 +93,6 @@ export default function AdminMessagesPage({ searchParams }: AdminMessagesPagePro
               <NoPermissionPanel message="当前管理员没有消息中心权限。" />
             ) : !visibleTabs.includes(activeTab) ? (
               <NoPermissionPanel message="当前管理员没有查看该消息 tab 的权限。" />
-            ) : activeTab === "feedback" ? (
-              <FeedbackTab params={params} />
             ) : activeTab === "reports" ? (
               <ReportsTab params={params} />
             ) : (
@@ -116,49 +102,6 @@ export default function AdminMessagesPage({ searchParams }: AdminMessagesPagePro
         );
       }}
     </AdminAuthGate>
-  );
-}
-
-async function FeedbackTab({ params }: { params?: Awaited<AdminMessagesPageProps["searchParams"]> }) {
-  const data = await getAdminFeedbackData({
-    status: normalizeFeedbackStatus(params?.status),
-    type: normalizeFeedbackTypeFilter(params?.type),
-    q: params?.q,
-    page: normalizePage(params?.page),
-  });
-
-  if (!data.permissions.viewFeedback) {
-    return (
-      <NoPermissionPanel message={`当前管理员没有 ${getAdminPermissionLabel("view_feedback")} 或 ${getAdminPermissionLabel("handle_feedback")} 权限。`}>
-        <AdminFeedbackPermissionBadges permissions={data.permissions} />
-      </NoPermissionPanel>
-    );
-  }
-
-  return (
-    <>
-      {data.state === "error" || data.state === "missing_config" ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
-          反馈后台读取暂时不可用：{data.error ?? "请稍后再试。"}
-        </div>
-      ) : null}
-
-      <AdminFeedbackStats totals={data.totals} />
-
-      <AdminCard title="提交设置" description="配置单个用户、匿名访客和全站每天允许提交的反馈数量。">
-        <AdminFeedbackSettingsForm settings={data.settings} permissions={data.permissions} />
-      </AdminCard>
-
-      <AdminCard title="筛选反馈" description="按状态、类型、内容、联系方式或相关链接快速筛选反馈记录。">
-        <AdminFeedbackFilter status={params?.status} type={params?.type} q={params?.q} />
-      </AdminCard>
-
-      <AdminCard title="反馈列表" description="删除后前台不再显示，后台仍保留处理记录，方便后续追溯。">
-        <AdminFeedbackReadHint pageSize={data.pageSize} />
-        <AdminFeedbackList feedback={data.feedback} permissions={data.permissions} />
-        <AdminFeedbackPagination page={data.page} pageCount={data.pageCount} totalCount={data.totalCount} status={params?.status} type={params?.type} q={params?.q} />
-      </AdminCard>
-    </>
   );
 }
 
@@ -261,11 +204,9 @@ async function NotificationsTab({ params }: { params?: Awaited<AdminMessagesPage
 }
 
 async function getMessageCenterPermissions() {
-  const [superAdmin, viewFeedback, handleFeedback, viewReports, handleReports, viewPostReports, handlePostReports, moderatePosts, manageNotifications] =
+  const [superAdmin, viewReports, handleReports, viewPostReports, handlePostReports, moderatePosts, manageNotifications] =
     await Promise.all([
       isSuperAdmin(),
-      hasAdminPermission("view_feedback"),
-      hasAdminPermission("handle_feedback"),
       hasAdminPermission("view_reports"),
       hasAdminPermission("handle_reports"),
       hasAdminPermission("view_post_reports"),
@@ -275,7 +216,6 @@ async function getMessageCenterPermissions() {
     ]);
 
   return {
-    canViewFeedback: superAdmin || viewFeedback || handleFeedback,
     canViewReports: superAdmin || viewReports || handleReports || viewPostReports || handlePostReports || moderatePosts,
     canManageNotifications: superAdmin || manageNotifications,
   };
@@ -283,7 +223,6 @@ async function getMessageCenterPermissions() {
 
 function getVisibleTabs(permissions: Awaited<ReturnType<typeof getMessageCenterPermissions>>): MessageTab[] {
   return [
-    permissions.canViewFeedback ? "feedback" : null,
     permissions.canViewReports ? "reports" : null,
     permissions.canManageNotifications ? "notifications" : null,
   ].filter((tab): tab is MessageTab => Boolean(tab));
@@ -318,7 +257,7 @@ function NoPermissionPanel({ message, children }: { message: string; children?: 
 }
 
 function normalizeMessageTab(value?: string): MessageTab | undefined {
-  if (value === "feedback" || value === "reports" || value === "notifications") return value;
+  if (value === "reports" || value === "notifications") return value;
   return undefined;
 }
 

@@ -4,8 +4,8 @@ This is a read-only recheck of the old `openaa-ny` backend against the new `open
 
 Historical note: this document started as an old-backend gap check. Since then, the new admin surface has consolidated several routes:
 
-- Old standalone feedback, reports, and notifications admin pages are now under `/admin/messages`:
-  - `/admin/messages?tab=feedback`
+- Feedback and report support tickets now use `/admin/support`.
+- Old standalone reports and notifications admin pages are now under `/admin/messages`:
   - `/admin/messages?tab=reports`
   - `/admin/messages?tab=notifications`
 - User-published content is now managed through `/admin/user-posts`.
@@ -102,7 +102,7 @@ New auth pattern:
 | top links management | Complete | New `/admin/top-links` covers header quick links. |
 | home sections | Complete | New `/admin/home` covers home sections, banners, ticker, and home operations. |
 | ads management | Complete with new model | New `/admin/ads` manages placements and external image assets. Old upload/delete image behavior is intentionally not copied one-to-one. |
-| feedback management | Complete | Current new-site route is `/admin/messages?tab=feedback`; old standalone `/admin/feedback` references are historical only. |
+| feedback management | Complete | Current new-site route is `/admin/support`; old standalone `/admin/feedback` and old `/admin/messages?tab=feedback` references are historical only. |
 | reports management | New app enhancement | Current new-site route is `/admin/messages?tab=reports`; old standalone `/admin/reports` references are historical only. |
 | notifications management | Complete | Current new-site route is `/admin/messages?tab=notifications`; old standalone `/admin/notifications` references are historical only. |
 | settings | Complete | New `/admin/settings` covers site settings such as daily post limit. |

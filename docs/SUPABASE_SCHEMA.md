@@ -35,7 +35,7 @@ Phase 2 establishes the minimum viable platform schema for the new `openaa-app` 
 - Favorites: `user_favorites`.
 - Media: `image_assets`.
 - Content and operations: `news_categories`, `news_posts`, `navigation_categories`, `navigation_links`, `user_navigation_links`, `user_navigation_settings`, `home_banners`, `home_sections`, `top_quick_links`, `latest_ticker`, `ads`.
-- Notifications and feedback: `notifications`, `notification_templates`, `system_announcements`, `feedback`, `push_subscriptions`.
+- Notifications and support: `notifications`, `notification_templates`, `system_announcements`, `support_tickets`, `support_ticket_settings`, `support_ticket_events`, `push_subscriptions`.
 - DMV: `dmv_questions`, `dmv_user_progress`, `dmv_wrong_questions`, `dmv_exam_results`, `dmv_question_imports`.
 - Reserved simple tables: `comments`, `ratings`, `business_verifications`, `appointments`, `coupons`.
 
@@ -82,6 +82,47 @@ New notifications should prefer `action_url`. Existing `link_url` rows remain re
 Seeded templates: `admin_post_deleted`, `admin_post_hidden`, `admin_post_restored`, `admin_post_published`, `admin_post_rejected`, `content_issue`, `image_issue`, `contact_issue`, `missing_info`, `wrong_category`, `duplicate_post`, `system_announcement`, and `account_notice`.
 
 Admin sends, bulk sends, and automatic moderation notifications use `features/notifications/service.ts` and write audit records to `admin_audit_logs`.
+
+## Support Tickets
+
+`support_tickets` is the first-version platform feedback and report ticket system. It replaces the old `feedback` / `feedback_posts` / `feedback_settings` tables. The content moderation report table `post_reports` remains separate because it powers post report counts, "already reported" state, and post moderation workflows.
+
+Fields:
+
+- `id`
+- `ticket_no`
+- `user_id`
+- `visitor_id`
+- `type`
+- `source`
+- `target_type`
+- `target_id`
+- `related_url`
+- `contact_info`
+- `content`
+- `status`
+- `priority`
+- `admin_reply`
+- `admin_note`
+- `handled_by`
+- `handled_at`
+- `closed_at`
+- `created_at`
+- `updated_at`
+- `deleted_at`
+
+`support_ticket_settings` stores runtime submission limits and field length constraints:
+
+- `enabled`
+- `daily_user_limit`
+- `daily_visitor_limit`
+- `daily_total_limit`
+- `content_min_length`
+- `content_max_length`
+- `contact_max_length`
+- `related_url_max_length`
+
+`support_ticket_events` stores ticket creation and administrator handling events. The first UI version writes events for ticket creation, status changes, priority changes, public reply edits, and internal note edits, but does not render a full timeline yet.
 
 ## User Post Admin Events
 

@@ -17,8 +17,8 @@ Phase 2 creates all of these tables and seeds baseline permission keys plus defa
 - `super_admin`: implicitly has all permissions through `public.is_super_admin()`.
 - `admin`: broad operational access, but not full administrator management by default.
 - `editor`: content, news, navigation, home, and DMV viewing permissions.
-- `moderator`: users, posts, reports, and feedback handling permissions.
-- `support`: simplified feedback/report support role, reserved for later UI enablement.
+- `moderator`: users, posts, and content report handling permissions.
+- `support`: support ticket handling permissions for `/admin/support`.
 
 Single-user permission overrides live in `admin_user_permissions`. `deny` wins over `allow`.
 
@@ -51,6 +51,15 @@ Permission points:
 Every server action checks the relevant permission before writing and inserts an `admin_audit_logs` row. The UI may hide sections for admins without permissions, but permission checks in server actions are the security boundary.
 
 The implementation preserves old-site homepage configuration capabilities in the new schema and does not use `ADMIN_TOKEN`, old Supabase, or old data imports.
+
+## Support Tickets
+
+The feedback and report support workflow uses:
+
+- `view_support_tickets`: read support tickets, submitter profile contact fields needed for handling, and support ticket settings.
+- `handle_support_tickets`: update support ticket status, priority, public reply, internal note, handling timestamps, and support ticket settings.
+
+Support ticket admin writes insert `admin_audit_logs`. Ticket creation and ticket field changes also write `support_ticket_events`.
 
 ## Phase 2 Static Review Notes
 

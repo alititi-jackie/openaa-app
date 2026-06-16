@@ -15,6 +15,7 @@ import {
 
 export type AdminModuleKey =
   | "user-posts"
+  | "support"
   | "messages"
   | "news"
   | "navigation"
@@ -156,17 +157,26 @@ export const ADMIN_MODULES: AdminModule[] = [
     superAdminOnly: true,
   },
   {
+    key: "support",
+    title: "反馈与举报管理",
+    description: "处理平台反馈、页面问题、联系方式异常、诈骗线索、合作咨询和账号问题工单。",
+    href: "/admin/support",
+    group: "users-security",
+    groupTitle: "用户与安全",
+    groupDescription: "管理用户状态、反馈、举报和站内通知。",
+    icon: MessageSquareText,
+    permissionKeys: ["view_support_tickets", "handle_support_tickets", "view_users"],
+  },
+  {
     key: "messages",
     title: "消息中心",
-    description: "集中处理用户反馈、内容举报和站内通知。",
+    description: "集中处理内容举报和站内通知。平台反馈与举报工单请进入“反馈与举报管理”。",
     href: "/admin/messages",
     group: "users-security",
     groupTitle: "用户与安全",
     groupDescription: "管理用户状态、反馈、举报和站内通知。",
     icon: MessageSquareText,
     permissionKeys: [
-      "view_feedback",
-      "handle_feedback",
       "view_reports",
       "handle_reports",
       "view_post_reports",
@@ -176,7 +186,6 @@ export const ADMIN_MODULES: AdminModule[] = [
       "super_admin",
     ],
     children: [
-      { key: "feedback", title: "反馈", href: "/admin/messages?tab=feedback" },
       { key: "reports", title: "举报", href: "/admin/messages?tab=reports" },
       { key: "notifications", title: "通知", href: "/admin/messages?tab=notifications" },
     ],

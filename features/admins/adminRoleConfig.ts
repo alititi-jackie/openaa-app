@@ -21,6 +21,7 @@ const adminStatusLabels: Record<string, string> = {
 const adminPermissionLabels: Record<string, string> = {
   super_admin: "超级管理员权限",
   "user-posts": "用户发布信息模块",
+  support: "反馈与举报管理模块",
   messages: "消息中心模块",
   news: "新闻管理模块",
   navigation: "导航管理模块",
@@ -39,8 +40,8 @@ const adminPermissionLabels: Record<string, string> = {
   hide_posts: "下架发布信息",
   restore_posts: "恢复发布信息",
   delete_posts: "删除发布信息",
-  view_feedback: "查看反馈",
-  handle_feedback: "处理反馈",
+  view_support_tickets: "查看反馈与举报工单",
+  handle_support_tickets: "处理反馈与举报工单",
   view_reports: "查看举报",
   handle_reports: "处理举报",
   view_post_reports: "查看内容举报",
@@ -133,12 +134,13 @@ export const adminRoleDescriptions: Record<AdminRoleName, string> = {
 };
 
 export const adminRoleDefaultModules: Record<AdminRoleName, AdminModuleKey[]> = {
-  support: ["messages"],
+  support: ["support", "messages"],
   moderator: ["user-posts", "messages", "recycle-bin"],
   editor: ["news", "navigation", "home", "ads"],
-  admin: ["user-posts", "messages", "news", "navigation", "home", "ads", "users", "settings", "audit-logs"],
+  admin: ["user-posts", "support", "messages", "news", "navigation", "home", "ads", "users", "settings", "audit-logs"],
   super_admin: [
     "user-posts",
+    "support",
     "messages",
     "news",
     "navigation",
