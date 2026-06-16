@@ -89,6 +89,7 @@ set
 alter table public.notification_templates enable row level security;
 
 drop policy if exists "Users can read own notifications" on public.notifications;
+drop policy if exists "Users can read own non-deleted notifications" on public.notifications;
 create policy "Users can read own non-deleted notifications"
   on public.notifications
   for select
@@ -96,6 +97,7 @@ create policy "Users can read own non-deleted notifications"
   using (auth.uid() = user_id and deleted_at is null);
 
 drop policy if exists "Users can update own notifications" on public.notifications;
+drop policy if exists "Users can mark or soft delete own notifications" on public.notifications;
 create policy "Users can mark or soft delete own notifications"
   on public.notifications
   for update

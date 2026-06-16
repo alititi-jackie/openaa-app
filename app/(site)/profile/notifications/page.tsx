@@ -31,7 +31,7 @@ export default async function ProfileNotificationsPage() {
       {notifications.state === "missing_config" ? <p className="rounded-xl bg-slate-50 p-3 text-sm leading-6 text-slate-600">Supabase 环境变量尚未配置，当前显示空列表。</p> : null}
       <ProfileNotificationsList notifications={notifications.data} />
       <div className="grid gap-3 sm:grid-cols-2">
-        <ProfileLink href="/feedback" label="反馈/联系平台" icon={<MessageCircle size={18} aria-hidden="true" />} />
+        <ProfileLink href="/feedback" label="线索与建议" icon={<MessageCircle size={18} aria-hidden="true" />} />
         <ProfileLink href="/profile" label="返回我的" icon={<UserRound size={18} aria-hidden="true" />} />
       </div>
     </PageShell>

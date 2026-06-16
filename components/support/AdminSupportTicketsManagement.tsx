@@ -12,6 +12,9 @@ import {
 } from "@/features/support/types";
 
 const statusTone = {
+  new: "bg-amber-50 text-amber-700 ring-amber-200",
+  viewed: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  deleted: "bg-red-50 text-red-700 ring-red-200",
   pending: "bg-amber-50 text-amber-700 ring-amber-200",
   processing: "bg-blue-50 text-blue-700 ring-blue-200",
   replied: "bg-emerald-50 text-emerald-700 ring-emerald-200",
@@ -355,4 +358,3 @@ function formatDateTime(value: string | null) {
   if (Number.isNaN(date.getTime())) return "未记录";
   return date.toLocaleString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
-

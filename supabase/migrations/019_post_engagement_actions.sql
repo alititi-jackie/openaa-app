@@ -66,10 +66,15 @@ create unique index if not exists post_reports_reporter_post_uidx
   on public.post_reports (reporter_id, post_id)
   where reporter_id is not null;
 
-drop trigger if exists refresh_post_stats_after_favorite on public.post_favorites;
-create trigger refresh_post_stats_after_favorite
-after insert or delete on public.post_favorites
-for each row execute function public.refresh_post_stats_from_row();
+do $$
+begin
+  if to_regclass('public.post_favorites') is not null then
+    drop trigger if exists refresh_post_stats_after_favorite on public.post_favorites;
+    create trigger refresh_post_stats_after_favorite
+    after insert or delete on public.post_favorites
+    for each row execute function public.refresh_post_stats_from_row();
+  end if;
+end $$;
 
 drop trigger if exists refresh_post_stats_after_view on public.post_views;
 create trigger refresh_post_stats_after_view
@@ -81,13 +86,18 @@ create trigger refresh_post_stats_after_report
 after insert or update or delete on public.post_reports
 for each row execute function public.refresh_post_stats_from_row();
 
-drop policy if exists "Users can manage own favorites" on public.post_favorites;
-create policy "Users can manage own favorites"
-  on public.post_favorites
-  for all
-  to authenticated
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id and public.is_public_post(post_id));
+do $$
+begin
+  if to_regclass('public.post_favorites') is not null then
+    drop policy if exists "Users can manage own favorites" on public.post_favorites;
+    create policy "Users can manage own favorites"
+      on public.post_favorites
+      for all
+      to authenticated
+      using (auth.uid() = user_id)
+      with check (auth.uid() = user_id and public.is_public_post(post_id));
+  end if;
+end $$;
 
 drop policy if exists "Users and anonymous visitors can insert post views" on public.post_views;
 create policy "Users and anonymous visitors can insert post views"

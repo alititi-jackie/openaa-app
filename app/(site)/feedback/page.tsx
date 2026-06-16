@@ -4,8 +4,8 @@ import { buildPageMetadata } from "@/lib/seo/metadata";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata = buildPageMetadata({
-  title: "反馈与举报",
-  description: "发现虚假信息、诈骗内容、页面错误或建议可提交给 OpenAA。",
+  title: "线索与建议",
+  description: "向 OpenAA 提交新闻线索、合作咨询、功能建议或回复管理员。",
   path: "/feedback",
   noIndex: true,
 });

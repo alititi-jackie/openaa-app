@@ -2,7 +2,7 @@
 
 import { FormEvent, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { normalizeSupportTicketType, supportTicketTypeOptions } from "@/features/support/types";
+import { supportTicketTypeOptions } from "@/features/support/types";
 
 const SUPPORT_VISITOR_ID_KEY = "openaa_support_visitor_id";
 
@@ -30,23 +30,13 @@ type FeedbackSubmitState = {
 export function FeedbackForm({ account }: { account: FeedbackAccountContext }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const queryType = useMemo(() => normalizeSupportTicketType(searchParams.get("type")), [searchParams]);
   const queryRelatedUrl = useMemo(() => searchParams.get("related_url") ?? "", [searchParams]);
   const queryTargetType = useMemo(() => searchParams.get("target_type") ?? "", [searchParams]);
   const queryTargetId = useMemo(() => searchParams.get("target_id") ?? "", [searchParams]);
   const visitorIdRef = useRef<HTMLInputElement | null>(null);
   const contactRequired = !account.isAuthenticated || !account.hasAccountContact;
-  const contactHint = getContactHint(account);
   const [state, setState] = useState<FeedbackSubmitState>({ ok: true, message: "", result: "idle" });
   const [pending, setPending] = useState(false);
-
-  function handleBackToPrevious() {
-    if (typeof window !== "undefined" && (document.referrer !== "" || window.history.length > 2)) {
-      window.history.back();
-      return;
-    }
-    router.push("/");
-  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -76,19 +66,18 @@ export function FeedbackForm({ account }: { account: FeedbackAccountContext }) {
       const json = (await response.json().catch(() => null)) as { error?: string; ticket_no?: string } | null;
 
       if (!response.ok) {
-        const message = json?.error || "提交失败，请稍后重试。";
-        setState({ ok: false, message, result: response.status === 429 ? "limited" : "idle" });
+        setState({ ok: false, message: json?.error || "提交失败，请稍后重试。", result: response.status === 429 ? "limited" : "idle" });
         return;
       }
 
       setState({
         ok: true,
-        message: "感谢你的反馈，我们会尽快查看并处理。",
+        message: "已收到你的提交，我们会尽快查看。",
         result: "success",
         ticketNo: json?.ticket_no,
       });
     } catch {
-      setState({ ok: false, message: "提交失败，请检查网络后稍后重试。", result: "idle" });
+      setState({ ok: false, message: "提交失败，请检查网络后重试。", result: "idle" });
     } finally {
       setPending(false);
     }
@@ -98,17 +87,16 @@ export function FeedbackForm({ account }: { account: FeedbackAccountContext }) {
     return (
       <div className="rounded-2xl border border-green-100 bg-white p-5 sm:p-6">
         <div className="rounded-2xl border border-green-200 bg-green-50 px-4 py-5 text-center sm:px-6">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-xl text-green-600">✓</div>
-          <h1 className="mt-4 text-2xl font-bold text-gray-900">提交成功</h1>
-          <p className="mt-2 text-sm leading-relaxed text-green-700">感谢你的反馈，我们会尽快查看并处理。</p>
-          {state.ticketNo ? <p className="mt-2 text-xs font-semibold text-green-700">工单编号：{state.ticketNo}</p> : null}
+          <h1 className="text-2xl font-black text-gray-900">提交成功</h1>
+          <p className="mt-2 text-sm leading-relaxed text-green-700">{state.message}</p>
+          {state.ticketNo ? <p className="mt-2 text-xs font-semibold text-green-700">编号：{state.ticketNo}</p> : null}
         </div>
 
-        <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-          <button type="button" onClick={handleBackToPrevious} className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
-            返回上一级
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <button type="button" onClick={() => router.back()} className="min-h-11 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-black text-gray-700">
+            返回上一页
           </button>
-          <button type="button" onClick={() => router.push("/")} className="w-full rounded-lg bg-[#1976d2] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#1565c0]">
+          <button type="button" onClick={() => router.push("/")} className="min-h-11 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-black text-white">
             返回首页
           </button>
         </div>
@@ -120,19 +108,8 @@ export function FeedbackForm({ account }: { account: FeedbackAccountContext }) {
     return (
       <div className="rounded-2xl border border-orange-100 bg-white p-5 sm:p-6">
         <div className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-5 text-center sm:px-6">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 text-xl text-orange-600">!</div>
-          <h1 className="mt-4 text-2xl font-bold text-gray-900">今日提交已达上限</h1>
-          <p className="mt-2 text-sm leading-relaxed text-orange-700">{state.message || "今日反馈提交数量已达上限，请明天再试。"}</p>
-          <p className="mt-1 text-sm leading-relaxed text-orange-700">如有紧急问题，请邮件联系：323748@gmail.com</p>
-        </div>
-
-        <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-          <button type="button" onClick={handleBackToPrevious} className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
-            返回上一级
-          </button>
-          <button type="button" onClick={() => router.push("/")} className="w-full rounded-lg bg-[#1976d2] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#1565c0]">
-            返回首页
-          </button>
+          <h1 className="text-2xl font-black text-gray-900">今日提交已达上限</h1>
+          <p className="mt-2 text-sm leading-relaxed text-orange-700">{state.message}</p>
         </div>
       </div>
     );
@@ -140,85 +117,76 @@ export function FeedbackForm({ account }: { account: FeedbackAccountContext }) {
 
   return (
     <>
-      <h1 className="text-2xl font-bold text-gray-900">反馈与举报</h1>
-      <p className="mt-2 text-sm leading-relaxed text-gray-600">发现虚假信息、诈骗内容、页面错误或建议可提交给 OpenAA。</p>
+      <h1 className="text-2xl font-black text-gray-900">线索与建议</h1>
+      <p className="mt-2 text-sm leading-relaxed text-gray-600">
+        可以提交纽约华人生活相关的新闻线索、合作咨询、功能建议，或回复管理员消息。
+      </p>
 
       <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-        {!state.ok && state.message ? <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{state.message}</div> : null}
+        {!state.ok && state.message ? <div className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-600">{state.message}</div> : null}
 
         <input ref={visitorIdRef} type="hidden" name="visitor_id" />
         <input type="hidden" name="target_type" value={queryTargetType} />
         <input type="hidden" name="target_id" value={queryTargetId} />
 
-        <div>
-          <label htmlFor="feedback-type" className="mb-1 block text-sm font-medium text-gray-700">
-            反馈类型
-          </label>
+        <label className="grid gap-1.5 text-sm font-bold text-gray-700">
+          <span>你反馈的类型 <span className="text-red-600">*</span></span>
           <select
-            id="feedback-type"
             name="type"
-            defaultValue={queryType}
-            key={queryType}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#1976d2]"
+            required
+            defaultValue=""
+            className="min-h-11 rounded-xl border border-gray-300 px-3 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#1976d2]"
           >
+            <option value="" disabled>请选择类型</option>
             {supportTicketTypeOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
             ))}
           </select>
-        </div>
+        </label>
 
-        <div>
-          <label htmlFor="feedback-related-url" className="mb-1 block text-sm font-medium text-gray-700">
-            相关链接
-          </label>
+        <label className="grid gap-1.5 text-sm font-bold text-gray-700">
+          <span>相关链接</span>
           <input
-            id="feedback-related-url"
             name="related_url"
             type="url"
             defaultValue={queryRelatedUrl}
-            key={queryRelatedUrl}
             placeholder="https://..."
-            className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#1976d2]"
+            className="min-h-11 rounded-xl border border-gray-300 px-3 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#1976d2]"
           />
-        </div>
+        </label>
 
-        <div>
-          <label htmlFor="feedback-contact" className="mb-1 block text-sm font-medium text-gray-700">
-            联系方式{contactRequired ? <span className="ml-1 text-red-600">*</span> : <span className="text-gray-500">（选填）</span>}
-          </label>
+        <label className="grid gap-1.5 text-sm font-bold text-gray-700">
+          <span>联系方式 {contactRequired ? <span className="text-red-600">*</span> : <span className="font-medium text-gray-400">可选</span>}</span>
           <input
-            id="feedback-contact"
             name="contact_info"
             type="text"
             required={contactRequired}
+            maxLength={200}
             placeholder="邮箱 / 电话 / 微信，方便我们联系你"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#1976d2]"
+            className="min-h-11 rounded-xl border border-gray-300 px-3 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#1976d2]"
           />
-          <p className="mt-1 text-xs leading-5 text-gray-500">{contactHint}</p>
-        </div>
+          <span className="text-xs leading-5 text-gray-500">{getContactHint(account)}</span>
+        </label>
 
-        <div>
-          <label htmlFor="feedback-content" className="mb-1 block text-sm font-medium text-gray-700">
-            反馈内容<span className="ml-1 text-red-600">*</span>
-          </label>
+        <label className="grid gap-1.5 text-sm font-bold text-gray-700">
+          <span>内容 <span className="text-red-600">*</span></span>
           <textarea
-            id="feedback-content"
             name="content"
             rows={6}
+            minLength={10}
+            maxLength={3000}
             required
-            placeholder="请尽量描述清楚问题，例如虚假信息、联系方式异常、页面打不开等"
-            className="w-full resize-y rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#1976d2]"
+            placeholder="请尽量说明清楚，例如新闻线索、活动信息、合作内容、功能建议或回复管理员的具体内容。"
+            className="resize-y rounded-xl border border-gray-300 px-3 py-2.5 text-sm leading-6 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#1976d2]"
           />
-        </div>
+        </label>
 
-        <button type="submit" disabled={pending} className="w-full rounded-lg bg-[#1976d2] py-2.5 font-medium text-white transition hover:bg-[#1565c0] disabled:opacity-50">
-          {pending ? "提交中..." : "提交反馈"}
+        <button type="submit" disabled={pending} className="min-h-11 w-full rounded-xl bg-slate-950 py-2.5 font-black text-white transition disabled:opacity-50">
+          {pending ? "提交中..." : "提交"}
         </button>
       </form>
-
-      <p className="mt-5 text-sm leading-relaxed text-gray-500">如有紧急问题或需加急处理，请邮件联系：323748@gmail.com，我们会优先查看。</p>
     </>
   );
 }
@@ -226,7 +194,7 @@ export function FeedbackForm({ account }: { account: FeedbackAccountContext }) {
 function getContactHint(account: FeedbackAccountContext) {
   if (!account.isAuthenticated) return "未登录提交需要填写联系方式，方便我们核实和回复。";
   if (!account.hasAccountContact) return "你的账号暂无联系方式，请填写邮箱 / 电话 / 微信，方便我们回复。";
-  return "已登录用户可不填；后台可通过你的账号信息联系你。如需使用其它联系方式，请在这里填写。";
+  return "已登录用户可不填；如需使用其它联系方式，也可以填写。";
 }
 
 function ensureVisitorId() {

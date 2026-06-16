@@ -6,6 +6,7 @@ import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { RecycleBinResourceNav } from "@/components/admin/RecycleBinResourceNav";
+import { MessageRecycleBinList } from "@/components/messages/AdminMessageRecycleBin";
 import { NavigationRecycleBinList } from "@/components/navigation/NavigationRecycleBinManagement";
 import {
   OrphanFavoritesNotice,
@@ -25,6 +26,7 @@ import {
   type RecycleBinFilter,
   type RecycleBinNewsFilter,
 } from "@/features/posts/adminQueries";
+import { getMessageRecycleData } from "@/features/messages/recycleQueries";
 import type { PostType } from "@/features/posts/types";
 import { hasAdminModule } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -38,7 +40,7 @@ export const metadata = buildPageMetadata({
   noIndex: true,
 });
 
-type RecycleBinResourceType = "post" | "news" | "navigation";
+type RecycleBinResourceType = "post" | "news" | "navigation" | "reports" | "feedback";
 
 const statusFilterTabs: Array<{ value: RecycleBinFilter; label: string }> = [
   { value: "all", label: "全部" },
@@ -94,6 +96,7 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
         }
 
         const navigationData = activeTab === "navigation" ? await getAdminNavigationRecycleBinData("links") : null;
+        const messageRecycleData = activeTab === "reports" || activeTab === "feedback" ? await getMessageRecycleData(activeTab) : null;
 
         return (
           <div className="space-y-4">
@@ -178,6 +181,22 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
                 </AdminCard>
               </>
             ) : null}
+
+            {activeTab === "reports" || activeTab === "feedback" ? (
+              <>
+                {messageRecycleData?.state === "error" || messageRecycleData?.state === "missing_config" ? (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">
+                    {messageRecycleData.error ?? "回收站内容读取失败，请稍后再试。"}
+                  </div>
+                ) : null}
+                <AdminCard
+                  title={activeTab === "reports" ? "已删除举报" : "已删除线索与建议"}
+                  description="所有永久删除都只能在回收站执行；恢复后会回到已处理/已查看状态。"
+                >
+                  <MessageRecycleBinList data={messageRecycleData ?? { state: "ready", type: activeTab, items: [] }} />
+                </AdminCard>
+              </>
+            ) : null}
           </div>
         );
       }}
@@ -186,7 +205,7 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
 }
 
 function normalizeResourceTab(value?: string): RecycleBinResourceType {
-  if (value === "news" || value === "navigation") return value;
+  if (value === "news" || value === "navigation" || value === "reports" || value === "feedback") return value;
   return "post";
 }
 

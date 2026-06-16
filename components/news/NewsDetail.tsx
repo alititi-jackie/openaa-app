@@ -22,7 +22,6 @@ function visibleParagraphs(body: string) {
 
 function NewsSuggestionCard({ post }: { post: NewsPostDetail }) {
   const feedbackHref = `/feedback?${new URLSearchParams({
-    type: "feature_suggestion",
     related_url: appUrl(post.href),
     target_type: "news",
     target_id: post.id,

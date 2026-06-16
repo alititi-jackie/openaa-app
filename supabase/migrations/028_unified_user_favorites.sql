@@ -1,4 +1,9 @@
-drop trigger if exists refresh_post_stats_after_favorite on public.post_favorites;
+do $$
+begin
+  if to_regclass('public.post_favorites') is not null then
+    drop trigger if exists refresh_post_stats_after_favorite on public.post_favorites;
+  end if;
+end $$;
 
 drop table if exists public.post_favorites;
 
@@ -29,18 +34,21 @@ create index if not exists user_favorites_user_type_created_idx
 
 alter table public.user_favorites enable row level security;
 
+drop policy if exists "Users can read own user favorites" on public.user_favorites;
 create policy "Users can read own user favorites"
   on public.user_favorites
   for select
   to authenticated
   using (auth.uid() = user_id);
 
+drop policy if exists "Users can insert own user favorites" on public.user_favorites;
 create policy "Users can insert own user favorites"
   on public.user_favorites
   for insert
   to authenticated
   with check (auth.uid() = user_id);
 
+drop policy if exists "Users can delete own user favorites" on public.user_favorites;
 create policy "Users can delete own user favorites"
   on public.user_favorites
   for delete
