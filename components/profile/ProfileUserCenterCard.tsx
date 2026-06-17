@@ -73,7 +73,7 @@ export function ProfileUserCenterCard({
 function ProfileMessageAdminBar({ counts }: { counts: MessageCenterPendingCounts }) {
   return (
     <div className="flex items-center justify-between gap-3 border-t border-zinc-100 bg-zinc-50/70 px-4 py-3">
-      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+      <div className="flex min-w-0 flex-1 items-center justify-evenly gap-4">
         <InlineCount label="举报" value={counts.reports} />
         <InlineCount label="线索与建议" value={counts.feedback} />
       </div>
@@ -86,7 +86,12 @@ function ProfileMessageAdminBar({ counts }: { counts: MessageCenterPendingCounts
 
 function InlineCount({ label, value }: { label: string; value: number }) {
   const active = value > 0;
-  return <span className={`text-[12px] font-black ${active ? "text-red-600" : "text-zinc-500"}`}>{label} {value}</span>;
+  return (
+    <span className="inline-flex min-w-0 items-baseline gap-1.5 whitespace-nowrap text-[12px] font-bold text-zinc-600">
+      <span>{label}</span>
+      <span className={`text-[16px] font-black leading-none ${active ? "text-red-600" : "text-zinc-900"}`}>{value}</span>
+    </span>
+  );
 }
 
 function ProfileMetricButton({ label, value, expanded, onClick }: { label: string; value: number; expanded: boolean; onClick: () => void }) {

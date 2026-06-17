@@ -138,8 +138,9 @@ function AdminEntryCard({ entry, messageCounts }: { entry: AdminModule; messageC
 function PendingCountBadge({ label, value }: { label: string; value: number }) {
   const active = value > 0;
   return (
-    <span className={`inline-flex min-h-8 items-center rounded-xl px-3 py-1.5 text-xs font-black ${active ? "bg-red-50 text-red-700 ring-1 ring-red-100" : "bg-slate-50 text-slate-500 ring-1 ring-slate-100"}`}>
-      {label} {value}
+    <span className="inline-flex min-h-8 items-center gap-2 rounded-xl bg-slate-50 px-3 py-1.5 text-xs font-black text-slate-600 ring-1 ring-slate-100">
+      <span>{label}</span>
+      <span className={`text-[15px] leading-none ${active ? "text-red-600" : "text-slate-900"}`}>{value}</span>
     </span>
   );
 }
