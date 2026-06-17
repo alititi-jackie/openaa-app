@@ -108,7 +108,7 @@ function tabTitle(tab: MessageTab) {
 }
 
 function tabDescription(tab: MessageTab) {
-  if (tab === "feedback") return "查看用户提交的合作咨询、新闻线索、功能建议、其它问题和回复管理员。";
+  if (tab === "feedback") return "查看用户提交的广告合作咨询、新闻线索、功能建议、其它问题和回复管理员。";
   if (tab === "contact-users") return "按用户名、登录邮箱或本站 ID 搜索用户，并发送站内联系消息。";
   return "处理用户对发布信息的举报，必要时下架或删除对应信息并通知作者。";
 }
