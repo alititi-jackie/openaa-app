@@ -20,7 +20,7 @@ export const SUPPORT_TICKET_STATUSES: SupportTicketStatus[] = ["new", "viewed", 
 export const SUPPORT_TICKET_PRIORITIES: SupportTicketPriority[] = ["low", "normal", "high", "urgent"];
 
 export const SUPPORT_TICKET_TYPE_LABELS: Record<SupportTicketType, string> = {
-  business: "合作咨询",
+  business: "广告合作咨询",
   news_tip: "提交新闻线索",
   feature_suggestion: "功能建议",
   other: "其它问题",
