@@ -34,8 +34,16 @@ export type AdminMessageReport = {
   contactInfo: string | null;
   reporter: AdminUserSummary | null;
   author: AdminUserSummary | null;
+  handler: AdminUserSummary | null;
   createdAt: string;
+  resolvedAt: string | null;
   status: ReportStatusTab;
+  postAction: "none" | "hide" | "delete" | null;
+  adminReason: ReportReason | null;
+  adminReasonLabel: string | null;
+  adminMessageEditable: string | null;
+  adminMessageFixed: string | null;
+  notifyAuthor: boolean;
   defaultAuthorMessage: string;
 };
 
@@ -71,6 +79,7 @@ export type AdminMessagesData = {
   };
   contactUsers: {
     q: string;
+    mode: "recent" | "search";
     users: AdminContactUser[];
   };
 };
@@ -83,6 +92,13 @@ type RawReport = {
   detail: string | null;
   contact_info: string | null;
   status: string;
+  handler_id: string | null;
+  resolved_at: string | null;
+  post_action: string | null;
+  admin_reason: string | null;
+  admin_message_editable: string | null;
+  admin_message_fixed: string | null;
+  notify_author: boolean | null;
   created_at: string;
   deleted_at: string | null;
   posts?: {
@@ -158,7 +174,7 @@ export async function getAdminMessagesData({
     state: "ready",
     reports,
     feedback,
-    contactUsers: { q, users: contactUsers },
+    contactUsers: { q, mode: q.trim().length >= 2 ? "search" : "recent", users: contactUsers },
   };
 }
 
@@ -171,7 +187,7 @@ async function readReports(supabase: ReturnType<typeof createSupabaseAdminClient
 
   let query = supabase
     .from("post_reports")
-    .select("id,post_id,reporter_id,reason,detail,contact_info,status,created_at,deleted_at,posts(id,post_type,title,status,author_id)")
+    .select("id,post_id,reporter_id,reason,detail,contact_info,status,handler_id,resolved_at,post_action,admin_reason,admin_message_editable,admin_message_fixed,notify_author,created_at,deleted_at,posts(id,post_type,title,status,author_id)")
     .order("created_at", { ascending: false })
     .limit(50);
 
@@ -187,7 +203,7 @@ async function readReports(supabase: ReturnType<typeof createSupabaseAdminClient
   const rows = (data ?? []) as unknown as RawReport[];
   const userIds = rows.flatMap((row) => {
     const post = relationOne(row.posts);
-    return [row.reporter_id, post?.author_id];
+    return [row.reporter_id, post?.author_id, row.handler_id];
   });
   const profiles = await readProfileMap(supabase, userIds);
 
@@ -232,9 +248,17 @@ async function readFeedback(supabase: ReturnType<typeof createSupabaseAdminClien
 
 async function searchUsers(supabase: ReturnType<typeof createSupabaseAdminClient>, q: string) {
   const keyword = q.trim().replace(/[%_,]/g, "").slice(0, 80);
-  if (keyword.length < 2) return [];
+  if (keyword.length < 2) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("id,nickname,email,phone,wechat_id,whatsapp,status,created_at")
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    return ((data ?? []) as RawProfile[]).map(mapProfile);
+  }
 
-  let query = supabase.from("profiles").select("id,nickname,email,phone,wechat_id,whatsapp,status").limit(20);
+  let query = supabase.from("profiles").select("id,nickname,email,phone,wechat_id,whatsapp,status").eq("status", "active").limit(20);
   const filters = [`nickname.ilike.%${keyword}%`, `email.ilike.%${keyword}%`];
   if (isUuid(keyword)) filters.push(`id.eq.${keyword}`);
   query = query.or(filters.join(","));
@@ -284,8 +308,16 @@ function mapReport(row: RawReport, profiles: Map<string, AdminUserSummary>, fall
     contactInfo: row.contact_info,
     reporter: row.reporter_id ? profiles.get(row.reporter_id) ?? null : null,
     author: post?.author_id ? profiles.get(post.author_id) ?? null : null,
+    handler: row.handler_id ? profiles.get(row.handler_id) ?? null : null,
     createdAt: row.created_at,
+    resolvedAt: row.resolved_at,
     status: row.deleted_at ? "deleted" : row.status === "resolved" ? "resolved" : fallbackStatus,
+    postAction: normalizePostAction(row.post_action),
+    adminReason: row.admin_reason ? normalizeReportReason(row.admin_reason) : null,
+    adminReasonLabel: row.admin_reason ? REPORT_REASON_LABELS[normalizeReportReason(row.admin_reason)] : null,
+    adminMessageEditable: row.admin_message_editable,
+    adminMessageFixed: row.admin_message_fixed,
+    notifyAuthor: Boolean(row.notify_author),
     defaultAuthorMessage: REPORT_AUTHOR_MESSAGE_TEMPLATES[reason],
   };
 }
@@ -351,8 +383,13 @@ function emptyResult(
     error,
     reports: { activeStatus: reportStatus, totals: emptyTotals, items: [] },
     feedback: { activeStatus: feedbackStatus, activeType: feedbackType, totals: emptyFeedbackTotals, items: [] },
-    contactUsers: { q, users: [] },
+    contactUsers: { q, mode: q.trim().length >= 2 ? "search" : "recent", users: [] },
   };
+}
+
+function normalizePostAction(value: string | null): AdminMessageReport["postAction"] {
+  if (value === "none" || value === "hide" || value === "delete") return value;
+  return null;
 }
 
 function isUuid(value: string) {

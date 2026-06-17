@@ -183,9 +183,14 @@ export function FeedbackForm({ account }: { account: FeedbackAccountContext }) {
           />
         </label>
 
-        <button type="submit" disabled={pending} className="min-h-11 w-full rounded-xl bg-slate-950 py-2.5 font-black text-white transition disabled:opacity-50">
-          {pending ? "提交中..." : "提交"}
-        </button>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <button type="button" onClick={() => router.back()} className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700">
+            取消
+          </button>
+          <button type="submit" disabled={pending} className="min-h-11 rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white transition disabled:opacity-50">
+            {pending ? "提交中..." : "提交"}
+          </button>
+        </div>
       </form>
     </>
   );
