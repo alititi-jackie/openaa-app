@@ -119,7 +119,7 @@ export function FeedbackForm({ account }: { account: FeedbackAccountContext }) {
     <>
       <h1 className="text-2xl font-black text-gray-900">线索与建议</h1>
       <p className="mt-2 text-sm leading-relaxed text-gray-600">
-        可以提交纽约华人生活相关的新闻线索、合作咨询、功能建议，或回复管理员消息。
+        可以提交纽约华人生活相关的新闻线索、广告合作咨询、功能建议，或回复管理员消息。
       </p>
 
       <form onSubmit={handleSubmit} className="mt-5 space-y-4">
