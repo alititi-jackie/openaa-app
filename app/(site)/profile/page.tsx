@@ -113,7 +113,7 @@ export default async function ProfilePage() {
             <MenuTile href="/profile/services" label="🛠️ 我的服务" className="border-t border-zinc-100" />
           </div>
 
-          <MenuRow href="/feedback" title="📝 线索与建议" description="提交新闻线索、合作咨询、功能建议或回复管理员" />
+          <MenuRow href="/feedback" title="📝 线索与建议" description="提交新闻线索、广告合作咨询、功能建议或回复管理员" />
           <MenuRow href="/profile/security" title="账号安全 / 修改密码" />
 
           {profile ? <ProfileLogoutButton variant="legacy" /> : <div className="p-4 text-[12px] text-zinc-400">登录后可使用更多功能</div>}
