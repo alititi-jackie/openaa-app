@@ -6,6 +6,7 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { ADMIN_MODULES, type AdminModule } from "@/features/admin/adminModules";
 import { getAdminPermissionLabel, getAdminRoleLabel } from "@/features/admins/adminRoleConfig";
+import { getMessageCenterPendingCounts, type MessageCenterPendingCounts } from "@/features/messages/pendingCounts";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { hasAdminModule, isSuperAdmin } from "@/lib/permissions/admin";
 
@@ -31,7 +32,10 @@ export default function AdminDashboardPage() {
     <AdminAuthGate>
       {async ({ user, adminRole }) => {
         const superAdmin = await isSuperAdmin();
-        const moduleAccess = await getDashboardModuleAccess();
+        const [moduleAccess, messageCounts] = await Promise.all([
+          getDashboardModuleAccess(),
+          getMessageCenterPendingCounts(),
+        ]);
         const visibleModules = ADMIN_MODULES.filter((module) => moduleAccess.get(module.key));
         const adminEntryGroups = groupVisibleModules(visibleModules);
 
@@ -57,7 +61,7 @@ export default function AdminDashboardPage() {
                   </div>
                   <div className="grid gap-3 md:grid-cols-2">
                     {group.entries.map((entry) => (
-                      <AdminEntryCard key={entry.key} entry={entry} />
+                      <AdminEntryCard key={entry.key} entry={entry} messageCounts={entry.key === "messages" ? messageCounts : null} />
                     ))}
                   </div>
                 </section>
@@ -96,7 +100,7 @@ function groupVisibleModules(modules: AdminModule[]): AdminEntryGroup[] {
     .filter((group): group is AdminEntryGroup => Boolean(group));
 }
 
-function AdminEntryCard({ entry }: { entry: AdminModule }) {
+function AdminEntryCard({ entry, messageCounts }: { entry: AdminModule; messageCounts?: MessageCenterPendingCounts | null }) {
   const Icon = entry.icon;
 
   return (
@@ -119,9 +123,24 @@ function AdminEntryCard({ entry }: { entry: AdminModule }) {
               {entry.permissionKeys.length > 0 ? entry.permissionKeys.map(formatPermissionLabel).join(" / ") : "模块授权"}
             </span>
           </div>
+          {messageCounts ? (
+            <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+              <PendingCountBadge label="举报" value={messageCounts.reports} />
+              <PendingCountBadge label="线索与建议" value={messageCounts.feedback} />
+            </div>
+          ) : null}
         </div>
       </div>
     </article>
+  );
+}
+
+function PendingCountBadge({ label, value }: { label: string; value: number }) {
+  const active = value > 0;
+  return (
+    <span className={`inline-flex min-h-8 items-center rounded-xl px-3 py-1.5 text-xs font-black ${active ? "bg-red-50 text-red-700 ring-1 ring-red-100" : "bg-slate-50 text-slate-500 ring-1 ring-slate-100"}`}>
+      {label} {value}
+    </span>
   );
 }
 

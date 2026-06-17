@@ -12,6 +12,7 @@ import { ProfileLogoutButton } from "@/components/profile/ProfileLogoutButton";
 import { ProfileShareButton } from "@/components/profile/ProfileShareButton";
 import { ProfileUserCenterCard } from "@/components/profile/ProfileUserCenterCard";
 import { FAVORITE_VISIBLE_TYPES } from "@/features/favorites/helpers";
+import { getMessageCenterPendingCounts, type MessageCenterPendingCounts } from "@/features/messages/pendingCounts";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { ensureProfileForUser } from "@/lib/supabase/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -34,11 +35,15 @@ export default async function ProfilePage() {
   let profile: Profile | null = null;
   let profileWarning = false;
   let profileCounts = { unreadNotifications: 0, favorites: 0, recent: 0 };
+  let messageCounts: MessageCenterPendingCounts | null = null;
 
   if (user) {
     try {
       profile = (await ensureProfileForUser(user)) as Profile;
-      profileCounts = await getProfileCounts(user.id);
+      [profileCounts, messageCounts] = await Promise.all([
+        getProfileCounts(user.id),
+        getMessageCenterPendingCounts(),
+      ]);
     } catch (error) {
       console.error("[profile] ensureProfileForUser failed", error);
       profileWarning = true;
@@ -66,6 +71,7 @@ export default async function ProfilePage() {
             unreadNotifications={profileCounts.unreadNotifications}
             favorites={profileCounts.favorites}
             recent={profileCounts.recent}
+            messageCounts={messageCounts}
           />
         ) : (
           <GuestHeader />

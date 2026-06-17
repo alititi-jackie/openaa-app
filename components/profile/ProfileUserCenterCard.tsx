@@ -12,9 +12,22 @@ type ProfileUserCenterCardProps = {
   unreadNotifications: number;
   favorites: number;
   recent: number;
+  messageCounts?: MessageCenterPendingCounts | null;
 };
 
-export function ProfileUserCenterCard({ profile, authLines, unreadNotifications, favorites, recent }: ProfileUserCenterCardProps) {
+type MessageCenterPendingCounts = {
+  reports: number;
+  feedback: number;
+};
+
+export function ProfileUserCenterCard({
+  profile,
+  authLines,
+  unreadNotifications,
+  favorites,
+  recent,
+  messageCounts,
+}: ProfileUserCenterCardProps) {
   const [expanded, setExpanded] = useState(false);
   const username = profile.nickname || profile.email?.split("@")[0] || "用户";
   const filledItems = getFilledProfileItems(profile);
@@ -50,9 +63,30 @@ export function ProfileUserCenterCard({ profile, authLines, unreadNotifications,
         <ProfileMetricLink href="/profile/recent" label="最近浏览" value={recent} />
       </div>
 
+      {messageCounts ? <ProfileMessageAdminBar counts={messageCounts} /> : null}
+
       {expanded ? <ProfileDetailsPanel profile={profile} filledItems={filledItems} /> : null}
     </section>
   );
+}
+
+function ProfileMessageAdminBar({ counts }: { counts: MessageCenterPendingCounts }) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-t border-zinc-100 bg-zinc-50/70 px-4 py-3">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+        <InlineCount label="举报" value={counts.reports} />
+        <InlineCount label="线索与建议" value={counts.feedback} />
+      </div>
+      <Link href="/admin/messages" className="shrink-0 rounded-xl bg-slate-950 px-3 py-1.5 text-[12px] font-black text-white">
+        进入
+      </Link>
+    </div>
+  );
+}
+
+function InlineCount({ label, value }: { label: string; value: number }) {
+  const active = value > 0;
+  return <span className={`text-[12px] font-black ${active ? "text-red-600" : "text-zinc-500"}`}>{label} {value}</span>;
 }
 
 function ProfileMetricButton({ label, value, expanded, onClick }: { label: string; value: number; expanded: boolean; onClick: () => void }) {
