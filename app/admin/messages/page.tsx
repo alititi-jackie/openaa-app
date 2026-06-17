@@ -61,7 +61,13 @@ export default function AdminMessagesPage({ searchParams }: AdminMessagesPagePro
               <AdminPermissionBadge allowed={canReadMessages} label="messages" />
             </AdminPageHeader>
 
-            <AdminMessageTabs active={activeTab} />
+            <AdminMessageTabs
+              active={activeTab}
+              counts={{
+                reports: data.reports.totals.open,
+                feedback: data.feedback.totals.new,
+              }}
+            />
 
             {data.state === "missing_config" || data.state === "error" ? (
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold leading-6 text-amber-800">

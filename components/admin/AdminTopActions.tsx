@@ -13,7 +13,12 @@ export function AdminTopActions() {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {isAdminHome ? null : (
+      {isAdminHome ? (
+        <Link href="/profile" className={adminNavigationButtonClassName}>
+          <ArrowLeft size={16} aria-hidden="true" />
+          返回我的
+        </Link>
+      ) : (
         <Link href={ADMIN_HOME_PATH} className={adminNavigationButtonClassName}>
           <ArrowLeft size={16} aria-hidden="true" />
           返回总后台

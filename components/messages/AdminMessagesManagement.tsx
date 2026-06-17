@@ -19,11 +19,12 @@ const feedbackTabs: Array<{ value: FeedbackStatusTab; label: string }> = [
 
 const secondaryActionClassName = "inline-flex min-h-9 items-center justify-center rounded-xl bg-white px-3 py-1.5 text-xs font-black text-blue-700 ring-1 ring-slate-200";
 const dangerActionClassName = "inline-flex min-h-9 items-center justify-center rounded-xl bg-red-600 px-3 py-1.5 text-xs font-black text-white";
+const contactCardActionClassName = "inline-flex min-h-10 w-full items-center justify-center rounded-xl px-3 py-2 text-xs font-black";
 
-export function AdminMessageTabs({ active }: { active: MessageTab }) {
-  const tabs: Array<{ value: MessageTab; label: string; href: string }> = [
-    { value: "reports", label: "举报", href: "/admin/messages?tab=reports" },
-    { value: "feedback", label: "线索与建议", href: "/admin/messages?tab=feedback" },
+export function AdminMessageTabs({ active, counts }: { active: MessageTab; counts?: { reports: number; feedback: number } }) {
+  const tabs: Array<{ value: MessageTab; label: string; href: string; count?: number }> = [
+    { value: "reports", label: "举报", href: "/admin/messages?tab=reports", count: counts?.reports ?? 0 },
+    { value: "feedback", label: "线索与建议", href: "/admin/messages?tab=feedback", count: counts?.feedback ?? 0 },
     { value: "contact-users", label: "联系用户", href: "/admin/messages?tab=contact-users" },
   ];
   return (
@@ -37,11 +38,21 @@ export function AdminMessageTabs({ active }: { active: MessageTab }) {
               active === tab.value ? "bg-slate-950 text-white ring-slate-950" : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50"
             }`}
           >
-            {tab.label}
+            <span>{tab.label}</span>
+            {typeof tab.count === "number" ? <PendingTabCount value={tab.count} activeTab={active === tab.value} /> : null}
           </Link>
         ))}
       </div>
     </nav>
+  );
+}
+
+function PendingTabCount({ value, activeTab }: { value: number; activeTab: boolean }) {
+  const hasItems = value > 0;
+  return (
+    <span className={`ml-2 text-[15px] font-black leading-none ${hasItems ? "text-red-600" : activeTab ? "text-white/80" : "text-slate-500"}`}>
+      {value}
+    </span>
   );
 }
 
@@ -226,10 +237,10 @@ function UserContactCard({ user }: { user: AdminUserSummary }) {
       <h3 className="font-black text-slate-950">{user.nickname || "未设置用户名"}</h3>
       <p className="mt-1 break-all text-sm font-semibold text-slate-600">邮箱：{user.email || "未填写"}</p>
       <p className="mt-1 break-all text-xs font-semibold text-slate-500">ID：{user.id}</p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <UserDetails user={user} />
-        <details className="rounded-xl bg-white p-3 ring-1 ring-slate-100">
-          <summary className="cursor-pointer text-sm font-black text-blue-700">联系用户</summary>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <UserDetails user={user} variant="cardAction" />
+        <details className="min-w-0 open:col-span-2">
+          <summary className={`${contactCardActionClassName} cursor-pointer bg-slate-950 text-white`}>联系用户</summary>
           <AdminActionForm action={contactUserFromMessages} submitLabel="发送" className="mt-3 space-y-3">
             <input type="hidden" name="user_id" value={user.id} />
             <AdminTextInput label="标题" name="title" defaultValue="OpenAA 管理员联系你" required />
@@ -279,10 +290,19 @@ function ReportResultDetails({ report }: { report: AdminMessageReport }) {
   );
 }
 
-function UserDetails({ user }: { user: AdminUserSummary }) {
+function UserDetails({ user, variant = "chip" }: { user: AdminUserSummary; variant?: "chip" | "cardAction" }) {
+  const isCardAction = variant === "cardAction";
   return (
-    <details className="inline-block">
-      <summary className="cursor-pointer rounded-full bg-white px-2.5 py-1 text-xs font-black text-blue-700 ring-1 ring-slate-200">查看用户</summary>
+    <details className={isCardAction ? "min-w-0 open:col-span-2" : "inline-block"}>
+      <summary
+        className={
+          isCardAction
+            ? `${contactCardActionClassName} cursor-pointer bg-white text-blue-700 ring-1 ring-slate-200`
+            : "cursor-pointer rounded-full bg-white px-2.5 py-1 text-xs font-black text-blue-700 ring-1 ring-slate-200"
+        }
+      >
+        查看用户
+      </summary>
       <div className="mt-2 grid min-w-72 gap-1 rounded-xl bg-white p-3 text-xs font-semibold text-slate-600 shadow-sm ring-1 ring-slate-100">
         <span>用户名：{user.nickname || "未设置"}</span>
         <span className="break-all">ID：{user.id}</span>
