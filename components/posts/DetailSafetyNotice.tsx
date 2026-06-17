@@ -9,7 +9,7 @@ type DetailSafetyNoticeProps = {
   className?: string;
 };
 
-export function DetailSafetyNotice({ postId, returnTo, className }: DetailSafetyNoticeProps) {
+export function DetailSafetyNotice({ postId, returnTo, initialHasReported, className }: DetailSafetyNoticeProps) {
   const router = useRouter();
 
   function reportPost() {
@@ -31,9 +31,10 @@ export function DetailSafetyNotice({ postId, returnTo, className }: DetailSafety
         <button
           type="button"
           onClick={reportPost}
+          disabled={initialHasReported}
           className="inline-flex items-center justify-center rounded-xl border border-amber-200 bg-white px-3 py-1.5 text-sm font-semibold text-amber-800 transition hover:bg-amber-50"
         >
-          举报此信息
+          {initialHasReported ? "已举报" : "举报此信息"}
         </button>
       </div>
     </section>

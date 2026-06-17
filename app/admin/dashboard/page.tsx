@@ -116,7 +116,7 @@ function AdminEntryCard({ entry }: { entry: AdminModule }) {
                 进入
             </Link>
             <span className="inline-flex min-h-9 items-center rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">
-              {entry.permissionKeys.map(formatPermissionLabel).join(" / ")}
+              {entry.permissionKeys.length > 0 ? entry.permissionKeys.map(formatPermissionLabel).join(" / ") : "模块授权"}
             </span>
           </div>
         </div>

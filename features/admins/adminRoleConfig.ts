@@ -21,7 +21,6 @@ const adminStatusLabels: Record<string, string> = {
 const adminPermissionLabels: Record<string, string> = {
   super_admin: "超级管理员权限",
   "user-posts": "用户发布信息模块",
-  support: "反馈与举报管理模块",
   messages: "消息中心模块",
   news: "新闻管理模块",
   navigation: "导航管理模块",
@@ -40,14 +39,6 @@ const adminPermissionLabels: Record<string, string> = {
   hide_posts: "下架发布信息",
   restore_posts: "恢复发布信息",
   delete_posts: "删除发布信息",
-  view_support_tickets: "查看反馈与举报工单",
-  handle_support_tickets: "处理反馈与举报工单",
-  view_reports: "查看举报",
-  handle_reports: "处理举报",
-  view_post_reports: "查看内容举报",
-  handle_post_reports: "处理内容举报",
-  manage_system_announcements: "管理系统公告",
-  manage_notifications: "管理站内通知",
   view_news: "查看新闻",
   create_news: "新增新闻",
   edit_news: "编辑新闻",
@@ -126,7 +117,7 @@ export const adminRoleOptions: Array<{ value: AdminRoleName; label: string }> = 
 ];
 
 export const adminRoleDescriptions: Record<AdminRoleName, string> = {
-  support: "适合处理用户反馈、基础沟通和站内通知，不参与内容裁定、站点设置和高风险后台操作。选择后会自动套用客服常用功能，主管理员可继续增减授权。",
+  support: "适合处理用户反馈、基础沟通和联系用户，不参与内容裁定、站点设置和高风险后台操作。选择后会自动套用客服常用功能，主管理员可继续增减授权。",
   moderator: "适合处理用户发布信息、举报内容和回收站内的内容复核，不默认参与站点配置、广告运营或管理员授权。",
   editor: "适合维护新闻、公共导航、首页内容和广告运营模块，不默认参与用户账号处置和管理员授权。",
   admin: "适合管理大部分日常后台功能，包括内容、用户、消息、运营设置和审计查看，但不默认负责管理员授权及最高风险操作。",
@@ -134,13 +125,12 @@ export const adminRoleDescriptions: Record<AdminRoleName, string> = {
 };
 
 export const adminRoleDefaultModules: Record<AdminRoleName, AdminModuleKey[]> = {
-  support: ["support", "messages"],
+  support: ["messages"],
   moderator: ["user-posts", "messages", "recycle-bin"],
   editor: ["news", "navigation", "home", "ads"],
-  admin: ["user-posts", "support", "messages", "news", "navigation", "home", "ads", "users", "settings", "audit-logs"],
+  admin: ["user-posts", "messages", "news", "navigation", "home", "ads", "users", "settings", "audit-logs"],
   super_admin: [
     "user-posts",
-    "support",
     "messages",
     "news",
     "navigation",

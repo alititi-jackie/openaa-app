@@ -1,21 +1,11 @@
 "use server";
 
 import { headers } from "next/headers";
-import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { DEFAULT_CITY_SLUG, POST_TYPE_TO_ROUTE } from "./constants";
-import { postHref } from "./formMappers";
+import { DEFAULT_CITY_SLUG } from "./constants";
 import type { PostType } from "./types";
 
 type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
-
-export type ReportActionResult = {
-  ok: boolean;
-  message: string;
-  authRequired?: boolean;
-  loginHref?: string;
-  alreadyReported?: boolean;
-};
 
 export type ViewActionResult = {
   ok: boolean;
@@ -24,12 +14,6 @@ export type ViewActionResult = {
 };
 
 type RecordPostViewRpcResult = number | { view_count?: number | null } | Array<{ view_count?: number | null }>;
-
-const reportReasons = new Set(["false_information", "expired", "scam", "invalid_contact", "illegal", "other"]);
-
-function loginHref(returnTo: string) {
-  return `/login?returnTo=${encodeURIComponent(returnTo)}`;
-}
 
 async function getPublicPost(supabase: SupabaseServerClient, postId: string) {
   const now = new Date().toISOString();
@@ -56,66 +40,6 @@ function viewCountFromRpcResult(data: RecordPostViewRpcResult | null) {
   const value = Array.isArray(data) ? data[0]?.view_count : typeof data === "number" ? data : data?.view_count;
   const count = Number(value);
   return Number.isFinite(count) ? count : null;
-}
-
-function revalidatePost(type: PostType, postId: string) {
-  revalidatePath(POST_TYPE_TO_ROUTE[type]);
-  revalidatePath(postHref(type, postId));
-}
-
-export async function submitPostReport(postId: string, reason: string, description: string, returnTo: string): Promise<ReportActionResult> {
-  const supabase = await createSupabaseServerClient();
-
-  if (!supabase) {
-    return { ok: false, message: "Supabase 环境变量尚未配置，暂时无法提交举报。" };
-  }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { ok: false, message: "请先登录后再举报。", authRequired: true, loginHref: loginHref(returnTo) };
-  }
-
-  if (!reportReasons.has(reason)) {
-    return { ok: false, message: "请选择有效的举报原因。" };
-  }
-
-  const post = await getPublicPost(supabase, postId);
-  if (!post) {
-    return { ok: false, message: "这条内容暂时不可举报。" };
-  }
-
-  const { data: existing, error: existingError } = await supabase
-    .from("post_reports")
-    .select("id")
-    .eq("post_id", postId)
-    .eq("reporter_id", user.id)
-    .maybeSingle();
-
-  if (existingError) {
-    return { ok: false, message: "举报状态读取失败，请稍后再试。" };
-  }
-
-  if (existing?.id) {
-    return { ok: true, message: "你已经举报过这条内容，我们会尽快处理。", alreadyReported: true };
-  }
-
-  const detail = description.trim().slice(0, 1000) || null;
-  const { error } = await supabase.from("post_reports").insert({
-    post_id: postId,
-    reporter_id: user.id,
-    reason,
-    detail,
-  });
-
-  if (error) {
-    return { ok: false, message: "举报提交失败，请稍后再试。" };
-  }
-
-  revalidatePost(post.post_type, postId);
-  return { ok: true, message: "已收到举报，我们会尽快处理。" };
 }
 
 export async function recordPostView(postId: string, visitorId: string | null): Promise<ViewActionResult> {
