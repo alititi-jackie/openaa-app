@@ -5,7 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata = buildPageMetadata({
   title: "线索与建议",
-  description: "向 OpenAA 提交新闻线索、合作咨询、功能建议或回复管理员。",
+  description: "向 OpenAA 提交新闻线索、广告合作咨询、功能建议或回复管理员。",
   path: "/feedback",
   noIndex: true,
 });
