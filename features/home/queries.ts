@@ -300,7 +300,7 @@ async function readHomeAds(supabase: HomeSupabaseClient) {
       .is("deleted_at", null)
       .eq("is_active", true)
       .or(`starts_at.is.null,starts_at.lte.${now}`)
-      .or(`ends_at.is.null,ends_at.gte.${now}`)
+      .or(`ends_at.is.null,ends_at.gt.${now}`)
       .order("sort_order", { ascending: true });
 
     if (error) {

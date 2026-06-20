@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { ImageOff } from "lucide-react";
 import { Autoplay, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
@@ -49,19 +50,7 @@ function renderSlideContent(slide: HomeBannerItem, index: number) {
 
   if (!imageUrl) return null;
 
-  const image = (
-    <div className="relative h-[160px] w-full bg-zinc-100 sm:h-[180px] md:h-[200px]">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={imageUrl}
-        alt="OpenAA广告图片"
-        className="h-full w-full select-none object-cover"
-        draggable={false}
-        loading={isFirstSlide ? "eager" : "lazy"}
-      />
-    </div>
-  );
-
+  const image = <BannerImage src={imageUrl} title={slide.title} eager={isFirstSlide} />;
   const href = normalizeHref(slide);
   const openMode = normalizeOpenMode(slide);
 
@@ -105,6 +94,32 @@ function renderSlideContent(slide: HomeBannerItem, index: number) {
   }
 
   return image;
+}
+
+function BannerImage({ src, title, eager }: { src: string; title: string; eager: boolean }) {
+  const [failed, setFailed] = useState(false);
+
+  return (
+    <div className="relative h-[160px] w-full bg-zinc-100 sm:h-[180px] md:h-[200px]">
+      {failed ? (
+        <div className="flex h-full w-full flex-col items-center justify-center gap-2 px-4 text-center text-zinc-500">
+          <ImageOff size={24} />
+          <p className="line-clamp-1 text-sm font-bold text-zinc-700">{title}</p>
+          <p className="text-xs">广告图片暂时无法加载</p>
+        </div>
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt={title || "OpenAA 广告图片"}
+          className="h-full w-full select-none object-cover"
+          draggable={false}
+          loading={eager ? "eager" : "lazy"}
+          onError={() => setFailed(true)}
+        />
+      )}
+    </div>
+  );
 }
 
 function normalizeImageUrl(value: unknown) {

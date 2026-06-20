@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { MessageCircle, ShieldCheck, Sparkles, TrendingUp, X, ZoomIn } from "lucide-react";
+import { ImageOff, MessageCircle, ShieldCheck, Sparkles, TrendingUp, X, ZoomIn } from "lucide-react";
 
 type AdDetail = {
   imageUrl: string;
@@ -12,10 +12,12 @@ type AdDetail = {
   contactName: string | null;
   phone: string | null;
   wechat: string | null;
+  address: string | null;
 };
 
 export function AdDetailClient({ ad }: { ad: AdDetail }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
 
   useEffect(() => {
     if (!lightboxOpen) return;
@@ -35,13 +37,21 @@ export function AdDetailClient({ ad }: { ad: AdDetail }) {
 
         <div className="overflow-hidden rounded-3xl bg-white shadow-[0_10px_35px_rgba(0,0,0,0.08)] ring-1 ring-black/5">
           <div className="relative bg-zinc-100">
-            <button type="button" onClick={() => setLightboxOpen(true)} className="group block w-full" aria-label="点击查看大图">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={ad.imageUrl} alt={ad.title} className="h-[240px] w-full object-contain object-center md:h-[340px]" />
-              <div className="pointer-events-none absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-black/30 px-2 py-1 text-[11px] text-white opacity-0 transition-opacity group-hover:opacity-100">
-                <ZoomIn size={12} />
-                <span>查看大图</span>
-              </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (!imageFailed) setLightboxOpen(true);
+              }}
+              className="group block w-full"
+              aria-label="点击查看大图"
+            >
+              <AdDetailImage ad={ad} imageFailed={imageFailed} onImageError={() => setImageFailed(true)} />
+              {!imageFailed ? (
+                <div className="pointer-events-none absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-black/30 px-2 py-1 text-[11px] text-white opacity-0 transition-opacity group-hover:opacity-100">
+                  <ZoomIn size={12} />
+                  <span>查看大图</span>
+                </div>
+              ) : null}
             </button>
           </div>
 
@@ -64,7 +74,7 @@ export function AdDetailClient({ ad }: { ad: AdDetail }) {
                 <AdvantageCard icon={<TrendingUp size={16} className="text-blue-600" />} title="精准华人流量" text="更高匹配度，更低获客成本" color="blue" />
                 <AdvantageCard icon={<Sparkles size={16} className="text-amber-600" />} title="首页黄金曝光" text="强占注意力，提升点击咨询" color="amber" />
                 <AdvantageCard icon={<ShieldCheck size={16} className="text-emerald-600" />} title="品牌信任提升" text="平台背书，降低用户决策成本" color="emerald" />
-                <AdvantageCard icon={<MessageCircle size={16} className="text-purple-600" />} title="高效咨询转化" text="按钮直达，缩短沟通路径" color="purple" />
+                <AdvantageCard icon={<MessageCircle size={16} className="text-purple-600" />} title="高效咨询转化" text="联系方式集中展示，缩短沟通路径" color="purple" />
               </div>
             </section>
 
@@ -74,10 +84,10 @@ export function AdDetailClient({ ad }: { ad: AdDetail }) {
           </div>
         </div>
 
-        <p className="mt-6 text-center text-[11px] text-zinc-400">提示：此页面为内部广告详情页展示样式（可按商家内容进行更新）。</p>
+        <p className="mt-6 text-center text-[11px] text-zinc-400">此页面为内部广告详情页，内容由管理员维护。</p>
       </div>
 
-      {lightboxOpen ? (
+      {lightboxOpen && !imageFailed ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" onClick={() => setLightboxOpen(false)}>
           <div className="relative h-[80vh] w-full max-w-5xl" onClick={(event) => event.stopPropagation()}>
             <button type="button" onClick={() => setLightboxOpen(false)} className="absolute right-2 top-2 z-10 flex items-center gap-1 rounded-full bg-black/60 px-3 py-2 text-sm text-white" aria-label="关闭">
@@ -89,6 +99,27 @@ export function AdDetailClient({ ad }: { ad: AdDetail }) {
           </div>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function AdDetailImage({ ad, imageFailed, onImageError }: { ad: AdDetail; imageFailed: boolean; onImageError: () => void }) {
+  if (imageFailed) {
+    return <AdImageFallback title={ad.title || ad.slug} className="h-[240px] md:h-[340px]" />;
+  }
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={ad.imageUrl} alt={ad.title} onError={onImageError} className="h-[240px] w-full object-contain object-center md:h-[340px]" />
+  );
+}
+
+function AdImageFallback({ title, className = "" }: { title: string; className?: string }) {
+  return (
+    <div className={`flex w-full flex-col items-center justify-center gap-2 bg-zinc-100 px-4 text-center text-zinc-500 ${className}`}>
+      <ImageOff size={26} />
+      <p className="text-sm font-bold text-zinc-700">{title}</p>
+      <p className="text-xs">广告图片暂时无法加载</p>
     </div>
   );
 }
@@ -122,7 +153,7 @@ function AdvantageCard({ icon, title, text, color }: { icon: React.ReactNode; ti
 }
 
 function ContactInfoCard({ ad }: { ad: AdDetail }) {
-  const hasContact = Boolean(ad.contactName || ad.phone || ad.wechat);
+  const hasContact = Boolean(ad.contactName || ad.phone || ad.wechat || ad.address);
   return (
     <div className="rounded-2xl border border-zinc-100 bg-white p-5 shadow-sm">
       <h2 className="text-xl font-bold text-gray-900">联系广告方</h2>
@@ -131,6 +162,7 @@ function ContactInfoCard({ ad }: { ad: AdDetail }) {
           {ad.contactName ? <p><span className="font-bold text-zinc-900">联系人：</span>{ad.contactName}</p> : null}
           {ad.phone ? <p><span className="font-bold text-zinc-900">电话：</span>{ad.phone}</p> : null}
           {ad.wechat ? <p><span className="font-bold text-zinc-900">微信：</span>{ad.wechat}</p> : null}
+          {ad.address ? <p><span className="font-bold text-zinc-900">地址：</span>{ad.address}</p> : null}
         </div>
       ) : (
         <p className="mt-3 text-sm text-zinc-500">暂无单独联系方式，请查看广告详情内容。</p>

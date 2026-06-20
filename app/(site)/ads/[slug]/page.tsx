@@ -16,6 +16,7 @@ type RawAdDetail = {
   contact_name: string | null;
   phone: string | null;
   wechat: string | null;
+  address: string | null;
   image_assets?: { public_url: string | null; external_url: string | null } | Array<{ public_url: string | null; external_url: string | null }> | null;
 };
 
@@ -37,13 +38,13 @@ export default async function AdDetailPage({ params }: AdDetailPageProps) {
   const now = new Date().toISOString();
   const { data, error } = await supabase
     .from("ads")
-    .select("title,slug,content,contact_name,phone,wechat,image_assets(public_url,external_url)")
+    .select("title,slug,content,contact_name,phone,wechat,address,image_assets(public_url,external_url)")
     .eq("slug", slug)
     .eq("link_type", "internal")
     .is("deleted_at", null)
     .eq("is_active", true)
     .or(`starts_at.is.null,starts_at.lte.${now}`)
-    .or(`ends_at.is.null,ends_at.gte.${now}`)
+    .or(`ends_at.is.null,ends_at.gt.${now}`)
     .maybeSingle();
 
   if (error || !data) notFound();
@@ -64,5 +65,6 @@ function mapAdDetail(row: RawAdDetail) {
     contactName: row.contact_name,
     phone: row.phone,
     wechat: row.wechat,
+    address: row.address,
   };
 }

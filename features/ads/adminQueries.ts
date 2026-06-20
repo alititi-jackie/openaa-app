@@ -38,7 +38,7 @@ export async function getAdminAdsData(position?: string, status?: string): Promi
 
   let query = supabase
     .from("ads")
-    .select("id,placement,href,image_asset_id,is_active,starts_at,ends_at,sort_order,created_at,link_type,external_url,slug,content,contact_name,phone,wechat,open_mode,image_assets(source_type,public_url,external_url)")
+    .select("id,title,placement,href,image_asset_id,is_active,starts_at,ends_at,sort_order,created_at,link_type,external_url,slug,content,contact_name,phone,wechat,address,open_mode,image_assets(source_type,public_url,external_url)")
     .eq("placement", activePosition)
     .is("deleted_at", null)
     .order("sort_order", { ascending: true })
@@ -70,6 +70,7 @@ function mapAd(row: RawAdRow): AdminAdRow {
 
   return {
     id: row.id,
+    title: row.title,
     image_asset_id: row.image_asset_id,
     image_url: imageAsset?.public_url || imageAsset?.external_url || null,
     image_source_type: imageAsset?.source_type ?? null,
@@ -81,6 +82,7 @@ function mapAd(row: RawAdRow): AdminAdRow {
     contact_name: row.contact_name,
     phone: row.phone,
     wechat: row.wechat,
+    address: row.address,
     open_mode: openMode,
     position,
     is_active: row.is_active,

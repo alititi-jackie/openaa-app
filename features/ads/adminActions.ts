@@ -28,6 +28,7 @@ type ExistingAd = {
   contact_name: string | null;
   phone: string | null;
   wechat: string | null;
+  address: string | null;
   open_mode: string | null;
   is_active: boolean;
   starts_at: string | null;
@@ -49,7 +50,8 @@ export async function upsertAd(_state: AdminHomeActionState, formData: FormData)
   const imageUrl = readText(formData, "image_url");
   const imageFile = readFile(formData, "image_file");
   const existingImageAssetId = readText(formData, "image_asset_id") || null;
-  const isActive = formData.get("is_active") === "on";
+  const isActiveValue = formData.get("is_active");
+  const isActive = isActiveValue === "on" || isActiveValue === "true";
   const startsAt = readAdDate(formData, "start_date", "start");
   const endsAt = readAdDate(formData, "end_date", "end");
   const before = id ? await readAd(context.supabase, id) : null;
@@ -173,14 +175,17 @@ async function getAdminActionContext(): Promise<AdminActionContext> {
 }
 
 function normalizeAdPayload(formData: FormData, openMode: AdOpenMode, position: NonNullable<ReturnType<typeof normalizeAdPosition>>, imageAssetId: string | null, isActive: boolean, startsAt: string | null, endsAt: string | null) {
+  const title = readText(formData, "title");
   const externalUrl = readText(formData, "external_url");
   const slug = normalizeAdSlug(readText(formData, "slug"));
   const content = readText(formData, "content") || null;
   const contactName = readText(formData, "contact_name") || null;
   const phone = readText(formData, "phone") || null;
   const wechat = readText(formData, "wechat") || null;
+  const address = readText(formData, "address") || null;
 
   if (!imageAssetId) return { ok: false as const, message: "请上传广告图片或填写外部图片链接。" };
+  if (!title) return { ok: false as const, message: "请填写广告标题。" };
 
   if (openMode === "internal") {
     if (!slug || !slugRegex.test(slug)) return { ok: false as const, message: "内部广告必须填写有效 slug，只能使用小写字母、数字和短横线。" };
@@ -188,7 +193,7 @@ function normalizeAdPayload(formData: FormData, openMode: AdOpenMode, position: 
       ok: true as const,
       payload: {
         placement: position,
-        title: slug,
+        title,
         href: `/ads/${slug}`,
         image_asset_id: imageAssetId,
         link_type: "internal",
@@ -198,6 +203,7 @@ function normalizeAdPayload(formData: FormData, openMode: AdOpenMode, position: 
         contact_name: contactName,
         phone,
         wechat,
+        address,
         open_mode: "internal",
         is_active: isActive,
         starts_at: startsAt,
@@ -212,7 +218,7 @@ function normalizeAdPayload(formData: FormData, openMode: AdOpenMode, position: 
     ok: true as const,
     payload: {
       placement: position,
-      title: externalUrl,
+      title,
       href: externalUrl,
       image_asset_id: imageAssetId,
       link_type: "external",
@@ -222,6 +228,7 @@ function normalizeAdPayload(formData: FormData, openMode: AdOpenMode, position: 
       contact_name: null,
       phone: null,
       wechat: null,
+      address: null,
       open_mode: openMode,
       is_active: isActive,
       starts_at: startsAt,
@@ -273,7 +280,7 @@ async function uploadAdImageAsset(context: Extract<AdminActionContext, { ok: tru
 }
 
 async function upsertExternalImageAsset(context: Extract<AdminActionContext, { ok: true }>, imageUrl: string, entityId: string | null) {
-  if (!isHttpUrl(imageUrl)) return false;
+  if (!isHttpsUrl(imageUrl)) return false;
   try {
     const externalHost = new URL(imageUrl).hostname.toLowerCase();
     const { data, error } = await context.supabase
@@ -302,7 +309,7 @@ async function readAd(supabase: SupabaseServerClient, id: string): Promise<Exist
   if (!id) return null;
   const { data } = await supabase
     .from("ads")
-    .select("id,placement,href,image_asset_id,link_type,external_url,slug,content,contact_name,phone,wechat,open_mode,is_active,starts_at,ends_at,sort_order")
+    .select("id,placement,href,image_asset_id,link_type,external_url,slug,content,contact_name,phone,wechat,address,open_mode,is_active,starts_at,ends_at,sort_order")
     .eq("id", id)
     .is("deleted_at", null)
     .maybeSingle();
@@ -397,6 +404,14 @@ function isHttpUrl(value: string) {
   try {
     const url = new URL(value);
     return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function isHttpsUrl(value: string) {
+  try {
+    return new URL(value).protocol === "https:";
   } catch {
     return false;
   }

@@ -1,69 +1,90 @@
 "use client";
 
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+
 import { deleteAd, toggleAdActive, upsertAd } from "@/features/ads/adminActions";
-import { adPositions, adStatusFilters, type AdminAdRow, type AdOpenMode, type AdPosition, type AdStatusFilter } from "@/features/ads/types";
+import {
+  adPositions,
+  adStatusFilters,
+  type AdminAdRow,
+  type AdOpenMode,
+  type AdPosition,
+  type AdStatusFilter,
+} from "@/features/ads/types";
 import type { AdminHomeActionState } from "@/features/admin-home/types";
 
 const initialState: AdminHomeActionState = { ok: true, message: "" };
-
 type ImageSourceLock = "uploaded" | "external";
+
+type AdminAdsManagementProps = {
+  ads: AdminAdRow[];
+  activePosition: AdPosition;
+  activeStatus: AdStatusFilter;
+};
 
 export function AdminAdsManagement({
   ads,
   activePosition,
   activeStatus,
-}: {
-  ads: AdminAdRow[];
-  activePosition: AdPosition;
-  activeStatus: AdStatusFilter;
-}) {
+}: AdminAdsManagementProps) {
   const [editingAd, setEditingAd] = useState<AdminAdRow | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [openMode, setOpenMode] = useState<AdOpenMode>("external_new");
+  const [openMode, setOpenMode] = useState<AdOpenMode>("internal");
   const [imageUrl, setImageUrl] = useState("");
+  const [currentImageAssetId, setCurrentImageAssetId] = useState<string | null>(null);
   const [imageSourceLock, setImageSourceLock] = useState<ImageSourceLock | null>(null);
   const [filePreviewUrl, setFilePreviewUrl] = useState("");
   const [uploadMessage, setUploadMessage] = useState("");
   const [state, formAction, pending] = useActionState(upsertAd, initialState);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
 
   const trimmedImageUrl = imageUrl.trim();
-  const hasImage = Boolean(trimmedImageUrl || filePreviewUrl);
+  const hasImage = Boolean(filePreviewUrl || trimmedImageUrl);
   const previewUrl = filePreviewUrl || trimmedImageUrl;
-  const uploadDisabled = Boolean(imageSourceLock && imageSourceLock !== "uploaded");
-  const urlDisabled = Boolean(imageSourceLock && imageSourceLock !== "external");
+  const uploadDisabled = imageSourceLock === "external";
+  const urlDisabled = imageSourceLock === "uploaded";
 
   useEffect(() => {
     if (state.ok && state.message) {
       resetForm(true);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.ok, state.message]);
+  }, [state]);
 
   useEffect(() => {
     return () => {
-      if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl);
+      if (filePreviewUrl) {
+        URL.revokeObjectURL(filePreviewUrl);
+      }
     };
   }, [filePreviewUrl]);
 
+  function scrollToForm() {
+    requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
   function resetForm(close = false) {
     setEditingAd(null);
-    setOpenMode("external_new");
+    setOpenMode("internal");
     setImageUrl("");
+    setCurrentImageAssetId(null);
     setImageSourceLock(null);
-    setUploadMessage("");
-    if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl);
     setFilePreviewUrl("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    if (close) setIsFormOpen(false);
+    setUploadMessage("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    if (close) {
+      setIsFormOpen(false);
+    }
   }
 
   function startCreate() {
     resetForm(false);
     setIsFormOpen(true);
-    requestAnimationFrame(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    scrollToForm();
   }
 
   function startEdit(ad: AdminAdRow) {
@@ -71,43 +92,56 @@ export function AdminAdsManagement({
     setEditingAd(ad);
     setOpenMode(ad.open_mode);
     setImageUrl(ad.image_url ?? "");
-    setImageSourceLock(ad.image_url ? (ad.image_source_type === "storage" ? "uploaded" : "external") : null);
-    setUploadMessage("");
-    if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl);
+    setCurrentImageAssetId(ad.image_asset_id ?? null);
+    setImageSourceLock(ad.image_source_type === "storage" ? "uploaded" : ad.image_url ? "external" : null);
     setFilePreviewUrl("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setUploadMessage("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    scrollToForm();
   }
 
   function clearImage() {
     setImageUrl("");
+    setCurrentImageAssetId(null);
     setImageSourceLock(null);
     setUploadMessage("");
-    if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl);
+    if (filePreviewUrl) {
+      URL.revokeObjectURL(filePreviewUrl);
+    }
     setFilePreviewUrl("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   }
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      return;
+    }
     if (imageSourceLock === "external") {
       event.target.value = "";
+      setUploadMessage("请先删除外部图片链接，再上传图片");
       return;
     }
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      setUploadMessage("图片格式仅支持 JPG、PNG、WEBP");
       event.target.value = "";
+      setUploadMessage("图片格式仅支持 JPG、PNG、WEBP");
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setUploadMessage("图片大小不能超过 5MB");
       event.target.value = "";
+      setUploadMessage("图片大小不能超过 5MB");
       return;
     }
-    if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl);
+    if (filePreviewUrl) {
+      URL.revokeObjectURL(filePreviewUrl);
+    }
     setFilePreviewUrl(URL.createObjectURL(file));
     setImageUrl("");
+    setCurrentImageAssetId(null);
     setImageSourceLock("uploaded");
     setUploadMessage("已选择上传图片");
   }
@@ -115,184 +149,366 @@ export function AdminAdsManagement({
   function handleImageUrlBlur() {
     const value = imageUrl.trim();
     if (!value) {
-      setImageSourceLock(null);
+      if (imageSourceLock === "external") {
+        setImageSourceLock(null);
+      }
       setUploadMessage("");
       return;
     }
-    if (!isHttpUrl(value)) {
-      setUploadMessage("图片链接必须以 http:// 或 https:// 开头");
+    if (!isHttpsUrl(value)) {
+      setUploadMessage("图片链接必须以 https:// 开头");
       return;
     }
-    if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl);
+    if (filePreviewUrl) {
+      URL.revokeObjectURL(filePreviewUrl);
+    }
     setFilePreviewUrl("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    if (value !== editingAd?.image_url) {
+      setCurrentImageAssetId(null);
+    }
     setImageUrl(value);
     setImageSourceLock("external");
     setUploadMessage("");
   }
 
+  const filteredAds = useMemo(() => ads, [ads]);
+
   return (
-    <div className="mx-auto w-full max-w-5xl">
-      <div className="mb-4">
-        <button type="button" onClick={startCreate} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm">
-          新增广告
-        </button>
+    <section className="space-y-5">
+      <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-black text-slate-950">广告管理</h2>
+            <p className="mt-1 text-sm font-semibold text-slate-500">
+              按位置管理广告图、详情页、外部链接、启用状态与排序。
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={startCreate}
+            className="inline-flex h-11 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-black text-white shadow-sm transition hover:bg-blue-700"
+          >
+            新增广告
+          </button>
+        </div>
       </div>
+
+      <AdsFilter activePosition={activePosition} activeStatus={activeStatus} />
 
       {isFormOpen ? (
-      <form ref={formRef} action={formAction} encType="multipart/form-data" className="scroll-mt-20 mb-8 space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-950">{editingAd ? "编辑广告" : "新增广告"}</h2>
-        <input type="hidden" name="id" value={editingAd?.id ?? ""} />
-        <input type="hidden" name="image_asset_id" value={editingAd?.image_asset_id ?? ""} />
-        <input type="hidden" name="sort_order" value={editingAd?.sort_order ?? 0} />
+        <form
+          ref={formRef}
+          action={formAction}
+          encType="multipart/form-data"
+          className="space-y-5 rounded-[28px] border border-blue-100 bg-white p-4 shadow-sm sm:p-5"
+        >
+          <input type="hidden" name="id" value={editingAd?.id ?? ""} />
+          <input type="hidden" name="image_asset_id" value={currentImageAssetId ?? ""} />
+          <input type="hidden" name="sort_order" value={editingAd?.sort_order ?? 0} />
 
-        <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">位置</label>
-          <select name="position" defaultValue={editingAd?.position ?? activePosition} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
-            {adPositions.map((position) => (
-              <option key={position.key} value={position.key}>{position.label.replace("广告", "")} ({position.key})</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="space-y-2 rounded-lg border border-slate-200 p-3">
-          <p className="text-sm font-medium text-slate-700">广告图片 *</p>
-          <div className="flex flex-wrap items-center gap-2">
-            <label className={`rounded-lg border px-3 py-2 text-sm font-medium ${uploadDisabled ? "cursor-not-allowed bg-slate-100 text-slate-400" : "cursor-pointer bg-slate-50 text-slate-700 hover:bg-slate-100"}`}>
-              上传广告图
-              <input ref={fileInputRef} name="image_file" type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploadDisabled} onChange={handleFileChange} />
-            </label>
-            {uploadMessage ? <span className={`text-xs ${uploadMessage.includes("已选择") ? "text-green-600" : "text-red-500"}`}>{uploadMessage}</span> : null}
-          </div>
-          <input
-            name="image_url"
-            value={imageUrl}
-            onChange={(event) => setImageUrl(event.target.value)}
-            onBlur={handleImageUrlBlur}
-            disabled={urlDisabled}
-            placeholder="外部图片 URL（例如 https://img.openaa.com/banners/xxx.jpg）"
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500"
-          />
-          {imageSourceLock ? (
-            <p className="text-xs text-amber-700">
-              {imageSourceLock === "uploaded" ? "已使用上传图片，如需改用外部链接，请先删除当前图片。" : "已使用外部图片链接，如需上传图片，请先删除当前图片。"}
+          <div className="flex flex-col gap-1">
+            <h3 className="text-base font-black text-slate-950">
+              {editingAd ? "编辑广告" : "新增广告"}
+            </h3>
+            <p className="text-sm font-semibold text-slate-500">
+              广告位置、图片和打开方式为必填。外部图片链接仅支持 https。
             </p>
-          ) : (
-            <p className="text-xs text-slate-500">上传图片与外部链接二选一。若已存在图片，请先删除后再更换。推荐 1200x420 或 1500x500，建议使用 WebP/JPG，单张建议小于 500KB。</p>
-          )}
-          {hasImage ? (
-            <button type="button" onClick={clearImage} className="rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600">
-              删除图片
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="space-y-2 text-sm font-black text-slate-700">
+              广告位置 *
+              <select
+                name="position"
+                required
+                defaultValue={editingAd?.position ?? activePosition}
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-base font-bold text-slate-900 outline-none focus:border-blue-500"
+              >
+                <option value="">请选择广告所在类别</option>
+                {adPositions.map((position) => (
+                  <option key={position.key} value={position.key}>
+                    {position.label.replace("广告", "")} ({position.key})
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="space-y-2 text-sm font-black text-slate-700">
+              打开方式 *
+              <select
+                name="open_mode"
+                required
+                value={openMode}
+                onChange={(event) => setOpenMode(event.target.value as AdOpenMode)}
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-base font-bold text-slate-900 outline-none focus:border-blue-500"
+              >
+                <option value="internal">内部详情页</option>
+                <option value="external_new">外部链接 - 新窗口</option>
+                <option value="external_same">外部链接 - 当前窗口</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="space-y-2 text-sm font-black text-slate-700">
+                上传广告图
+                <input
+                  ref={fileInputRef}
+                  name="image_file"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  disabled={uploadDisabled}
+                  onChange={handleFileChange}
+                  className="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 file:mr-4 file:rounded-xl file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-black file:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+              </label>
+
+              <label className="space-y-2 text-sm font-black text-slate-700">
+                或使用外部图片链接
+                <input
+                  name="image_url"
+                  value={imageUrl}
+                  disabled={urlDisabled}
+                  onChange={(event) => setImageUrl(event.target.value)}
+                  onBlur={handleImageUrlBlur}
+                  placeholder="外部图片 URL，例如 https://img.openaa.com/banners/xxx.jpg"
+                  className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+              </label>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm font-semibold text-slate-500">
+                图片只能二选一。要更换图片，请先删除当前图片。
+              </p>
+              {hasImage ? (
+                <button
+                  type="button"
+                  onClick={clearImage}
+                  className="h-10 rounded-2xl border border-red-200 bg-white px-4 text-sm font-black text-red-600 transition hover:bg-red-50"
+                >
+                  删除图片
+                </button>
+              ) : null}
+            </div>
+
+            {uploadMessage ? (
+              <p className="text-sm font-black text-blue-700">{uploadMessage}</p>
+            ) : null}
+
+            {previewUrl ? (
+              <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={previewUrl} alt="广告预览" className="h-40 w-full object-cover" />
+              </div>
+            ) : null}
+          </div>
+
+          {openMode === "internal" ? <InternalFields ad={editingAd} /> : <ExternalFields ad={editingAd} />}
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700">
+              <input
+                name="is_active"
+                type="checkbox"
+                value="true"
+                defaultChecked={editingAd?.is_active ?? true}
+                className="h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              />
+              立即启用
+            </label>
+            <DateInput key={`start-${editingAd?.id ?? "new"}-${editingAd?.start_date ?? ""}`} label="开始日期（可选）" name="start_date" value={editingAd?.start_date ?? null} />
+            <DateInput key={`end-${editingAd?.id ?? "new"}-${editingAd?.end_date ?? ""}`} label="结束日期（可选）" name="end_date" value={editingAd?.end_date ?? null} endDate />
+          </div>
+
+          {state.message ? (
+            <p className={`rounded-2xl px-4 py-3 text-sm font-black ${state.ok ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
+              {state.message}
+            </p>
+          ) : null}
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => resetForm(true)}
+              className="h-12 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-black text-slate-700 transition hover:bg-slate-50"
+            >
+              取消
             </button>
-          ) : null}
-          {previewUrl && isHttpUrl(previewUrl) ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={previewUrl} alt="广告图预览" className="mt-2 max-h-40 rounded-lg object-cover" />
-          ) : null}
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">打开方式 (Open mode) *</label>
-          <select name="open_mode" value={openMode} onChange={(event) => setOpenMode(event.target.value as AdOpenMode)} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
-            <option value="internal">内部详情页</option>
-            <option value="external_new">外部链接 - 新窗口</option>
-            <option value="external_same">外部链接 - 当前窗口</option>
-          </select>
-        </div>
-
-        {openMode !== "internal" ? <ExternalFields ad={editingAd} /> : <InternalFields ad={editingAd} />}
-
-        <div className="flex items-center gap-2">
-          <input type="checkbox" id="is_active" name="is_active" defaultChecked={editingAd?.is_active ?? true} />
-          <label htmlFor="is_active" className="text-sm font-medium text-slate-700">立即启用</label>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <DateInput key={`${editingAd?.id ?? "new"}-start-${editingAd?.start_date ?? ""}`} label="开始日期（可选）" name="start_date" defaultValue={editingAd?.start_date} />
-          <DateInput key={`${editingAd?.id ?? "new"}-end-${editingAd?.end_date ?? ""}`} label="结束日期（可选）" name="end_date" defaultValue={editingAd?.end_date} endDate />
-        </div>
-
-        {state.message ? <p className={`text-sm ${state.ok ? "text-green-600" : "text-red-500"}`}>{state.message}</p> : null}
-
-        <div className="flex gap-2">
-          <button type="submit" disabled={pending} className="flex-1 rounded-lg bg-blue-600 py-2 font-medium text-white disabled:opacity-50">
-            {pending ? "处理中..." : editingAd ? "保存修改" : "提交广告"}
-          </button>
-          <button type="button" onClick={() => resetForm(true)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">
-            取消
-          </button>
-        </div>
-      </form>
+            <button
+              type="submit"
+              disabled={pending}
+              className="h-12 rounded-2xl bg-blue-600 px-5 text-sm font-black text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {pending ? "处理中..." : editingAd ? "保存修改" : "提交广告"}
+            </button>
+          </div>
+        </form>
       ) : null}
 
-      <div>
-        <h2 className="mb-3 text-lg font-semibold text-slate-950">现有广告</h2>
-        <AdsFilter activePosition={activePosition} activeStatus={activeStatus} />
-        {ads.length === 0 ? <p className="mt-3 text-sm text-slate-400">暂无符合条件的广告</p> : null}
-        <ul className="mt-3 space-y-3">
-          {ads.map((ad) => (
-            <AdListItem key={ad.id} ad={ad} onEdit={() => startEdit(ad)} />
-          ))}
-        </ul>
+      <div className="space-y-3 rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-base font-black text-slate-950">现有广告</h3>
+          <span className="text-sm font-black text-slate-500">{filteredAds.length} 条</span>
+        </div>
+        {filteredAds.length === 0 ? (
+          <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm font-black text-slate-500">
+            暂无符合条件的广告
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredAds.map((ad) => (
+              <AdListItem key={ad.id} ad={ad} onEdit={() => startEdit(ad)} />
+            ))}
+          </div>
+        )}
       </div>
-    </div>
+    </section>
   );
 }
 
 function InternalFields({ ad }: { ad: AdminAdRow | null }) {
   return (
-    <>
-      <Input label="页面标识 (slug) *" name="slug" defaultValue={ad?.slug} placeholder="e.g. summer-sale-2024" />
-      <p className="-mt-3 text-xs text-slate-400">只能使用小写字母、数字和短横线，访问路径将为 /ads/你的标识</p>
-      <Textarea label="详情内容（可选）" name="content" defaultValue={ad?.content} />
-      <Input label="联系人（可选）" name="contact_name" defaultValue={ad?.contact_name} placeholder="请输入联系人" />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Input label="联系电话（可选）" name="phone" defaultValue={ad?.phone} placeholder="请输入联系电话" />
-        <Input label="微信号（可选）" name="wechat" defaultValue={ad?.wechat} placeholder="请输入微信号" />
+    <div className="space-y-4 rounded-3xl border border-slate-200 bg-white p-4">
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className="space-y-2 text-sm font-black text-slate-700">
+          页面标识 (slug) *
+          <input
+            name="slug"
+            defaultValue={ad?.slug ?? ""}
+            placeholder="例如 home-top-banner"
+            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm font-bold text-slate-900 outline-none focus:border-blue-500"
+          />
+          <span className="block text-xs font-semibold text-slate-500">
+            只能使用小写字母、数字和短横线，访问路径将为 /ads/你的标识
+          </span>
+        </label>
+        <label className="space-y-2 text-sm font-black text-slate-700">
+          标题 *
+          <input
+            name="title"
+            defaultValue={ad?.title ?? ""}
+            required
+            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm font-bold text-slate-900 outline-none focus:border-blue-500"
+          />
+        </label>
       </div>
-    </>
+      <label className="space-y-2 text-sm font-black text-slate-700">
+        详情内容（可选）
+        <textarea
+          name="content"
+          defaultValue={ad?.content ?? ""}
+          rows={5}
+          className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500"
+        />
+      </label>
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className="space-y-2 text-sm font-black text-slate-700">
+          联系人（可选）
+          <input name="contact_name" defaultValue={ad?.contact_name ?? ""} className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm font-bold outline-none focus:border-blue-500" />
+        </label>
+        <label className="space-y-2 text-sm font-black text-slate-700">
+          联系电话（可选）
+          <input name="phone" defaultValue={ad?.phone ?? ""} className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm font-bold outline-none focus:border-blue-500" />
+        </label>
+        <label className="space-y-2 text-sm font-black text-slate-700">
+          微信号（可选）
+          <input name="wechat" defaultValue={ad?.wechat ?? ""} className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm font-bold outline-none focus:border-blue-500" />
+        </label>
+        <label className="space-y-2 text-sm font-black text-slate-700">
+          地址（可选）
+          <input name="address" defaultValue={ad?.address ?? ""} className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm font-bold outline-none focus:border-blue-500" />
+        </label>
+      </div>
+    </div>
   );
 }
 
 function ExternalFields({ ad }: { ad: AdminAdRow | null }) {
   return (
-    <div>
-      <Input label="外部链接地址 *" name="external_url" type="url" defaultValue={ad?.external_url} placeholder="https://example.com" />
-      <p className="mt-1 text-xs text-slate-400">必须以 http:// 或 https:// 开头。</p>
+    <div className="grid gap-4 rounded-3xl border border-slate-200 bg-white p-4 md:grid-cols-2">
+      <label className="space-y-2 text-sm font-black text-slate-700">
+        标题 *
+        <input
+          name="title"
+          defaultValue={ad?.title ?? ""}
+          required
+          className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm font-bold text-slate-900 outline-none focus:border-blue-500"
+        />
+      </label>
+      <label className="space-y-2 text-sm font-black text-slate-700">
+        外部链接地址 *
+        <input
+          name="external_url"
+          defaultValue={ad?.external_url ?? ""}
+          placeholder="https://example.com"
+          required
+          className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm font-bold text-slate-900 outline-none focus:border-blue-500"
+        />
+        <span className="block text-xs font-semibold text-slate-500">
+          必须以 http:// 或 https:// 开头。
+        </span>
+      </label>
     </div>
   );
 }
 
-function AdsFilter({ activePosition, activeStatus }: { activePosition: AdPosition; activeStatus: AdStatusFilter }) {
+function AdsFilter({
+  activePosition,
+  activeStatus,
+}: {
+  activePosition: AdPosition;
+  activeStatus: AdStatusFilter;
+}) {
   return (
-    <div className="space-y-2">
-      <div className="-mx-1 overflow-x-auto overflow-y-hidden py-1 [touch-action:pan-x] [overscroll-behavior-x:contain] [overscroll-behavior-y:contain]">
-        <div className="flex flex-nowrap gap-2 px-1 whitespace-nowrap">
-          {adPositions.map((item) => (
-            <FilterLink key={item.key} href={`/admin/ads?position=${item.key}&status=${activeStatus}`} active={activePosition === item.key}>
-              {item.label}
-            </FilterLink>
-          ))}
-        </div>
+    <div className="space-y-3 rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {adPositions.map((position) => (
+          <FilterLink
+            key={position.key}
+            href={`/admin/ads?position=${position.key}&status=${activeStatus}`}
+            active={position.key === activePosition}
+          >
+            {position.label.replace("广告", "")}
+          </FilterLink>
+        ))}
       </div>
-      <div className="-mx-1 overflow-x-auto overflow-y-hidden py-1 [touch-action:pan-x] [overscroll-behavior-x:contain] [overscroll-behavior-y:contain]">
-        <div className="flex flex-nowrap gap-2 px-1 whitespace-nowrap">
-          {adStatusFilters.map((item) => (
-            <FilterLink key={item.key} href={`/admin/ads?position=${activePosition}&status=${item.key}`} active={activeStatus === item.key}>
-              {item.label}
-            </FilterLink>
-          ))}
-        </div>
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {adStatusFilters.map((filter) => (
+          <FilterLink
+            key={filter.key}
+            href={`/admin/ads?position=${activePosition}&status=${filter.key}`}
+            active={filter.key === activeStatus}
+          >
+            {filter.label}
+          </FilterLink>
+        ))}
       </div>
     </div>
   );
 }
 
-function FilterLink({ href, active, children }: { href: string; active: boolean; children: React.ReactNode }) {
+function FilterLink({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <a
       href={href}
-      className={`inline-flex min-h-7 items-center rounded-full border px-3 py-1 text-xs font-medium leading-none ${active ? "border-blue-200 bg-blue-50 text-blue-700" : "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
+      className={`inline-flex h-10 shrink-0 items-center justify-center rounded-2xl border px-4 text-sm font-black transition ${
+        active
+          ? "border-blue-600 bg-blue-600 text-white"
+          : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50"
+      }`}
     >
       {children}
     </a>
@@ -300,121 +516,140 @@ function FilterLink({ href, active, children }: { href: string; active: boolean;
 }
 
 function AdListItem({ ad, onEdit }: { ad: AdminAdRow; onEdit: () => void }) {
-  const target = ad.open_mode === "internal" || ad.link_type === "internal" ? `/ads/${ad.slug ?? ""}` : ad.external_url || ad.link_url || "";
-  const positionLabel = adPositions.find((item) => item.key === ad.position)?.label ?? ad.position;
+  const positionLabel = adPositions.find((position) => position.key === ad.position)?.label ?? ad.position;
+  const target = ad.open_mode === "internal" ? `/ads/${ad.slug}` : ad.external_url;
+  const actionState = useMemo<AdminHomeActionState>(() => ({ ok: true, message: "" }), []);
+  const [, toggleAction, togglePending] = useActionState(toggleAdActive, actionState);
+  const [, deleteAction, deletePending] = useActionState(deleteAd, actionState);
 
   return (
-    <li className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      {ad.image_url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={ad.image_url} alt="" className="h-14 w-20 flex-shrink-0 rounded-lg bg-slate-100 object-cover" />
-      ) : (
-        <div className="h-14 w-20 flex-shrink-0 rounded-lg bg-slate-100" />
-      )}
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-xs text-slate-500">{target}</p>
-        <p className="mt-1 text-xs">
-          <span className="font-medium">位置:</span> {positionLabel}
-          {" · "}
-          <span className={`font-medium ${ad.open_mode === "internal" || ad.link_type === "internal" ? "text-purple-600" : "text-blue-600"}`}>
-            {ad.open_mode === "internal" || ad.link_type === "internal" ? "内部页" : "外部链接"}
-          </span>
-          {" · "}
-          <span className={ad.is_active ? "text-green-600" : "text-slate-400"}>{ad.is_active ? "启用" : "停用"}</span>
-        </p>
-        {(ad.start_date || ad.end_date) ? (
-          <p className="mt-0.5 text-xs text-slate-400">
-            {ad.start_date ? ad.start_date.slice(0, 10) : "—"} → {ad.end_date ? ad.end_date.slice(0, 10) : "—"}
-          </p>
-        ) : null}
+    <article className="rounded-3xl border border-slate-200 bg-slate-50 p-3">
+      <div className="grid gap-3 sm:grid-cols-[120px_1fr]">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          {ad.image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={ad.image_url} alt={ad.title} className="h-28 w-full object-cover sm:h-full" />
+          ) : (
+            <div className="flex h-28 items-center justify-center text-xs font-black text-slate-400">无图片</div>
+          )}
+        </div>
+        <div className="min-w-0 space-y-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <h4 className="truncate text-base font-black text-slate-950">{ad.title}</h4>
+              <p className="truncate text-xs font-semibold text-slate-500">{target || "未设置目标"}</p>
+            </div>
+            <span className={`w-fit rounded-full px-3 py-1 text-xs font-black ${ad.is_active ? "bg-emerald-50 text-emerald-700" : "bg-slate-200 text-slate-600"}`}>
+              {ad.is_active ? "启用" : "停用"}
+            </span>
+          </div>
+          <div className="grid gap-2 text-xs font-bold text-slate-500 sm:grid-cols-3">
+            <span>{positionLabel}</span>
+            <span>{ad.open_mode === "internal" ? "内部页" : "外部链接"}</span>
+            <span>
+              {formatAdDate(ad.start_date) || "—"} 至 {formatAdDate(ad.end_date, true) || "—"}
+            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onEdit}
+              className="h-10 rounded-2xl border border-slate-200 bg-white text-sm font-black text-slate-700 transition hover:bg-slate-100"
+            >
+              编辑
+            </button>
+            <form action={toggleAction}>
+              <input type="hidden" name="id" value={ad.id} />
+              <input type="hidden" name="next_active" value={ad.is_active ? "false" : "true"} />
+              <button
+                type="submit"
+                disabled={togglePending}
+                className="h-10 w-full rounded-2xl border border-blue-200 bg-white text-sm font-black text-blue-700 transition hover:bg-blue-50 disabled:opacity-60"
+              >
+                {ad.is_active ? "停用" : "启用"}
+              </button>
+            </form>
+            <form action={deleteAction}>
+              <input type="hidden" name="id" value={ad.id} />
+              <button
+                type="submit"
+                disabled={deletePending}
+                className="h-10 w-full rounded-2xl border border-red-200 bg-white text-sm font-black text-red-600 transition hover:bg-red-50 disabled:opacity-60"
+              >
+                删除
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
-      <div className="flex flex-shrink-0 flex-col gap-1.5">
-        <button type="button" onClick={onEdit} className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-medium">
-          编辑
-        </button>
-        <MiniAction action={toggleAdActive} label={ad.is_active ? "停用" : "启用"}>
-          <input type="hidden" name="id" value={ad.id} />
-          <input type="hidden" name="next_active" value={ad.is_active ? "false" : "true"} />
-        </MiniAction>
-        <MiniAction action={deleteAd} label="删除" danger>
-          <input type="hidden" name="id" value={ad.id} />
-        </MiniAction>
-      </div>
-    </li>
+    </article>
   );
 }
 
-function MiniAction({ action, label, children, danger = false }: { action: (state: AdminHomeActionState, formData: FormData) => Promise<AdminHomeActionState>; label: string; children: React.ReactNode; danger?: boolean }) {
-  const [, formAction, pending] = useActionState(action, initialState);
-  return (
-    <form action={formAction}>
-      {children}
-      <button type="submit" disabled={pending} className={`w-full rounded-lg border px-3 py-1 text-xs font-medium disabled:opacity-50 ${danger ? "border-red-300 text-red-500" : "border-slate-200 text-slate-700"}`}>
-        {pending ? "..." : label}
-      </button>
-    </form>
-  );
-}
+function DateInput({
+  label,
+  name,
+  value,
+  endDate = false,
+}: {
+  label: string;
+  name: string;
+  value: string | null;
+  endDate?: boolean;
+}) {
+  const inputId = `${name}-${label}`;
+  const [inputValue, setInputValue] = useState(toDateInputValue(value, endDate));
 
-function DateInput({ label, name, defaultValue, endDate = false }: { label: string; name: string; defaultValue?: string | null; endDate?: boolean }) {
-  const initial = useMemo(() => toDateInputValue(defaultValue, endDate), [defaultValue, endDate]);
-  const [value, setValue] = useState(initial);
-  const inputId = `ad-${name}`;
   return (
-    <div className="block">
-      <label htmlFor={inputId} className="mb-1 block text-sm font-medium text-slate-700">{label}</label>
+    <div className="space-y-2 text-sm font-black text-slate-700">
+      <label htmlFor={inputId}>{label}</label>
       <div className="flex gap-2">
-        <input id={inputId} name={name} type="date" value={value} onChange={(event) => setValue(event.target.value)} className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm" />
-        {value ? (
-          <button
-            type="button"
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              setValue("");
-            }}
-            className="rounded-lg border border-slate-200 px-3 text-xs font-medium text-slate-600"
-          >
-            清除
-          </button>
-        ) : null}
+        <input
+          id={inputId}
+          name={name}
+          type="date"
+          value={inputValue}
+          onChange={(event) => setInputValue(event.target.value)}
+          className="h-12 min-w-0 flex-1 rounded-2xl border border-slate-200 px-4 text-sm font-bold text-slate-900 outline-none focus:border-blue-500"
+        />
+        <button
+          type="button"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setInputValue("");
+          }}
+          className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 transition hover:bg-slate-50"
+        >
+          清除
+        </button>
       </div>
     </div>
   );
 }
 
-function Input({ label, name, defaultValue, placeholder, type = "text" }: { label: string; name: string; defaultValue?: string | null; placeholder?: string; type?: string }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-sm font-medium text-slate-700">{label}</span>
-      <input name={name} type={type} defaultValue={defaultValue ?? ""} placeholder={placeholder} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" />
-    </label>
-  );
+function formatAdDate(value: string | null, endDate = false) {
+  return toDateInputValue(value, endDate);
 }
 
-function Textarea({ label, name, defaultValue }: { label: string; name: string; defaultValue?: string | null }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-sm font-medium text-slate-700">{label}</span>
-      <textarea name={name} rows={4} defaultValue={defaultValue ?? ""} placeholder="广告详细描述..." className="w-full resize-y rounded-lg border border-slate-200 px-3 py-2 text-sm" />
-    </label>
-  );
-}
-
-function toDateInputValue(value?: string | null, endDate = false) {
-  if (!value) return "";
+function toDateInputValue(value: string | null, endDate = false) {
+  if (!value) {
+    return "";
+  }
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
   const parts = datePartsInNewYork(date);
   if (endDate && parts.hour === 0 && parts.minute === 0 && parts.second === 0) {
-    date.setUTCDate(date.getUTCDate() - 1);
-    return datePartsInNewYork(date).date;
+    const previousDay = new Date(date.getTime() - 24 * 60 * 60 * 1000);
+    return datePartsInNewYork(previousDay).date;
   }
   return parts.date;
 }
 
 function datePartsInNewYork(date: Date) {
-  const parts = new Intl.DateTimeFormat("en-CA", {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/New_York",
     year: "numeric",
     month: "2-digit",
@@ -423,20 +658,19 @@ function datePartsInNewYork(date: Date) {
     minute: "2-digit",
     second: "2-digit",
     hourCycle: "h23",
-  }).formatToParts(date);
-  const value = (type: string) => parts.find((part) => part.type === type)?.value ?? "00";
+  });
+  const parts = Object.fromEntries(formatter.formatToParts(date).map((part) => [part.type, part.value]));
   return {
-    date: `${value("year")}-${value("month")}-${value("day")}`,
-    hour: Number(value("hour")),
-    minute: Number(value("minute")),
-    second: Number(value("second")),
+    date: `${parts.year}-${parts.month}-${parts.day}`,
+    hour: Number(parts.hour),
+    minute: Number(parts.minute),
+    second: Number(parts.second),
   };
 }
 
-function isHttpUrl(value: string) {
+function isHttpsUrl(value: string) {
   try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
+    return new URL(value).protocol === "https:";
   } catch {
     return false;
   }

@@ -5,6 +5,7 @@ export type AdLinkType = "internal" | "external";
 
 export type AdminAdRow = {
   id: string;
+  title: string;
   image_asset_id: string | null;
   image_url: string | null;
   image_source_type: "storage" | "external" | null;
@@ -16,6 +17,7 @@ export type AdminAdRow = {
   contact_name: string | null;
   phone: string | null;
   wechat: string | null;
+  address: string | null;
   open_mode: AdOpenMode;
   position: AdPosition;
   is_active: boolean;
