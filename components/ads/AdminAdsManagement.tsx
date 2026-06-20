@@ -359,18 +359,27 @@ function MiniAction({ action, label, children, danger = false }: { action: (stat
 function DateInput({ label, name, defaultValue, endDate = false }: { label: string; name: string; defaultValue?: string | null; endDate?: boolean }) {
   const initial = useMemo(() => toDateInputValue(defaultValue, endDate), [defaultValue, endDate]);
   const [value, setValue] = useState(initial);
+  const inputId = `ad-${name}`;
   return (
-    <label className="block">
-      <span className="mb-1 block text-sm font-medium text-slate-700">{label}</span>
+    <div className="block">
+      <label htmlFor={inputId} className="mb-1 block text-sm font-medium text-slate-700">{label}</label>
       <div className="flex gap-2">
-        <input name={name} type="date" value={value} onChange={(event) => setValue(event.target.value)} className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm" />
+        <input id={inputId} name={name} type="date" value={value} onChange={(event) => setValue(event.target.value)} className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm" />
         {value ? (
-          <button type="button" onClick={() => setValue("")} className="rounded-lg border border-slate-200 px-3 text-xs font-medium text-slate-600">
+          <button
+            type="button"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              setValue("");
+            }}
+            className="rounded-lg border border-slate-200 px-3 text-xs font-medium text-slate-600"
+          >
             清除
           </button>
         ) : null}
       </div>
-    </label>
+    </div>
   );
 }
 
