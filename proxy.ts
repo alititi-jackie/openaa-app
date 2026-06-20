@@ -1,17 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { updateSupabaseSession } from "@/lib/supabase/middleware";
 
 const primaryHostname = "openaa.com";
 const redirectHostnames = new Set(["www.openaa.com", "app.openaa.com", "openaa.cn", "www.openaa.cn", "openaa.app", "www.openaa.app"]);
+const independentHostnames = new Set(["tools.openaa.com", "img.openaa.com", "go.openaa.com"]);
 
 export async function proxy(request: NextRequest) {
-  const redirectResponse = redirectToPrimaryDomain(request);
+  const host = request.headers.get("host")?.toLowerCase().split(":")[0] ?? "";
 
-  if (redirectResponse) {
-    return redirectResponse;
+  if (host === primaryHostname || independentHostnames.has(host) || !redirectHostnames.has(host)) {
+    return NextResponse.next({ request });
   }
 
-  return updateSupabaseSession(request);
+  return redirectToPrimaryDomain(request);
 }
 
 export const config = {
@@ -21,13 +21,6 @@ export const config = {
 };
 
 function redirectToPrimaryDomain(request: NextRequest) {
-  const host = request.headers.get("host")?.toLowerCase().split(":")[0];
-  const shouldRedirectHost = host ? redirectHostnames.has(host) : false;
-
-  if (!shouldRedirectHost) {
-    return null;
-  }
-
   const url = request.nextUrl.clone();
   url.protocol = "https:";
   url.hostname = primaryHostname;
