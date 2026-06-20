@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { getChannelBanner, getChannelTickerConfig } from "@/features/channels/queries";
+import { getChannelBanners, getChannelTickerConfig } from "@/features/channels/queries";
 import type { ChannelKey } from "@/features/channels/types";
 import { ChannelSectionShell } from "./ChannelSectionShell";
 import { ChannelTicker } from "./ChannelTicker";
@@ -17,14 +17,14 @@ type ChannelPageChromeProps = {
 };
 
 export async function ChannelPageChrome({ channelKey, path, title, description, topActionFavorite, topActionButtonClassName, children }: ChannelPageChromeProps) {
-  const [banner, tickerConfig] = await Promise.all([
-    getChannelBanner(channelKey),
+  const [banners, tickerConfig] = await Promise.all([
+    getChannelBanners(channelKey),
     getChannelTickerConfig(),
   ]);
 
   return (
     <div className="space-y-4">
-      <ChannelTopBanner banner={banner} />
+      <ChannelTopBanner banners={banners} />
       <ChannelTicker items={tickerConfig.items} settings={tickerConfig.settings} />
       <ChannelTopActions path={path} title={title} text={description} favoriteAction={topActionFavorite} actionButtonClassName={topActionButtonClassName} />
       <ChannelSectionShell>{children}</ChannelSectionShell>

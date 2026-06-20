@@ -1,8 +1,8 @@
 import type { HomeBannerItem } from "@/components/home/HomeBanner";
 import { HomeBanner } from "@/components/home/HomeBanner";
 
-export function ChannelTopBanner({ banner }: { banner: HomeBannerItem | null }) {
-  if (!banner) return null;
+export function ChannelTopBanner({ banners }: { banners: HomeBannerItem[] }) {
+  if (banners.length === 0) return null;
 
-  return <HomeBanner item={banner} />;
+  return <HomeBanner items={banners} />;
 }

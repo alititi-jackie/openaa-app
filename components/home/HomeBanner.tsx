@@ -145,7 +145,8 @@ function canUseNextImage(src: string) {
   if (src.startsWith("/")) return true;
 
   try {
-    return new URL(src).hostname === "img.openaa.com";
+    const hostname = new URL(src).hostname;
+    return hostname === "img.openaa.com" || hostname.endsWith(".supabase.co") || hostname.endsWith(".googleusercontent.com");
   } catch {
     return false;
   }

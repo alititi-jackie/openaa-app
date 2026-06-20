@@ -1,10 +1,8 @@
-import { Megaphone } from "lucide-react";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminTopActions } from "@/components/admin/AdminTopActions";
-import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
-import { AdForm, AdminAdsFilter, AdminAdsList } from "@/components/ads/AdminAdsManagement";
+import { AdminAdsManagement } from "@/components/ads/AdminAdsManagement";
 import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { getAdminAdsData } from "@/features/ads/adminQueries";
 import { hasAdminModule } from "@/lib/permissions/admin";
@@ -20,7 +18,7 @@ export const metadata = buildPageMetadata({
 });
 
 type AdminAdsPageProps = {
-  searchParams?: Promise<{ placement?: string; status?: string }>;
+  searchParams?: Promise<{ position?: string; placement?: string; status?: string }>;
 };
 
 export default function AdminAdsPage({ searchParams }: AdminAdsPageProps) {
@@ -36,7 +34,7 @@ export default function AdminAdsPage({ searchParams }: AdminAdsPageProps) {
             </div>
           );
         }
-        const data = await getAdminAdsData(params?.placement, params?.status);
+        const data = await getAdminAdsData(params?.position ?? params?.placement, params?.status);
 
         if (!data.canManageAds) {
           return (
@@ -49,7 +47,7 @@ export default function AdminAdsPage({ searchParams }: AdminAdsPageProps) {
         return (
           <div className="space-y-4">
             <AdminTopActions />
-            <AdminPageHeader title="广告管理" description="管理首页和频道页广告位。图片只引用 https://img.openaa.com/ 外链，不下载、不上传。">
+            <AdminPageHeader title="广告管理" description="管理首页和频道页广告，支持内部详情页和外部链接。">
               <AdminPermissionBadge allowed={data.canManageAds} label="manage_ads" />
             </AdminPageHeader>
 
@@ -59,21 +57,7 @@ export default function AdminAdsPage({ searchParams }: AdminAdsPageProps) {
               </div>
             ) : null}
 
-            <AdminCard title="新增广告" description="支持 home、jobs_top、housing_top、marketplace_top、services_top、news_top、navigation_top、dmv_top 等广告位。">
-              <AdForm />
-            </AdminCard>
-
-            <AdminCard title="筛选广告" description="按广告位查看当前配置。">
-              <AdminAdsFilter placement={params?.placement} status={params?.status} />
-            </AdminCard>
-
-            <AdminCard title="广告列表" description="保存后会刷新首页和频道页顶部广告。">
-              <div className="mb-4 flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">
-                <Megaphone size={15} aria-hidden="true" />
-                当前筛选共 {data.ads.length} 条广告。
-              </div>
-              <AdminAdsList ads={data.ads} />
-            </AdminCard>
+            <AdminAdsManagement ads={data.ads} activePosition={data.activePosition} activeStatus={data.activeStatus} />
 </div>
         );
       }}

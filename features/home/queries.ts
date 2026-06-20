@@ -111,15 +111,15 @@ export async function getHomeBanners(client?: HomeSupabaseClient | null, city = 
     return fallbackHomeBanners;
   }
 
-  const banners = await readHomeBanners(supabase, city);
-
-  if (banners.length > 0) {
-    return banners;
-  }
-
   const ads = await readHomeAds(supabase);
 
-  return ads.length > 0 ? ads : fallbackHomeBanners;
+  if (ads.length > 0) {
+    return ads;
+  }
+
+  const banners = await readHomeBanners(supabase, city);
+
+  return banners.length > 0 ? banners : fallbackHomeBanners;
 }
 
 export async function getLatestTickerItems(client?: HomeSupabaseClient | null, city = fallbackHomeCity, settings = fallbackTickerSettings) {
@@ -295,8 +295,9 @@ async function readHomeAds(supabase: HomeSupabaseClient) {
     const now = new Date().toISOString();
     const { data, error } = await supabase
       .from("ads")
-      .select("id,title,href,open_mode,placement,metadata,is_active,sort_order,starts_at,ends_at,image_assets(public_url,external_url)")
+      .select("id,title,href,open_mode,placement,metadata,is_active,sort_order,starts_at,ends_at,link_type,external_url,slug,image_assets(public_url,external_url)")
       .eq("placement", HOME_AD_PLACEMENT)
+      .is("deleted_at", null)
       .eq("is_active", true)
       .or(`starts_at.is.null,starts_at.lte.${now}`)
       .or(`ends_at.is.null,ends_at.gte.${now}`)

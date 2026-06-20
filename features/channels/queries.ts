@@ -10,16 +10,6 @@ import type { ChannelKey, ChannelTickerItem } from "./types";
 type ChannelSupabaseClient = SupabaseClient;
 
 const channelBannerPlacements: Record<ChannelKey, string> = {
-  jobs: "jobs_top",
-  housing: "housing_top",
-  marketplace: "marketplace_top",
-  services: "services_top",
-  news: "news_top",
-  navigation: "navigation_top",
-  dmv: "dmv_top",
-};
-
-const legacyChannelBannerPlacements: Partial<Record<ChannelKey, string>> = {
   jobs: "jobs",
   housing: "housing",
   marketplace: "secondhand",
@@ -29,31 +19,33 @@ const legacyChannelBannerPlacements: Partial<Record<ChannelKey, string>> = {
   dmv: "dmv",
 };
 
-export async function getChannelBanner(channelKey: ChannelKey): Promise<HomeBannerItem | null> {
+export async function getChannelBanners(channelKey: ChannelKey): Promise<HomeBannerItem[]> {
   const supabase = await createSupabaseServerClient();
-  if (!supabase) return null;
+  if (!supabase) return [];
 
   try {
     const now = new Date().toISOString();
     const { data, error } = await supabase
       .from("ads")
-      .select("id,title,href,open_mode,placement,metadata,is_active,sort_order,starts_at,ends_at,image_assets(public_url,external_url)")
-      .in("placement", [channelBannerPlacements[channelKey], legacyChannelBannerPlacements[channelKey]].filter(Boolean) as string[])
+      .select("id,title,href,open_mode,placement,metadata,is_active,sort_order,starts_at,ends_at,link_type,external_url,slug,image_assets(public_url,external_url)")
+      .eq("placement", channelBannerPlacements[channelKey])
+      .is("deleted_at", null)
       .eq("is_active", true)
       .or(`starts_at.is.null,starts_at.lte.${now}`)
       .or(`ends_at.is.null,ends_at.gte.${now}`)
       .order("sort_order", { ascending: true })
-      .limit(1);
+      .order("created_at", { ascending: false })
+      .limit(10);
 
     if (error) {
       warnChannelChrome("ads", error.message);
-      return null;
+      return [];
     }
 
-    return (data ?? []).map((row) => mapBanner(row as Record<string, unknown>)).find(Boolean) ?? null;
+    return (data ?? []).map((row) => mapBanner(row as Record<string, unknown>)).filter((item): item is HomeBannerItem => Boolean(item));
   } catch (error) {
     warnChannelChrome("ads", error);
-    return null;
+    return [];
   }
 }
 

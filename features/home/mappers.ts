@@ -89,6 +89,9 @@ export function mapBanner(row: Record<string, unknown>): HomeBannerItem | null {
   const imageAsset = firstRecord(row.image_assets);
   const metadata = asRecord(row.metadata);
   const imageUrl = asString(imageAsset.public_url, asString(imageAsset.external_url, asString(metadata.image_url)));
+  const openMode = asString(row.open_mode) || null;
+  const slug = asString(row.slug) || null;
+  const href = openMode === "internal" && slug ? `/ads/${slug}` : normalizeRoute(asString(row.external_url, asString(row.href, "/")));
 
   if (!title || !imageUrl) {
     return null;
@@ -97,10 +100,10 @@ export function mapBanner(row: Record<string, unknown>): HomeBannerItem | null {
   return {
     title,
     description: asString(row.subtitle, asString(row.description, asString(metadata.description))),
-    href: normalizeRoute(asString(row.href, "/")),
+    href,
     imageUrl,
-    openMode: asString(row.open_mode) || null,
-    slug: asString(row.slug) || null,
+    openMode,
+    slug,
   };
 }
 

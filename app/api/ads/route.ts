@@ -6,7 +6,10 @@ type PublicAdRow = {
   placement: string;
   title: string;
   href: string | null;
-  open_mode: "same" | "new";
+  open_mode: "internal" | "external_new" | "external_same";
+  link_type: "internal" | "external";
+  external_url: string | null;
+  slug: string | null;
   is_active: boolean;
   sort_order: number;
   starts_at: string | null;
@@ -25,7 +28,8 @@ export async function GET(request: Request) {
   const now = new Date().toISOString();
   let query = supabase
     .from("ads")
-    .select("id,placement,title,href,open_mode,is_active,sort_order,starts_at,ends_at,image_assets(public_url,external_url)")
+    .select("id,placement,title,href,open_mode,link_type,external_url,slug,is_active,sort_order,starts_at,ends_at,image_assets(public_url,external_url)")
+    .is("deleted_at", null)
     .eq("is_active", true)
     .or(`starts_at.is.null,starts_at.lte.${now}`)
     .or(`ends_at.is.null,ends_at.gte.${now}`)
@@ -50,9 +54,16 @@ function mapAd(row: PublicAdRow) {
   return {
     id: row.id,
     placement: row.placement,
+    position: row.placement,
     title: row.title,
     href: row.href,
-    openMode: row.open_mode === "new" ? "new" : "same",
+    link_url: row.href,
+    link_type: row.link_type,
+    external_url: row.external_url,
+    slug: row.slug,
+    open_mode: row.open_mode,
+    openMode: row.open_mode,
+    image_url: imageAsset?.public_url || imageAsset?.external_url || null,
     imageUrl: imageAsset?.public_url || imageAsset?.external_url || null,
   };
 }
