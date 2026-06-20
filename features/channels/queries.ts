@@ -32,7 +32,7 @@ export async function getChannelBanners(channelKey: ChannelKey): Promise<HomeBan
       .is("deleted_at", null)
       .eq("is_active", true)
       .or(`starts_at.is.null,starts_at.lte.${now}`)
-      .or(`ends_at.is.null,ends_at.gte.${now}`)
+      .or(`ends_at.is.null,ends_at.gt.${now}`)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false })
       .limit(10);

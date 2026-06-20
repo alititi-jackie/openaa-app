@@ -32,7 +32,7 @@ export async function GET(request: Request) {
     .is("deleted_at", null)
     .eq("is_active", true)
     .or(`starts_at.is.null,starts_at.lte.${now}`)
-    .or(`ends_at.is.null,ends_at.gte.${now}`)
+    .or(`ends_at.is.null,ends_at.gt.${now}`)
     .order("placement", { ascending: true })
     .order("sort_order", { ascending: true })
     .limit(readLimit(url));

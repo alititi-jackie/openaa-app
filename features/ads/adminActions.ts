@@ -50,8 +50,8 @@ export async function upsertAd(_state: AdminHomeActionState, formData: FormData)
   const imageFile = readFile(formData, "image_file");
   const existingImageAssetId = readText(formData, "image_asset_id") || null;
   const isActive = formData.get("is_active") === "on";
-  const startsAt = readDateTime(formData, "start_date");
-  const endsAt = readDateTime(formData, "end_date");
+  const startsAt = readAdDate(formData, "start_date", "start");
+  const endsAt = readAdDate(formData, "end_date", "end");
   const before = id ? await readAd(context.supabase, id) : null;
 
   if (!position) return fail("请选择广告位置。");
@@ -345,11 +345,38 @@ function readFile(formData: FormData, key: string) {
   return value instanceof File && value.size > 0 ? value : null;
 }
 
-function readDateTime(formData: FormData, key: string) {
+function readAdDate(formData: FormData, key: string, boundary: "start" | "end") {
   const raw = readText(formData, key);
   if (!raw) return null;
-  const date = new Date(raw);
-  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]) + (boundary === "end" ? 1 : 0);
+  return zonedMidnightToUtcIso(year, month, day, "America/New_York");
+}
+
+function zonedMidnightToUtcIso(year: number, month: number, day: number, timeZone: string) {
+  const utcGuess = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+  const firstPass = new Date(utcGuess.getTime() - getTimeZoneOffsetMs(utcGuess, timeZone));
+  const secondPass = new Date(utcGuess.getTime() - getTimeZoneOffsetMs(firstPass, timeZone));
+  return secondPass.toISOString();
+}
+
+function getTimeZoneOffsetMs(date: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const value = (type: string) => Number(parts.find((part) => part.type === type)?.value ?? 0);
+  const asUtc = Date.UTC(value("year"), value("month") - 1, value("day"), value("hour"), value("minute"), value("second"));
+  return asUtc - date.getTime();
 }
 
 function readInteger(formData: FormData, key: string) {

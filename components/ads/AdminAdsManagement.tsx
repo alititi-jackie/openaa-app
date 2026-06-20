@@ -19,6 +19,7 @@ export function AdminAdsManagement({
   activeStatus: AdStatusFilter;
 }) {
   const [editingAd, setEditingAd] = useState<AdminAdRow | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [openMode, setOpenMode] = useState<AdOpenMode>("external_new");
   const [imageUrl, setImageUrl] = useState("");
   const [imageSourceLock, setImageSourceLock] = useState<ImageSourceLock | null>(null);
@@ -36,7 +37,7 @@ export function AdminAdsManagement({
 
   useEffect(() => {
     if (state.ok && state.message) {
-      resetForm();
+      resetForm(true);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.ok, state.message]);
@@ -47,7 +48,7 @@ export function AdminAdsManagement({
     };
   }, [filePreviewUrl]);
 
-  function resetForm() {
+  function resetForm(close = false) {
     setEditingAd(null);
     setOpenMode("external_new");
     setImageUrl("");
@@ -56,9 +57,17 @@ export function AdminAdsManagement({
     if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl);
     setFilePreviewUrl("");
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (close) setIsFormOpen(false);
+  }
+
+  function startCreate() {
+    resetForm(false);
+    setIsFormOpen(true);
+    requestAnimationFrame(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }
 
   function startEdit(ad: AdminAdRow) {
+    setIsFormOpen(true);
     setEditingAd(ad);
     setOpenMode(ad.open_mode);
     setImageUrl(ad.image_url ?? "");
@@ -124,6 +133,13 @@ export function AdminAdsManagement({
 
   return (
     <div className="mx-auto w-full max-w-5xl">
+      <div className="mb-4">
+        <button type="button" onClick={startCreate} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm">
+          新增广告
+        </button>
+      </div>
+
+      {isFormOpen ? (
       <form ref={formRef} action={formAction} encType="multipart/form-data" className="scroll-mt-20 mb-8 space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-950">{editingAd ? "编辑广告" : "新增广告"}</h2>
         <input type="hidden" name="id" value={editingAd?.id ?? ""} />
@@ -192,8 +208,8 @@ export function AdminAdsManagement({
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <DateInput label="开始日期（可选）" name="start_date" defaultValue={editingAd?.start_date} />
-          <DateInput label="结束日期（可选）" name="end_date" defaultValue={editingAd?.end_date} />
+          <DateInput key={`${editingAd?.id ?? "new"}-start-${editingAd?.start_date ?? ""}`} label="开始日期（可选）" name="start_date" defaultValue={editingAd?.start_date} />
+          <DateInput key={`${editingAd?.id ?? "new"}-end-${editingAd?.end_date ?? ""}`} label="结束日期（可选）" name="end_date" defaultValue={editingAd?.end_date} endDate />
         </div>
 
         {state.message ? <p className={`text-sm ${state.ok ? "text-green-600" : "text-red-500"}`}>{state.message}</p> : null}
@@ -202,13 +218,12 @@ export function AdminAdsManagement({
           <button type="submit" disabled={pending} className="flex-1 rounded-lg bg-blue-600 py-2 font-medium text-white disabled:opacity-50">
             {pending ? "处理中..." : editingAd ? "保存修改" : "提交广告"}
           </button>
-          {editingAd ? (
-            <button type="button" onClick={resetForm} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">
-              取消编辑
-            </button>
-          ) : null}
+          <button type="button" onClick={() => resetForm(true)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">
+            取消
+          </button>
         </div>
       </form>
+      ) : null}
 
       <div>
         <h2 className="mb-3 text-lg font-semibold text-slate-950">现有广告</h2>
@@ -341,14 +356,14 @@ function MiniAction({ action, label, children, danger = false }: { action: (stat
   );
 }
 
-function DateInput({ label, name, defaultValue }: { label: string; name: string; defaultValue?: string | null }) {
-  const initial = useMemo(() => toDateTimeLocal(defaultValue), [defaultValue]);
+function DateInput({ label, name, defaultValue, endDate = false }: { label: string; name: string; defaultValue?: string | null; endDate?: boolean }) {
+  const initial = useMemo(() => toDateInputValue(defaultValue, endDate), [defaultValue, endDate]);
   const [value, setValue] = useState(initial);
   return (
     <label className="block">
       <span className="mb-1 block text-sm font-medium text-slate-700">{label}</span>
       <div className="flex gap-2">
-        <input name={name} type="datetime-local" value={value} onChange={(event) => setValue(event.target.value)} className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm" />
+        <input name={name} type="date" value={value} onChange={(event) => setValue(event.target.value)} className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm" />
         {value ? (
           <button type="button" onClick={() => setValue("")} className="rounded-lg border border-slate-200 px-3 text-xs font-medium text-slate-600">
             清除
@@ -377,11 +392,36 @@ function Textarea({ label, name, defaultValue }: { label: string; name: string; 
   );
 }
 
-function toDateTimeLocal(value?: string | null) {
+function toDateInputValue(value?: string | null, endDate = false) {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  return date.toISOString().slice(0, 16);
+  const parts = datePartsInNewYork(date);
+  if (endDate && parts.hour === 0 && parts.minute === 0 && parts.second === 0) {
+    date.setUTCDate(date.getUTCDate() - 1);
+    return datePartsInNewYork(date).date;
+  }
+  return parts.date;
+}
+
+function datePartsInNewYork(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const value = (type: string) => parts.find((part) => part.type === type)?.value ?? "00";
+  return {
+    date: `${value("year")}-${value("month")}-${value("day")}`,
+    hour: Number(value("hour")),
+    minute: Number(value("minute")),
+    second: Number(value("second")),
+  };
 }
 
 function isHttpUrl(value: string) {

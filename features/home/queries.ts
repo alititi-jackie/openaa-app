@@ -267,7 +267,7 @@ async function readHomeBanners(supabase: HomeSupabaseClient, city: HomeCity) {
       .select("id,title,subtitle,href,open_mode,is_active,sort_order,starts_at,ends_at,city_id,image_assets(public_url,external_url)")
       .eq("is_active", true)
       .or(`starts_at.is.null,starts_at.lte.${now}`)
-      .or(`ends_at.is.null,ends_at.gte.${now}`)
+      .or(`ends_at.is.null,ends_at.gt.${now}`)
       .order("sort_order", { ascending: true });
 
     if (city.id) {

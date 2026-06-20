@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useMemo } from "react";
 import { Autoplay, Pagination } from "swiper/modules";
@@ -16,8 +15,6 @@ export type HomeBannerItem = {
   openMode?: "same" | "new" | "internal" | "external_new" | "external_same" | string | null;
   slug?: string | null;
 };
-
-const bannerImageSizes = "(min-width: 1040px) 1040px, 100vw";
 
 export function HomeBanner({ item, items }: { item?: HomeBannerItem; items?: HomeBannerItem[] }) {
   const slides = useMemo(() => (item ? [item] : (items ?? []).filter((banner) => normalizeImageUrl(banner.imageUrl))), [item, items]);
@@ -54,26 +51,14 @@ function renderSlideContent(slide: HomeBannerItem, index: number) {
 
   const image = (
     <div className="relative h-[160px] w-full bg-zinc-100 sm:h-[180px] md:h-[200px]">
-      {canUseNextImage(imageUrl) ? (
-        <Image
-          src={imageUrl}
-          alt={slide.title || ""}
-          fill
-          sizes={bannerImageSizes}
-          className="select-none object-cover"
-          draggable={false}
-          {...(isFirstSlide ? { priority: true } : { loading: "lazy" as const })}
-        />
-      ) : (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={imageUrl}
-          alt={slide.title || ""}
-          className="h-full w-full select-none object-cover"
-          draggable={false}
-          loading={isFirstSlide ? "eager" : "lazy"}
-        />
-      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={imageUrl}
+        alt="OpenAA广告图片"
+        className="h-full w-full select-none object-cover"
+        draggable={false}
+        loading={isFirstSlide ? "eager" : "lazy"}
+      />
     </div>
   );
 
@@ -139,17 +124,6 @@ function normalizeOpenMode(banner: HomeBannerItem) {
   if (banner.openMode === "external_same") return "same";
   if (banner.openMode === "internal") return "internal";
   return banner.openMode === "new" ? "new" : "same";
-}
-
-function canUseNextImage(src: string) {
-  if (src.startsWith("/")) return true;
-
-  try {
-    const hostname = new URL(src).hostname;
-    return hostname === "img.openaa.com" || hostname.endsWith(".supabase.co") || hostname.endsWith(".googleusercontent.com");
-  } catch {
-    return false;
-  }
 }
 
 function isExternalHref(href: string) {
