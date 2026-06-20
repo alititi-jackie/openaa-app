@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Clock } from "lucide-react";
 import type { PostListItem } from "@/components/posts/PostList";
@@ -73,7 +72,12 @@ export function HomePostCard({ post, variant = "grid" }: { post: PostListItem; v
 function Thumb({ post }: { post: PostListItem }) {
   return (
     <span className="relative h-full w-28 shrink-0 overflow-hidden rounded-lg bg-slate-100 sm:w-32">
-      {post.imageUrl ? <Image src={post.imageUrl} alt={post.title} fill sizes="(min-width: 640px) 128px, 112px" className="object-cover" /> : <span className="absolute inset-0 bg-gradient-to-br from-blue-50 to-slate-100" />}
+      {post.imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={post.imageUrl} alt={post.title} loading="lazy" className="h-full w-full object-cover" />
+      ) : (
+        <span className="absolute inset-0 bg-gradient-to-br from-blue-50 to-slate-100" />
+      )}
     </span>
   );
 }

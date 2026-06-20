@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabasePublicClient } from "@/lib/supabase/public";
 import { hasAdminPermission } from "@/lib/permissions/admin";
 import { ADMIN_NEWS_LIMIT, PUBLIC_NEWS_LIMIT } from "./constants";
 import { fallbackNewsCategories, mapNewsCategory, mapNewsPostToAdmin, mapNewsPostToCard, mapNewsPostToDetail, sortPinnedFirst } from "./mappers";
@@ -44,7 +45,7 @@ function errorResult<T>(data: T, error: unknown): NewsQueryResult<T> {
 }
 
 export async function getNewsCategories(): Promise<NewsQueryResult<NewsCategory[]>> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
   const fallback = fallbackNewsCategories();
 
   if (!supabase) return missingConfig(fallback);
@@ -65,7 +66,7 @@ export async function getNewsCategories(): Promise<NewsQueryResult<NewsCategory[
 }
 
 export async function getPublishedNewsList(params: NewsListParams = {}): Promise<NewsQueryResult<NewsPostCard[]>> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
   if (!supabase) return missingConfig([]);
 
   try {
@@ -104,7 +105,7 @@ function normalizeSearchLimit(value?: number) {
 }
 
 export async function searchPublishedNews(params: { q?: string; limit?: number } = {}): Promise<NewsQueryResult<NewsPostCard[]>> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
   if (!supabase) return missingConfig([]);
 
   const q = sanitizeSearchTerm(params.q ?? "");
@@ -141,7 +142,7 @@ export async function getLatestNews(limit = 4): Promise<NewsQueryResult<NewsPost
 }
 
 export async function getNewsBySlug(slug: string): Promise<NewsQueryResult<NewsPostDetail | null>> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
   if (!supabase) return missingConfig(null);
 
   try {
@@ -162,7 +163,7 @@ export async function getNewsBySlug(slug: string): Promise<NewsQueryResult<NewsP
 }
 
 async function getPublishedNewsCards(params: NewsListParams = {}): Promise<NewsQueryResult<NewsPostCard[]>> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
   if (!supabase) return missingConfig([]);
 
   try {

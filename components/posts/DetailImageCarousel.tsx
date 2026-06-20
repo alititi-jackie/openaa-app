@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
@@ -14,8 +13,6 @@ type DetailImageCarouselProps = {
   images: DetailImage[];
   title: string;
 };
-
-const imageSizes = "(min-width: 768px) 720px, 100vw";
 
 export function DetailImageCarousel({ images, title }: DetailImageCarouselProps) {
   const visibleImages = images.filter((image) => image.url.trim());
@@ -42,26 +39,14 @@ export function DetailImageCarousel({ images, title }: DetailImageCarouselProps)
         {visibleImages.map((image, index) => (
           <SwiperSlide key={`${image.url}-${index}`}>
             <button type="button" onClick={() => setLightboxIndex(index)} className="relative block h-[220px] w-full bg-slate-100 text-left sm:h-[250px] md:h-[380px]" aria-label="查看大图">
-              {canUseNextImage(image.url) ? (
-                <Image
-                  src={image.url}
-                  alt={image.caption || title}
-                  fill
-                  sizes={imageSizes}
-                  className="select-none object-cover"
-                  draggable={false}
-                  priority={index === 0}
-                />
-              ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={image.url}
-                  alt={image.caption || title}
-                  className="h-full w-full select-none object-cover"
-                  draggable={false}
-                  loading={index === 0 ? "eager" : "lazy"}
-                />
-              )}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={image.url}
+                alt={image.caption || title}
+                className="h-full w-full select-none object-cover"
+                draggable={false}
+                loading={index === 0 ? "eager" : "lazy"}
+              />
             </button>
           </SwiperSlide>
         ))}
@@ -91,15 +76,4 @@ export function DetailImageCarousel({ images, title }: DetailImageCarouselProps)
       )}
     </section>
   );
-}
-
-function canUseNextImage(src: string) {
-  if (src.startsWith("/")) return true;
-
-  try {
-    const hostname = new URL(src).hostname;
-    return hostname === "img.openaa.com";
-  } catch {
-    return false;
-  }
 }

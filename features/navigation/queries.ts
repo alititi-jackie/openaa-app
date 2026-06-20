@@ -2,6 +2,7 @@ import "server-only";
 
 import { hasAdminModule, hasAdminPermission, isSuperAdmin } from "@/lib/permissions/admin";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { createSupabasePublicClient } from "@/lib/supabase/public";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ADMIN_NAVIGATION_LIMIT, NAVIGATION_PUBLIC_LIMIT } from "./constants";
 import { fallbackNavigationCategories, mapNavigationCategory, mapNavigationLink, mapUserNavigationLink } from "./mappers";
@@ -59,7 +60,7 @@ function sanitizeSearchTerm(value?: string) {
 }
 
 export async function getNavigationCategories(includeInactive = false): Promise<NavigationQueryResult<NavigationCategory[]>> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
   const fallback = fallbackNavigationCategories();
   if (!supabase) return missingConfig(fallback);
 
@@ -82,7 +83,7 @@ export async function getNavigationCategories(includeInactive = false): Promise<
 }
 
 export async function getPublicNavigationLinks(params: { categorySlug?: string; q?: string; featuredOnly?: boolean; limit?: number } = {}): Promise<NavigationQueryResult<NavigationLink[]>> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
   if (!supabase) return missingConfig([]);
 
   try {

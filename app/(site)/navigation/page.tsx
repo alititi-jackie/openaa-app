@@ -5,7 +5,7 @@ import { ChannelSeoCard } from "@/components/posts/ChannelSeoCard";
 import { getNavigationPageData } from "@/features/navigation/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export const metadata = buildPageMetadata({
   title: "美国华人常用网站导航",

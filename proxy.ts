@@ -12,7 +12,24 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icons|openaa-logo.png|og-default.png).*)"],
+  matcher: [
+    "/admin/:path*",
+    "/profile/:path*",
+    "/account/:path*",
+    "/navigation/my/:path*",
+    "/login",
+    "/register",
+    "/forgot-password",
+    "/reset-password",
+    "/auth/:path*",
+    "/:path*/publish",
+    "/:path*/edit/:path*",
+    "/api/admin/:path*",
+    "/api/auth/:path*",
+    "/api/favorites/:path*",
+    "/api/support/:path*",
+    "/api/reports/:path*",
+  ],
 };
 
 function redirectToPrimaryDomain(request: NextRequest) {

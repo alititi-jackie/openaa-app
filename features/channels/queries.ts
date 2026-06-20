@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { HomeBannerItem } from "@/components/home/HomeBanner";
 import { getLatestTickerItems, getLatestTickerSettings } from "@/features/home/queries";
 import { mapBanner } from "@/features/home/mappers";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabasePublicClient } from "@/lib/supabase/public";
 import type { ChannelKey, ChannelTickerItem } from "./types";
 
 type ChannelSupabaseClient = SupabaseClient;
@@ -20,7 +20,7 @@ const channelBannerPlacements: Record<ChannelKey, string> = {
 };
 
 export async function getChannelBanners(channelKey: ChannelKey): Promise<HomeBannerItem[]> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
   if (!supabase) return [];
 
   try {

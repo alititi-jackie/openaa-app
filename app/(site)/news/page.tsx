@@ -8,7 +8,7 @@ import { getNewsCategories, getPublishedNewsList } from "@/features/news/queries
 import { NEWS_CATEGORY_ALL, NEWS_DEFAULT_DESCRIPTION } from "@/features/news/constants";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export const metadata = buildPageMetadata({
   title: "纽约华人新闻",

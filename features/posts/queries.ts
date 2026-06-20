@@ -1,9 +1,11 @@
 import "server-only";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabasePublicClient } from "@/lib/supabase/public";
 import { DEFAULT_PLACEHOLDER_IMAGE_KEYS, normalizePlaceholderImageValue, placeholderImagesFromSettings } from "@/features/settings/defaultPlaceholderImages";
 import { DEFAULT_CITY_SLUG, DEFAULT_POST_LIMIT, PUBLIC_POST_TYPES } from "./constants";
 import { applyPublicPostFilters, normalizePublicPostFilters } from "./filters";
+import { housingTypeFromValue } from "./options";
 import { mapPostRecordToCard, mapPostRecordToDetail } from "./mappers";
 import type {
   AuthorSummary,
@@ -11,6 +13,7 @@ import type {
   DefaultPostPlaceholderImages,
   PostCardView,
   PostDetailView,
+  PublicPostFilters,
   PostRecord,
   PostType,
   PostsQueryResult,
@@ -63,6 +66,21 @@ const ownPostSelect = `
   cities(name, slug)
 `;
 
+function publicSelectForType(type: PostType, innerDetail = false) {
+  if (!innerDetail) return publicPostSelect;
+
+  const relation =
+    type === "job"
+      ? "post_details_jobs"
+      : type === "housing"
+        ? "post_details_housing"
+        : type === "marketplace"
+          ? "post_details_marketplace"
+          : "post_details_services";
+
+  return publicPostSelect.replace(`${relation}(`, `${relation}!inner(`);
+}
+
 function warnMissingSupabase() {
   if (process.env.NODE_ENV !== "production") {
     console.warn("Supabase public environment variables are not configured; returning empty posts.");
@@ -79,14 +97,139 @@ function queryError<T>(scope: string, error: { message?: string } | null | undef
   return { state: "error", data, error: "内容读取失败，请稍后再试。" };
 }
 
-async function fetchAuthors(authorIds: Array<string | null | undefined>): Promise<Record<string, AuthorSummary>> {
+function escapeLike(value: string) {
+  return value.replace(/[%_]/g, "\\$&");
+}
+
+function needsInnerDetailFilter(type: PostType, filters: PublicPostFilters) {
+  if (filters.area || filters.category || filters.min !== undefined || filters.max !== undefined || filters.sort === "price_asc" || filters.sort === "price_desc") {
+    return true;
+  }
+
+  if (type === "housing" || type === "marketplace") {
+    return Boolean(filters.mode);
+  }
+
+  if (type === "job") {
+    return Boolean(filters.workType);
+  }
+
+  return false;
+}
+
+function detailFilterColumn(type: PostType, kind: "mode" | "category" | "area" | "priceLow" | "priceHigh" | "price") {
+  if (type === "job") {
+    return {
+      mode: "category",
+      category: "post_details_jobs.job_category",
+      area: "post_details_jobs.work_area",
+      priceLow: "post_details_jobs.wage_min",
+      priceHigh: "post_details_jobs.wage_max",
+      price: "post_details_jobs.wage_min",
+    }[kind];
+  }
+
+  if (type === "housing") {
+    return {
+      mode: "post_details_housing.listing_type",
+      category: "post_details_housing.housing_type",
+      area: "post_details_housing.address_area",
+      priceLow: "post_details_housing.rent_amount",
+      priceHigh: "post_details_housing.rent_amount",
+      price: "post_details_housing.rent_amount",
+    }[kind];
+  }
+
+  if (type === "marketplace") {
+    return {
+      mode: "post_details_marketplace.listing_type",
+      category: "post_details_marketplace.item_category",
+      area: "post_details_marketplace.trade_area",
+      priceLow: "post_details_marketplace.price_amount",
+      priceHigh: "post_details_marketplace.price_amount",
+      price: "post_details_marketplace.price_amount",
+    }[kind];
+  }
+
+  return {
+    mode: "subcategory",
+    category: "post_details_services.service_category",
+    area: "post_details_services.service_area",
+    priceLow: "price_amount",
+    priceHigh: "price_amount",
+    price: "price_amount",
+  }[kind];
+}
+
+function applyPublicPostQueryFilters<T>(query: T, type: PostType, filters: PublicPostFilters): T {
+  let next = query as {
+    ilike(column: string, pattern: string): typeof next;
+    eq(column: string, value: unknown): typeof next;
+    gte(column: string, value: unknown): typeof next;
+    lte(column: string, value: unknown): typeof next;
+    or(filters: string): typeof next;
+  };
+
+  if (filters.q) {
+    const term = escapeLike(filters.q);
+    next = next.or(`title.ilike.%${term}%,summary.ilike.%${term}%,body.ilike.%${term}%,category.ilike.%${term}%,subcategory.ilike.%${term}%`);
+  }
+
+  if (filters.mode) {
+    const mode = type === "housing" ? housingTypeFromValue(filters.mode) : filters.mode;
+    if (mode) next = next.eq(detailFilterColumn(type, "mode"), mode);
+  }
+
+  if (filters.workType && type === "job") {
+    next = next.eq("post_details_jobs.employment_type", filters.workType);
+  }
+
+  if (filters.category && filters.category !== "鍏ㄩ儴") {
+    next = next.eq(detailFilterColumn(type, "category"), filters.category);
+  }
+
+  if (filters.area) {
+    next = next.ilike(detailFilterColumn(type, "area"), `%${escapeLike(filters.area)}%`);
+  }
+
+  if (type !== "service") {
+    if (filters.min !== undefined) next = next.gte(detailFilterColumn(type, "priceHigh"), filters.min);
+    if (filters.max !== undefined) next = next.lte(detailFilterColumn(type, "priceLow"), filters.max);
+  }
+
+  return next as T;
+}
+
+function applyPublicPostQuerySort<T>(query: T, type: PostType, sort: PublicPostFilters["sort"]): T {
+  let next = query as {
+    order(column: string, options?: { ascending?: boolean; nullsFirst?: boolean; foreignTable?: string }): typeof next;
+  };
+
+  if (sort === "oldest") {
+    return next.order("published_at", { ascending: true, nullsFirst: false }).order("created_at", { ascending: true }) as T;
+  }
+
+  if (sort === "price_asc" || sort === "price_desc") {
+    const column = detailFilterColumn(type, "price");
+    const [foreignTable, foreignColumn] = column.includes(".") ? column.split(".") : [undefined, column];
+    if (foreignTable) {
+      next = next.order(foreignColumn, { foreignTable, ascending: sort === "price_asc", nullsFirst: false });
+    } else {
+      next = next.order(foreignColumn, { ascending: sort === "price_asc", nullsFirst: false });
+    }
+  }
+
+  return next.order("published_at", { ascending: false, nullsFirst: false }).order("created_at", { ascending: false }) as T;
+}
+
+async function fetchAuthors(authorIds: Array<string | null | undefined>, client?: NonNullable<ReturnType<typeof createSupabasePublicClient>>): Promise<Record<string, AuthorSummary>> {
   const ids = [...new Set(authorIds.filter((id): id is string => Boolean(id)))];
 
   if (ids.length === 0) {
     return {};
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = client ?? createSupabasePublicClient();
 
   if (!supabase) {
     return {};
@@ -106,8 +249,8 @@ async function fetchAuthors(authorIds: Array<string | null | undefined>): Promis
   );
 }
 
-async function fetchDefaultPlaceholderImages(): Promise<DefaultPostPlaceholderImages> {
-  const supabase = await createSupabaseServerClient();
+async function fetchDefaultPlaceholderImages(client?: NonNullable<ReturnType<typeof createSupabasePublicClient>>): Promise<DefaultPostPlaceholderImages> {
+  const supabase = client ?? createSupabasePublicClient();
   if (!supabase) return {};
 
   const { data, error } = await supabase
@@ -126,7 +269,7 @@ async function fetchDefaultPlaceholderImages(): Promise<DefaultPostPlaceholderIm
 }
 
 export async function getPublicPosts(params: PublicPostsParams): Promise<PostsQueryResult<PostCardView[]>> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
 
   if (!supabase) {
     return emptyResult([]);
@@ -137,35 +280,37 @@ export async function getPublicPosts(params: PublicPostsParams): Promise<PostsQu
     ? { ...normalizedFilters, min: undefined, max: undefined, sort: normalizedFilters.sort === "oldest" ? ("oldest" as const) : ("latest" as const) }
     : normalizedFilters;
   const now = new Date().toISOString();
-  const { data, error } = await supabase
+  const innerDetail = needsInnerDetailFilter(params.type, filters);
+  let query = supabase
     .from("posts")
-    .select(publicPostSelect)
+    .select(publicSelectForType(params.type, innerDetail), { count: "exact" })
     .eq("status", "published")
     .eq("visibility", "public")
     .eq("cities.slug", DEFAULT_CITY_SLUG)
     .or(`expires_at.is.null,expires_at.gt.${now}`)
-    .eq("post_type", params.type)
-    .order("published_at", { ascending: false, nullsFirst: false })
-    .order("created_at", { ascending: false })
-    .limit(params.limit ?? MAX_PUBLIC_FILTER_ROWS);
+    .eq("post_type", params.type);
 
+  query = applyPublicPostQueryFilters(query, params.type, filters);
+  query = applyPublicPostQuerySort(query, params.type, filters.sort);
+
+  const pageSize = params.limit ?? filters.pageSize;
+  const page = params.limit ? 1 : filters.page;
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  const { data, error, count } = await query.range(from, to);
   if (error) return queryError("get public posts failed", error, []);
 
   const records = (data ?? []) as unknown as PostRecord[];
-  const filteredRecords = applyPublicPostFilters(records, params.type, filters);
-  const total = filteredRecords.length;
+  const total = count ?? records.length;
   const pageCount = Math.max(1, Math.ceil(total / filters.pageSize));
-  const page = Math.min(filters.page, pageCount);
-  const start = (page - 1) * filters.pageSize;
-  const pageRecords = filteredRecords.slice(start, start + filters.pageSize);
   const [authors, placeholderImages] = await Promise.all([
-    fetchAuthors(records.map((post) => post.author_id)),
-    params.type === "marketplace" || params.type === "service" ? fetchDefaultPlaceholderImages() : Promise.resolve({}),
+    fetchAuthors(records.map((post) => post.author_id), supabase),
+    params.type === "marketplace" || params.type === "service" ? fetchDefaultPlaceholderImages(supabase) : Promise.resolve({}),
   ]);
 
   return {
     state: "ready",
-    data: pageRecords.map((record) => mapPostRecordToCard(record, authors, { showImageIndicator: params.showImageIndicator, placeholderImages })),
+    data: records.map((record) => mapPostRecordToCard(record, authors, { showImageIndicator: params.showImageIndicator, placeholderImages })),
     pagination: {
       page,
       pageSize: filters.pageSize,
@@ -178,7 +323,7 @@ export async function getPublicPosts(params: PublicPostsParams): Promise<PostsQu
 }
 
 export async function searchPublicPosts(params: { q?: string; type?: PostType; limit?: number } = {}): Promise<PostsQueryResult<PostCardView[]>> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
 
   if (!supabase) {
     return emptyResult([]);
@@ -214,15 +359,15 @@ export async function searchPublicPosts(params: { q?: string; type?: PostType; l
     .filter((record) => applyPublicPostFilters([record], record.post_type, { ...normalizePublicPostFilters({ q: keyword }), pageSize: MAX_PUBLIC_FILTER_ROWS }).length > 0)
     .slice(0, normalizeSearchLimit(params.limit));
   const [authors, placeholderImages] = await Promise.all([
-    fetchAuthors(filteredRecords.map((post) => post.author_id)),
-    fetchDefaultPlaceholderImages(),
+    fetchAuthors(filteredRecords.map((post) => post.author_id), supabase),
+    fetchDefaultPlaceholderImages(supabase),
   ]);
 
   return { state: "ready", data: filteredRecords.map((record) => mapPostRecordToCard(record, authors, { placeholderImages })) };
 }
 
 export async function getPublicPostById(id: string, type: PostType): Promise<PostsQueryResult<PostDetailView | null>> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
 
   if (!supabase) {
     return emptyResult(null);
@@ -248,8 +393,8 @@ export async function getPublicPostById(id: string, type: PostType): Promise<Pos
 
   const record = data as unknown as PostRecord;
   const [authors, placeholderImages] = await Promise.all([
-    fetchAuthors([record.author_id]),
-    type === "marketplace" || type === "service" ? fetchDefaultPlaceholderImages() : Promise.resolve({}),
+    fetchAuthors([record.author_id], supabase),
+    type === "marketplace" || type === "service" ? fetchDefaultPlaceholderImages(supabase) : Promise.resolve({}),
   ]);
 
   return { state: "ready", data: mapPostRecordToDetail(record, authors, { placeholderImages }) };
@@ -354,7 +499,7 @@ async function getPublicCardsByOrderedIds(ids: string[]): Promise<PostsQueryResu
     return { state: "ready", data: [] };
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
 
   if (!supabase) {
     return emptyResult([]);
@@ -373,7 +518,7 @@ async function getPublicCardsByOrderedIds(ids: string[]): Promise<PostsQueryResu
   if (error) return queryError("get public cards by ordered ids failed", error, []);
 
   const records = (data ?? []) as unknown as PostRecord[];
-  const authors = await fetchAuthors(records.map((post) => post.author_id));
+  const authors = await fetchAuthors(records.map((post) => post.author_id), supabase);
   const cardsById = new Map(records.map((record) => [record.id, mapPostRecordToCard(record, authors)]));
 
   return { state: "ready", data: ids.flatMap((id) => cardsById.get(id) ?? []) };

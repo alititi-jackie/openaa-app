@@ -1,7 +1,7 @@
 import "server-only";
 
 import auditedQuestionBank from "@/data/dmv/openaa-ny-dmv-questions-v1.json";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabasePublicClient } from "@/lib/supabase/public";
 import { isRoadSignCategory } from "./questionPredicates";
 import type { DmvQuestion, DmvQuestionBank } from "./types";
 
@@ -23,7 +23,7 @@ type AuditedQuestion = {
 const defaultDisclaimer = "OpenAA 纽约 DMV 中文练习题库仅供学习参考，实际考试内容以 New York DMV 官方资料为准。";
 
 export async function getDmvQuestionBank(): Promise<DmvQuestionBank> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
 
   if (supabase) {
     const { data, error } = await supabase

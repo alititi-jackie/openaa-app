@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
@@ -75,12 +74,12 @@ function ListingImage({ post, kind }: { post: PostCardData; kind: ListingGridKin
   return (
     <div className={["relative overflow-hidden bg-slate-100", frameClass].join(" ")}>
       {post.imageUrl ? (
-        <Image
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
           src={post.imageUrl}
           alt={post.title}
-          fill
-          sizes={kind === "marketplace" ? "(min-width: 1024px) 25vw, 50vw" : "(min-width: 1024px) 50vw, 100vw"}
-          className="object-cover transition duration-200 group-hover:scale-[1.02]"
+          loading="lazy"
+          className="h-full w-full object-cover transition duration-200 group-hover:scale-[1.02]"
         />
       ) : (
         <div className="absolute inset-0 bg-slate-100" aria-label="暂无图片" />

@@ -10,7 +10,7 @@ export const metadata = buildPageMetadata({
   path: "/services",
 });
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export default async function ServicesPage({
   searchParams,

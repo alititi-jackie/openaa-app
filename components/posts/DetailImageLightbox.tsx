@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -61,12 +60,8 @@ export function DetailImageLightbox({ images, activeIndex, title, onClose, onNav
 
       <div className="flex h-full w-full items-center justify-center p-4">
         <div className="relative h-full w-full">
-          {canUseNextImage(image.url) ? (
-            <Image src={image.url} alt={image.caption || title} fill sizes="100vw" className="select-none object-contain" draggable={false} />
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={image.url} alt={image.caption || title} className="h-full w-full select-none object-contain" draggable={false} />
-          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={image.url} alt={image.caption || title} className="h-full w-full select-none object-contain" draggable={false} />
         </div>
       </div>
 
@@ -97,13 +92,3 @@ export function DetailImageLightbox({ images, activeIndex, title, onClose, onNav
   );
 }
 
-function canUseNextImage(src: string) {
-  if (src.startsWith("/")) return true;
-
-  try {
-    const hostname = new URL(src).hostname;
-    return hostname === "img.openaa.com";
-  } catch {
-    return false;
-  }
-}

@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabasePublicClient } from "@/lib/supabase/public";
 import type { PostListItem } from "@/components/posts/PostList";
 import { getPublicPosts } from "@/features/posts/queries";
 import type { PostType } from "@/features/posts/types";
@@ -34,7 +34,7 @@ import type { HomeCity, HomeConfig, HomeLatestPostSectionConfig, HomeSectionReco
 type HomeSupabaseClient = SupabaseClient;
 
 export async function getHomeConfig(): Promise<HomeConfig> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
 
   if (!supabase) {
     return fallbackHomeConfig();
@@ -51,16 +51,22 @@ export async function getHomeConfig(): Promise<HomeConfig> {
   const quickGridItems = mapQuickGridItems(quickGridSectionConfig);
   const utilityTools = mapUtilityTools(utilitySectionConfig).filter((item) => item.isVisible !== false);
   const tickerSettings = await getLatestTickerSettings(supabase);
+  const [topQuickLinks, banners, tickerItems, latestPostGroups] = await Promise.all([
+    getTopQuickLinks(supabase, city),
+    getHomeBanners(supabase, city),
+    getLatestTickerItems(supabase, city, tickerSettings),
+    getLatestPostGroups(latestPostSections),
+  ]);
 
   return {
     city,
-    topQuickLinks: await getTopQuickLinks(supabase, city),
-    banners: await getHomeBanners(supabase, city),
-    tickerItems: await getLatestTickerItems(supabase, city, tickerSettings),
+    topQuickLinks,
+    banners,
+    tickerItems,
     tickerSettings,
     quickGridItems,
     utilityTools,
-    latestPostGroups: await getLatestPostGroups(latestPostSections),
+    latestPostGroups,
     latestPostsVisible: Boolean(latestSectionConfig?.is_visible ?? true) && latestPostSections.length > 0,
     utilityToolsVisible: Boolean(utilitySectionConfig?.is_visible ?? true) && utilityTools.length > 0,
     quickGridVisible: Boolean(quickGridSectionConfig?.is_visible ?? true) && quickGridItems.length > 0,
@@ -69,7 +75,7 @@ export async function getHomeConfig(): Promise<HomeConfig> {
 }
 
 export async function getTopQuickLinks(client?: HomeSupabaseClient | null, city = fallbackHomeCity) {
-  const supabase = client ?? (await createSupabaseServerClient());
+  const supabase = client ?? createSupabasePublicClient();
 
   if (!supabase) {
     return fallbackTopQuickLinks;
@@ -105,7 +111,7 @@ export async function getTopQuickLinks(client?: HomeSupabaseClient | null, city 
 }
 
 export async function getHomeBanners(client?: HomeSupabaseClient | null, city = fallbackHomeCity) {
-  const supabase = client ?? (await createSupabaseServerClient());
+  const supabase = client ?? createSupabasePublicClient();
 
   if (!supabase) {
     return fallbackHomeBanners;
@@ -123,7 +129,7 @@ export async function getHomeBanners(client?: HomeSupabaseClient | null, city = 
 }
 
 export async function getLatestTickerItems(client?: HomeSupabaseClient | null, city = fallbackHomeCity, settings = fallbackTickerSettings) {
-  const supabase = client ?? (await createSupabaseServerClient());
+  const supabase = client ?? createSupabasePublicClient();
 
   if (!settings.global.isEnabled) {
     return [];
@@ -163,7 +169,7 @@ export async function getLatestTickerItems(client?: HomeSupabaseClient | null, c
 }
 
 export async function getLatestTickerSettings(client?: HomeSupabaseClient | null) {
-  const supabase = client ?? (await createSupabaseServerClient());
+  const supabase = client ?? createSupabasePublicClient();
 
   if (!supabase) {
     return fallbackTickerSettings;
@@ -198,7 +204,7 @@ export async function getLatestTickerSettings(client?: HomeSupabaseClient | null
 }
 
 export async function getHomeSections(client?: HomeSupabaseClient | null) {
-  const supabase = client ?? (await createSupabaseServerClient());
+  const supabase = client ?? createSupabasePublicClient();
 
   if (!supabase) {
     return {};
@@ -318,20 +324,15 @@ async function readHomeAds(supabase: HomeSupabaseClient) {
 }
 
 async function getLatestPostGroups(sections: HomeLatestPostSectionConfig[]) {
-  const groups = [];
-
-  for (const section of sections) {
+  return Promise.all(sections.map(async (section) => {
     if (section.postType === "news") {
       const result = await getLatestNews(section.limitCount);
-      groups.push({ ...section, posts: result.data.map(mapNewsToHomePost) });
-      continue;
+      return { ...section, posts: result.data.map(mapNewsToHomePost) };
     }
 
     const result = await getPublicPosts({ type: section.postType as PostType, limit: section.limitCount });
-    groups.push({ ...section, posts: result.data });
-  }
-
-  return groups;
+    return { ...section, posts: result.data };
+  }));
 }
 
 function mapNewsToHomePost(post: Awaited<ReturnType<typeof getLatestNews>>["data"][number]): PostListItem {

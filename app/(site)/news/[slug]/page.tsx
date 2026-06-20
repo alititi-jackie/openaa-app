@@ -6,7 +6,7 @@ import { getNewsBySlug, getNewsDetailContext } from "@/features/news/queries";
 import { NEWS_DEFAULT_DESCRIPTION } from "@/features/news/constants";
 import { canonicalUrl, siteConfig } from "@/lib/seo/siteConfig";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 type NewsDetailPageProps = {
   params: Promise<{ slug: string }>;
