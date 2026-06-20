@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 import { Share2 } from "lucide-react";
 import { useState } from "react";
 
-const OPENAA_SHARE_URL = "https://openaa.app/";
+const OPENAA_SHARE_URL = "https://openaa.com/";
 const OPENAA_SHARE_TITLE = "OpenAA 美国华人生活平台";
 
 type ShareNavigator = Navigator & {
@@ -49,15 +49,15 @@ export function ProfileShareButton() {
       }
 
       if (await copyShareUrl()) {
-        showToast("✅ 链接已复制");
+        showToast("链接已复制");
       }
     } catch {
       try {
         if (await copyShareUrl()) {
-          showToast("✅ 链接已复制");
+          showToast("链接已复制");
         }
       } catch {
-        showToast("请手动复制：https://openaa.app/", 2400);
+        showToast("请手动复制：https://openaa.com/", 2400);
       }
     }
   }

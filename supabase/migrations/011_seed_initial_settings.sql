@@ -1,4 +1,4 @@
-insert into public.cities (
+﻿insert into public.cities (
   slug,
   name,
   state_code,
@@ -11,7 +11,7 @@ insert into public.cities (
 )
 values (
   'ny',
-  '纽约',
+  '绾界害',
   'NY',
   'US',
   'America/New_York',
@@ -36,13 +36,13 @@ insert into public.site_settings (key, value, description, is_public)
 values
   (
     'domain_strategy',
-    '{"appDomain":"openaa.app","primarySeoDomain":"openaa.app","canonicalBaseUrl":"https://openaa.app","allowedDomains":["openaa.app"],"redirectDomains":["www.openaa.app"]}'::jsonb,
+    '{"appDomain":"openaa.com","primarySeoDomain":"openaa.com","canonicalBaseUrl":"https://openaa.com","allowedDomains":["openaa.com"],"redirectDomains":["www.openaa.com","app.openaa.com","openaa.cn","www.openaa.cn","openaa.app","www.openaa.app"]}'::jsonb,
     'Canonical and domain strategy for OpenAA.',
     true
   ),
   (
     'dmv_disclaimer',
-    '{"text":"OpenAA 纽约 DMV 中文练习题库，仅供学习参考，实际考试内容以 New York DMV 官方资料为准。"}'::jsonb,
+    '{"text":"OpenAA 绾界害 DMV 涓枃缁冧範棰樺簱锛屼粎渚涘涔犲弬鑰冿紝瀹為檯鑰冭瘯鍐呭浠?New York DMV 瀹樻柟璧勬枡涓哄噯銆?}'::jsonb,
     'Public DMV disclaimer copy.',
     true
   ),

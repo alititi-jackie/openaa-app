@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { canonicalUrl } from "@/lib/seo/siteConfig";
 import { detailActionButtonClass } from "./detailActionStyles";
 
 type PageShareButtonProps = {
@@ -12,8 +13,7 @@ type PageShareButtonProps = {
 };
 
 function buildUrl(path: string) {
-  if (typeof window === "undefined") return path;
-  return new URL(path, window.location.origin).toString();
+  return canonicalUrl(path);
 }
 
 export function PageShareButton({ path, title, text, className, label = "分享" }: PageShareButtonProps) {

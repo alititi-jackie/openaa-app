@@ -1,13 +1,13 @@
-# openaa-app
+﻿# openaa-app
 
-OpenAA APP core for `openaa.app`: a mobile-first Web/PWA platform that will later support Android TWA, Capacitor, or iOS WebView wrappers without replacing the core business system.
+OpenAA APP core for `openaa.com`: a mobile-first Web/PWA platform that will later support Android TWA, Capacitor, or iOS WebView wrappers without replacing the core business system.
 
 ## Phase 1
 
 - Next.js App Router, TypeScript, Tailwind CSS, ESLint.
 - Mobile-first AppShell with Header, BottomNav, safe-area spacing, and placeholder public/auth/admin routes.
 - PWA shell with manifest, icons, install/update/offline placeholders.
-- Domain-aware SEO config for `openaa.app`, `openaa.com`, and `openaa.cn`.
+- Domain-aware SEO config with `https://openaa.com` as the canonical primary domain.
 - Legal page templates for privacy, terms, community guidelines, and contact.
 
 ## Guardrails

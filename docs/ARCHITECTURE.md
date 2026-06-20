@@ -1,6 +1,6 @@
-# OpenAA Architecture
+﻿# OpenAA Architecture
 
-`openaa-app` is the new OpenAA platform core for `openaa.app`. It is separate from `openaa-ny` and will use a new GitHub repository, new Supabase project, new database schema, new Auth, new Storage, new API, and new admin system.
+`openaa-app` is the new OpenAA platform core for `openaa.com`. It is separate from `openaa-ny` and will use a new GitHub repository, new Supabase project, new database schema, new Auth, new Storage, new API, and new admin system.
 
 ## Phase 1 Scope
 

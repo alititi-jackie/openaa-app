@@ -1,4 +1,4 @@
-# Admin Online Authorization Runbook
+﻿# Admin Online Authorization Runbook
 
 This runbook describes how to grant and manage admin access in the new `openaa-app` stack.
 
@@ -175,9 +175,9 @@ Finally:
 
 Supabase Auth should be configured for the new app domain:
 
-- Site URL: `https://openaa.app`
+- Site URL: `https://openaa.com`
 - Redirect URLs:
-  - `https://openaa.app/**`
+  - `https://openaa.com/**`
   - `http://localhost:3000/**`
 
 Vercel environment variables must point to the new Supabase project:

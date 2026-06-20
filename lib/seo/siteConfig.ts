@@ -1,4 +1,4 @@
-const fallbackSiteUrl = "https://openaa.app";
+const fallbackSiteUrl = "https://openaa.com";
 const fallbackPrimarySeoUrl = fallbackSiteUrl;
 
 function normalizeBaseUrl(value: string | undefined, fallback: string) {
@@ -37,8 +37,8 @@ export const siteConfig = {
     process.env.NEXT_PUBLIC_CANONICAL_URL,
     process.env.NEXT_PUBLIC_PRIMARY_SEO_URL || process.env.NEXT_PUBLIC_SITE_URL || fallbackSiteUrl,
   ),
-  allowedDomains: ["openaa.app"],
-  redirectDomains: ["www.openaa.app"],
+  allowedDomains: ["openaa.com"],
+  redirectDomains: ["www.openaa.com", "app.openaa.com", "openaa.cn", "www.openaa.cn", "openaa.app", "www.openaa.app"],
   locale: "zh_CN",
   defaultCity: {
     id: "ny",

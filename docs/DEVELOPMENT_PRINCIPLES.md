@@ -1,13 +1,13 @@
-# OpenAA Development Principles
+﻿# OpenAA Development Principles
 
-These principles apply to future openaa.app development. They are intended to keep the new project aligned with the proven ny.openaa.com experience while preserving the new architecture and code quality.
+These principles apply to future openaa.com development. They are intended to keep the new project aligned with the proven ny.openaa.com experience while preserving the new architecture and code quality.
 
-1. openaa.app is a new-architecture project, not a copy of the openaa-ny codebase.
+1. openaa.com is a new-architecture project, not a copy of the openaa-ny codebase.
 2. The old ny.openaa.com site is a read-only reference for functionality, visual behavior, and interaction patterns.
 3. Features that exist on the old site must be preserved in the new site; the new site may add more, but should not have less.
 4. When the user has not requested a new visual direction, pages and modules should default to the old site's display behavior.
 5. When the user requests a new visual direction, follow the new requirement while ensuring the overall experience does not fall below the old site.
-6. The current openaa.app desktop responsive content width has been confirmed as better; future changes should not regress it back to the old site's narrower width.
+6. The current openaa.com desktop responsive content width has been confirmed as better; future changes should not regress it back to the old site's narrower width.
 7. Do not copy old-site code. Rebuild behavior using the new project structure.
 8. Shared UI such as Header, BottomNav, cards, channel pages, detail pages, forms, filters, back/share controls, empty states, SEO cards, and admin cards must prioritize reusable public components.
 9. Before adding or changing UI, search openaa-app for existing reusable components and use them when appropriate.

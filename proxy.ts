@@ -1,6 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSupabaseSession } from "@/lib/supabase/middleware";
 
+const primaryHostname = "openaa.com";
+const redirectHostnames = new Set(["www.openaa.com", "app.openaa.com", "openaa.cn", "www.openaa.cn", "openaa.app", "www.openaa.app"]);
+
 export async function proxy(request: NextRequest) {
   const redirectResponse = redirectToPrimaryDomain(request);
 
@@ -13,28 +16,13 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/admin/:path*",
-    "/profile/:path*",
-    "/account/:path*",
-    "/navigation/my/:path*",
-    "/login",
-    "/register",
-    "/forgot-password",
-    "/reset-password",
-    "/auth/:path*",
-    "/:path*/publish",
-    "/:path*/edit/:path*",
-    "/api/admin/:path*",
-    "/api/auth/:path*",
-    "/api/favorites/:path*",
-    "/api/support/:path*",
-    "/api/reports/:path*",
+    "/((?!_next/static|_next/image|favicon.ico|apple-touch-icon.png|icons/|og-default.png|openaa-logo.png).*)",
   ],
 };
 
 function redirectToPrimaryDomain(request: NextRequest) {
-  const host = request.headers.get("host")?.toLowerCase();
-  const shouldRedirectHost = host === "www.openaa.app";
+  const host = request.headers.get("host")?.toLowerCase().split(":")[0];
+  const shouldRedirectHost = host ? redirectHostnames.has(host) : false;
 
   if (!shouldRedirectHost) {
     return null;
@@ -42,7 +30,7 @@ function redirectToPrimaryDomain(request: NextRequest) {
 
   const url = request.nextUrl.clone();
   url.protocol = "https:";
-  url.hostname = "openaa.app";
+  url.hostname = primaryHostname;
   url.port = "";
 
   return NextResponse.redirect(url, 301);

@@ -1,12 +1,12 @@
-# Domain And SEO Strategy
+﻿# Domain And SEO Strategy
 
-The code must not hard-code `openaa.app` into canonical, sitemap, OpenGraph, JSON-LD, share links, or Auth redirect logic.
+Canonical, sitemap, OpenGraph, JSON-LD, share links, and Auth redirect URLs should resolve through `lib/seo/siteConfig.ts`.
 
 ## Domains
 
-- Current app domain: `openaa.app`
-- Future primary SEO domain candidate: `openaa.com`
-- Backup/redirect domain: `openaa.cn`
+- Primary domain: `openaa.com`
+- Legacy/backup redirect domains: `www.openaa.com`, `app.openaa.com`, `openaa.cn`, `www.openaa.cn`, `openaa.app`, `www.openaa.app`
+- Independent subdomains: `tools.openaa.com`, `img.openaa.com`, `go.openaa.com`
 
 ## Config
 
