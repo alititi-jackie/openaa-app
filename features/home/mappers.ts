@@ -2,6 +2,7 @@ import type { HomeBannerItem } from "@/components/home/HomeBanner";
 import type { QuickGridItem } from "@/components/home/QuickGrid";
 import type { UtilityCardItem, UtilityIconKey, UtilityTheme } from "@/components/home/UtilityCards";
 import type { TopQuickLink } from "@/features/navigation/topQuickLinks";
+import { canonicalizeMainSiteHref } from "@/lib/seo/siteConfig";
 import { fallbackLatestPostSections, fallbackQuickGridItems, fallbackSeoContent, fallbackTickerItems, fallbackUtilityTools } from "./fallbacks";
 import type { HomeLatestPostSectionConfig, HomeSectionRecord, HomeSeoContent, HomeTickerItem } from "./types";
 
@@ -85,13 +86,14 @@ function fallbackTickerLabelForRoute(href: string) {
 }
 
 export function mapBanner(row: Record<string, unknown>): HomeBannerItem | null {
-  const title = asString(row.title);
+  const rawTitle = asString(row.title);
   const imageAsset = firstRecord(row.image_assets);
   const metadata = asRecord(row.metadata);
   const imageUrl = asString(imageAsset.public_url, asString(imageAsset.external_url, asString(metadata.image_url)));
   const openMode = asString(row.open_mode) || null;
   const slug = asString(row.slug) || null;
   const href = openMode === "internal" && slug ? `/ads/${slug}` : normalizeRoute(asString(row.external_url, asString(row.href, "/")));
+  const title = rawTitle === asString(row.href) || rawTitle === asString(row.external_url) ? href : normalizeRoute(rawTitle);
 
   if (!title || !imageUrl) {
     return null;
@@ -301,7 +303,8 @@ function normalizeLayout(value: unknown, fallback: HomeLatestPostSectionConfig["
 }
 
 function normalizeRoute(route: string) {
-  return route.startsWith("/") && route.slice(1) === "marketplace" ? "/secondhand" : route;
+  const normalized = canonicalizeMainSiteHref(route);
+  return normalized.startsWith("/") && normalized.slice(1) === "marketplace" ? "/secondhand" : normalized;
 }
 
 function clamp(value: number, min: number, max: number) {

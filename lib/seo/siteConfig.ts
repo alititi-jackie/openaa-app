@@ -1,6 +1,13 @@
 const fallbackSiteUrl = "https://openaa.com";
 const fallbackPrimarySeoUrl = fallbackSiteUrl;
 const primarySiteHostname = "openaa.com";
+const legacyMainSiteHostnames = new Set([
+  "www.openaa.com",
+  "app.openaa.com",
+  "ny.openaa.com",
+  "openaa.app",
+  "www.openaa.app",
+]);
 
 function normalizeBaseUrl(value: string | undefined, fallback: string) {
   const raw = value?.trim() || fallback;
@@ -65,6 +72,24 @@ export function canonicalUrl(path = "/") {
 export function appUrl(path = "/") {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   return new URL(normalizedPath, siteConfig.appBaseUrl).toString();
+}
+
+export function canonicalizeMainSiteHref(value: string) {
+  const raw = value.trim();
+  if (!raw || raw.startsWith("/") || raw.startsWith("#")) return raw;
+
+  try {
+    const url = new URL(raw);
+    const hostname = url.hostname.toLowerCase();
+
+    if (hostname === primarySiteHostname || legacyMainSiteHostnames.has(hostname)) {
+      return `${url.pathname}${url.search}${url.hash}` || "/";
+    }
+  } catch {
+    return raw;
+  }
+
+  return raw;
 }
 
 export const noindexRoutePrefixes = [

@@ -69,7 +69,7 @@ from (values
   ('featured', '纽约生活', '纽约本地生活信息。', 'https://newyork.craigslist.org/', 'auto', 50, true, 'f1f8010d-2e0d-4e1c-bb25-bf40c1b475c7'),
   ('featured', '一亩三分地', '留学、求职、移民与北美生活社区。', 'https://www.1point3acres.com/', 'auto', 60, true, 'c8d06825-eb8e-41d0-bede-9f28814a0ee0'),
   ('featured', 'DMV NY', '纽约州 DMV 官方网站。', 'https://dmv.ny.gov/', 'auto', 70, true, 'c2d73ce1-c5f5-493c-9ce0-e0a910fd4357'),
-  ('featured', 'OpenAA站内搜索', 'OpenAA站内搜索', 'https://ny.openaa.com/search', 'auto', 80, true, '169e3727-2dec-4544-a90d-e9e241c851d1'),
+  ('featured', 'OpenAA站内搜索', 'OpenAA站内搜索', 'https://openaa.com/search', 'auto', 80, true, '169e3727-2dec-4544-a90d-e9e241c851d1'),
   ('government', 'DMV官方入口', '各州 DMV 官方导航入口。', 'https://openaa.com/nav/dmv', 'auto', 10, true, '7fc59537-e7f8-4f2c-a1f6-b73a2faf24e8'),
   ('government', 'USCIS', '移民/工卡/入籍等官方办理入口。', 'https://www.uscis.gov/', 'auto', 20, true, '6e98644c-e018-4dbc-892d-5185d05c0ef9'),
   ('government', 'IRS', '联邦税务申报与查询。', 'https://www.irs.gov/', 'auto', 30, true, '0f2d478c-58c0-4a4d-ab81-01fada9cec2c'),
