@@ -239,7 +239,6 @@ export function mapQuickGridItems(section?: HomeSectionRecord): QuickGridItem[] 
       const fallback = fallbackQuickGridItems.find((value) => value.href === href || value.label === record.label);
       const label = asString(record.label, asString(record.title, fallback?.label));
       const icon = fallback?.icon;
-      const openMode = isOpenMode(record.open_mode) ? record.open_mode : fallback?.openMode;
 
       if (!label || !href || !icon) {
         return null;
@@ -249,7 +248,6 @@ export function mapQuickGridItems(section?: HomeSectionRecord): QuickGridItem[] 
         label,
         href,
         icon,
-        openMode,
         isVisible: asBoolean(record.is_visible, asBoolean(record.isVisible, true)),
         sortOrder: asNumber(record.sort_order, index),
       };
@@ -260,7 +258,6 @@ export function mapQuickGridItems(section?: HomeSectionRecord): QuickGridItem[] 
       label: item.label,
       href: item.href,
       icon: item.icon,
-      openMode: item.openMode,
     }));
 
   return mapped;
