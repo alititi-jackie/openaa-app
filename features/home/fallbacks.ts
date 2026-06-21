@@ -1,4 +1,4 @@
-import { BookOpenCheck, BriefcaseBusiness, Building2, CarFront, Map, Newspaper, ShoppingBag, Store } from "lucide-react";
+import { BriefcaseBusiness, Building2, CarFront, Map, Newspaper, ShoppingBag, Store, Wrench } from "lucide-react";
 import { getFallbackTopQuickLinks } from "@/features/navigation/topQuickLinks";
 import { DEFAULT_HOME_CITY_NAME, DEFAULT_HOME_CITY_SLUG } from "./constants";
 import type { HomeBannerItem } from "@/components/home/HomeBanner";
@@ -46,7 +46,7 @@ export const fallbackQuickGridItems: QuickGridItem[] = [
   { href: "/dmv", label: "DMV", icon: CarFront },
   { href: "/news", label: "新闻", icon: Newspaper },
   { href: "/navigation", label: "导航", icon: Map },
-  { href: "/news", label: "新手指南", icon: BookOpenCheck },
+  { href: "https://tools.openaa.com", label: "OpenAA工具", icon: Wrench, openMode: "new" },
   { href: "/services", label: "本地服务", icon: Store },
 ];
 

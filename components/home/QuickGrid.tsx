@@ -7,6 +7,7 @@ export type QuickGridItem = {
   href: string;
   label: string;
   icon: LucideIcon;
+  openMode?: "same" | "new";
 };
 
 const quickGridThemes: Record<string, { bg: string; text: string; ring: string; hover: string }> = {
@@ -16,7 +17,7 @@ const quickGridThemes: Record<string, { bg: string; text: string; ring: string; 
   DMV: { bg: "bg-amber-50", text: "text-amber-600", ring: "ring-amber-100", hover: "hover:text-amber-700" },
   新闻: { bg: "bg-rose-50", text: "text-rose-600", ring: "ring-rose-100", hover: "hover:text-rose-700" },
   导航: { bg: "bg-cyan-50", text: "text-cyan-600", ring: "ring-cyan-100", hover: "hover:text-cyan-700" },
-  新手指南: { bg: "bg-orange-50", text: "text-orange-600", ring: "ring-orange-100", hover: "hover:text-orange-700" },
+  OpenAA工具: { bg: "bg-orange-50", text: "text-orange-600", ring: "ring-orange-100", hover: "hover:text-orange-700" },
   本地服务: { bg: "bg-teal-50", text: "text-teal-600", ring: "ring-teal-100", hover: "hover:text-teal-700" },
 };
 
@@ -49,7 +50,7 @@ export function QuickGrid({ items }: { items: QuickGridItem[] }) {
           }
 
           return (
-            <Link key={item.href} href={item.href} className={className}>
+            <Link key={item.href} href={item.href} className={className} target={item.openMode === "new" ? "_blank" : undefined} rel={item.openMode === "new" ? "noopener noreferrer" : undefined}>
               {content}
             </Link>
           );

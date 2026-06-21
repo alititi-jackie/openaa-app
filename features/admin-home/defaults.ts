@@ -12,6 +12,7 @@ export const defaultHomeSections = [
       items: fallbackQuickGridItems.map((item, index) => ({
         label: item.label,
         href: item.href,
+        open_mode: item.openMode ?? "same",
         sort_order: index + 1,
         is_visible: true,
       })),

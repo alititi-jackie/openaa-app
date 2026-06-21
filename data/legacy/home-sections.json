@@ -65,9 +65,10 @@
             "is_visible": true
           },
           {
-            "label": "新手指南",
-            "href": "/news?category=newcomer-guide",
-            "icon": "book-open-check",
+            "label": "OpenAA工具",
+            "href": "https://tools.openaa.com",
+            "icon": "wrench",
+            "open_mode": "new",
             "sort_order": 70,
             "is_visible": true
           },
