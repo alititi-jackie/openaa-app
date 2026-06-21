@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
+import { ChannelFallbackCover } from "@/components/common/ChannelFallbackCover";
 import { DetailMetaPills } from "./DetailMetaPills";
 import type { DetailMetaPill } from "./DetailMetaPills";
 import type { PostCardData } from "./PostCard";
@@ -82,7 +83,7 @@ function ListingImage({ post, kind }: { post: PostCardData; kind: ListingGridKin
           className="h-full w-full object-cover transition duration-200 group-hover:scale-[1.02]"
         />
       ) : (
-        <div className="absolute inset-0 bg-slate-100" aria-label="暂无图片" />
+        <ChannelFallbackCover kind={kind} className="absolute inset-0" />
       )}
     </div>
   );

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { ChannelFallbackCover } from "@/components/common/ChannelFallbackCover";
 
 type NewsCoverProps = {
   src?: string | null;
@@ -25,11 +26,7 @@ function canUseNextImage(src: string) {
 }
 
 function Fallback({ className }: { className?: string }) {
-  return (
-    <div className={`${className ?? ""} flex items-center justify-center bg-gradient-to-br from-sky-100 to-blue-200`.trim()}>
-      <span className="text-sm font-semibold text-blue-700">OpenAA 资讯</span>
-    </div>
-  );
+  return <ChannelFallbackCover kind="news" className={className} />;
 }
 
 export function NewsCover({ src, alt, className, sizes = defaultSizes, priority = false }: NewsCoverProps) {

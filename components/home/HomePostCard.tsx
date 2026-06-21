@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Clock } from "lucide-react";
+import { ChannelFallbackCover } from "@/components/common/ChannelFallbackCover";
 import type { PostListItem } from "@/components/posts/PostList";
 import { DetailMetaPills, type DetailMetaPill } from "@/components/posts/DetailMetaPills";
 
@@ -75,6 +76,8 @@ function Thumb({ post }: { post: PostListItem }) {
       {post.imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={post.imageUrl} alt={post.title} loading="lazy" className="h-full w-full object-cover" />
+      ) : post.type === "marketplace" || post.type === "service" ? (
+        <ChannelFallbackCover kind={post.type} className="absolute inset-0" />
       ) : (
         <span className="absolute inset-0 bg-gradient-to-br from-blue-50 to-slate-100" />
       )}

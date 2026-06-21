@@ -160,11 +160,6 @@ export type PostDetailView = PostCardView & {
   sourceRecord?: PostRecord;
 };
 
-export type DefaultPostPlaceholderImages = {
-  marketplace?: string;
-  service?: string;
-};
-
 export type PostsQueryResult<T> = {
   state: QueryState;
   data: T;
