@@ -1,5 +1,6 @@
 const fallbackSiteUrl = "https://openaa.com";
 const fallbackPrimarySeoUrl = fallbackSiteUrl;
+const primarySiteHostname = "openaa.com";
 
 function normalizeBaseUrl(value: string | undefined, fallback: string) {
   const raw = value?.trim() || fallback;
@@ -26,14 +27,19 @@ function hostnameFromUrl(value: string) {
   }
 }
 
+function normalizePrimarySiteUrl(value: string | undefined, fallback: string) {
+  const normalized = normalizeBaseUrl(value, fallback);
+  return hostnameFromUrl(normalized) === primarySiteHostname ? normalized : fallback;
+}
+
 export const siteConfig = {
   name: "OpenAA",
   title: "OpenAA 纽约华人生活信息平台",
   description:
     "OpenAA 是面向纽约华人的移动优先生活信息平台，提供招聘、房屋、二手市场、本地服务、新闻、DMV 练习和导航入口。",
-  appBaseUrl: normalizeBaseUrl(process.env.NEXT_PUBLIC_SITE_URL, fallbackSiteUrl),
-  primarySeoBaseUrl: normalizeBaseUrl(process.env.NEXT_PUBLIC_PRIMARY_SEO_URL, fallbackPrimarySeoUrl),
-  canonicalBaseUrl: normalizeBaseUrl(
+  appBaseUrl: normalizePrimarySiteUrl(process.env.NEXT_PUBLIC_SITE_URL, fallbackSiteUrl),
+  primarySeoBaseUrl: normalizePrimarySiteUrl(process.env.NEXT_PUBLIC_PRIMARY_SEO_URL, fallbackPrimarySeoUrl),
+  canonicalBaseUrl: normalizePrimarySiteUrl(
     process.env.NEXT_PUBLIC_CANONICAL_URL,
     process.env.NEXT_PUBLIC_PRIMARY_SEO_URL || process.env.NEXT_PUBLIC_SITE_URL || fallbackSiteUrl,
   ),
