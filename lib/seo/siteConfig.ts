@@ -41,7 +41,7 @@ export const siteConfig = {
   primarySeoBaseUrl: normalizePrimarySiteUrl(process.env.NEXT_PUBLIC_PRIMARY_SEO_URL, fallbackPrimarySeoUrl),
   canonicalBaseUrl: normalizePrimarySiteUrl(
     process.env.NEXT_PUBLIC_CANONICAL_URL,
-    process.env.NEXT_PUBLIC_PRIMARY_SEO_URL || process.env.NEXT_PUBLIC_SITE_URL || fallbackSiteUrl,
+    fallbackSiteUrl,
   ),
   allowedDomains: ["openaa.com"],
   redirectDomains: [],
