@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { LatestPostGroup } from "@/components/home/LatestPostsSection";
 import { createSupabasePublicClient } from "@/lib/supabase/public";
 import type { PostListItem } from "@/components/posts/PostList";
 import { getPublicPosts } from "@/features/posts/queries";
@@ -51,12 +52,12 @@ export async function getHomeConfig(): Promise<HomeConfig> {
   const quickGridItems = mapQuickGridItems(quickGridSectionConfig);
   const utilityTools = mapUtilityTools(utilitySectionConfig).filter((item) => item.isVisible !== false);
   const tickerSettings = await getLatestTickerSettings(supabase);
-  const [topQuickLinks, banners, tickerItems, latestPostGroups] = await Promise.all([
+  const [topQuickLinks, banners, latestPostGroups] = await Promise.all([
     getTopQuickLinks(supabase, city),
     getHomeBanners(supabase, city),
-    getLatestTickerItems(supabase, city, tickerSettings),
     getLatestPostGroups(latestPostSections),
   ]);
+  const tickerItems = await getLatestTickerItems(supabase, city, tickerSettings, latestPostGroups);
 
   return {
     city,
@@ -128,22 +129,40 @@ export async function getHomeBanners(client?: HomeSupabaseClient | null, city = 
   return banners.length > 0 ? banners : fallbackHomeBanners;
 }
 
-export async function getLatestTickerItems(client?: HomeSupabaseClient | null, city = fallbackHomeCity, settings = fallbackTickerSettings) {
+export async function getLatestTickerItems(
+  client?: HomeSupabaseClient | null,
+  city = fallbackHomeCity,
+  settings = fallbackTickerSettings,
+  latestPostGroups?: LatestPostGroup[],
+) {
   const supabase = client ?? createSupabasePublicClient();
 
   if (!settings.global.isEnabled) {
     return [];
   }
 
+  const dynamicItems = latestPostGroups
+    ? mapLatestPostGroupsToTickerItems(latestPostGroups, settings)
+    : mapLatestPostGroupsToTickerItems(await getLatestPostGroups(fallbackLatestPostSections.filter((section) => section.isVisible)), settings);
+
+  if (dynamicItems.length > 0) {
+    return dynamicItems;
+  }
+
   if (!supabase) {
     return fallbackTickerItems;
   }
 
+  const configuredItems = await getConfiguredTickerItems(supabase, city, settings);
+  return configuredItems.length > 0 ? configuredItems : fallbackTickerItems;
+}
+
+async function getConfiguredTickerItems(supabase: HomeSupabaseClient, city = fallbackHomeCity, settings = fallbackTickerSettings) {
   try {
     const now = new Date().toISOString();
     const { data, error } = await supabase
       .from("latest_ticker")
-      .select("id,title,href,is_enabled,sort_order,starts_at,ends_at")
+      .select("id,title,href,module,is_enabled,sort_order,starts_at,ends_at")
       .eq("is_enabled", true)
       .or(`starts_at.is.null,starts_at.lte.${now}`)
       .or(`ends_at.is.null,ends_at.gte.${now}`)
@@ -161,10 +180,10 @@ export async function getLatestTickerItems(client?: HomeSupabaseClient | null, c
       settings,
     );
 
-    return items.length > 0 ? items : fallbackTickerItems;
+    return items;
   } catch (error) {
     warnHomeConfig("latest_ticker", error);
-    return fallbackTickerItems;
+    return [];
   }
 }
 
@@ -347,6 +366,38 @@ function mapNewsToHomePost(post: Awaited<ReturnType<typeof getLatestNews>>["data
     imageUrl: post.coverImageUrl ?? undefined,
     fields: post.isPinned ? [{ label: "pinned", value: "置顶" }] : undefined,
   };
+}
+
+function mapLatestPostGroupsToTickerItems(groups: LatestPostGroup[], settings = fallbackTickerSettings) {
+  const items = groups
+    .filter((group) => group.isVisible !== false)
+    .flatMap((group) =>
+      group.posts.map((post) => {
+        const label = buildTickerLabel(group, post);
+        return label ? { label, href: post.href, module: group.key } : null;
+      }),
+    )
+    .filter((item): item is { label: string; href: string; module: string } => item !== null);
+
+  return applyTickerSectionSettings(items, settings);
+}
+
+function buildTickerLabel(group: LatestPostGroup, post: PostListItem) {
+  const channel = group.navLabel || group.title;
+  const detail = tickerPostDetail(post);
+  const title = post.title.trim();
+
+  if (!channel || !title) {
+    return "";
+  }
+
+  return detail ? `[${channel}] ${detail} ${title}` : `[${channel}] ${title}`;
+}
+
+function tickerPostDetail(post: PostListItem) {
+  return [post.location, post.area, post.tag, post.meta]
+    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .find(Boolean);
 }
 
 function getVisibleSection(sections: Record<string, HomeSectionRecord>, key: string) {
