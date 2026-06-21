@@ -30,6 +30,9 @@ export type PostCardData = {
   secondaryTag?: string;
   createdAt?: string;
   publishedAt?: string | null;
+  isPinned?: boolean;
+  pinnedOrder?: number | null;
+  tickerSortAt?: string | null;
   authorName?: string;
   imageUrl?: string;
   favoriteCount?: number;

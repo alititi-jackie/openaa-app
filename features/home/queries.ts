@@ -34,6 +34,9 @@ import type { HomeCity, HomeConfig, HomeLatestPostSectionConfig, HomeSectionReco
 
 type HomeSupabaseClient = SupabaseClient;
 
+const MAX_DYNAMIC_TICKER_ITEMS = 10;
+const MAX_DYNAMIC_TICKER_ITEMS_PER_SECTION = 2;
+
 export async function getHomeConfig(): Promise<HomeConfig> {
   const supabase = createSupabasePublicClient();
 
@@ -363,23 +366,75 @@ function mapNewsToHomePost(post: Awaited<ReturnType<typeof getLatestNews>>["data
     meta: formatNewsDate(post.publishedAt),
     tag: post.categoryName,
     location: formatNewsDate(post.publishedAt),
+    publishedAt: post.publishedAt,
+    createdAt: post.updatedAt,
+    isPinned: post.isPinned,
+    pinnedOrder: post.pinnedOrder,
+    tickerSortAt: post.publishedAt || post.updatedAt,
     imageUrl: post.coverImageUrl ?? undefined,
     fields: post.isPinned ? [{ label: "pinned", value: "置顶" }] : undefined,
   };
 }
 
 function mapLatestPostGroupsToTickerItems(groups: LatestPostGroup[], settings = fallbackTickerSettings) {
-  const items = groups
+  const enabledSectionKeys = new Set(
+    settings.sections
+      .filter((section) => section.isEnabled)
+      .map((section) => section.sectionKey),
+  );
+  const hasSectionSettings = settings.sections.length > 0;
+  const candidates = groups
     .filter((group) => group.isVisible !== false)
+    .filter((group) => !hasSectionSettings || enabledSectionKeys.has(normalizeTickerModule(group.key)))
     .flatMap((group) =>
-      group.posts.map((post) => {
-        const label = buildTickerLabel(group, post);
-        return label ? { label, href: post.href, module: group.key } : null;
-      }),
+      group.posts
+        .map((post) => mapLatestPostToTickerCandidate(group, post))
+        .filter((item): item is TickerCandidate => item !== null)
+        .sort(compareTickerCandidates)
+        .slice(0, MAX_DYNAMIC_TICKER_ITEMS_PER_SECTION),
     )
-    .filter((item): item is { label: string; href: string; module: string } => item !== null);
+    .sort(compareTickerCandidates)
+    .slice(0, MAX_DYNAMIC_TICKER_ITEMS);
 
-  return applyTickerSectionSettings(items, settings);
+  return candidates.map((item) => ({ label: item.label, href: item.href, module: item.module }));
+}
+
+type TickerCandidate = {
+  label: string;
+  href: string;
+  module: string;
+  isPinned: boolean;
+  pinnedOrder: number;
+  sortAt: string;
+};
+
+function mapLatestPostToTickerCandidate(group: LatestPostGroup, post: PostListItem): TickerCandidate | null {
+  const label = buildTickerLabel(group, post);
+
+  if (!label) {
+    return null;
+  }
+
+  return {
+    label,
+    href: post.href,
+    module: group.key,
+    isPinned: post.isPinned === true,
+    pinnedOrder: typeof post.pinnedOrder === "number" ? post.pinnedOrder : 0,
+    sortAt: post.tickerSortAt || post.publishedAt || post.createdAt || "",
+  };
+}
+
+function compareTickerCandidates(a: TickerCandidate, b: TickerCandidate) {
+  if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
+  if (a.isPinned && b.isPinned && a.pinnedOrder !== b.pinnedOrder) return a.pinnedOrder - b.pinnedOrder;
+  return dateValue(b.sortAt) - dateValue(a.sortAt);
+}
+
+function dateValue(value?: string | null) {
+  if (!value) return 0;
+  const time = new Date(value).getTime();
+  return Number.isFinite(time) ? time : 0;
 }
 
 function buildTickerLabel(group: LatestPostGroup, post: PostListItem) {
