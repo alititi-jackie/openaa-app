@@ -2,7 +2,7 @@
 values
   (
     'domain_strategy',
-    '{"appDomain":"openaa.com","primarySeoDomain":"openaa.com","canonicalBaseUrl":"https://openaa.com","allowedDomains":["openaa.com"],"redirectDomains":["www.openaa.com","app.openaa.com","openaa.cn","www.openaa.cn","openaa.app","www.openaa.app"]}'::jsonb,
+    '{"appDomain":"openaa.com","primarySeoDomain":"openaa.com","canonicalBaseUrl":"https://openaa.com","allowedDomains":["openaa.com"],"redirectDomains":[]}'::jsonb,
     'Canonical and domain strategy for OpenAA.',
     true
   ),
