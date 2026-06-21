@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getHomeConfig } from "@/features/home/queries";
 
-const allowedOrigins = new Set(["https://go.openaa.com"]);
+const allowedOrigins = new Set(["https://go.openaa.com", "https://tools.openaa.com"]);
 
 export const revalidate = 300;
 
