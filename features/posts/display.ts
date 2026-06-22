@@ -210,7 +210,7 @@ export function formatJobWorkTypeLabel(value?: string | null) {
   const normalized = value?.trim();
   if (!normalized) return "";
 
-  const legacyLabels: Record<string, string> = {
+  const commonAliases: Record<string, string> = {
     fulltime: "全职",
     full_time: "全职",
     "full-time": "全职",
@@ -224,7 +224,7 @@ export function formatJobWorkTypeLabel(value?: string | null) {
     other: "其它",
   };
 
-  return optionLabel(JOB_TYPE_OPTIONS, normalized, legacyLabels[normalized.toLowerCase()] ?? "其它");
+  return optionLabel(JOB_TYPE_OPTIONS, normalized, commonAliases[normalized.toLowerCase()] ?? "其它");
 }
 
 export function buildPostDisplayBody(source: { body?: string | null; summary?: string | null }) {

@@ -5,7 +5,7 @@ import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
-export function ProfileLogoutButton({ variant = "default" }: { variant?: "default" | "legacy" }) {
+export function ProfileLogoutButton({ variant = "default" }: { variant?: "default" | "compact" }) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -32,7 +32,7 @@ export function ProfileLogoutButton({ variant = "default" }: { variant?: "defaul
     }
   }
 
-  if (variant === "legacy") {
+  if (variant === "compact") {
     return (
       <div>
         <button type="button" onClick={handleLogout} disabled={isPending} className="w-full p-4 transition hover:bg-red-50 disabled:opacity-60">

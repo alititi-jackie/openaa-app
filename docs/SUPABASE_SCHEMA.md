@@ -25,7 +25,7 @@ Reset local or production test databases before applying this baseline. After re
 
 ## Not Created In First Baseline
 
-Payments, orders, chats, memberships, points, coupon redemption, rideshare, comments, ratings, appointments, coupons, and business verification tables are intentionally not created. They remain architecture directions only because they require more security, operations, and compliance design.
+Commerce, chat, membership, points, rideshare, community interaction, booking, promotion, and business verification tables are intentionally not created. They remain architecture directions only because they require more security, operations, and compliance design.
 
 ## Notifications
 
@@ -69,7 +69,7 @@ Admin sends, bulk sends, and automatic moderation notifications use `features/no
 
 ## Support Tickets
 
-`support_tickets` is the first-version platform feedback and report ticket system. It replaces the old `feedback` / `feedback_posts` / `feedback_settings` tables. The content moderation report table `post_reports` remains separate because it powers post report counts, "already reported" state, and post moderation workflows.
+`support_tickets` is the first-version platform feedback and report ticket system. It replaces the old split feedback tables from the test-period schema. The content moderation report table `post_reports` remains separate because it powers post report counts, "already reported" state, and post moderation workflows.
 
 Fields:
 
@@ -141,9 +141,7 @@ User self-service actions do not write `post_admin_events`. Administrator post a
 
 Marketplace and local service posts no longer use admin-configured default placeholder images. If a post has no user-uploaded image, the UI renders a channel fallback such as `OpenAA 二手` or `OpenAA 服务`.
 
-Fallback covers are presentation-only. They are not stored in `site_settings`, do not create `image_assets`, and are not inserted into `post_images`. `042_default_post_placeholder_images.sql` now removes legacy test placeholder settings if they exist; `043_site_setting_images_storage_policies.sql` is kept as a no-op historical migration.
-
-`044_image_assets_entity_id_text.sql` changes `image_assets.entity_id` from `uuid` to `text` so generic media references can point to UUID-backed rows or text-backed entities when needed.
+Fallback covers are presentation-only. They are not stored in `site_settings`, do not create `image_assets`, and are not inserted into `post_images`. The collapsed baseline already includes the final `image_assets.entity_id` text shape, so there are no placeholder cleanup migrations in the launch chain.
 
 ## Type Generation
 

@@ -1,7 +1,7 @@
 const fallbackSiteUrl = "https://openaa.com";
 const fallbackPrimarySeoUrl = fallbackSiteUrl;
 const primarySiteHostname = "openaa.com";
-const legacyMainSiteHostnames = new Set([
+const alternateMainSiteHostnames = new Set([
   "www.openaa.com",
   "app.openaa.com",
   "ny.openaa.com",
@@ -82,7 +82,7 @@ export function canonicalizeMainSiteHref(value: string) {
     const url = new URL(raw);
     const hostname = url.hostname.toLowerCase();
 
-    if (hostname === primarySiteHostname || legacyMainSiteHostnames.has(hostname)) {
+    if (hostname === primarySiteHostname || alternateMainSiteHostnames.has(hostname)) {
       return `${url.pathname}${url.search}${url.hash}` || "/";
     }
   } catch {

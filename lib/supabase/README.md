@@ -1,5 +1,7 @@
 # Supabase
 
-Supabase clients, server helpers, migrations, and generated types will live here.
+Supabase clients, server helpers, application DTOs, and generated database types live here.
 
-Phase 1 intentionally does not connect to any Supabase project.
+- `database.ts` is generated from the active Supabase schema.
+- `types.ts` contains hand-written application DTOs used by forms and admin screens.
+- Client helpers must never expose the service role key to browser code.

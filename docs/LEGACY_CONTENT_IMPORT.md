@@ -246,7 +246,7 @@ It must not clean `legacy_official_import` navigation, news, ads, ticker, top li
 ## Production Safety
 
 - Do not place legacy or demo content in migrations.
-- Do not place legacy or demo content in `supabase/seed.sql`.
+- Do not place legacy or demo content in database seed files.
 - Do not run production imports in Seed-B3.
 - Do not let demo user posts enter production sitemap unless explicitly approved.
 - Do not alter RLS as part of content import.

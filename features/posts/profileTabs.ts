@@ -48,11 +48,11 @@ export function normalizeProfilePostStatusFilter(value?: string | null): Profile
 }
 
 export function normalizeProfilePostFilters(postType: PostType, params?: ProfileFilterSearchParams | null): ProfilePostFiltersState {
-  const legacyTab = firstParam(params?.tab);
+  const tabParam = firstParam(params?.tab);
 
   return {
-    selectedType: normalizeProfilePostTypeFilter(postType, firstParam(params?.type) ?? legacyTab),
-    selectedStatus: normalizeProfilePostStatusFilter(firstParam(params?.status) ?? legacyTab),
+    selectedType: normalizeProfilePostTypeFilter(postType, firstParam(params?.type) ?? tabParam),
+    selectedStatus: normalizeProfilePostStatusFilter(firstParam(params?.status) ?? tabParam),
   };
 }
 

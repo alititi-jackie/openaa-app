@@ -8,11 +8,11 @@ Feature flags are part of the platform foundation. They control module availabil
 
 ## Default Disabled
 
-`auth_apple`, `auth_wechat`, `auth_phone`, `web_push`, `native_push`, `comments`, `ratings`, `business_verification`, `business_public_pages`, `appointments`, `coupons`, `memberships`, `points`, `payments`, `orders`, `chats`, `rideshare`, `multi_city_public`, `app_deep_links`, `ad_packages`.
+Apple/WeChat/phone auth, push delivery, community interaction modules, business verification, business public pages, booking and promotion modules, memberships, points, payments, orders, chats, rideshare, multi-city public publishing, app deep links, and ad packages.
 
 Disabled features should hide frontend entries, reject server actions with `feature_disabled`, stay out of sitemap, and use `noindex` when a placeholder page exists.
 
-## Phase 2 Schema
+## Schema
 
 The `feature_flags` table supports:
 
