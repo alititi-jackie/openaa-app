@@ -1,14 +1,17 @@
 import { Users } from "lucide-react";
+import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
+import { AdminAlert } from "@/components/admin/AdminAlert";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
-import { AdminTopActions } from "@/components/admin/AdminTopActions";
-import { AdminCard } from "@/components/admin/AdminCard";
+import { AdminFilterBar } from "@/components/admin/AdminFilterBar";
+import { AdminListCard } from "@/components/admin/AdminListCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminTopActions } from "@/components/admin/AdminTopActions";
 import { AdminUsersFilter, AdminUsersList, AdminUsersPagination, AdminUsersPermissionBadges, AdminUsersStats } from "@/components/users/AdminUsersManagement";
 import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { getAdminUsersData } from "@/features/users/adminQueries";
-import type { ProfileStatus } from "@/lib/supabase/types";
 import { hasAdminModule } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
+import type { ProfileStatus } from "@/lib/supabase/types";
 
 export const dynamic = "force-dynamic";
 
@@ -28,14 +31,17 @@ export default function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
     <AdminAuthGate>
       {async () => {
         const params = await searchParams;
+
         if (!(await hasAdminModule("users"))) {
           return (
             <div className="space-y-4">
               <AdminTopActions />
-              <AdminPageHeader title="用户管理" description="当前管理员没有用户管理模块权限。" />
+              <AdminPageHeader title="用户管理" description="查看用户资料状态，并管理账号状态。" />
+              <AdminAccessDenied title="无权限" message="当前管理员没有用户管理模块权限。" permission="users" />
             </div>
           );
         }
+
         const data = await getAdminUsersData({
           status: normalizeStatus(params?.status),
           accountType: normalizeAccountType(params?.accountType),
@@ -45,9 +51,13 @@ export default function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
 
         if (!data.permissions.viewUsers) {
           return (
-            <AdminPageHeader title="用户管理" description={`当前管理员没有 ${getAdminPermissionLabel("view_users")} 权限。`}>
-              <AdminUsersPermissionBadges permissions={data.permissions} />
-            </AdminPageHeader>
+            <div className="space-y-4">
+              <AdminTopActions />
+              <AdminPageHeader title="用户管理" description="查看用户资料状态，并管理账号状态。">
+                <AdminUsersPermissionBadges permissions={data.permissions} />
+              </AdminPageHeader>
+              <AdminAccessDenied title="无权限" message={`当前管理员没有 ${getAdminPermissionLabel("view_users")} 权限。`} permission="view_users" />
+            </div>
           );
         }
 
@@ -58,27 +68,28 @@ export default function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
               <AdminUsersPermissionBadges permissions={data.permissions} />
             </AdminPageHeader>
 
-            {data.state === "error" ? (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
-                用户后台读取暂时不可用：{data.error ?? "请稍后再试。"}
-              </div>
-            ) : null}
+            {data.state === "error" ? <AdminAlert>用户后台读取暂时不可用：{data.error ?? "请稍后再试。"}</AdminAlert> : null}
 
             <AdminUsersStats totals={data.totals} />
 
-            <AdminCard title="筛选用户" description="按状态、账号类型、邮箱、昵称、联系方式或用户 ID 搜索。">
+            <AdminFilterBar title="筛选用户" description="按状态、账号类型、邮箱、昵称、联系方式或用户 ID 搜索。">
               <AdminUsersFilter status={params?.status} accountType={params?.accountType} q={params?.q} canSearchContacts={data.permissions.viewUserContacts} />
-            </AdminCard>
+            </AdminFilterBar>
 
-            <AdminCard title="用户列表" description="只更新账号状态，不删除用户，不修改 Auth 账号。">
-              <div className="mb-4 flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">
-                <Users size={15} aria-hidden="true" />
-                默认按最近更新排序，每页显示 {data.pageSize} 位用户。
-              </div>
+            <AdminListCard
+              title="用户列表"
+              description="只更新账号状态，不删除用户，不修改 Auth 账号。"
+              meta={
+                <>
+                  <Users size={15} aria-hidden="true" />
+                  <span>默认按最近更新排序，每页显示 {data.pageSize} 位用户。</span>
+                </>
+              }
+            >
               <AdminUsersList users={data.users} permissions={data.permissions} currentAdminId={data.currentAdminId} />
               <AdminUsersPagination page={data.page} pageCount={data.pageCount} totalCount={data.totalCount} status={params?.status} accountType={params?.accountType} q={params?.q} />
-            </AdminCard>
-</div>
+            </AdminListCard>
+          </div>
         );
       }}
     </AdminAuthGate>

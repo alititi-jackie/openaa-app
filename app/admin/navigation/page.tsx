@@ -1,9 +1,15 @@
-import Link from "next/link";
+import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
+import { AdminActionButton } from "@/components/admin/AdminActionButton";
+import { AdminActionGroup } from "@/components/admin/AdminActionGroup";
+import { AdminAlert } from "@/components/admin/AdminAlert";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
+import { AdminCard } from "@/components/admin/AdminCard";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { AdminTopActions } from "@/components/admin/AdminTopActions";
 import { TopQuickLinksManagement } from "@/components/admin/TopQuickLinksManagement";
 import { NavigationAdminPermissions, NavigationLinkAdminList } from "@/components/navigation/NavigationAdminForm";
+import { HorizontalPillTabs } from "@/components/common/HorizontalPillTabs";
 import { getAdminTopLinksData } from "@/features/admin-home/queries";
 import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { getAdminNavigationData } from "@/features/navigation/queries";
@@ -28,34 +34,34 @@ export default function AdminNavigationPage({ searchParams }: AdminNavigationPag
     <AdminAuthGate>
       {async () => {
         const params = await searchParams;
+
         if (!(await hasAdminModule("navigation"))) {
           return (
             <div className="space-y-4">
               <AdminTopActions />
-              <header className="bg-white">
-                <h1 className="text-2xl font-black leading-tight text-slate-950">导航管理</h1>
-              </header>
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">当前管理员没有导航管理模块权限。</div>
+              <AdminPageHeader title="导航管理" description="管理公共导航和顶部快捷入口。" />
+              <AdminAccessDenied title="无权限" message="当前管理员没有导航管理模块权限。" permission="navigation" />
             </div>
           );
         }
+
         const activeTab = normalizeNavigationTab(params?.tab);
         const [data, topLinksData] = await Promise.all([getAdminNavigationData(), getAdminTopLinksData()]);
+
+        const header = (
+          <AdminPageHeader title="导航管理" description="管理公共导航和顶部快捷入口。">
+            <NavigationAdminPermissions permissions={data.permissions} />
+            <AdminPermissionBadge allowed={topLinksData.permissions.manageTopLinks} label="manage_top_links" />
+          </AdminPageHeader>
+        );
 
         if (activeTab === "public" && !data.permissions.manageNavigation) {
           return (
             <div className="space-y-4">
               <AdminTopActions />
-
-              <header className="bg-white">
-                <h1 className="text-2xl font-black leading-tight text-slate-950">导航管理</h1>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <NavigationAdminPermissions permissions={data.permissions} />
-                  <AdminPermissionBadge allowed={topLinksData.permissions.manageTopLinks} label="manage_top_links" />
-                </div>
-              </header>
+              {header}
               <NavigationAdminTabs active={activeTab} />
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">当前管理员没有 {getAdminPermissionLabel("manage_navigation")} 权限。</div>
+              <AdminAccessDenied title="无权限" message={`当前管理员没有 ${getAdminPermissionLabel("manage_navigation")} 权限。`} permission="manage_navigation" />
             </div>
           );
         }
@@ -64,16 +70,9 @@ export default function AdminNavigationPage({ searchParams }: AdminNavigationPag
           return (
             <div className="space-y-4">
               <AdminTopActions />
-
-              <header className="bg-white">
-                <h1 className="text-2xl font-black leading-tight text-slate-950">导航管理</h1>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <NavigationAdminPermissions permissions={data.permissions} />
-                  <AdminPermissionBadge allowed={topLinksData.permissions.manageTopLinks} label="manage_top_links" />
-                </div>
-              </header>
+              {header}
               <NavigationAdminTabs active={activeTab} />
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">当前管理员没有 {getAdminPermissionLabel("manage_top_links")} 权限。</div>
+              <AdminAccessDenied title="无权限" message={`当前管理员没有 ${getAdminPermissionLabel("manage_top_links")} 权限。`} permission="manage_top_links" />
             </div>
           );
         }
@@ -81,33 +80,18 @@ export default function AdminNavigationPage({ searchParams }: AdminNavigationPag
         return (
           <div className="space-y-4">
             <AdminTopActions />
-
-            <header className="bg-white">
-              <h1 className="text-2xl font-black leading-tight text-slate-950">导航管理</h1>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <NavigationAdminPermissions permissions={data.permissions} />
-                <AdminPermissionBadge allowed={topLinksData.permissions.manageTopLinks} label="manage_top_links" />
-              </div>
-            </header>
-
+            {header}
             <NavigationAdminTabs active={activeTab} />
 
-            {activeTab === "public" && data.state === "error" ? (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
-                导航后台读取暂时不可用：{data.error ?? "请稍后再试。"}
-              </div>
-            ) : null}
+            {activeTab === "public" && data.state === "error" ? <AdminAlert>导航后台读取暂时不可用：{data.error ?? "请稍后再试。"}</AdminAlert> : null}
 
             {activeTab === "public" ? (
               <>
-                <section className="bg-white">
-                  <h2 className="text-lg font-black text-slate-950">网站列表</h2>
-                  <p className="mt-1 text-sm leading-6 text-slate-600">在对应分类里新增、编辑、显示、隐藏或删除网站。</p>
-                  <Link href="/admin/recycle-bin?tab=navigation" className="mt-3 inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
-                    回收站
-                  </Link>
-                </section>
-
+                <AdminCard title="网站列表" description="在对应分类里新增、编辑、显示、隐藏或删除网站。">
+                  <AdminActionGroup>
+                    <AdminActionButton href="/admin/recycle-bin?tab=navigation">回收站</AdminActionButton>
+                  </AdminActionGroup>
+                </AdminCard>
                 <NavigationLinkAdminList links={data.links} categories={data.categories} />
               </>
             ) : (
@@ -121,27 +105,15 @@ export default function AdminNavigationPage({ searchParams }: AdminNavigationPag
 }
 
 function NavigationAdminTabs({ active }: { active: "public" | "top-links" }) {
-  const tabs = [
-    { value: "public", label: "公共导航", href: "/admin/navigation?tab=public" },
-    { value: "top-links", label: "顶部快捷导航", href: "/admin/navigation?tab=top-links" },
-  ] as const;
-
   return (
-    <nav aria-label="导航管理分类" className="max-w-full overflow-x-auto overflow-y-hidden whitespace-nowrap py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <div className="inline-flex gap-2">
-        {tabs.map((tab) => (
-          <Link
-            key={tab.value}
-            href={tab.href}
-            className={`inline-flex min-h-10 items-center justify-center rounded-xl px-4 py-2 text-sm font-black ring-1 ${
-              active === tab.value ? "bg-slate-950 text-white ring-slate-950" : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50"
-            }`}
-          >
-            {tab.label}
-          </Link>
-        ))}
-      </div>
-    </nav>
+    <HorizontalPillTabs
+      activeValue={active}
+      ariaLabel="导航管理分类"
+      tabs={[
+        { value: "public", label: "公共导航", href: "/admin/navigation?tab=public" },
+        { value: "top-links", label: "顶部快捷导航", href: "/admin/navigation?tab=top-links" },
+      ]}
+    />
   );
 }
 

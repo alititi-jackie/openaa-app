@@ -1,3 +1,5 @@
+import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
+import { AdminAlert } from "@/components/admin/AdminAlert";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -35,6 +37,17 @@ export default function AdminMessagesPage({ searchParams }: AdminMessagesPagePro
         const params = await searchParams;
         const canReadMessages = await hasAdminModule("messages");
         const activeTab = normalizeMessageTab(params?.tab);
+
+        if (!canReadMessages) {
+          return (
+            <div className="space-y-4">
+              <AdminTopActions />
+              <AdminPageHeader title="消息中心" description="集中处理举报、线索与建议，并主动联系用户。" />
+              <AdminAccessDenied title="无权限" message="当前管理员没有消息中心模块权限。" permission="messages" />
+            </div>
+          );
+        }
+
         const data = await getAdminMessagesData({
           reportStatus: normalizeReportStatus(params?.reportStatus),
           feedbackStatus: normalizeFeedbackStatus(params?.feedbackStatus),
@@ -42,38 +55,16 @@ export default function AdminMessagesPage({ searchParams }: AdminMessagesPagePro
           q: params?.q ?? "",
         });
 
-        if (!canReadMessages) {
-          return (
-            <div className="space-y-4">
-              <AdminTopActions />
-              <AdminPageHeader title="消息中心" description="当前管理员没有消息中心模块权限。">
-                <AdminPermissionBadge allowed={false} label="messages" />
-              </AdminPageHeader>
-            </div>
-          );
-        }
-
         return (
           <div className="space-y-4">
             <AdminTopActions />
-
             <AdminPageHeader title="消息中心" description="集中处理举报、线索与建议，并主动联系用户。">
               <AdminPermissionBadge allowed={canReadMessages} label="messages" />
             </AdminPageHeader>
 
-            <AdminMessageTabs
-              active={activeTab}
-              counts={{
-                reports: data.reports.totals.open,
-                feedback: data.feedback.totals.new,
-              }}
-            />
+            <AdminMessageTabs active={activeTab} counts={{ reports: data.reports.totals.open, feedback: data.feedback.totals.new }} />
 
-            {data.state === "missing_config" || data.state === "error" ? (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold leading-6 text-amber-800">
-                消息中心暂时不可用：{data.error ?? "请稍后再试。"}
-              </div>
-            ) : null}
+            {data.state === "missing_config" || data.state === "error" ? <AdminAlert>消息中心暂时不可用：{data.error ?? "请稍后再试。"}</AdminAlert> : null}
 
             <AdminCard title={tabTitle(activeTab)} description={tabDescription(activeTab)}>
               {activeTab === "reports" ? <ReportsPanel data={data.reports} /> : null}

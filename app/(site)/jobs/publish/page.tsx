@@ -1,9 +1,5 @@
-import { PostForm } from "@/components/forms/PostForm";
-import { emptyPostFormValues, profileNeedsPublishDefaultsTip, publishContactDefaultsFromProfile } from "@/features/posts/formMappers";
-import { redirectToAuthRequired } from "@/lib/auth/redirects";
+import { PostPublishPage } from "@/components/posts/PostPublishPage";
 import { buildPageMetadata } from "@/lib/seo/metadata";
-import { ensureProfileForUser } from "@/lib/supabase/profile";
-import { getCurrentUser } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -15,16 +11,5 @@ export const metadata = buildPageMetadata({
 });
 
 export default async function JobsPublishPage() {
-  const user = await getCurrentUser();
-  if (!user) redirectToAuthRequired("/jobs/publish");
-  const profile = await ensureProfileForUser(user);
-
-  return (
-    <PostForm
-      mode="create"
-      postType="job"
-      initialValues={emptyPostFormValues("job", publishContactDefaultsFromProfile(profile))}
-      showProfileCompletionHint={profileNeedsPublishDefaultsTip(profile)}
-    />
-  );
+  return <PostPublishPage postType="job" returnTo="/jobs/publish" />;
 }

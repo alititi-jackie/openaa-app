@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useActionState, useState, type ReactNode } from "react";
+import { AdminDeletionSettingsCard } from "@/components/admin/AdminDeletionSettingsCard";
+import { RecycleBinHealthCard } from "@/components/admin/RecycleBinHealthCard";
 import {
   permanentlyDeletePost,
   restoreDeletedPost,
@@ -31,7 +33,7 @@ export function RecycleBinSettingsSection({ settings }: { settings: RecycleBinRe
   const [state, action, pending] = useActionState(updateRecycleBinRetentionSettings, initialActionState);
 
   return (
-    <CollapsibleSection title="删除设置">
+    <AdminDeletionSettingsCard>
       <form action={action} className="space-y-3">
         <div className="grid gap-3 sm:grid-cols-2">
           <RetentionInput label="用户删除保留" name="user_retention_days" defaultValue={settings.userRetentionDays} />
@@ -48,7 +50,7 @@ export function RecycleBinSettingsSection({ settings }: { settings: RecycleBinRe
           {state.message ? <p className={state.ok ? "text-sm font-semibold text-emerald-700" : "text-sm font-semibold text-red-600"}>{state.message}</p> : null}
         </div>
       </form>
-    </CollapsibleSection>
+    </AdminDeletionSettingsCard>
   );
 }
 
@@ -56,7 +58,7 @@ export function RecycleBinNewsSettingsSection({ settings }: { settings: RecycleB
   const [state, action, pending] = useActionState(updateRecycleBinNewsRetentionSettings, initialActionState);
 
   return (
-    <CollapsibleSection title="删除设置">
+    <AdminDeletionSettingsCard>
       <form action={action} className="space-y-3">
         <div className="grid gap-3 sm:grid-cols-2">
           <RetentionInput label="新闻删除保留" name="news_retention_days" defaultValue={settings.newsRetentionDays} />
@@ -72,7 +74,7 @@ export function RecycleBinNewsSettingsSection({ settings }: { settings: RecycleB
           {state.message ? <p className={state.ok ? "text-sm font-semibold text-emerald-700" : "text-sm font-semibold text-red-600"}>{state.message}</p> : null}
         </div>
       </form>
-    </CollapsibleSection>
+    </AdminDeletionSettingsCard>
   );
 }
 
@@ -80,10 +82,10 @@ export function RecycleBinHealthSection({ health, activeFilter, postType = "all"
   return (
     <CollapsibleSection title="健康检查">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <HealthLink label="已超期" value={health.overdueCount} href={postRecycleBinHref("expired", postType)} active={activeFilter === "expired"} />
-        <HealthLink label="带图片" value={health.deletedPostsWithImagesCount} href={postRecycleBinHref("with_images", postType)} active={activeFilter === "with_images"} />
-        <HealthLink label="图片异常" value={health.possibleMissingStorageCount} href={postRecycleBinHref("image_error", postType)} active={activeFilter === "image_error"} />
-        <HealthLink label="收藏孤儿" value={health.orphanFavoriteCount} href={postRecycleBinHref("orphan_favorites", postType)} active={activeFilter === "orphan_favorites"} />
+        <RecycleBinHealthCard label="已超期" value={health.overdueCount} href={postRecycleBinHref("expired", postType)} active={activeFilter === "expired"} />
+        <RecycleBinHealthCard label="带图片" value={health.deletedPostsWithImagesCount} href={postRecycleBinHref("with_images", postType)} active={activeFilter === "with_images"} />
+        <RecycleBinHealthCard label="图片异常" value={health.possibleMissingStorageCount} href={postRecycleBinHref("image_error", postType)} active={activeFilter === "image_error"} />
+        <RecycleBinHealthCard label="收藏孤儿" value={health.orphanFavoriteCount} href={postRecycleBinHref("orphan_favorites", postType)} active={activeFilter === "orphan_favorites"} />
       </div>
     </CollapsibleSection>
   );
@@ -93,9 +95,9 @@ export function RecycleBinNewsHealthSection({ health, activeFilter, category = "
   return (
     <CollapsibleSection title="健康检查">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-        <HealthLink label="已超期" value={health.overdueCount} href={newsRecycleBinHref("expired", category)} active={activeFilter === "expired"} />
-        <HealthLink label="带图片" value={health.newsWithImagesCount} href={newsRecycleBinHref("with_images", category)} active={activeFilter === "with_images"} />
-        <HealthLink label="图片异常" value={health.imageErrorCount} href={newsRecycleBinHref("image_error", category)} active={activeFilter === "image_error"} />
+        <RecycleBinHealthCard label="已超期" value={health.overdueCount} href={newsRecycleBinHref("expired", category)} active={activeFilter === "expired"} />
+        <RecycleBinHealthCard label="带图片" value={health.newsWithImagesCount} href={newsRecycleBinHref("with_images", category)} active={activeFilter === "with_images"} />
+        <RecycleBinHealthCard label="图片异常" value={health.imageErrorCount} href={newsRecycleBinHref("image_error", category)} active={activeFilter === "image_error"} />
       </div>
     </CollapsibleSection>
   );
@@ -174,20 +176,6 @@ function newsRecycleBinHref(filter: RecycleBinNewsFilter, category: string) {
   if (category && category !== "all") params.set("category", category);
   if (filter !== "all") params.set("filter", filter);
   return `/admin/recycle-bin?${params.toString()}`;
-}
-
-function HealthLink({ label, value, href, active }: { label: string; value: number; href: string; active: boolean }) {
-  return (
-    <Link
-      href={href}
-      className={`block rounded-xl p-3 ring-1 transition ${
-        active ? "bg-blue-50 text-blue-900 ring-blue-200" : "bg-slate-50 text-slate-950 ring-slate-100 hover:bg-slate-100"
-      }`}
-    >
-      <span className="block text-xs font-bold text-slate-500">{label}</span>
-      <span className="mt-1 block text-2xl font-black">{value}</span>
-    </Link>
-  );
 }
 
 function RecycleBinRow({ item }: { item: RecycleBinItem }) {

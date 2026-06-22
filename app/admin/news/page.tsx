@@ -1,5 +1,9 @@
-import Link from "next/link";
+import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
+import { AdminActionButton } from "@/components/admin/AdminActionButton";
+import { AdminActionGroup } from "@/components/admin/AdminActionGroup";
+import { AdminAlert } from "@/components/admin/AdminAlert";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminTopActions } from "@/components/admin/AdminTopActions";
 import { NewsAdminManager, NewsAdminPermissions } from "@/components/news/NewsAdminForm";
 import { getAdminNewsData } from "@/features/news/queries";
@@ -23,54 +27,42 @@ export default function AdminNewsPage() {
           return (
             <div className="space-y-4">
               <AdminTopActions />
-              <header className="bg-white">
-                <h1 className="text-2xl font-black leading-tight text-slate-950">新闻管理</h1>
-              </header>
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">当前管理员没有新闻管理模块权限。</div>
+              <AdminPageHeader title="新闻管理" description="管理新闻内容、分类、发布状态和回收站。" />
+              <AdminAccessDenied title="无权限" message="当前管理员没有新闻管理模块权限。" permission="news" />
             </div>
           );
         }
+
         const data = await getAdminNewsData();
         const canRead = data.permissions.viewNews || data.permissions.createNews || data.permissions.editNews || data.permissions.publishNews || data.permissions.deleteNews;
 
         if (!canRead && !data.permissions.manageNewsCategories) {
           return (
             <div className="space-y-4">
-              <header className="bg-white">
-                <h1 className="text-2xl font-black leading-tight text-slate-950">新闻管理</h1>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <NewsAdminPermissions permissions={data.permissions} />
-                </div>
-              </header>
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">当前管理员没有新闻管理相关权限。</div>
+              <AdminTopActions />
+              <AdminPageHeader title="新闻管理" description="管理新闻内容、分类、发布状态和回收站。">
+                <NewsAdminPermissions permissions={data.permissions} />
+              </AdminPageHeader>
+              <AdminAccessDenied title="无权限" message="当前管理员没有新闻管理相关权限。" permission="news" />
             </div>
           );
         }
 
         return (
           <div className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-            <AdminTopActions />
-              <Link href="/admin/recycle-bin?tab=news" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50">
-                回收站
-              </Link>
-            </div>
+            <AdminActionGroup>
+              <AdminTopActions />
+              <AdminActionButton href="/admin/recycle-bin?tab=news">回收站</AdminActionButton>
+            </AdminActionGroup>
 
-            <header className="bg-white">
-              <h1 className="text-2xl font-black leading-tight text-slate-950">新闻管理</h1>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <NewsAdminPermissions permissions={data.permissions} />
-              </div>
-            </header>
+            <AdminPageHeader title="新闻管理" description="管理新闻内容、分类、发布状态和回收站。">
+              <NewsAdminPermissions permissions={data.permissions} />
+            </AdminPageHeader>
 
-            {data.state === "error" ? (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
-                新闻后台读取暂时不可用：{data.error ?? "请稍后再试。"}
-              </div>
-            ) : null}
+            {data.state === "error" ? <AdminAlert>新闻后台读取暂时不可用：{data.error ?? "请稍后再试。"}</AdminAlert> : null}
 
             <NewsAdminManager posts={data.posts} categories={data.categories} permissions={data.permissions} />
-</div>
+          </div>
         );
       }}
     </AdminAuthGate>

@@ -1,7 +1,9 @@
+import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
+import { AdminAlert } from "@/components/admin/AdminAlert";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
-import { AdminTopActions } from "@/components/admin/AdminTopActions";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
+import { AdminTopActions } from "@/components/admin/AdminTopActions";
 import { AdminAdsManagement } from "@/components/ads/AdminAdsManagement";
 import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { getAdminAdsData } from "@/features/ads/adminQueries";
@@ -30,17 +32,22 @@ export default function AdminAdsPage({ searchParams }: AdminAdsPageProps) {
           return (
             <div className="space-y-4">
               <AdminTopActions />
-              <AdminPageHeader title="广告管理" description="当前管理员没有广告管理模块权限。" />
+              <AdminPageHeader title="广告管理" description="管理首页和频道页广告。" />
+              <AdminAccessDenied title="无权限" message="当前管理员没有广告管理模块权限。" permission="ads" />
             </div>
           );
         }
-        const data = await getAdminAdsData(params?.position ?? params?.placement, params?.status);
 
+        const data = await getAdminAdsData(params?.position ?? params?.placement, params?.status);
         if (!data.canManageAds) {
           return (
-            <AdminPageHeader title="广告管理" description={`当前管理员没有 ${getAdminPermissionLabel("manage_ads")} 权限。`}>
-              <AdminPermissionBadge allowed={data.canManageAds} label="manage_ads" />
-            </AdminPageHeader>
+            <div className="space-y-4">
+              <AdminTopActions />
+              <AdminPageHeader title="广告管理" description="管理首页和频道页广告。">
+                <AdminPermissionBadge allowed={data.canManageAds} label="manage_ads" />
+              </AdminPageHeader>
+              <AdminAccessDenied title="无权限" message={`当前管理员没有 ${getAdminPermissionLabel("manage_ads")} 权限。`} permission="manage_ads" />
+            </div>
           );
         }
 
@@ -50,15 +57,9 @@ export default function AdminAdsPage({ searchParams }: AdminAdsPageProps) {
             <AdminPageHeader title="广告管理" description="管理首页和频道页广告，支持内部详情页和外部链接。">
               <AdminPermissionBadge allowed={data.canManageAds} label="manage_ads" />
             </AdminPageHeader>
-
-            {data.state === "error" ? (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
-                广告后台读取暂时不可用：{data.error ?? "请稍后再试。"}
-              </div>
-            ) : null}
-
+            {data.state === "error" ? <AdminAlert>广告后台读取暂时不可用：{data.error ?? "请稍后再试。"}</AdminAlert> : null}
             <AdminAdsManagement ads={data.ads} activePosition={data.activePosition} activeStatus={data.activeStatus} />
-</div>
+          </div>
         );
       }}
     </AdminAuthGate>

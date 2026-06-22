@@ -215,10 +215,12 @@ create table public.admin_user_exemptions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,
   exemption_key text not null,
+  is_enabled boolean not null default true,
   reason text,
   granted_by uuid references public.profiles(id) on delete set null,
   expires_at timestamptz,
   created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
   unique (user_id, exemption_key)
 );
 

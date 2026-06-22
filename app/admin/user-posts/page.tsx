@@ -1,12 +1,15 @@
 import { FileText } from "lucide-react";
+import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
+import { AdminAlert } from "@/components/admin/AdminAlert";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
-import { AdminTopActions } from "@/components/admin/AdminTopActions";
-import { AdminCard } from "@/components/admin/AdminCard";
+import { AdminFilterBar } from "@/components/admin/AdminFilterBar";
+import { AdminListCard } from "@/components/admin/AdminListCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminTopActions } from "@/components/admin/AdminTopActions";
 import { AdminPostsFilter, AdminPostsList, AdminPostsPagination, AdminPostsPermissionBadges } from "@/components/posts/AdminPostsManagement";
+import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { getAdminPostNotificationTemplates, getAdminPostsData } from "@/features/posts/adminQueries";
 import type { PostStatus, PostType } from "@/features/posts/types";
-import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { hasAdminModule } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -28,14 +31,17 @@ export default function AdminUserPostsPage({ searchParams }: AdminUserPostsPageP
     <AdminAuthGate>
       {async () => {
         const params = await searchParams;
+
         if (!(await hasAdminModule("user-posts"))) {
           return (
             <div className="space-y-4">
               <AdminTopActions />
-              <AdminPageHeader title="用户发布信息管理" description="当前管理员没有用户发布信息管理模块权限。" />
+              <AdminPageHeader title="用户发布信息管理" description="统一管理用户发布的招聘、房屋、二手和本地服务信息。" />
+              <AdminAccessDenied title="无权限" message="当前管理员没有用户发布信息管理模块权限。" permission="user-posts" />
             </div>
           );
         }
+
         const data = await getAdminPostsData({
           type: normalizeType(params?.type),
           status: normalizeStatus(params?.status),
@@ -50,9 +56,10 @@ export default function AdminUserPostsPage({ searchParams }: AdminUserPostsPageP
           return (
             <div className="space-y-4">
               <AdminTopActions />
-              <AdminPageHeader title="用户发布信息管理" description={`当前管理员没有 ${getAdminPermissionLabel("view_posts")} 或 ${getAdminPermissionLabel("moderate_posts")} 权限。`}>
+              <AdminPageHeader title="用户发布信息管理" description="统一管理用户发布信息。">
                 <AdminPostsPermissionBadges permissions={data.permissions} />
               </AdminPageHeader>
+              <AdminAccessDenied title="无权限" message={`当前管理员没有 ${getAdminPermissionLabel("view_posts")} 或 ${getAdminPermissionLabel("moderate_posts")} 权限。`} permission="view_posts" />
             </div>
           );
         }
@@ -64,25 +71,26 @@ export default function AdminUserPostsPage({ searchParams }: AdminUserPostsPageP
               <AdminPostsPermissionBadges permissions={data.permissions} />
             </AdminPageHeader>
 
-            {data.state === "error" ? (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
-                用户发布信息读取暂时不可用：{data.error ?? "请稍后再试。"}
-              </div>
-            ) : null}
+            {data.state === "error" ? <AdminAlert>用户发布信息读取暂时不可用：{data.error ?? "请稍后再试。"}</AdminAlert> : null}
 
-            <AdminCard title="筛选用户发布信息" description="按类型、状态、标题、内容或作者快速筛选用户发布信息。">
+            <AdminFilterBar title="筛选用户发布信息" description="按类型、状态、标题、内容或作者快速筛选。">
               {params?.author ? <p className="mb-3 rounded-xl bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700">正在按作者筛选：{params.author}</p> : null}
               <AdminPostsFilter type={params?.type} status={params?.status} q={params?.q} author={params?.author} />
-            </AdminCard>
+            </AdminFilterBar>
 
-            <AdminCard title="用户发布信息列表" description="支持审核、下架、恢复显示、审核拒绝和删除到回收站；永久删除只在回收站中处理。">
-              <div className="mb-4 flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">
-                <FileText size={15} aria-hidden="true" />
-                默认按最近更新排序，每页显示 {data.pageSize} 条。
-              </div>
+            <AdminListCard
+              title="用户发布信息列表"
+              description="支持审核、下架、恢复显示、审核拒绝和删除到回收站；永久删除只在回收站中处理。"
+              meta={
+                <>
+                  <FileText size={15} aria-hidden="true" />
+                  <span>默认按最近更新排序，每页显示 {data.pageSize} 条。</span>
+                </>
+              }
+            >
               <AdminPostsList posts={data.posts} permissions={data.permissions} templates={templates} />
               <AdminPostsPagination page={data.page} pageCount={data.pageCount} totalCount={data.totalCount} type={params?.type} status={params?.status} q={params?.q} author={params?.author} />
-            </AdminCard>
+            </AdminListCard>
           </div>
         );
       }}
