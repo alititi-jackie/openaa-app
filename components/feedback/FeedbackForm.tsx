@@ -2,7 +2,7 @@
 
 import { FormEvent, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { supportTicketTypeOptions } from "@/features/support/types";
+import { isSupportTicketType, supportTicketTypeOptions } from "@/features/support/types";
 
 const SUPPORT_VISITOR_ID_KEY = "openaa_support_visitor_id";
 
@@ -33,6 +33,14 @@ export function FeedbackForm({ account }: { account: FeedbackAccountContext }) {
   const queryRelatedUrl = useMemo(() => searchParams.get("related_url") ?? "", [searchParams]);
   const queryTargetType = useMemo(() => searchParams.get("target_type") ?? "", [searchParams]);
   const queryTargetId = useMemo(() => searchParams.get("target_id") ?? "", [searchParams]);
+  const queryType = useMemo(() => {
+    const value = searchParams.get("type") ?? "";
+    return isSupportTicketType(value) ? value : "";
+  }, [searchParams]);
+  const querySource = useMemo(() => {
+    const value = searchParams.get("source") ?? "";
+    return value.trim().slice(0, 80) || "feedback_page";
+  }, [searchParams]);
   const visitorIdRef = useRef<HTMLInputElement | null>(null);
   const contactRequired = !account.isAuthenticated || !account.hasAccountContact;
   const [state, setState] = useState<FeedbackSubmitState>({ ok: true, message: "", result: "idle" });
@@ -58,7 +66,7 @@ export function FeedbackForm({ account }: { account: FeedbackAccountContext }) {
           contact_info: String(formData.get("contact_info") ?? "").trim() || null,
           content: String(formData.get("content") ?? "").trim(),
           visitor_id: visitorId,
-          source: "feedback_page",
+          source: String(formData.get("source") ?? "").trim() || "feedback_page",
           target_type: String(formData.get("target_type") ?? "").trim() || null,
           target_id: String(formData.get("target_id") ?? "").trim() || null,
         }),
@@ -126,6 +134,7 @@ export function FeedbackForm({ account }: { account: FeedbackAccountContext }) {
         {!state.ok && state.message ? <div className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-600">{state.message}</div> : null}
 
         <input ref={visitorIdRef} type="hidden" name="visitor_id" />
+        <input type="hidden" name="source" value={querySource} />
         <input type="hidden" name="target_type" value={queryTargetType} />
         <input type="hidden" name="target_id" value={queryTargetId} />
 
@@ -134,7 +143,7 @@ export function FeedbackForm({ account }: { account: FeedbackAccountContext }) {
           <select
             name="type"
             required
-            defaultValue=""
+            defaultValue={queryType}
             className="min-h-11 rounded-xl border border-gray-300 px-3 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#1976d2]"
           >
             <option value="" disabled>请选择类型</option>
