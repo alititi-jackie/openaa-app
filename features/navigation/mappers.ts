@@ -1,4 +1,5 @@
 import { DEFAULT_NAVIGATION_CATEGORIES } from "./constants";
+import { canonicalizeMainSiteHref } from "@/lib/seo/siteConfig";
 import type {
   NavigationCategory,
   NavigationCategoryRecord,
@@ -63,7 +64,7 @@ export function mapNavigationLink(record: NavigationLinkRecord): NavigationLink 
     categorySlug: category.slug,
     title: record.title,
     description: record.description,
-    url: record.url,
+    url: canonicalizeMainSiteHref(record.url),
     icon: record.icon,
     imageUrl: imageUrlFor(record),
     openMode: record.open_mode === "same" || record.open_mode === "auto" ? record.open_mode : "new",
@@ -81,7 +82,7 @@ export function mapUserNavigationLink(record: UserNavigationLinkRecord): UserNav
   return {
     id: record.id,
     title: record.title,
-    url: record.url,
+    url: canonicalizeMainSiteHref(record.url),
     icon: record.icon,
     sortOrder: record.sort_order,
     isActive: record.is_active !== false,

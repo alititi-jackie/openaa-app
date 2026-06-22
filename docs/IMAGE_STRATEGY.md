@@ -21,11 +21,8 @@ External images must use `https`. Phase 2 constrains external image hosts to `im
 
 Storage-backed assets will point to a bucket/path in the new Supabase project. Service role and Storage deletion operations must remain server-side.
 
-## Default Placeholder Images
+## Channel Fallback Covers
 
-Marketplace and local service posts can use one admin-configured default placeholder image per type when a public post has no user-uploaded image. The settings live in `site_settings` as:
+Marketplace and local service posts do not use admin-configured default placeholder images. If a public post has no user-uploaded image, list views render a lightweight channel fallback such as `OpenAA 二手` or `OpenAA 服务`.
 
-- `default_marketplace_placeholder_image`
-- `default_service_placeholder_image`
-
-Uploads use the `site-setting-images` bucket. External URLs follow the same trusted-host rule as other external images. Both uploaded and external placeholder images are stored in `image_assets` with `entity_type = site_setting` and `entity_id` set to the setting key. Placeholder images are display fallbacks only; they are not inserted into `post_images` and should not be treated as user-uploaded content.
+These fallback covers are UI-only. They do not live in `site_settings`, do not use a Storage bucket, do not create `image_assets`, and must not be treated as user-uploaded content. Detail pages only show a carousel when the post has real uploaded images.

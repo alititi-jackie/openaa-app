@@ -1,5 +1,13 @@
 const fallbackSiteUrl = "https://openaa.com";
 const fallbackPrimarySeoUrl = fallbackSiteUrl;
+const primarySiteHostname = "openaa.com";
+const legacyMainSiteHostnames = new Set([
+  "www.openaa.com",
+  "app.openaa.com",
+  "ny.openaa.com",
+  "openaa.app",
+  "www.openaa.app",
+]);
 
 function normalizeBaseUrl(value: string | undefined, fallback: string) {
   const raw = value?.trim() || fallback;
@@ -26,16 +34,21 @@ function hostnameFromUrl(value: string) {
   }
 }
 
+function normalizePrimarySiteUrl(value: string | undefined, fallback: string) {
+  const normalized = normalizeBaseUrl(value, fallback);
+  return hostnameFromUrl(normalized) === primarySiteHostname ? normalized : fallback;
+}
+
 export const siteConfig = {
   name: "OpenAA",
   title: "OpenAA 纽约华人生活信息平台",
   description:
     "OpenAA 是面向纽约华人的移动优先生活信息平台，提供招聘、房屋、二手市场、本地服务、新闻、DMV 练习和导航入口。",
-  appBaseUrl: normalizeBaseUrl(process.env.NEXT_PUBLIC_SITE_URL, fallbackSiteUrl),
-  primarySeoBaseUrl: normalizeBaseUrl(process.env.NEXT_PUBLIC_PRIMARY_SEO_URL, fallbackPrimarySeoUrl),
-  canonicalBaseUrl: normalizeBaseUrl(
+  appBaseUrl: normalizePrimarySiteUrl(process.env.NEXT_PUBLIC_SITE_URL, fallbackSiteUrl),
+  primarySeoBaseUrl: normalizePrimarySiteUrl(process.env.NEXT_PUBLIC_PRIMARY_SEO_URL, fallbackPrimarySeoUrl),
+  canonicalBaseUrl: normalizePrimarySiteUrl(
     process.env.NEXT_PUBLIC_CANONICAL_URL,
-    process.env.NEXT_PUBLIC_PRIMARY_SEO_URL || process.env.NEXT_PUBLIC_SITE_URL || fallbackSiteUrl,
+    fallbackSiteUrl,
   ),
   allowedDomains: ["openaa.com"],
   redirectDomains: [],
@@ -59,6 +72,24 @@ export function canonicalUrl(path = "/") {
 export function appUrl(path = "/") {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   return new URL(normalizedPath, siteConfig.appBaseUrl).toString();
+}
+
+export function canonicalizeMainSiteHref(value: string) {
+  const raw = value.trim();
+  if (!raw || raw.startsWith("/") || raw.startsWith("#")) return raw;
+
+  try {
+    const url = new URL(raw);
+    const hostname = url.hostname.toLowerCase();
+
+    if (hostname === primarySiteHostname || legacyMainSiteHostnames.has(hostname)) {
+      return `${url.pathname}${url.search}${url.hash}` || "/";
+    }
+  } catch {
+    return raw;
+  }
+
+  return raw;
 }
 
 export const noindexRoutePrefixes = [

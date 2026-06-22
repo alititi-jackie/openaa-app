@@ -6,6 +6,7 @@ import Link from "next/link";
 import { featureFlags } from "@/lib/config/featureFlags";
 import { authErrorMessage } from "@/lib/auth/errorMessages";
 import { safeReturnTo } from "@/lib/auth/redirects";
+import { appUrl } from "@/lib/seo/siteConfig";
 import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
 
 function loginFallbackMessage(isConfigured: boolean) {
@@ -78,7 +79,7 @@ function clearAuthParamsFromUrl() {
 }
 
 function authCallbackUrl(returnTo: string) {
-  const url = new URL("/auth/callback", window.location.origin);
+  const url = new URL("/auth/callback", appUrl("/"));
   url.searchParams.set("returnTo", returnTo);
   return url.toString();
 }

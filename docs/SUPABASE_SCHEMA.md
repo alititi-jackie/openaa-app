@@ -153,22 +153,13 @@ Fields:
 
 User self-service actions do not write `post_admin_events`. Administrator post actions may update the latest summary and append a `post_admin_events` row.
 
-## Default Post Placeholder Images
+## Listing Image Fallbacks
 
-`042_default_post_placeholder_images.sql` adds the `site-setting-images` public Storage bucket and two public `site_settings` keys:
+Marketplace and local service posts no longer use admin-configured default placeholder images. If a post has no user-uploaded image, the UI renders a channel fallback such as `OpenAA 二手` or `OpenAA 服务`.
 
-- `default_marketplace_placeholder_image`
-- `default_service_placeholder_image`
+Fallback covers are presentation-only. They are not stored in `site_settings`, do not create `image_assets`, and are not inserted into `post_images`. `042_default_post_placeholder_images.sql` now removes legacy test placeholder settings if they exist; `043_site_setting_images_storage_policies.sql` is kept as a no-op historical migration.
 
-Each setting stores JSON with:
-
-- `url`
-- `imageAssetId`
-- `sourceType`
-
-These settings are only used for public marketplace and service display when the post has no user-uploaded image. They do not create `post_images` rows and do not affect the user publish flow. Uploaded and external placeholder images are represented in `image_assets` with `entity_type = site_setting` and `entity_id` equal to the setting key, so the image cleanup tool treats them as business-referenced assets.
-
-`043_site_setting_images_storage_policies.sql` ensures the `site-setting-images` Storage policies exist. `044_image_assets_entity_id_text.sql` changes `image_assets.entity_id` from `uuid` to `text` so generic media references can point to UUID-backed rows or text-backed setting keys.
+`044_image_assets_entity_id_text.sql` changes `image_assets.entity_id` from `uuid` to `text` so generic media references can point to UUID-backed rows or text-backed entities when needed.
 
 ## Type Generation
 

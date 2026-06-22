@@ -2,12 +2,6 @@ import "server-only";
 
 import { hasAdminPermission } from "@/lib/permissions/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import {
-  DEFAULT_PLACEHOLDER_IMAGE_CONFIGS,
-  normalizePlaceholderImageValue,
-  type DefaultPlaceholderImageKey,
-  type DefaultPlaceholderImageValue,
-} from "./defaultPlaceholderImages";
 
 export const DAILY_POST_LIMIT_KEY = "daily_post_limit";
 export const DEFAULT_DAILY_POST_LIMIT = 5;
@@ -25,12 +19,6 @@ export type AdminSettingsData = {
   error?: string;
   canManageSettings: boolean;
   dailyPostLimit: number;
-  placeholderImages: Array<{
-    key: DefaultPlaceholderImageKey;
-    label: string;
-    description: string;
-    value: DefaultPlaceholderImageValue;
-  }>;
   settings: AdminSiteSetting[];
 };
 
@@ -51,7 +39,6 @@ export async function getAdminSettingsData(): Promise<AdminSettingsData> {
       state: "missing_config",
       canManageSettings,
       dailyPostLimit: DEFAULT_DAILY_POST_LIMIT,
-      placeholderImages: emptyPlaceholderImages(),
       settings: [],
       error: "Supabase 环境变量未配置，暂时无法读取站点设置。",
     };
@@ -62,7 +49,6 @@ export async function getAdminSettingsData(): Promise<AdminSettingsData> {
       state: "ready",
       canManageSettings,
       dailyPostLimit: DEFAULT_DAILY_POST_LIMIT,
-      placeholderImages: emptyPlaceholderImages(),
       settings: [],
     };
   }
@@ -77,7 +63,6 @@ export async function getAdminSettingsData(): Promise<AdminSettingsData> {
       state: "error",
       canManageSettings,
       dailyPostLimit: DEFAULT_DAILY_POST_LIMIT,
-      placeholderImages: emptyPlaceholderImages(),
       settings: [],
       error: "站点设置读取失败，请稍后再试。",
     };
@@ -90,12 +75,6 @@ export async function getAdminSettingsData(): Promise<AdminSettingsData> {
     state: "ready",
     canManageSettings,
     dailyPostLimit: normalizeDailyPostLimit(dailyLimit?.value),
-    placeholderImages: DEFAULT_PLACEHOLDER_IMAGE_CONFIGS.map((config) => ({
-      key: config.key,
-      label: config.label,
-      description: config.description,
-      value: normalizePlaceholderImageValue(rows.find((setting) => setting.key === config.key)?.value),
-    })),
     settings: rows,
   };
 }
@@ -121,13 +100,4 @@ function mapSiteSetting(row: RawSiteSetting): AdminSiteSetting {
     isPublic: Boolean(row.is_public),
     updatedAt: row.updated_at,
   };
-}
-
-function emptyPlaceholderImages() {
-  return DEFAULT_PLACEHOLDER_IMAGE_CONFIGS.map((config) => ({
-    key: config.key,
-    label: config.label,
-    description: config.description,
-    value: normalizePlaceholderImageValue(null),
-  }));
 }
