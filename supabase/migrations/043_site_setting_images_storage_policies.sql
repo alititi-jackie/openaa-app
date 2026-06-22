@@ -1,2 +1,0 @@
--- Deprecated: the `site-setting-images` bucket was only used by the removed
--- default post placeholder image feature. No storage policies are needed.

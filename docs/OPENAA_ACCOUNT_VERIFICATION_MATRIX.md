@@ -38,17 +38,17 @@ This matrix is for real Supabase/Auth/Vercel verification after the permission, 
 - `/dmv/ny/questions` redirects to `/dmv/questions`.
 - `/dmv/ny/mock-test` redirects to `/dmv/mock-test`.
 - `/dmv/ny/sign-test` redirects to `/dmv/sign-test`.
-- `/auth/login` redirects to `/login`.
-- `/auth/register` redirects to `/register`.
-- `/auth/reset-password` redirects to `/reset-password`.
+- `/login` is the canonical login route.
+- `/register` is the canonical registration route.
+- `/reset-password` is the canonical password reset route.
 - `/auth/callback` exchanges Supabase auth code and redirects to a safe return target.
 
 ## API Checks
 
-- `GET /api/jobs`
-- `GET /api/housing`
-- `GET /api/secondhand`
-- `GET /api/services`
+- `GET /api/posts?type=job`
+- `GET /api/posts?type=housing`
+- `GET /api/posts?type=marketplace`
+- `GET /api/posts?type=service`
 - `GET /api/search?q=...`
 - `GET /api/ads`
 - `GET /api/favorites`

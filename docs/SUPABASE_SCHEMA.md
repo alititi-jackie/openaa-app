@@ -1,47 +1,31 @@
 # Supabase Schema
 
-Phase 2 establishes the minimum viable platform schema for the new `openaa-app` Supabase project. It does not connect to the old Supabase project and does not import legacy data.
+This document describes the clean production baseline for the new `openaa-app` Supabase project. The old test-period migration chain was collapsed because current data is disposable and no legacy links or rows need compatibility.
 
 ## Migration Order
 
-1. `001_init_enums_and_cities.sql`
-2. `002_auth_profiles.sql`
-3. `003_admin_permissions.sql`
-4. `004_feature_flags.sql`
-5. `005_posts_core.sql`
-6. `006_media_storage.sql`
-7. `007_news_navigation_home.sql`
-8. `008_notifications_feedback.sql`
-9. `009_dmv.sql`
-10. `010_legal_consents.sql`
-11. `011_seed_initial_settings.sql`
-12. `012_seed_feature_flags.sql`
-13. `013_seed_admin_permissions.sql`
-14. `038_notifications_first_version.sql`
-15. `039_notifications_rls_hardening.sql`
-16. `040_notification_templates_post_management.sql`
-17. `041_post_admin_events.sql`
-18. `042_default_post_placeholder_images.sql`
-19. `043_site_setting_images_storage_policies.sql`
-20. `044_image_assets_entity_id_text.sql`
+1. `001_baseline_schema.sql`
+2. `002_baseline_rls.sql`
+3. `003_seed_required_settings.sql`
+
+Reset local or production test databases before applying this baseline. After reset, generate real Supabase types into `lib/supabase/database.ts`.
 
 ## Core Tables
 
 - Cities and system: `cities`, `site_settings`, `rate_limits`, `search_logs`.
 - Users: `profiles`, `business_profiles`, `user_auth_identities`, `user_settings`, `user_security_logs`, `user_blocks`, `user_consents`, `account_deletion_requests`.
-- Admin: `admin_roles`, `admin_permissions`, `admin_role_permissions`, `admin_user_permissions`, `admin_audit_logs`.
+- Admin: `admin_roles`, `admin_permissions`, `admin_role_permissions`, `admin_user_permissions`, `admin_user_modules`, `admin_user_exemptions`, `admin_module_permissions`, `admin_audit_logs`.
 - Feature flags: `feature_flags`.
-- Posts: `posts`, `post_details_jobs`, `post_details_housing`, `post_details_marketplace`, `post_details_services`, `post_contacts`, `post_stats`, `post_views`, `post_reports`, `post_moderation_logs`, `post_admin_events`, `post_drafts`, `post_images`.
+- Posts: `posts`, `post_details_jobs`, `post_details_housing`, `post_details_marketplace`, `post_details_services`, `post_contacts`, `post_stats`, `post_views`, `post_reports`, `post_admin_events`, `post_images`.
 - Favorites: `user_favorites`.
 - Media: `image_assets`.
 - Content and operations: `news_categories`, `news_posts`, `navigation_categories`, `navigation_links`, `user_navigation_links`, `user_navigation_settings`, `home_banners`, `home_sections`, `top_quick_links`, `latest_ticker`, `ads`.
-- Notifications and support: `notifications`, `notification_templates`, `system_announcements`, `support_tickets`, `support_ticket_settings`, `support_ticket_events`, `push_subscriptions`.
+- Notifications and support: `notifications`, `notification_templates`, `support_tickets`, `support_ticket_settings`, `support_ticket_events`.
 - DMV: `dmv_questions`, `dmv_user_progress`, `dmv_wrong_questions`, `dmv_exam_results`, `dmv_question_imports`.
-- Reserved simple tables: `comments`, `ratings`, `business_verifications`, `appointments`, `coupons`.
 
-## Not Created In Phase 2
+## Not Created In First Baseline
 
-Payments, orders, chats, memberships, points, coupon redemption, and rideshare business tables are intentionally not created. They remain architecture directions only because they require more security, operations, and compliance design.
+Payments, orders, chats, memberships, points, coupon redemption, rideshare, comments, ratings, appointments, coupons, and business verification tables are intentionally not created. They remain architecture directions only because they require more security, operations, and compliance design.
 
 ## Notifications
 
@@ -163,4 +147,4 @@ Fallback covers are presentation-only. They are not stored in `site_settings`, d
 
 ## Type Generation
 
-`types/database.ts` is a placeholder only. After the new Supabase project is available locally, generate real types with Supabase CLI and replace the placeholder.
+`lib/supabase/database.ts` is the reserved generated-type output file. After the production Supabase project is reset with the baseline migrations, generate real types with Supabase CLI and replace that file.

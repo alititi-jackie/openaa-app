@@ -43,7 +43,7 @@ type LegacyNewsPost = JsonRecord & { legacy_id: string; title: string; slug: str
 type LegacyAd = JsonRecord & { legacy_id: string; placement: string; title: string; href: string; image_url: string; open_mode: string; sort_order: number; is_active: boolean; starts_at?: string | null; ends_at?: string | null; metadata?: JsonRecord };
 type LegacyHomeSection = JsonRecord & { legacy_id: string; key: string; title: string; description?: string; module: string; config: JsonRecord; is_visible: boolean; sort_order: number; metadata?: JsonRecord };
 
-const LEGACY_DIR = join(process.cwd(), "data", "legacy");
+const LEGACY_DIR = join(process.cwd(), "tools", "archive", "legacy");
 const OFFICIAL_METADATA = {
   source: "legacy_official_import",
   origin: "openaa-ny",

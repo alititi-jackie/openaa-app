@@ -1,12 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { NextRequest, NextResponse } from "next/server";
 import { DEFAULT_CITY_SLUG, POST_TYPE_TO_ROUTE } from "@/features/posts/constants";
 import type { PostType } from "@/features/posts/types";
 import { isReportReason } from "@/features/reports/types";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
+
+const REPORT_DAILY_VISITOR_LIMIT = 5;
+const REPORT_DAILY_USER_LIMIT = 20;
 
 type ProfileContact = {
   email: string | null;
@@ -18,12 +21,7 @@ type ProfileContact = {
 type PublicPost = {
   id: string;
   post_type: PostType;
-  title: string;
   author_id: string | null;
-  status: string;
-  visibility: string;
-  expires_at: string | null;
-  cities?: { slug: string }[] | { slug: string } | null;
 };
 
 export async function POST(request: NextRequest) {
@@ -40,7 +38,7 @@ export async function POST(request: NextRequest) {
   const visitorId = readText(payload, "visitor_id").slice(0, 120);
   const relatedUrl = readText(payload, "related_url").slice(0, 500);
 
-  if (!postId) return NextResponse.json({ error: "缺少被举报信息。" }, { status: 400 });
+  if (!isUuid(postId)) return NextResponse.json({ error: "缺少有效的举报对象。" }, { status: 400 });
   if (!isReportReason(reason)) return NextResponse.json({ error: "请选择有效的举报原因。" }, { status: 400 });
   if (detail.length < 10) return NextResponse.json({ error: "举报内容至少需要 10 个字。" }, { status: 400 });
   if (detail.length > 1000) return NextResponse.json({ error: "举报内容不能超过 1000 个字。" }, { status: 400 });
@@ -69,10 +67,13 @@ export async function POST(request: NextRequest) {
   if (!post) return NextResponse.json({ error: "这条信息当前不可举报。" }, { status: 404 });
   if (user && post.author_id === user.id) return NextResponse.json({ error: "不能举报自己发布的信息。" }, { status: 400 });
 
+  const rateLimit = await checkReportRateLimit(supabase, request, user?.id ?? visitorId, Boolean(user));
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ error: "今日提交次数已达上限，请明天再试。" }, { status: 429 });
+  }
+
   const profile = user ? await readProfileContact(supabase, user.id) : null;
-  const hasAccountContact = Boolean(
-    profile?.email?.trim() || profile?.phone?.trim() || profile?.wechat_id?.trim() || profile?.whatsapp?.trim(),
-  );
+  const hasAccountContact = Boolean(profile?.email?.trim() || profile?.phone?.trim() || profile?.wechat_id?.trim() || profile?.whatsapp?.trim());
   if ((!user || !hasAccountContact) && !contactInfo) {
     return NextResponse.json({ error: "请填写联系方式，方便平台核实举报内容。" }, { status: 400 });
   }
@@ -114,7 +115,7 @@ async function readPublicPost(supabase: ReturnType<typeof createSupabaseAdminCli
   const now = new Date().toISOString();
   const { data, error } = await supabase
     .from("posts")
-    .select("id,post_type,title,author_id,status,visibility,expires_at,cities!inner(slug)")
+    .select("id,post_type,author_id,cities!inner(slug)")
     .eq("id", postId)
     .eq("status", "published")
     .eq("visibility", "public")
@@ -127,12 +128,36 @@ async function readPublicPost(supabase: ReturnType<typeof createSupabaseAdminCli
 }
 
 async function readProfileContact(supabase: ReturnType<typeof createSupabaseAdminClient>, userId: string) {
-  const { data } = await supabase
-    .from("profiles")
-    .select("email,phone,wechat_id,whatsapp")
-    .eq("id", userId)
-    .maybeSingle();
+  const { data } = await supabase.from("profiles").select("email,phone,wechat_id,whatsapp").eq("id", userId).maybeSingle();
   return (data as ProfileContact | null) ?? null;
+}
+
+async function checkReportRateLimit(supabase: ReturnType<typeof createSupabaseAdminClient>, request: NextRequest, actorId: string, isUser: boolean) {
+  const now = new Date();
+  const windowStart = new Date(now);
+  windowStart.setHours(0, 0, 0, 0);
+  const action = isUser ? "report_post_user" : "report_post_visitor";
+  const actor = isUser ? actorId : `${actorId}:${readClientIp(request)}`;
+  const maxCount = isUser ? REPORT_DAILY_USER_LIMIT : REPORT_DAILY_VISITOR_LIMIT;
+
+  const { data } = await supabase
+    .from("rate_limits")
+    .select("id,count")
+    .eq("actor_id", actor)
+    .eq("action", action)
+    .eq("window_start", windowStart.toISOString())
+    .maybeSingle();
+
+  const currentCount = typeof data?.count === "number" ? data.count : 0;
+  if (currentCount >= maxCount) return { allowed: false };
+
+  if (data?.id) {
+    await supabase.from("rate_limits").update({ count: currentCount + 1, updated_at: now.toISOString() }).eq("id", data.id);
+  } else {
+    await supabase.from("rate_limits").insert({ actor_id: actor, action, window_start: windowStart.toISOString(), count: 1, metadata: { source: "reports_api" } });
+  }
+
+  return { allowed: true };
 }
 
 function readText(payload: Record<string, unknown>, key: string) {
@@ -147,4 +172,12 @@ function isValidUrl(value: string) {
   } catch {
     return false;
   }
+}
+
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+function readClientIp(request: NextRequest) {
+  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";
 }

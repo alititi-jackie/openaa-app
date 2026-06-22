@@ -1,14 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { NextRequest, NextResponse } from "next/server";
+import { DEFAULT_SUPPORT_TICKET_SETTINGS, isSupportTicketType, type SupportTicketSettings } from "@/features/support/types";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import {
-  DEFAULT_SUPPORT_TICKET_SETTINGS,
-  isSupportTicketType,
-  type SupportTicketSettings,
-} from "@/features/support/types";
 
 export const dynamic = "force-dynamic";
+
+const allowedSources = new Set(["feedback_page", "news_detail", "post_detail", "profile_notifications"]);
+const allowedTargetTypes = new Set(["", "post", "news", "navigation", "ad", "profile"]);
 
 type ProfileContact = {
   email: string | null;
@@ -29,12 +28,20 @@ export async function POST(request: NextRequest) {
   const contactInfo = readPayloadText(payload, "contact_info");
   const content = readPayloadText(payload, "content");
   const visitorId = readPayloadText(payload, "visitor_id").slice(0, 120);
-  const source = readPayloadText(payload, "source").slice(0, 80) || "feedback_page";
-  const targetType = readPayloadText(payload, "target_type").slice(0, 80);
+  const rawSource = readPayloadText(payload, "source").slice(0, 80) || "feedback_page";
+  const rawTargetType = readPayloadText(payload, "target_type").slice(0, 80);
   const targetId = readPayloadText(payload, "target_id").slice(0, 200);
+  const source = allowedSources.has(rawSource) ? rawSource : "feedback_page";
+  const targetType = allowedTargetTypes.has(rawTargetType) ? rawTargetType : "";
 
   if (!isSupportTicketType(type)) {
-    return NextResponse.json({ error: "请选择你反馈的类型。" }, { status: 400 });
+    return NextResponse.json({ error: "请选择反馈类型。" }, { status: 400 });
+  }
+  if (rawTargetType && !allowedTargetTypes.has(rawTargetType)) {
+    return NextResponse.json({ error: "请求参数无效。" }, { status: 400 });
+  }
+  if (targetId && !isSafeTargetId(targetId)) {
+    return NextResponse.json({ error: "请求参数无效。" }, { status: 400 });
   }
 
   const serverClient = await createSupabaseServerClient();
@@ -59,9 +66,7 @@ export async function POST(request: NextRequest) {
   if (!settings.enabled) return NextResponse.json({ error: "线索与建议功能暂时关闭，请稍后再试。" }, { status: 503 });
 
   const profile = user ? await readProfileContact(supabase, user.id) : null;
-  const hasAccountContact = Boolean(
-    profile?.email?.trim() || profile?.phone?.trim() || profile?.wechat_id?.trim() || profile?.whatsapp?.trim(),
-  );
+  const hasAccountContact = Boolean(profile?.email?.trim() || profile?.phone?.trim() || profile?.wechat_id?.trim() || profile?.whatsapp?.trim());
   const contactRequired = !user || !hasAccountContact;
 
   const validationError = validatePayload({
@@ -142,11 +147,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function readProfileContact(supabase: ReturnType<typeof createSupabaseAdminClient>, userId: string) {
-  const { data } = await supabase
-    .from("profiles")
-    .select("email,phone,wechat_id,whatsapp")
-    .eq("id", userId)
-    .maybeSingle();
+  const { data } = await supabase.from("profiles").select("email,phone,wechat_id,whatsapp").eq("id", userId).maybeSingle();
   return (data as ProfileContact | null) ?? null;
 }
 
@@ -206,6 +207,10 @@ function isValidUrl(value: string) {
   } catch {
     return false;
   }
+}
+
+function isSafeTargetId(value: string) {
+  return /^[a-zA-Z0-9:_./-]{1,200}$/.test(value);
 }
 
 function parseBoolean(value: string | undefined, fallback: boolean) {

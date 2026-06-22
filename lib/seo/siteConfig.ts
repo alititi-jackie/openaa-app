@@ -134,4 +134,5 @@ export const staticSitemapRoutes = [
   "/terms",
   "/community-guidelines",
   "/contact",
+  "/app",
 ];

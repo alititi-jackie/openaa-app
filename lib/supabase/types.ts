@@ -1,3 +1,12 @@
+/**
+ * Application DTOs used by forms and admin screens.
+ *
+ * These are not generated Supabase schema types. After the production Supabase
+ * project is created, generate database types into `lib/supabase/database.ts`
+ * with:
+ *
+ *   supabase gen types typescript --project-id <project-id> > lib/supabase/database.ts
+ */
 export type AccountType = "personal" | "business";
 export type ProfileStatus = "active" | "restricted" | "banned" | "pending";
 export type AdminRoleName = "super_admin" | "admin" | "editor" | "moderator" | "support";

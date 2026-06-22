@@ -30,7 +30,7 @@ User-post demo content is only for local or staging visual testing. It must be t
 - Do not use old Supabase connection strings.
 - Do not read the old database directly.
 - Do not download or re-upload `img.openaa.com` images.
-- Use reviewed JSON files in `data/legacy/`.
+- Use reviewed JSON files in `tools/archive/legacy/`.
 - Keep images as external URLs.
 
 Operating content metadata:
@@ -57,13 +57,13 @@ Future demo post metadata:
 
 Preferred real file names:
 
-- `data/legacy/navigation.json`
-- `data/legacy/news-categories.json`
-- `data/legacy/news-posts.json`
-- `data/legacy/ads.json`
-- `data/legacy/ticker.json`
-- `data/legacy/top-links.json`
-- `data/legacy/home-sections.json`
+- `tools/archive/legacy/navigation.json`
+- `tools/archive/legacy/news-categories.json`
+- `tools/archive/legacy/news-posts.json`
+- `tools/archive/legacy/ads.json`
+- `tools/archive/legacy/ticker.json`
+- `tools/archive/legacy/top-links.json`
+- `tools/archive/legacy/home-sections.json`
 
 Seed-A includes `.example.json` files only. The import script uses real files when present and falls back to examples for dry-run validation.
 
@@ -71,9 +71,9 @@ Seed-A includes `.example.json` files only. The import script uses real files wh
 
 Seed-B1 adds the first reviewed `legacy_official_import` JSON files:
 
-- `data/legacy/navigation.json`
-- `data/legacy/top-links.json`
-- `data/legacy/ticker.json`
+- `tools/archive/legacy/navigation.json`
+- `tools/archive/legacy/top-links.json`
+- `tools/archive/legacy/ticker.json`
 
 These files are official operating-content candidates for initial production content. They do not import anything by themselves, do not connect to the old Supabase project, do not add migrations, and do not change UI.
 
@@ -90,10 +90,10 @@ Seed-B1 source rules:
 
 Seed-B2 adds the second reviewed `legacy_official_import` JSON batch:
 
-- `data/legacy/news-categories.json`
-- `data/legacy/news-posts.json`
-- `data/legacy/ads.json`
-- `data/legacy/home-sections.json`
+- `tools/archive/legacy/news-categories.json`
+- `tools/archive/legacy/news-posts.json`
+- `tools/archive/legacy/ads.json`
+- `tools/archive/legacy/home-sections.json`
 
 These files are JSON-only operating-content candidates. They do not import a database, connect to old Supabase, add migrations, or change UI.
 
@@ -127,7 +127,7 @@ npm run import:legacy -- --module=all --env=staging --dry-run
 The package scripts use the current Node runtime's TypeScript strip mode:
 
 ```bash
-node --experimental-strip-types scripts/import-legacy-content.ts
+node --experimental-strip-types tools/archive/import-legacy-content.ts
 ```
 
 Use Node 22 or newer for these scripts. If a future deployment or CI environment must run older Node, add an explicit lightweight runner such as `tsx` in a separate PR instead of changing Seed-A behavior.

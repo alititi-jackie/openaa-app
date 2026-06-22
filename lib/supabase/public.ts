@@ -7,6 +7,10 @@ import { isSupabaseServerConfigured } from "./server";
 const PUBLIC_FETCH_TIMEOUT_MS = 1500;
 
 export function createSupabasePublicClient() {
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return null;
+  }
+
   if (!isSupabaseServerConfigured()) {
     return null;
   }
