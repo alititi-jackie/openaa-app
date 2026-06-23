@@ -258,7 +258,8 @@ create policy "Public can read published posts" on public.posts for select using
 create policy "Authors can read own posts" on public.posts for select using (auth.uid() = author_id);
 create policy "Authors can create own posts" on public.posts for insert with check (auth.uid() = author_id);
 create policy "Authors can update active own posts" on public.posts for update using (auth.uid() = author_id and status <> 'deleted') with check (auth.uid() = author_id);
-create policy "Admins can manage posts" on public.posts for all using (public.has_admin_permission('moderate_posts') or public.has_admin_permission('view_posts')) with check (public.has_admin_permission('moderate_posts'));
+create policy "Admins can read posts" on public.posts for select using (public.has_admin_permission('view_posts') or public.has_admin_permission('moderate_posts'));
+create policy "Admins can moderate posts" on public.posts for all using (public.has_admin_permission('moderate_posts')) with check (public.has_admin_permission('moderate_posts'));
 
 create policy "Public can read public post details" on public.post_details_jobs for select using (public.is_public_post(post_id));
 create policy "Public can read public housing details" on public.post_details_housing for select using (public.is_public_post(post_id));
@@ -318,7 +319,10 @@ create policy "Users can manage own user favorites" on public.user_favorites for
 create policy "Public can read active news categories" on public.news_categories for select using (is_active = true);
 create policy "News editors can manage categories" on public.news_categories for all using (public.has_admin_permission('manage_news_categories')) with check (public.has_admin_permission('manage_news_categories'));
 create policy "Public can read published news" on public.news_posts for select using (status = 'published' and (published_at is null or published_at <= now()));
-create policy "News editors can manage news" on public.news_posts for all using (public.has_admin_permission('view_news') or public.has_admin_permission('edit_news') or public.has_admin_permission('publish_news') or public.has_admin_permission('delete_news')) with check (public.has_admin_permission('edit_news') or public.has_admin_permission('publish_news') or public.has_admin_permission('delete_news'));
+create policy "News editors can read news" on public.news_posts for select using (public.has_admin_permission('view_news') or public.has_admin_permission('edit_news') or public.has_admin_permission('publish_news') or public.has_admin_permission('delete_news'));
+create policy "News editors can insert news" on public.news_posts for insert with check (public.has_admin_permission('edit_news') or public.has_admin_permission('publish_news'));
+create policy "News editors can update news" on public.news_posts for update using (public.has_admin_permission('edit_news') or public.has_admin_permission('publish_news') or public.has_admin_permission('delete_news')) with check (public.has_admin_permission('edit_news') or public.has_admin_permission('publish_news') or public.has_admin_permission('delete_news'));
+create policy "News editors can delete news" on public.news_posts for delete using (public.has_admin_permission('delete_news'));
 
 create policy "Public can read active navigation categories" on public.navigation_categories for select using (is_active = true);
 create policy "Public can read active navigation links" on public.navigation_links for select using (is_active = true and deleted_at is null);

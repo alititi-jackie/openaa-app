@@ -7,12 +7,12 @@ import { buildPageMetadata } from "@/lib/seo/metadata";
 export const metadata = buildPageMetadata({
   title: "纽约华人二手市场",
   description: "纽约二手市场、出售、求购、跳蚤市场信息入口。",
-  path: "/secondhand",
+  path: "/marketplace",
 });
 
 export const revalidate = 300;
 
-export default async function SecondhandPage({
+export default async function MarketplacePage({
   searchParams,
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;

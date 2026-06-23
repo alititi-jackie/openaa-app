@@ -36,9 +36,6 @@ export function normalizeNavigationUrl(raw: string): ValidationResult<string> {
 
   if (value.startsWith("/")) {
     if (value.startsWith("//")) return { ok: false, message: "请输入有效网址。" };
-    if (value === "/marketplace" || value.startsWith("/marketplace/")) {
-      return { ok: false, message: "请使用 /secondhand 作为二手频道路径。" };
-    }
     return { ok: true, value };
   }
 

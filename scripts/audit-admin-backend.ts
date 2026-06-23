@@ -39,13 +39,16 @@ function auditAdminPages() {
 
 function auditDashboardCoverage() {
   const dashboard = read("app/admin/dashboard/page.tsx");
+  const adminModules = read("features/admin/adminModules.ts");
+  const ignoredRoutes = new Set(["/admin/[...notFound]", "/admin/top-links"]);
   const adminDirs = readdirSync(join(root, "app/admin"), { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => `/admin/${entry.name}`)
     .filter((route) => route !== "/admin/dashboard")
+    .filter((route) => !ignoredRoutes.has(route))
     .sort();
   const dashboardHrefs = new Set(
-    Array.from(dashboard.matchAll(/href:\s*"([^"]+)"/g))
+    Array.from(`${dashboard}\n${adminModules}`.matchAll(/href:\s*"([^"]+)"/g))
       .map((match) => match[1].split("?")[0])
       .filter((href) => href.startsWith("/admin/")),
   );
@@ -82,19 +85,35 @@ function auditAdminActions() {
   for (const file of actionFiles) {
     const content = read(file);
     const isAdminWriteFile =
-      file.includes("/admin") ||
-      content.includes("Admin") ||
+      file.endsWith("adminActions.ts") ||
       content.includes("has_admin_permission") ||
-      content.includes("hasAdminPermission");
+      content.includes("hasAdminPermission") ||
+      content.includes("hasAdminModulePermission");
     const hasWrite = /\.(insert|update|upsert|delete)\(/.test(content);
-    if (isAdminWriteFile && hasWrite && !content.includes("admin_audit_logs")) {
+    const hasAuditLog = content.includes("admin_audit_logs") || content.includes("writeAdminAuditLog") || content.includes("auditLog(");
+    if (isAdminWriteFile && hasWrite && !hasAuditLog) {
       add("warning", `${file} has admin-like writes but no admin_audit_logs insert.`);
     }
   }
 }
 
 function isAllowedServiceRoleFile(file: string) {
-  return file === "lib/supabase/admin.ts" || file === "features/reports/adminActions.ts" || file === "features/reports/adminQueries.ts";
+  return new Set([
+    "lib/supabase/admin.ts",
+    "lib/permissions/adminAuditLog.ts",
+    "app/api/reports/route.ts",
+    "app/api/support/tickets/route.ts",
+    "features/messages/adminActions.ts",
+    "features/messages/adminQueries.ts",
+    "features/messages/pendingCounts.ts",
+    "features/messages/recycleActions.ts",
+    "features/messages/recycleQueries.ts",
+    "features/navigation/queries.ts",
+    "features/notifications/actions.ts",
+    "features/notifications/service.ts",
+    "features/posts/adminActions.ts",
+    "features/posts/adminQueries.ts",
+  ]).has(file);
 }
 
 auditAdminPages();

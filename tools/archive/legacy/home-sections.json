@@ -33,13 +33,13 @@
           },
           {
             "label": "二手",
-            "href": "/secondhand",
+            "href": "/marketplace",
             "icon": "shopping-bag",
             "sort_order": 30,
             "is_visible": true,
             "metadata": {
               "notes": [
-                "mapped_secondhand_to_marketplace"
+                "marketplace_canonical_route"
               ]
             }
           },
@@ -189,7 +189,7 @@
             "title": "最新二手",
             "nav_label": "二手",
             "post_type": "marketplace",
-            "route": "/secondhand",
+            "route": "/marketplace",
             "is_visible": true,
             "sort_order": 30,
             "limit_count": 2,
@@ -198,7 +198,7 @@
             "empty_message": "暂无最新二手信息。",
             "metadata": {
               "notes": [
-                "mapped_secondhand_to_marketplace"
+                "marketplace_canonical_route"
               ]
             }
           },
@@ -272,7 +272,7 @@
         "origin": "openaa-ny",
         "legacy_source": "/api/home-sections",
         "notes": [
-          "mapped_secondhand_to_marketplace"
+          "marketplace_canonical_route"
         ]
       }
     },

@@ -5,8 +5,8 @@ import {
   JOB_MODE_OPTIONS,
   JOB_TYPE_OPTIONS,
   LOCATION_OPTIONS,
-  SECONDHAND_CATEGORY_OPTIONS,
-  SECONDHAND_MODE_OPTIONS,
+  MARKETPLACE_CATEGORY_OPTIONS,
+  MARKETPLACE_MODE_OPTIONS,
   SERVICE_CATEGORY_OPTIONS,
   housingTypeFromValue,
   isOptionValue,
@@ -74,9 +74,9 @@ export function validatePostForm(values: PostFormValues) {
   }
 
   if (values.postType === "marketplace") {
-    if (!isOptionValue(SECONDHAND_MODE_OPTIONS, values.marketplace?.marketplace_mode)) errors.marketplace_mode = "请选择出售或求购。";
+    if (!isOptionValue(MARKETPLACE_MODE_OPTIONS, values.marketplace?.marketplace_mode)) errors.marketplace_mode = "请选择出售或求购。";
     if (!isOptionValue(LOCATION_OPTIONS, values.marketplace?.trade_area)) errors.trade_area = "请选择所在地区。";
-    if (!isOptionValue(SECONDHAND_CATEGORY_OPTIONS, values.marketplace?.category)) errors.category = "请选择商品分类。";
+    if (!isOptionValue(MARKETPLACE_CATEGORY_OPTIONS, values.marketplace?.category)) errors.category = "请选择商品分类。";
     if (values.marketplace?.marketplace_mode === "selling" && !values.title.trim()) errors.title = "请填写商品标题。";
   }
 

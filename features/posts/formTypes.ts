@@ -1,5 +1,5 @@
 import type { PostType } from "./types";
-import type { HousingMode, JobMode, SecondhandMode } from "./options";
+import type { HousingMode, JobMode, MarketplaceMode } from "./options";
 
 export type ContactInput = {
   contact_name: string;
@@ -74,7 +74,7 @@ export type HousingFields = {
 };
 
 export type MarketplaceFields = {
-  marketplace_mode: SecondhandMode;
+  marketplace_mode: MarketplaceMode;
   category: string;
   condition: string;
   price: string;

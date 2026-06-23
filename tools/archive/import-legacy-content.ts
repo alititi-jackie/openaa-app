@@ -229,7 +229,7 @@ async function applyNavigation(supabase: SupabaseClient): Promise<ApplyStats> {
   const categoryIds = new Map<string, string>();
 
   for (const category of categories) {
-    if (!category.slug || hasSecondhand(category.slug)) {
+    if (!category.slug) {
       stats.skipped += 1;
       continue;
     }
@@ -252,7 +252,7 @@ async function applyNavigation(supabase: SupabaseClient): Promise<ApplyStats> {
   for (const link of links) {
     const categoryId = categoryIds.get(link.category_slug) ?? (await findIdBy(supabase, "navigation_categories", { slug: link.category_slug }));
     const url = normalizeSafeUrl(link.url);
-    if (!categoryId || !url || hasSecondhand(url)) {
+    if (!categoryId || !url) {
       stats.skipped += 1;
       continue;
     }
@@ -290,7 +290,7 @@ async function applyTopLinks(supabase: SupabaseClient): Promise<ApplyStats> {
   for (const link of links) {
     const href = normalizeSafeUrl(link.href);
     const openMode = normalizeOpenMode(link.open_mode);
-    if (!href || !openMode || hasSecondhand(href)) {
+    if (!href || !openMode) {
       stats.skipped += 1;
       continue;
     }
@@ -326,7 +326,7 @@ async function applyTicker(supabase: SupabaseClient): Promise<ApplyStats> {
   for (const section of sections) {
     const href = normalizeSafeUrl(section.href);
     const moduleName = normalizeModule(section.module);
-    if (!href || !moduleName || hasSecondhand(href)) {
+    if (!href || !moduleName) {
       stats.skipped += 1;
       continue;
     }
@@ -363,7 +363,7 @@ async function applyNews(supabase: SupabaseClient): Promise<ApplyStats> {
   const categoryIds = new Map<string, string>();
 
   for (const category of categories) {
-    if (!category.slug || hasSecondhand(category.slug)) {
+    if (!category.slug) {
       stats.skipped += 1;
       continue;
     }
@@ -381,7 +381,7 @@ async function applyNews(supabase: SupabaseClient): Promise<ApplyStats> {
   }
 
   for (const post of posts) {
-    if (post.status !== "published" || hasSecondhand(post.slug)) {
+    if (post.status !== "published") {
       stats.skipped += 1;
       continue;
     }
@@ -421,7 +421,7 @@ async function applyAds(supabase: SupabaseClient): Promise<ApplyStats> {
   for (const ad of ads) {
     const href = normalizeSafeUrl(ad.href);
     const openMode = normalizeOpenMode(ad.open_mode);
-    if (!href || !openMode || hasSecondhand(href) || !isImgOpenAA(ad.image_url)) {
+    if (!href || !openMode || !isImgOpenAA(ad.image_url)) {
       stats.skipped += 1;
       continue;
     }
@@ -456,7 +456,7 @@ async function applyHome(supabase: SupabaseClient): Promise<ApplyStats> {
   const stats = applyStats("home");
 
   for (const section of sections) {
-    if (!section.key || JSON.stringify(section).includes("/secondhand")) {
+    if (!section.key) {
       stats.skipped += 1;
       continue;
     }
@@ -767,7 +767,6 @@ function warnUnsafeRoutes(items: unknown[], warnings: string[], label: string, k
   items.forEach((item, index) => {
     const value = asRecord(item)[key];
     if (typeof value !== "string") return;
-    if (hasSecondhand(value)) warnings.push(`${label} #${index + 1}: /secondhand is not allowed.`);
     if (/^javascript:/i.test(value) || /^data:/i.test(value) || /^http:\/\//i.test(value)) {
       warnings.push(`${label} #${index + 1}: unsafe URL protocol.`);
     }
@@ -813,7 +812,7 @@ function legacyMetadata(legacyId: string, extra?: unknown): JsonRecord {
 
 function normalizeSafeUrl(value: unknown) {
   const url = asString(value);
-  if (!url || hasSecondhand(url)) return null;
+  if (!url) return null;
   if (/^javascript:/i.test(url) || /^data:/i.test(url) || /^http:\/\//i.test(url)) return null;
   if (url.startsWith("/") || url.startsWith("https://")) return url;
   return null;
@@ -829,7 +828,6 @@ function openModeFromUrl(url: string, fallback: unknown) {
 
 function normalizeModule(value: unknown) {
   const moduleName = asString(value);
-  if (moduleName === "secondhand") return "marketplace";
   if (["news", "jobs", "housing", "marketplace", "services"].includes(moduleName)) return moduleName;
   return null;
 }
@@ -843,10 +841,6 @@ function legacyKey(legacyId: string) {
 
 function isImgOpenAA(url: unknown) {
   return typeof url === "string" && url.startsWith(`https://${IMAGE_HOST}/`);
-}
-
-function hasSecondhand(value: unknown) {
-  return typeof value === "string" && value.includes("/secondhand");
 }
 
 function safeError(message: string) {

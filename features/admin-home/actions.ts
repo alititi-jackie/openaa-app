@@ -619,7 +619,6 @@ function readIntegerInRange(formData: FormData, key: string, label: string, min:
 }
 
 function normalizeTickerModule(value: string) {
-  if (value === "secondhand") return "marketplace";
   if (value === "news" || value === "jobs" || value === "housing" || value === "marketplace" || value === "services") return value;
   return "news";
 }
@@ -646,7 +645,6 @@ function readJsonObject(formData: FormData, key: string): { ok: true; value: Rec
 function normalizeLink(raw: string): { ok: true; value: string } | { ok: false; message: string } {
   if (!raw) return { ok: false, message: "URL 不能为空。" };
   if (raw.startsWith("/") && !raw.startsWith("//")) {
-    if (raw.slice(1) === "marketplace") return { ok: false, message: "请使用 /secondhand 作为二手频道路径。" };
     return { ok: true, value: raw };
   }
 

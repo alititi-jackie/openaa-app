@@ -6,8 +6,8 @@ import {
   JOB_TYPE_OPTIONS,
   JOB_SALARY_UNIT_OPTIONS,
   LOCATION_OPTIONS,
-  SECONDHAND_MODE_OPTIONS,
-  SECONDHAND_CATEGORY_OPTIONS,
+  MARKETPLACE_MODE_OPTIONS,
+  MARKETPLACE_CATEGORY_OPTIONS,
   SERVICE_CATEGORY_OPTIONS,
   housingTypeOption,
   type PostOption,
@@ -57,7 +57,7 @@ function displayFromOptions(options: readonly PostOption[], toneForValue: (value
 export const POST_MODE_DISPLAY: Partial<Record<PostType, Record<string, ModeDisplay>>> = {
   job: displayFromOptions(JOB_MODE_OPTIONS, modeCssTone),
   housing: displayFromOptions(HOUSING_TYPE_OPTIONS, modeCssTone),
-  marketplace: displayFromOptions(SECONDHAND_MODE_OPTIONS, modeCssTone),
+  marketplace: displayFromOptions(MARKETPLACE_MODE_OPTIONS, modeCssTone),
 };
 
 function normalizePostModeForDisplay(postType: PostType, mode: string) {
@@ -201,7 +201,7 @@ function optionLabel(options: readonly PostOption[], value?: string | null, fall
 
 export function formatPostCategoryLabel(postType: PostType, value?: string | null) {
   if (postType === "job") return optionLabel(JOB_CATEGORY_OPTIONS, value, "其它职位");
-  if (postType === "marketplace") return optionLabel(SECONDHAND_CATEGORY_OPTIONS, value, "其它二手");
+  if (postType === "marketplace") return optionLabel(MARKETPLACE_CATEGORY_OPTIONS, value, "其它二手");
   if (postType === "service") return optionLabel(SERVICE_CATEGORY_OPTIONS, value, "其它服务");
   return value?.trim() || "";
 }

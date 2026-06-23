@@ -57,10 +57,10 @@ const FEATURE_GROUPS: FeatureGroup[] = [
   {
     keywords: ["二手", "买卖", "家具", "求购"],
     entries: [
-      { value: "secondhand", label: "二手交易", href: "/secondhand" },
-      { value: "secondhand-publish", label: "发布二手", href: "/secondhand/publish" },
-      { value: "secondhand-buying", label: "求购信息", href: "/secondhand?mode=buying" },
-      { value: "my-secondhand", label: "我的二手", href: "/profile/secondhand" },
+      { value: "marketplace", label: "二手交易", href: "/marketplace" },
+      { value: "marketplace-publish", label: "发布二手", href: "/marketplace/publish" },
+      { value: "marketplace-buying", label: "求购信息", href: "/marketplace?mode=buying" },
+      { value: "my-marketplace", label: "我的二手", href: "/profile/marketplace" },
     ],
   },
   {
@@ -87,7 +87,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
 const FALLBACK_FEATURE_ENTRIES: FeatureEntry[] = [
   { value: "jobs", label: "招聘信息", href: "/jobs" },
   { value: "housing", label: "房屋信息", href: "/housing" },
-  { value: "secondhand", label: "二手交易", href: "/secondhand" },
+  { value: "marketplace", label: "二手交易", href: "/marketplace" },
   { value: "services", label: "本地服务", href: "/services" },
   { value: "dmv-home", label: "DMV首页", href: "/dmv" },
   { value: "navigation", label: "网站导航", href: "/navigation" },

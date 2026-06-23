@@ -12,17 +12,17 @@ export const dynamic = "force-dynamic";
 export const metadata = buildPageMetadata({
   title: "我的商品",
   description: "OpenAA 我的商品发布管理页。",
-  path: "/profile/secondhand",
+  path: "/profile/marketplace",
   noIndex: true,
 });
 
-export default async function ProfileSecondhandPage({ searchParams }: { searchParams?: Promise<{ type?: string | string[]; status?: string | string[]; tab?: string | string[] }> }) {
+export default async function ProfileMarketplacePage({ searchParams }: { searchParams?: Promise<{ type?: string | string[]; status?: string | string[]; tab?: string | string[] }> }) {
   const params = await searchParams;
   const filters = normalizeProfilePostFilters("marketplace", params);
   const user = await getCurrentUser();
 
   if (!user) {
-    redirectToAuthRequired("/profile/secondhand");
+    redirectToAuthRequired("/profile/marketplace");
   }
 
   const posts = await getMyPosts("marketplace");
@@ -33,10 +33,10 @@ export default async function ProfileSecondhandPage({ searchParams }: { searchPa
       <ProfileManagementPageHeader
         title="我的商品"
         description="管理您发布的二手出售与求购信息"
-        actions={<ProfilePublishLink href="/secondhand/publish" label="+ 发布商品" />}
+        actions={<ProfilePublishLink href="/marketplace/publish" label="+ 发布商品" />}
       />
       <ProfilePostFilters
-        path="/profile/secondhand"
+        path="/profile/marketplace"
         typeOptions={buildProfilePostTypeOptions("marketplace")}
         statusOptions={buildProfilePostStatusOptions(posts.data)}
         selectedType={filters.selectedType}

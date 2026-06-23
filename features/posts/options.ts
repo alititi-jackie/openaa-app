@@ -113,12 +113,12 @@ export const HOUSING_TYPE_OPTIONS = [
   },
 ] as const;
 
-export const SECONDHAND_MODE_OPTIONS = [
+export const MARKETPLACE_MODE_OPTIONS = [
   { value: "selling", label: "出售商品" },
   { value: "buying", label: "求购商品" },
 ] as const satisfies readonly PostOption[];
 
-export const SECONDHAND_CATEGORY_OPTIONS = [
+export const MARKETPLACE_CATEGORY_OPTIONS = [
   { value: "生活用品", label: "生活用品" },
   { value: "母婴用品", label: "母婴用品" },
   { value: "电子产品", label: "电子产品" },
@@ -145,7 +145,7 @@ export const SERVICE_CATEGORY_OPTIONS = [
 
 export type JobMode = (typeof JOB_MODE_OPTIONS)[number]["value"];
 export type HousingMode = (typeof HOUSING_TYPE_OPTIONS)[number]["value"];
-export type SecondhandMode = (typeof SECONDHAND_MODE_OPTIONS)[number]["value"];
+export type MarketplaceMode = (typeof MARKETPLACE_MODE_OPTIONS)[number]["value"];
 
 export function isOptionValue(options: readonly PostOption[], value?: string | null) {
   return Boolean(value && options.some((option) => option.value === value));

@@ -1,4 +1,4 @@
-export type AdPosition = "home" | "jobs" | "housing" | "secondhand" | "navigation" | "services" | "news" | "dmv";
+export type AdPosition = "home" | "jobs" | "housing" | "marketplace" | "navigation" | "services" | "news" | "dmv";
 export type AdStatusFilter = "all" | "active" | "inactive";
 export type AdOpenMode = "internal" | "external_new" | "external_same";
 export type AdLinkType = "internal" | "external";
@@ -31,7 +31,7 @@ export const adPositions: Array<{ key: AdPosition; label: string }> = [
   { key: "home", label: "首页广告" },
   { key: "jobs", label: "招聘广告" },
   { key: "housing", label: "房屋广告" },
-  { key: "secondhand", label: "二手广告" },
+  { key: "marketplace", label: "二手广告" },
   { key: "navigation", label: "导航广告" },
   { key: "services", label: "本地服务广告" },
   { key: "news", label: "新闻广告" },

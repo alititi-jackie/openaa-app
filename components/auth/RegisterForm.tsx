@@ -7,6 +7,7 @@ import { AuthCard, AuthLink } from "@/components/auth/AuthCard";
 import { validateNicknameForSave } from "@/features/auth/actions";
 import { unavailableNicknameMessage, validateNickname } from "@/features/auth/nicknameValidation";
 import { authErrorMessage } from "@/lib/auth/errorMessages";
+import { isPasswordLongEnough, passwordLengthMessage } from "@/lib/auth/passwordPolicy";
 import { featureFlags } from "@/lib/config/featureFlags";
 import { appUrl } from "@/lib/seo/siteConfig";
 import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
@@ -53,8 +54,8 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
       return;
     }
 
-    if (password.length < 6) {
-      setMessage("密码至少需要6个字符");
+    if (!isPasswordLongEnough(password)) {
+      setMessage(passwordLengthMessage());
       return;
     }
 

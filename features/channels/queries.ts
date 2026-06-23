@@ -12,7 +12,7 @@ type ChannelSupabaseClient = SupabaseClient;
 const channelBannerPlacements: Record<ChannelKey, string> = {
   jobs: "jobs",
   housing: "housing",
-  marketplace: "secondhand",
+  marketplace: "marketplace",
   services: "services",
   news: "news",
   navigation: "navigation",

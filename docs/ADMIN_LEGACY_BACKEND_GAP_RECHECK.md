@@ -95,7 +95,7 @@ New auth pattern:
 | dashboard/module entry | Complete | New `/admin/dashboard` lists all backend modules and permission gates. |
 | users management | Complete | New `/admin/users` supports user status, internal notes, post counts, and permissions. |
 | admin authorization | New app enhancement | Old site did not have role-based admin grant UI; new `/admin/admins` handles this. |
-| posts management | Complete | New `/admin/user-posts` handles jobs/housing/marketplace/services in one unified table. Old `secondhand` maps to new `marketplace`. |
+| posts management | Complete | New `/admin/user-posts` handles jobs/housing/marketplace/services in one unified table. Marketplace uses `marketplace` as its canonical module and route name. |
 | services admin page | Covered by user-posts | Old `/admin/services` is represented by `/admin/user-posts?type=service` in the new architecture. |
 | news management | Complete | New `/admin/news` supports news/category operations with permission checks and audit logs. |
 | navigation management | Complete | New `/admin/navigation` covers categories, links, featured state, sorting, and active state. |

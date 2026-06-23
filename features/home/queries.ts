@@ -482,7 +482,7 @@ function applyTickerSectionSettings<T extends { module?: string | null }>(items:
 }
 
 function normalizeTickerModule(module?: string | null) {
-  if (module === "secondhand") return "marketplace";
+  if (module === "marketplace") return "marketplace";
   return module ?? "";
 }
 

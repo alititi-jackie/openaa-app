@@ -432,7 +432,7 @@ function revalidateAds() {
   revalidatePath("/");
   revalidatePath("/jobs");
   revalidatePath("/housing");
-  revalidatePath("/secondhand");
+  revalidatePath("/marketplace");
   revalidatePath("/services");
   revalidatePath("/news");
   revalidatePath("/navigation");

@@ -42,7 +42,7 @@ export const fallbackTickerSettings: HomeTickerSettings = {
 export const fallbackQuickGridItems: QuickGridItem[] = [
   { href: "/jobs", label: "招聘", icon: BriefcaseBusiness },
   { href: "/housing", label: "房屋", icon: Building2 },
-  { href: "/secondhand", label: "二手", icon: ShoppingBag },
+  { href: "/marketplace", label: "二手", icon: ShoppingBag },
   { href: "/dmv", label: "DMV", icon: CarFront },
   { href: "/news", label: "新闻", icon: Newspaper },
   { href: "/navigation", label: "导航", icon: Map },
@@ -89,7 +89,7 @@ export const fallbackLatestPostSections: HomeLatestPostSectionConfig[] = [
     title: "最新二手",
     navLabel: "二手",
     postType: "marketplace",
-    route: "/secondhand",
+    route: "/marketplace",
     isVisible: true,
     sortOrder: 30,
     limitCount: 6,

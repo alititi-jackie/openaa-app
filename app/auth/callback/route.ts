@@ -10,7 +10,7 @@ const allowedReturnToPrefixes = [
   "/reset-password",
   "/jobs",
   "/housing",
-  "/secondhand",
+  "/marketplace",
   "/services",
   "/navigation/my",
   "/dmv",

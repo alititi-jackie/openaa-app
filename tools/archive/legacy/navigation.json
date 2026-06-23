@@ -344,7 +344,7 @@
       "category_slug": "featured",
       "title": "二手闲置",
       "description": "OpenAA 二手板块入口。",
-      "url": "/secondhand",
+      "url": "/marketplace",
       "icon": "",
       "image_url": null,
       "sort_order": 30,

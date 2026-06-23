@@ -1,4 +1,4 @@
-﻿{
+{
   "metadata": {
     "source": "legacy_official_import",
     "origin": "openaa-ny",
@@ -104,7 +104,7 @@
       "legacy_id": "5e014d74-34d9-4466-868d-641d9a578c7a",
       "placement": "jobs_top",
       "title": "jobs_top banner",
-      "href": "https://openaa.com/secondhand",
+      "href": "https://openaa.com/marketplace",
       "image_url": "https://img.openaa.com/img/banners/1215d9b3-f38c-4173-ad87-aa0792690bd8.png",
       "open_mode": "same",
       "sort_order": 30,
@@ -158,7 +158,7 @@
       "legacy_id": "cb364ec1-85f0-4d5e-9a9c-0932f794686f",
       "placement": "housing_top",
       "title": "housing_top banner",
-      "href": "https://openaa.com/secondhand",
+      "href": "https://openaa.com/marketplace",
       "image_url": "https://img.openaa.com/img/banners/1215d9b3-f38c-4173-ad87-aa0792690bd8.png",
       "open_mode": "same",
       "sort_order": 20,
@@ -222,7 +222,7 @@
       "metadata": {
         "source": "legacy_official_import",
         "origin": "openaa-ny",
-        "legacy_position": "secondhand",
+        "legacy_position": "marketplace",
         "legacy_open_mode": "external_same"
       }
     },
@@ -240,7 +240,7 @@
       "metadata": {
         "source": "legacy_official_import",
         "origin": "openaa-ny",
-        "legacy_position": "secondhand",
+        "legacy_position": "marketplace",
         "legacy_open_mode": "external_same"
       }
     },
@@ -258,7 +258,7 @@
       "metadata": {
         "source": "legacy_official_import",
         "origin": "openaa-ny",
-        "legacy_position": "secondhand",
+        "legacy_position": "marketplace",
         "legacy_open_mode": "external_same"
       }
     },
@@ -284,7 +284,7 @@
       "legacy_id": "75682ffe-1f23-432b-a46d-96c39ee8a629",
       "placement": "services_top",
       "title": "services_top banner",
-      "href": "https://openaa.com/secondhand",
+      "href": "https://openaa.com/marketplace",
       "image_url": "https://img.openaa.com/img/banners/4cbbab1c-a91d-4414-9889-97a8844b1e24.png",
       "open_mode": "same",
       "sort_order": 20,
@@ -504,7 +504,7 @@
       "legacy_id": "6c05ff79-584a-4761-aa14-c4aa7b76491c",
       "placement": "dmv_top",
       "title": "dmv_top banner",
-      "href": "https://openaa.com/secondhand",
+      "href": "https://openaa.com/marketplace",
       "image_url": "https://img.openaa.com/img/banners/1215d9b3-f38c-4173-ad87-aa0792690bd8.png",
       "open_mode": "same",
       "sort_order": 40,

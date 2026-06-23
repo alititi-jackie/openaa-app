@@ -18,14 +18,14 @@ import {
   JOB_MODE_OPTIONS,
   JOB_TYPE_OPTIONS,
   LOCATION_OPTIONS,
-  SECONDHAND_CATEGORY_OPTIONS,
-  SECONDHAND_MODE_OPTIONS,
+  MARKETPLACE_CATEGORY_OPTIONS,
+  MARKETPLACE_MODE_OPTIONS,
   SERVICE_CATEGORY_OPTIONS,
   normalizeHousingType,
   isOptionValue,
   type JobMode,
   type PostOption,
-  type SecondhandMode,
+  type MarketplaceMode,
 } from "./options";
 import type { PostDetailView, PostType } from "./types";
 
@@ -177,8 +177,8 @@ export function formValuesFromDetail(post: PostDetailView): PostFormValues {
   if (post.type === "marketplace") {
     values.marketplace = {
       ...values.marketplace!,
-      marketplace_mode: isOptionValue(SECONDHAND_MODE_OPTIONS, post.mode) ? (post.mode as SecondhandMode) : values.marketplace!.marketplace_mode,
-      category: optionValueOrEmpty(SECONDHAND_CATEGORY_OPTIONS, displayMetaValue(post, "分类")) || optionValueOrEmpty(SECONDHAND_CATEGORY_OPTIONS, post.tag) || values.marketplace!.category,
+      marketplace_mode: isOptionValue(MARKETPLACE_MODE_OPTIONS, post.mode) ? (post.mode as MarketplaceMode) : values.marketplace!.marketplace_mode,
+      category: optionValueOrEmpty(MARKETPLACE_CATEGORY_OPTIONS, displayMetaValue(post, "分类")) || optionValueOrEmpty(MARKETPLACE_CATEGORY_OPTIONS, post.tag) || values.marketplace!.category,
       price: displayFieldValue(post, "价格").replace(/[$,]/g, ""),
       condition: displayFieldValue(post, "成色"),
       trade_area: marketplaceArea || values.location_area,

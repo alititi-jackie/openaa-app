@@ -31,9 +31,9 @@ This matrix is for real Supabase/Auth/Vercel verification after the permission, 
 
 ## Route Checks
 
-- `/secondhand` redirects to `/marketplace`.
-- `/secondhand/[id]` redirects to `/marketplace/[id]`.
-- `/secondhand/publish` redirects to `/marketplace/publish` after auth check.
+- `/marketplace` is the canonical marketplace channel route.
+- `/marketplace/[id]` is the canonical marketplace detail route.
+- `/marketplace/publish` is the canonical marketplace publish route and requires auth.
 - `/dmv/ny/practice` redirects to `/dmv/practice`.
 - `/dmv/ny/questions` redirects to `/dmv/questions`.
 - `/dmv/ny/mock-test` redirects to `/dmv/mock-test`.

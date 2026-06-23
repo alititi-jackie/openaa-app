@@ -1,7 +1,10 @@
+import { passwordLengthMessage } from "@/lib/auth/passwordPolicy";
+
 const AUTH_ERROR_MESSAGES: Array<[string, string]> = [
   ["invalid login credentials", "邮箱或密码不正确。"],
   ["email not confirmed", "请先验证邮箱后再登录。"],
-  ["password should be at least 6 characters", "密码至少需要 6 位。"],
+  ["password should be at least 6 characters", passwordLengthMessage()],
+  ["password should be at least 8 characters", passwordLengthMessage()],
   ["token has expired or is invalid", "链接已失效，请重新发送。"],
   ["user already registered", "该邮箱已注册，请直接登录。"],
   ["auth session missing", "登录状态已失效，请重新登录。"],

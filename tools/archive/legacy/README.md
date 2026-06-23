@@ -46,7 +46,7 @@ Seed-B1 adds reviewed official operating-content JSON for:
 
 These files use `legacy_official_import` and are candidates for initial production content. They are JSON data only; no database import is performed by committing them.
 
-Seed-B1 keeps old-site `/secondhand` references mapped to the new `/marketplace` route. Ticker data represents configuration only and does not include user-post aggregation output.
+Seed-B1 keeps marketplace references using the canonical `/marketplace` route. Ticker data represents configuration only and does not include user-post aggregation output.
 
 ## Seed-B2
 
@@ -61,7 +61,7 @@ These files use `legacy_official_import` and are candidates for initial producti
 
 Seed-B2 includes only published public news from old-site sitemap/pages. Draft, hidden, deleted, and user-post content remain out of scope. Old Supabase Storage images are not migrated as official images: news covers are marked for replacement and ads with old Storage images are skipped.
 
-Old `/secondhand` references stay mapped to `/marketplace`, including `marketplace_top` ad placement and marketplace latest-post configuration. News, ads, and SEO content may include review notes such as `needs_freshness_review`, `cover_needs_replacement`, `needs_human_review`, or `needs_domain_review`.
+Marketplace references use canonical `/marketplace`, including `marketplace_top` ad placement and marketplace latest-post configuration. News, ads, and SEO content may include review notes such as `needs_freshness_review`, `cover_needs_replacement`, `needs_human_review`, or `needs_domain_review`.
 
 ## Seed-B3
 

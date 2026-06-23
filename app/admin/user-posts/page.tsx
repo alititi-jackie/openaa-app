@@ -100,7 +100,7 @@ export default function AdminUserPostsPage({ searchParams }: AdminUserPostsPageP
 
 function normalizeType(value?: string): PostType | "all" | undefined {
   if (value === "jobs") return "job";
-  if (value === "secondhand") return "marketplace";
+  if (value === "marketplace") return "marketplace";
   if (value === "services") return "service";
   if (value === "job" || value === "housing" || value === "marketplace" || value === "service") return value;
   if (value === "all") return "all";

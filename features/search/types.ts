@@ -1,4 +1,4 @@
-export type SearchResultType = "jobs" | "housing" | "secondhand" | "services" | "news" | "navigation";
+export type SearchResultType = "jobs" | "housing" | "marketplace" | "services" | "news" | "navigation";
 
 export type SearchResultItem = {
   id: string;

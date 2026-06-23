@@ -11,7 +11,7 @@ import type { SearchQueryResult, SearchResultItem, SearchResultType } from "./ty
 const CHANNELS: Record<SearchResultType, boolean> = {
   jobs: true,
   housing: true,
-  secondhand: true,
+  marketplace: true,
   services: true,
   news: true,
   navigation: true,
@@ -20,7 +20,7 @@ const CHANNELS: Record<SearchResultType, boolean> = {
 const POST_TYPE_META: Record<PostType, { type: SearchResultType; label: string }> = {
   job: { type: "jobs", label: "招聘" },
   housing: { type: "housing", label: "房屋" },
-  marketplace: { type: "secondhand", label: "二手" },
+  marketplace: { type: "marketplace", label: "二手" },
   service: { type: "services", label: "服务" },
 };
 

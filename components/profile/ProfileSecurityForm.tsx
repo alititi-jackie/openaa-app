@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { KeyRound } from "lucide-react";
 import { authErrorMessage } from "@/lib/auth/errorMessages";
+import { isPasswordLongEnough, passwordLengthMessage } from "@/lib/auth/passwordPolicy";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type NoticeState = {
@@ -46,8 +47,8 @@ export function ProfileSecurityForm({ email, hasPasswordLogin }: ProfileSecurity
       return;
     }
 
-    if (newPassword.length < 6) {
-      setNotice({ type: "error", message: "新密码至少需要 6 位" });
+    if (!isPasswordLongEnough(newPassword)) {
+      setNotice({ type: "error", message: passwordLengthMessage("新密码") });
       return;
     }
 

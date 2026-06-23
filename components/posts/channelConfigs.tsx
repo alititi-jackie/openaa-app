@@ -77,7 +77,7 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
   marketplace: {
     channelKey: "marketplace",
     title: "二手市场",
-    path: "/secondhand",
+    path: "/marketplace",
     icon: ShoppingBag,
     publishLabel: "发布二手",
     modeTabs: postConfig.marketplace.modeOptions,
@@ -86,8 +86,8 @@ export const channelConfigs: Record<"jobs" | "housing" | "marketplace" | "servic
     categoryOptions: postConfig.marketplace.categoryOptions,
     categoryPlaceholder: "商品分类",
     posts: [
-      { title: "搬家家具出售占位", description: "后续显示价格、区域和取货方式。", href: "/secondhand", meta: "占位", tag: "出售" },
-      { title: "求购显示器占位", description: "这里展示求购信息卡片样式。", href: "/secondhand", meta: "占位", tag: "求购" },
+      { title: "搬家家具出售占位", description: "后续显示价格、区域和取货方式。", href: "/marketplace", meta: "占位", tag: "出售" },
+      { title: "求购显示器占位", description: "这里展示求购信息卡片样式。", href: "/marketplace", meta: "占位", tag: "求购" },
     ],
     seoTitle: "纽约华人二手交易频道使用说明",
     seoContent: (

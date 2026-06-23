@@ -80,7 +80,7 @@ These files are official operating-content candidates for initial production con
 Seed-B1 source rules:
 
 - Navigation and top links are prepared from old-site public API output and read-only review.
-- Old `/secondhand` routes are mapped to `/marketplace`; the new app must not restore `/secondhand`.
+- Marketplace routes use `/marketplace` as the canonical new-site path. No legacy route compatibility is kept in the app.
 - Ticker JSON stores the configuration layer only. It does not seed user-post aggregation results from the old ticker API.
 - Images remain external references. Do not download or re-upload `img.openaa.com` assets.
 - News, ads, and home sections are intentionally left for Seed-B2.
@@ -102,7 +102,7 @@ Seed-B2 source rules:
 - News categories and posts come from old-site public sitemap and public news pages.
 - Only published public news is included; draft, hidden, and deleted news are excluded.
 - Old Supabase Storage images are not used as official images. News covers with old Storage URLs use `cover_image_url: null` and `metadata.notes: ["cover_needs_replacement"]`; ads with old Storage images are skipped.
-- Old `/secondhand` references are mapped to `/marketplace`, including ads placement `secondhand -> marketplace_top` and home latest section `latest_secondhand -> marketplace`.
+- Marketplace references use `/marketplace` and the `marketplace` placement/module names directly.
 - Ads are imported only from active public API output. Legacy `external_same` / `external_new` modes are mapped to `same` / `new` while keeping `metadata.legacy_open_mode`.
 - Policy, fee, DMV, and time-sensitive news uses `metadata.notes: ["needs_freshness_review"]`.
 - SEO/domain text uses review notes where appropriate, such as `needs_domain_review`.

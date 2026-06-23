@@ -5,6 +5,7 @@ import type { Session } from "@supabase/supabase-js";
 import { KeyRound } from "lucide-react";
 import { AuthCard, AuthLink } from "@/components/auth/AuthCard";
 import { authErrorMessage } from "@/lib/auth/errorMessages";
+import { isPasswordLongEnough, passwordLengthMessage } from "@/lib/auth/passwordPolicy";
 import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
 
 const resetExpiredMessage = "重置链接已失效，请重新发送重置邮件。";
@@ -50,8 +51,8 @@ export function ResetPasswordForm() {
     if (!newPassword) {
       setNewPasswordError("请输入新密码");
       valid = false;
-    } else if (newPassword.length < 6) {
-      setNewPasswordError("密码至少需要 6 位");
+    } else if (!isPasswordLongEnough(newPassword)) {
+      setNewPasswordError(passwordLengthMessage());
       valid = false;
     } else {
       setNewPasswordError("");

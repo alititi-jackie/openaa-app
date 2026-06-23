@@ -76,7 +76,7 @@
     {
       "legacy_id": "3096a011-d593-47a9-a695-f425344fe44a",
       "title": "二手",
-      "href": "/secondhand",
+      "href": "/marketplace",
       "icon": "shopping-bag",
       "open_mode": "same",
       "sort_order": 22,
@@ -85,7 +85,7 @@
         "source": "legacy_official_import",
         "origin": "openaa-ny",
         "notes": [
-          "mapped_secondhand_to_marketplace"
+          "marketplace_canonical_route"
         ]
       }
     },

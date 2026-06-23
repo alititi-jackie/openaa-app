@@ -14,8 +14,8 @@ import {
   JOB_MODE_OPTIONS,
   JOB_SALARY_UNIT_OPTIONS,
   JOB_TYPE_OPTIONS,
-  SECONDHAND_CATEGORY_OPTIONS,
-  SECONDHAND_MODE_OPTIONS,
+  MARKETPLACE_CATEGORY_OPTIONS,
+  MARKETPLACE_MODE_OPTIONS,
   SERVICE_CATEGORY_OPTIONS,
   housingTypeOption,
   normalizeHousingType,
@@ -373,7 +373,7 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
             <ModeSwitch
               label="发布类型"
               locked={typeSwitchLocked}
-              options={SECONDHAND_MODE_OPTIONS}
+              options={MARKETPLACE_MODE_OPTIONS}
               value={values.marketplace?.marketplace_mode ?? "selling"}
               onChange={(next) => setMarketplace({ marketplace_mode: next as MarketplaceFields["marketplace_mode"] })}
             />
@@ -393,7 +393,7 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
                 <option value="" disabled>
                   请选择商品分类
                 </option>
-                {SECONDHAND_CATEGORY_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+                {MARKETPLACE_CATEGORY_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
               </SelectInput>
             </FormField>
 
