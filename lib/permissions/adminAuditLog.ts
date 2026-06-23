@@ -15,6 +15,10 @@ type AdminAuditLogInput = {
 
 export async function writeAdminAuditLog(input: AdminAuditLogInput) {
   try {
+    const metadata = {
+      ...(input.ipHash ? { ip_hash: input.ipHash } : {}),
+      ...(input.userAgent ? { user_agent: input.userAgent } : {}),
+    };
     const { error } = await createSupabaseAdminClient()
       .from("admin_audit_logs")
       .insert({
@@ -24,8 +28,7 @@ export async function writeAdminAuditLog(input: AdminAuditLogInput) {
         entity_id: input.entityId ?? null,
         before_data: input.beforeData ?? null,
         after_data: input.afterData ?? null,
-        ip_hash: input.ipHash ?? null,
-        user_agent: input.userAgent ?? null,
+        metadata,
       });
 
     return !error;
