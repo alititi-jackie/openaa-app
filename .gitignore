@@ -32,3 +32,4 @@ Thumbs.db
 # supabase
 .branches
 .temp
+tools/archive/supabase-backups/
