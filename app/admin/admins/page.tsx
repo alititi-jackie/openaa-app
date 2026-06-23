@@ -75,11 +75,11 @@ export default function AdminAdminsPage({ searchParams }: AdminAdminsPageProps) 
                 <UserPlus size={15} aria-hidden="true" />
                 授权管理员 / 超级管理员等高权限角色前，请再次核对邮箱和 user id。
               </div>
-              <AdminCandidates candidates={data.candidates} permissions={data.permissions} />
+              <AdminCandidates candidates={data.candidates} permissions={data.permissions} authorizationConfig={data.authorizationConfig} />
             </AdminCard>
 
             <AdminCard title="其他管理员列表" description="支持改角色、停用和恢复。当前账号在上方单独展示，不在此列表中出现。不能停用或降级最后一个启用的超级管理员。">
-              <AdminRolesList admins={data.admins} permissions={data.permissions} />
+              <AdminRolesList admins={data.admins} permissions={data.permissions} authorizationConfig={data.authorizationConfig} />
               <AdminRolePagination page={data.page} pageCount={data.pageCount} totalCount={data.totalCount} q={params?.q} role={params?.role} status={params?.status} />
             </AdminCard>
 </div>

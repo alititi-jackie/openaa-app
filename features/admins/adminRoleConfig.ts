@@ -1,6 +1,8 @@
 import type { AdminRoleName } from "@/lib/supabase/types";
 import type { AdminModuleKey } from "@/features/admin/adminModules";
 
+export const OWNER_SUPER_ADMIN_EMAIL = "fengjiancheng8@gmail.com";
+
 export const adminRoleLabels: Record<AdminRoleName, string> = {
   super_admin: "超级管理员",
   admin: "管理员",

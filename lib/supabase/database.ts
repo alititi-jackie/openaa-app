@@ -2726,6 +2726,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      is_owner_super_admin_user: { Args: { p_user_id: string }; Returns: boolean }
       is_public_post: { Args: { p_post_id: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       record_post_view: {

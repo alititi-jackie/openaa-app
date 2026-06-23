@@ -35,6 +35,51 @@ as $$
   );
 $$;
 
+create or replace function public.is_owner_super_admin_user(p_user_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.profiles p
+    where p.id = p_user_id
+      and lower(p.email) = 'fengjiancheng8@gmail.com'
+  );
+$$;
+
+create or replace function public.protect_owner_super_admin_role()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if tg_op = 'DELETE' and public.is_owner_super_admin_user(old.user_id) then
+    raise exception 'Owner super admin cannot be deleted from admin_roles';
+  end if;
+
+  if tg_op in ('INSERT', 'UPDATE') and public.is_owner_super_admin_user(new.user_id) then
+    if new.role <> 'super_admin' or new.is_active is not true then
+      raise exception 'Owner super admin must remain an active super_admin';
+    end if;
+  end if;
+
+  if tg_op = 'UPDATE' and public.is_owner_super_admin_user(old.user_id) and old.user_id <> new.user_id then
+    raise exception 'Owner super admin user_id cannot be changed';
+  end if;
+
+  return case when tg_op = 'DELETE' then old else new end;
+end;
+$$;
+
+drop trigger if exists protect_owner_super_admin_role on public.admin_roles;
+create trigger protect_owner_super_admin_role
+before insert or update or delete on public.admin_roles
+for each row execute function public.protect_owner_super_admin_role();
+
 create or replace function public.has_admin_module(p_module_key text)
 returns boolean
 language sql

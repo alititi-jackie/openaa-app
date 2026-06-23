@@ -1,5 +1,7 @@
 "use client";
 
+export { AdminAdminManageDialog } from "@/components/admins/AdminAdminPermissionDialog";
+
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
@@ -19,7 +21,7 @@ import {
 import type { AdminRoleListItem, AdminsPermissions } from "@/features/admins/adminQueries";
 import type { AdminRoleName } from "@/lib/supabase/types";
 
-export function AdminAdminManageDialog({ admin, permissions }: { admin: AdminRoleListItem; permissions: AdminsPermissions }) {
+export function LegacyAdminAdminManageDialog({ admin, permissions }: { admin: AdminRoleListItem; permissions: AdminsPermissions }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<AdminRoleName>(admin.role);

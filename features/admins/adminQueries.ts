@@ -3,7 +3,7 @@ import "server-only";
 import { ADMIN_MODULES, type AdminModuleKey } from "@/features/admin/adminModules";
 import { getCurrentAdminRole, hasAdminPermission, isSuperAdmin } from "@/lib/permissions/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { adminExemptionOptions, adminRoleDefaultModules, adminRoleLabels, type AdminExemptionKey } from "@/features/admins/adminRoleConfig";
+import { adminExemptionOptions, adminRoleDefaultModules, adminRoleLabels, OWNER_SUPER_ADMIN_EMAIL, type AdminExemptionKey } from "@/features/admins/adminRoleConfig";
 import type { AdminRoleName } from "@/lib/supabase/types";
 
 const PAGE_SIZE = 20;
@@ -19,6 +19,27 @@ export type AdminsPermissions = {
   superAdmin: boolean;
 };
 
+export type AdminPermissionDefinition = {
+  permissionKey: string;
+  name: string;
+  description: string | null;
+  category: string;
+};
+
+export type AdminPermissionGroup = {
+  moduleKey: string;
+  title: string;
+  description: string;
+  permissions: AdminPermissionDefinition[];
+};
+
+export type AdminAuthorizationConfig = {
+  allPermissionKeys: string[];
+  permissionGroups: AdminPermissionGroup[];
+  rolePermissionDefaults: Record<AdminRoleName, string[]>;
+  modulePermissionMap: Record<string, string[]>;
+};
+
 export type AdminRoleListItem = {
   id: string;
   userId: string;
@@ -32,7 +53,9 @@ export type AdminRoleListItem = {
   revokedAt: string | null;
   lastAdminLoginAt: string | null;
   isCurrentUser: boolean;
+  isOwnerSuperAdmin: boolean;
   moduleKeys: AdminModuleKey[];
+  permissionKeys: string[];
   exemptionKeys: AdminExemptionKey[];
 };
 
@@ -53,6 +76,7 @@ export type AdminsData = {
   permissions: AdminsPermissions;
   admins: AdminRoleListItem[];
   candidates: AdminCandidate[];
+  authorizationConfig: AdminAuthorizationConfig;
   page: number;
   pageSize: number;
   pageCount: number;
@@ -117,12 +141,14 @@ export async function getAdminsData({
   const allRows = currentRoleRow ? [...rows, currentRoleRow] : rows;
   const profileMap = await fetchProfileMap(supabase, allRows.map((item) => item.user_id));
   const userIds = allRows.map((item) => item.user_id);
-  const [moduleMap, exemptionMap] = await Promise.all([
+  const [authorizationConfig, moduleMap, permissionMap, exemptionMap] = await Promise.all([
+    fetchAdminAuthorizationConfig(supabase),
     fetchAdminModuleMap(supabase, userIds),
+    fetchAdminPermissionMap(supabase, userIds),
     fetchAdminExemptionMap(supabase, userIds),
   ]);
-  const admins = rows.map((item) => mapAdminRole(item, profileMap.get(item.user_id), currentRole?.user_id ?? null, moduleMap, exemptionMap));
-  const currentAdmin = currentRoleRow ? mapAdminRole(currentRoleRow, profileMap.get(currentRoleRow.user_id), currentRoleRow.user_id, moduleMap, exemptionMap) : null;
+  const admins = rows.map((item) => mapAdminRole(item, profileMap.get(item.user_id), currentRole?.user_id ?? null, moduleMap, permissionMap, exemptionMap, authorizationConfig));
+  const currentAdmin = currentRoleRow ? mapAdminRole(currentRoleRow, profileMap.get(currentRoleRow.user_id), currentRoleRow.user_id, moduleMap, permissionMap, exemptionMap, authorizationConfig) : null;
   const search = q?.trim();
   const filteredAdmins = search ? filterAdmins(admins, search) : admins;
   const candidates = search && search.length >= 2 ? await searchCandidates(supabase, search, rows) : [];
@@ -135,6 +161,7 @@ export async function getAdminsData({
     permissions,
     admins: filteredAdmins,
     candidates,
+    authorizationConfig,
     page: normalizedPage,
     pageSize: PAGE_SIZE,
     pageCount: Math.max(1, Math.ceil(totalCount / PAGE_SIZE)),
@@ -218,6 +245,18 @@ async function fetchAdminModuleMap(supabase: NonNullable<Awaited<ReturnType<type
   return map;
 }
 
+async function fetchAdminPermissionMap(supabase: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>, userIds: string[]) {
+  const map = new Map<string, string[]>();
+  const ids = Array.from(new Set(userIds.filter(Boolean)));
+  if (ids.length === 0) return map;
+  const { data } = await supabase.from("admin_user_permissions").select("user_id,permission_key,effect").in("user_id", ids);
+  for (const row of (data ?? []) as Array<{ user_id: string; permission_key: string; effect: string }>) {
+    if (row.effect !== "allow") continue;
+    map.set(row.user_id, [...(map.get(row.user_id) ?? []), row.permission_key]);
+  }
+  return map;
+}
+
 async function fetchAdminExemptionMap(supabase: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>, userIds: string[]) {
   const map = new Map<string, AdminExemptionKey[]>();
   const ids = Array.from(new Set(userIds.filter(Boolean)));
@@ -230,13 +269,59 @@ async function fetchAdminExemptionMap(supabase: NonNullable<Awaited<ReturnType<t
   return map;
 }
 
+async function fetchAdminAuthorizationConfig(supabase: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>): Promise<AdminAuthorizationConfig> {
+  const [permissionsResult, rolePermissionsResult, modulePermissionsResult] = await Promise.all([
+    supabase.from("admin_permissions").select("permission_key,name,description,category").order("category", { ascending: true }).order("permission_key", { ascending: true }),
+    supabase.from("admin_role_permissions").select("role,permission_key,allowed").eq("allowed", true),
+    supabase.from("admin_module_permissions").select("module_key,permission_key"),
+  ]);
+
+  const permissionRows = (permissionsResult.data ?? []) as Array<{ permission_key: string; name: string; description: string | null; category: string }>;
+  const roleRows = (rolePermissionsResult.data ?? []) as Array<{ role: AdminRoleName; permission_key: string; allowed: boolean }>;
+  const moduleRows = (modulePermissionsResult.data ?? []) as Array<{ module_key: string; permission_key: string }>;
+  const permissionMap = new Map<string, AdminPermissionDefinition>(
+    permissionRows.map((permission) => [
+      permission.permission_key,
+      {
+        permissionKey: permission.permission_key,
+        name: permission.name,
+        description: permission.description,
+        category: permission.category,
+      },
+    ]),
+  );
+  const modulePermissionMap = buildModulePermissionMap(moduleRows, permissionMap);
+  const rolePermissionDefaults = buildRolePermissionDefaults(roleRows, permissionRows.map((permission) => permission.permission_key));
+  const permissionGroups = buildPermissionGroups(modulePermissionMap, permissionRows, permissionMap);
+
+  return {
+    allPermissionKeys: permissionRows.map((permission) => permission.permission_key),
+    permissionGroups,
+    rolePermissionDefaults,
+    modulePermissionMap,
+  };
+}
+
 function mapAdminRole(
   row: RawAdminRole,
   profile: ProfileSummary | undefined,
   currentUserId: string | null,
   moduleMap: Map<string, AdminModuleKey[]>,
+  permissionMap: Map<string, string[]>,
   exemptionMap: Map<string, AdminExemptionKey[]>,
+  authorizationConfig: AdminAuthorizationConfig,
 ): AdminRoleListItem {
+  const moduleKeys = row.role === "super_admin" ? adminRoleDefaultModules.super_admin : (moduleMap.get(row.user_id) ?? []);
+  const explicitPermissionKeys = permissionMap.get(row.user_id) ?? [];
+  const modulePermissionKeys = moduleKeys.flatMap((moduleKey) => authorizationConfig.modulePermissionMap[moduleKey] ?? []);
+  const permissionKeys = row.role === "super_admin"
+    ? authorizationConfig.allPermissionKeys
+    : explicitPermissionKeys.length > 0
+      ? explicitPermissionKeys
+      : modulePermissionKeys.length > 0
+        ? modulePermissionKeys
+        : authorizationConfig.rolePermissionDefaults[row.role];
+
   return {
     id: row.id,
     userId: row.user_id,
@@ -250,7 +335,9 @@ function mapAdminRole(
     revokedAt: row.revoked_at,
     lastAdminLoginAt: row.last_admin_login_at,
     isCurrentUser: row.user_id === currentUserId,
-    moduleKeys: row.role === "super_admin" ? adminRoleDefaultModules.super_admin : (moduleMap.get(row.user_id) ?? []),
+    isOwnerSuperAdmin: row.role === "super_admin" && profile?.email?.trim().toLowerCase() === OWNER_SUPER_ADMIN_EMAIL,
+    moduleKeys,
+    permissionKeys: Array.from(new Set(permissionKeys)).sort(),
     exemptionKeys: row.role === "super_admin" ? adminExemptionOptions.map((option) => option.key) : (exemptionMap.get(row.user_id) ?? []),
   };
 }
@@ -269,11 +356,91 @@ function emptyResult(state: AdminsData["state"], permissions: AdminsPermissions,
     permissions,
     admins: [],
     candidates: [],
+    authorizationConfig: emptyAuthorizationConfig(),
     page,
     pageSize: PAGE_SIZE,
     pageCount: 1,
     totalCount: 0,
   };
+}
+
+function emptyAuthorizationConfig(): AdminAuthorizationConfig {
+  return {
+    allPermissionKeys: [],
+    permissionGroups: [],
+    rolePermissionDefaults: {
+      support: [],
+      moderator: [],
+      editor: [],
+      admin: [],
+      super_admin: [],
+    },
+    modulePermissionMap: {},
+  };
+}
+
+function buildModulePermissionMap(
+  rows: Array<{ module_key: string; permission_key: string }>,
+  permissionMap: Map<string, AdminPermissionDefinition>,
+) {
+  const map: Record<string, string[]> = {};
+  for (const row of rows) {
+    if (!permissionMap.has(row.permission_key)) continue;
+    map[row.module_key] = [...(map[row.module_key] ?? []), row.permission_key];
+  }
+  return Object.fromEntries(Object.entries(map).map(([moduleKey, permissionKeys]) => [moduleKey, Array.from(new Set(permissionKeys)).sort()]));
+}
+
+function buildRolePermissionDefaults(rows: Array<{ role: AdminRoleName; permission_key: string }>, allPermissionKeys: string[]): Record<AdminRoleName, string[]> {
+  const defaults: Record<AdminRoleName, string[]> = {
+    support: [],
+    moderator: [],
+    editor: [],
+    admin: [],
+    super_admin: allPermissionKeys,
+  };
+  for (const row of rows) {
+    defaults[row.role] = [...(defaults[row.role] ?? []), row.permission_key];
+  }
+  return {
+    support: Array.from(new Set(defaults.support)).sort(),
+    moderator: Array.from(new Set(defaults.moderator)).sort(),
+    editor: Array.from(new Set(defaults.editor)).sort(),
+    admin: Array.from(new Set(defaults.admin)).sort(),
+    super_admin: Array.from(new Set(defaults.super_admin)).sort(),
+  };
+}
+
+function buildPermissionGroups(
+  modulePermissionMap: Record<string, string[]>,
+  permissionRows: Array<{ permission_key: string; name: string; description: string | null; category: string }>,
+  permissionMap: Map<string, AdminPermissionDefinition>,
+): AdminPermissionGroup[] {
+  const grouped = new Set<string>();
+  const groups: AdminPermissionGroup[] = ADMIN_MODULES.map((module) => {
+    const permissionKeys = Array.from(new Set(modulePermissionMap[module.key] ?? module.permissionKeys)).filter((key) => permissionMap.has(key));
+    for (const permissionKey of permissionKeys) grouped.add(permissionKey);
+    return {
+      moduleKey: module.key,
+      title: module.title,
+      description: module.description,
+      permissions: permissionKeys.map((key) => permissionMap.get(key)).filter((permission): permission is AdminPermissionDefinition => Boolean(permission)),
+    };
+  }).filter((group) => group.permissions.length > 0);
+
+  const ungroupedPermissions = permissionRows
+    .filter((permission) => !grouped.has(permission.permission_key))
+    .map((permission) => permissionMap.get(permission.permission_key))
+    .filter((permission): permission is AdminPermissionDefinition => Boolean(permission));
+  if (ungroupedPermissions.length > 0) {
+    groups.push({
+      moduleKey: "unmapped",
+      title: "未分组权限",
+      description: "当前未映射到后台模块的权限。",
+      permissions: ungroupedPermissions,
+    });
+  }
+  return groups;
 }
 
 function isUuid(value: string) {

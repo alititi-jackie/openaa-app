@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { ADMIN_MODULES, type AdminModuleKey } from "@/features/admin/adminModules";
 import type { AdminHomeActionState } from "@/features/admin-home/types";
-import { adminExemptionOptions, adminRoleDefaultModules, type AdminExemptionKey } from "@/features/admins/adminRoleConfig";
+import { adminExemptionOptions, OWNER_SUPER_ADMIN_EMAIL, type AdminExemptionKey } from "@/features/admins/adminRoleConfig";
 import { writeAdminAuditLog } from "@/lib/permissions/adminAuditLog";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { AdminRoleName } from "@/lib/supabase/types";
@@ -19,8 +19,11 @@ const fail = (message: string): AdminHomeActionState => ({ ok: false, message })
 export async function grantAdminRole(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
   const userId = readText(formData, "user_id");
   const role = readText(formData, "role") as AdminRoleName;
+  const status = readText(formData, "status");
   const note = readText(formData, "note") || null;
-  if (!userId || !isAdminRole(role)) return fail("授权参数无效。");
+  if (!userId) return fail("请先搜索并确认真实用户。");
+  if (!isAdminRole(role)) return fail("请选择角色。");
+  if (!isAdminStatus(status)) return fail("请选择状态。");
   if (!isConfirmed(formData)) return fail("请先输入 CONFIRM 完成二次确认。");
 
   const context = await getSuperAdminActionContext();
@@ -29,30 +32,35 @@ export async function grantAdminRole(_state: AdminHomeActionState, formData: For
 
   const profile = await readProfile(context.supabase, userId);
   if (!profile) return fail("没有找到真实用户，请先搜索并确认 user id 后再授权。");
+  if (isOwnerSuperAdminProfile(profile)) return fail("内置首席超级管理员只能通过代码或 migration 修改，不能在后台授权表单中变更。");
 
+  const authorization = await readAuthorizationData(context.supabase);
+  const permissionKeys = normalizePermissionKeys(formData, role, authorization.allPermissionKeys);
+  if (role !== "super_admin" && permissionKeys.length === 0) return fail("普通管理员至少需要选择一个权限。");
+  const moduleKeys = role === "super_admin" ? allAdminModuleKeys() : deriveModuleKeys(permissionKeys, authorization.modulePermissionMap);
+  const exemptionKeys = role === "super_admin" ? allAdminExemptionKeys() : readExemptionKeys(formData);
+  const isActive = status === "active";
   const before = await readAdminRole(context.supabase, userId);
   const beforeModules = await readAdminModules(context.supabase, userId);
+  const beforePermissions = await readAdminPermissions(context.supabase, userId);
   const beforeExemptions = await readAdminExemptions(context.supabase, userId);
   const payload = {
     user_id: userId,
     role,
-    is_active: true,
+    is_active: isActive,
     note,
     granted_by: context.userId,
     granted_at: new Date().toISOString(),
-    revoked_by: null,
-    revoked_at: null,
+    revoked_at: isActive ? null : new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
 
   const { data, error } = await context.supabase.from("admin_roles").upsert(payload, { onConflict: "user_id" }).select("id").single();
   if (error || !data) return fail("管理员授权保存失败，请稍后再试。");
-  const modules = role === "super_admin" ? adminRoleDefaultModules.super_admin : adminRoleDefaultModules[role];
-  const exemptions = role === "super_admin" ? adminExemptionOptions.map((option) => option.key) : [];
-  const grantsSaved = await saveAdminGrants(context, userId, modules, exemptions);
+  const grantsSaved = await saveAdminGrants(context, userId, permissionKeys, moduleKeys, exemptionKeys);
   if (!grantsSaved) return fail("管理员已授权，但功能授权保存失败，请稍后再试。");
   if (
-    !(await auditLog(context, before ? "update_admin_role" : "add_admin_role", "admin_roles", data.id, { role: before, modules: beforeModules, exemptions: beforeExemptions }, { ...payload, profile, modules, exemptions }))
+    !(await auditLog(context, before ? "update_admin_role" : "add_admin_role", "admin_roles", data.id, { role: before, modules: beforeModules, permissions: beforePermissions, exemptions: beforeExemptions }, { ...payload, profile, modules: moduleKeys, permissions: permissionKeys, exemptions: exemptionKeys }))
   ) {
     return fail("授权已保存，但审计日志写入失败。");
   }
@@ -65,10 +73,11 @@ export async function grantAdminRole(_state: AdminHomeActionState, formData: For
 export async function updateAdminRole(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
   const roleId = readText(formData, "role_id");
   const role = readText(formData, "role") as AdminRoleName;
+  const status = readText(formData, "status");
   const note = readText(formData, "note") || null;
-  const modules = role === "super_admin" ? adminRoleDefaultModules.super_admin : readModuleKeys(formData);
-  const exemptions = role === "super_admin" ? adminExemptionOptions.map((option) => option.key) : readExemptionKeys(formData);
-  if (!roleId || !isAdminRole(role)) return fail("角色参数无效。");
+  if (!roleId) return fail("管理员记录参数无效。");
+  if (!isAdminRole(role)) return fail("请选择角色。");
+  if (!isAdminStatus(status)) return fail("请选择状态。");
   if (!isConfirmed(formData)) return fail("请先输入 CONFIRM 完成二次确认。");
 
   const context = await getSuperAdminActionContext();
@@ -77,17 +86,29 @@ export async function updateAdminRole(_state: AdminHomeActionState, formData: Fo
   const before = await readAdminRoleById(context.supabase, roleId);
   if (before?.user_id === context.userId) return fail("不能修改自己的管理员权限。");
   if (!before) return fail("管理员记录不存在。");
-  const [beforeModules, beforeExemptions] = await Promise.all([
+  const profile = await readProfile(context.supabase, before.user_id);
+  if (profile && isOwnerSuperAdminProfile(profile)) return fail("内置首席超级管理员只能通过代码或 migration 修改，不能在后台停用、降级或减少权限。");
+
+  const authorization = await readAuthorizationData(context.supabase);
+  const permissionKeys = normalizePermissionKeys(formData, role, authorization.allPermissionKeys);
+  if (role !== "super_admin" && permissionKeys.length === 0) return fail("普通管理员至少需要选择一个权限。");
+  const moduleKeys = role === "super_admin" ? allAdminModuleKeys() : deriveModuleKeys(permissionKeys, authorization.modulePermissionMap);
+  const exemptionKeys = role === "super_admin" ? allAdminExemptionKeys() : readExemptionKeys(formData);
+  const isActive = status === "active";
+  if (await wouldRemoveLastActiveSuperAdmin(context.supabase, before.user_id, role, isActive)) return fail("不能停用或降级最后一个启用的超级管理员。");
+
+  const [beforeModules, beforePermissions, beforeExemptions] = await Promise.all([
     readAdminModules(context.supabase, before.user_id),
+    readAdminPermissions(context.supabase, before.user_id),
     readAdminExemptions(context.supabase, before.user_id),
   ]);
 
-  const payload = { role, note, updated_at: new Date().toISOString() };
+  const payload = { role, note, is_active: isActive, revoked_at: isActive ? null : new Date().toISOString(), updated_at: new Date().toISOString() };
   const { error } = await context.supabase.from("admin_roles").update(payload).eq("id", roleId);
   if (error) return fail("管理员角色更新失败，请确认不会降级最后一个超级管理员。");
-  const grantsSaved = await saveAdminGrants(context, before.user_id, modules, exemptions);
+  const grantsSaved = await saveAdminGrants(context, before.user_id, permissionKeys, moduleKeys, exemptionKeys);
   if (!grantsSaved) return fail("角色已更新，但功能授权保存失败，请稍后再试。");
-  if (!(await auditLog(context, "change_admin_role", "admin_roles", roleId, { role: before, modules: beforeModules, exemptions: beforeExemptions }, { ...payload, modules, exemptions }))) {
+  if (!(await auditLog(context, "change_admin_role", "admin_roles", roleId, { role: before, modules: beforeModules, permissions: beforePermissions, exemptions: beforeExemptions }, { ...payload, modules: moduleKeys, permissions: permissionKeys, exemptions: exemptionKeys }))) {
     return fail("角色已更新，但审计日志写入失败。");
   }
 
@@ -108,10 +129,13 @@ export async function setAdminRoleActive(_state: AdminHomeActionState, formData:
   const before = await readAdminRoleById(context.supabase, roleId);
   if (before?.user_id === context.userId) return fail(active ? "不能恢复自己的管理员账号。" : "不能停用自己的管理员账号。");
   if (!before) return fail("管理员记录不存在。");
+  const profile = await readProfile(context.supabase, before.user_id);
+  if (profile && isOwnerSuperAdminProfile(profile)) return fail("内置首席超级管理员不能在后台停用或恢复。");
+  if (await wouldRemoveLastActiveSuperAdmin(context.supabase, before.user_id, before.role, active)) return fail("不能停用最后一个启用的超级管理员。");
 
   const payload = active
-    ? { is_active: true, revoked_by: null, revoked_at: null, updated_at: new Date().toISOString() }
-    : { is_active: false, revoked_by: context.userId, revoked_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+    ? { is_active: true, revoked_at: null, updated_at: new Date().toISOString() }
+    : { is_active: false, revoked_at: new Date().toISOString(), updated_at: new Date().toISOString() };
 
   const { error } = await context.supabase.from("admin_roles").update(payload).eq("id", roleId);
   if (error) return fail("管理员状态更新失败，请确认不会停用最后一个超级管理员。");
@@ -161,19 +185,40 @@ async function readAdminExemptions(supabase: SupabaseServerClient, userId: strin
   return ((data ?? []) as Array<{ exemption_key: string; is_enabled: boolean }>).filter((item) => item.is_enabled).map((item) => item.exemption_key);
 }
 
-async function saveAdminGrants(context: Extract<AdminActionContext, { ok: true }>, userId: string, moduleKeys: AdminModuleKey[], exemptionKeys: AdminExemptionKey[]) {
+async function readAdminPermissions(supabase: SupabaseServerClient, userId: string) {
+  const { data } = await supabase.from("admin_user_permissions").select("permission_key,effect").eq("user_id", userId);
+  return ((data ?? []) as Array<{ permission_key: string; effect: string }>).filter((item) => item.effect === "allow").map((item) => item.permission_key);
+}
+
+async function readAuthorizationData(supabase: SupabaseServerClient) {
+  const [permissionsResult, modulePermissionsResult] = await Promise.all([
+    supabase.from("admin_permissions").select("permission_key"),
+    supabase.from("admin_module_permissions").select("module_key,permission_key"),
+  ]);
+  const allPermissionKeys = ((permissionsResult.data ?? []) as Array<{ permission_key: string }>).map((row) => row.permission_key);
+  const permissionSet = new Set(allPermissionKeys);
+  const modulePermissionMap: Record<string, string[]> = {};
+  for (const row of (modulePermissionsResult.data ?? []) as Array<{ module_key: string; permission_key: string }>) {
+    if (!permissionSet.has(row.permission_key)) continue;
+    modulePermissionMap[row.module_key] = [...(modulePermissionMap[row.module_key] ?? []), row.permission_key];
+  }
+  return {
+    allPermissionKeys,
+    modulePermissionMap,
+  };
+}
+
+async function saveAdminGrants(
+  context: Extract<AdminActionContext, { ok: true }>,
+  userId: string,
+  permissionKeys: string[],
+  moduleKeys: AdminModuleKey[],
+  exemptionKeys: AdminExemptionKey[],
+) {
   const now = new Date().toISOString();
+  const allowedPermissionKeys = Array.from(new Set(permissionKeys));
   const allowedModules = Array.from(new Set(moduleKeys.filter(isAdminModuleKey)));
   const allowedExemptions = Array.from(new Set(exemptionKeys.filter(isAdminExemptionKey)));
-  const modulePermissionKeys = Array.from(new Set(ADMIN_MODULES.flatMap((module) => module.permissionKeys).filter((key) => key !== "super_admin")));
-  const allowedPermissionKeys = Array.from(
-    new Set(
-      ADMIN_MODULES
-        .filter((module) => allowedModules.includes(module.key))
-        .flatMap((module) => module.permissionKeys)
-        .filter((key) => key !== "super_admin"),
-    ),
-  );
 
   const { error: deleteModuleError } = await context.supabase.from("admin_user_modules").delete().eq("user_id", userId);
   if (deleteModuleError) return false;
@@ -207,17 +252,15 @@ async function saveAdminGrants(context: Extract<AdminActionContext, { ok: true }
     if (error) return false;
   }
 
-  if (modulePermissionKeys.length > 0) {
-    const { error } = await context.supabase.from("admin_user_permissions").delete().eq("user_id", userId).in("permission_key", modulePermissionKeys);
-    if (error) return false;
-  }
+  const { error: deletePermissionError } = await context.supabase.from("admin_user_permissions").delete().eq("user_id", userId);
+  if (deletePermissionError) return false;
   if (allowedPermissionKeys.length > 0) {
     const { error } = await context.supabase.from("admin_user_permissions").insert(
       allowedPermissionKeys.map((permissionKey) => ({
         user_id: userId,
         permission_key: permissionKey,
         effect: "allow",
-        reason: "Synced from admin module grant",
+        reason: "Synced from admin permission grant",
         granted_by: context.userId,
         created_at: now,
         updated_at: now,
@@ -245,12 +288,35 @@ function readText(formData: FormData, key: string) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function readModuleKeys(formData: FormData): AdminModuleKey[] {
-  return formData.getAll("module_keys").filter((value): value is AdminModuleKey => typeof value === "string" && isAdminModuleKey(value));
+function normalizePermissionKeys(formData: FormData, role: AdminRoleName, allPermissionKeys: string[]) {
+  const allPermissionSet = new Set(allPermissionKeys);
+  if (role === "super_admin") return Array.from(allPermissionSet).sort();
+  return Array.from(
+    new Set(
+      formData
+        .getAll("permission_keys")
+        .filter((value): value is string => typeof value === "string" && allPermissionSet.has(value)),
+    ),
+  ).sort();
+}
+
+function deriveModuleKeys(permissionKeys: string[], modulePermissionMap: Record<string, string[]>): AdminModuleKey[] {
+  const selected = new Set(permissionKeys);
+  return Object.entries(modulePermissionMap)
+    .filter(([moduleKey, mappedPermissions]) => isAdminModuleKey(moduleKey) && mappedPermissions.some((permissionKey) => selected.has(permissionKey)))
+    .map(([moduleKey]) => moduleKey as AdminModuleKey);
 }
 
 function readExemptionKeys(formData: FormData): AdminExemptionKey[] {
   return formData.getAll("exemption_keys").filter((value): value is AdminExemptionKey => typeof value === "string" && isAdminExemptionKey(value));
+}
+
+function allAdminModuleKeys(): AdminModuleKey[] {
+  return ADMIN_MODULES.map((module) => module.key);
+}
+
+function allAdminExemptionKeys(): AdminExemptionKey[] {
+  return adminExemptionOptions.map((option) => option.key);
 }
 
 function isConfirmed(formData: FormData) {
@@ -261,10 +327,30 @@ function isAdminRole(value: string): value is AdminRoleName {
   return value === "super_admin" || value === "admin" || value === "editor" || value === "moderator" || value === "support";
 }
 
+function isAdminStatus(value: string): value is "active" | "inactive" {
+  return value === "active" || value === "inactive";
+}
+
 function isAdminModuleKey(value: string): value is AdminModuleKey {
   return ADMIN_MODULES.some((module) => module.key === value);
 }
 
 function isAdminExemptionKey(value: string): value is AdminExemptionKey {
   return adminExemptionOptions.some((option) => option.key === value);
+}
+
+function isOwnerSuperAdminProfile(profile: { email: string | null }) {
+  return profile.email?.trim().toLowerCase() === OWNER_SUPER_ADMIN_EMAIL;
+}
+
+async function wouldRemoveLastActiveSuperAdmin(supabase: SupabaseServerClient, targetUserId: string, nextRole: AdminRoleName, nextActive: boolean) {
+  if (nextRole === "super_admin" && nextActive) return false;
+  const { count, error } = await supabase
+    .from("admin_roles")
+    .select("id", { count: "exact", head: true })
+    .eq("role", "super_admin")
+    .eq("is_active", true)
+    .neq("user_id", targetUserId);
+  if (error) return true;
+  return (count ?? 0) === 0;
 }

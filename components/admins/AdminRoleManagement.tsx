@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { AdminActionForm, AdminTextInput } from "@/components/admin/AdminActionForm";
-import { AdminAdminManageDialog } from "@/components/admins/AdminAdminManageDialog";
+import { AdminAdminManageDialog } from "@/components/admins/AdminAdminPermissionDialog";
+import { AdminAuthorizationFields } from "@/components/admins/AdminAuthorizationFields";
 import { ADMIN_MODULES } from "@/features/admin/adminModules";
 import { grantAdminRole } from "@/features/admins/adminActions";
 import { adminExemptionOptions, adminRoleOptions, getAdminRoleLabel, getAdminStatusLabel } from "@/features/admins/adminRoleConfig";
-import type { AdminCandidate, AdminRoleListItem, AdminsPermissions } from "@/features/admins/adminQueries";
+import type { AdminAuthorizationConfig, AdminCandidate, AdminRoleListItem, AdminsPermissions } from "@/features/admins/adminQueries";
 import type { AdminRoleName } from "@/lib/supabase/types";
 
 export function AdminRoleStats({ admins }: { admins: AdminRoleListItem[] }) {
@@ -62,7 +63,7 @@ export function AdminRoleSearch({ q, role, status }: { q?: string; role?: string
   );
 }
 
-export function AdminCandidates({ candidates, permissions }: { candidates: AdminCandidate[]; permissions: AdminsPermissions }) {
+export function AdminCandidates({ candidates, permissions, authorizationConfig }: { candidates: AdminCandidate[]; permissions: AdminsPermissions; authorizationConfig: AdminAuthorizationConfig }) {
   if (candidates.length === 0) {
     return <p className="rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-500">输入邮箱、昵称或 user id 后，会在这里显示真实用户候选项。必须确认 user id 后才能授权。</p>;
   }
@@ -82,7 +83,7 @@ export function AdminCandidates({ candidates, permissions }: { candidates: Admin
                 </p>
               ) : null}
             </div>
-            <GrantAdminForm candidate={candidate} permissions={permissions} />
+            <GrantAdminForm candidate={candidate} permissions={permissions} authorizationConfig={authorizationConfig} />
           </div>
         </article>
       ))}
@@ -90,7 +91,7 @@ export function AdminCandidates({ candidates, permissions }: { candidates: Admin
   );
 }
 
-export function AdminRolesList({ admins, permissions }: { admins: AdminRoleListItem[]; permissions: AdminsPermissions }) {
+export function AdminRolesList({ admins, permissions, authorizationConfig }: { admins: AdminRoleListItem[]; permissions: AdminsPermissions; authorizationConfig: AdminAuthorizationConfig }) {
   if (admins.length === 0) {
     return <p className="rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-500">暂无其他管理员记录。</p>;
   }
@@ -111,7 +112,7 @@ export function AdminRolesList({ admins, permissions }: { admins: AdminRoleListI
               <p className="mt-2 text-xs font-semibold text-slate-500">授权：{formatDateTime(admin.grantedAt)} · 最近后台登录：{formatDateTime(admin.lastAdminLoginAt)}</p>
               <AdminGrantSummary admin={admin} />
             </div>
-            {!admin.isCurrentUser ? <AdminAdminManageDialog admin={admin} permissions={permissions} /> : null}
+            {!admin.isCurrentUser ? <AdminAdminManageDialog admin={admin} permissions={permissions} authorizationConfig={authorizationConfig} /> : null}
           </div>
         </article>
       ))}
@@ -130,6 +131,7 @@ function AdminGrantSummary({ admin }: { admin: AdminRoleListItem }) {
   return (
     <div className="mt-3 border-t border-slate-200 pt-3">
       <SummaryRow label="功能授权" emptyLabel="暂无功能授权" items={moduleLabels} />
+      <SummaryRow label="权限数量" items={[`${admin.permissionKeys.length} 项权限`]} />
       {exemptionLabels.length > 0 ? <SummaryRow label="限制豁免" items={exemptionLabels} /> : null}
     </div>
   );
@@ -156,13 +158,18 @@ function SummaryRow({ label, items, emptyLabel }: { label: string; items: string
   );
 }
 
-function GrantAdminForm({ candidate, permissions }: { candidate: AdminCandidate; permissions: AdminsPermissions }) {
+function GrantAdminForm({ candidate, permissions, authorizationConfig }: { candidate: AdminCandidate; permissions: AdminsPermissions; authorizationConfig: AdminAuthorizationConfig }) {
   const canGrant = permissions.addAdmins || permissions.manageAdmins || permissions.superAdmin;
   if (!canGrant) return <DisabledReason reason="当前账号不能新增管理员授权" />;
   return (
-    <AdminActionForm action={grantAdminRole} submitLabel="确认授权" className="grid w-full gap-2 md:w-80">
+    <AdminActionForm
+      action={grantAdminRole}
+      submitLabel="确认授权"
+      className="grid w-full gap-4 lg:w-[620px]"
+      footerClassName="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end"
+    >
       <input type="hidden" name="user_id" value={candidate.id} />
-      <RoleSelect name="role" defaultValue="support" allowSuperAdmin={permissions.superAdmin} />
+      <AdminAuthorizationFields config={authorizationConfig} allowSuperAdmin={permissions.superAdmin} />
       <AdminTextInput label="备注" name="note" placeholder="例如：客服排班 / 内容审核" />
       <ConfirmInput />
     </AdminActionForm>
