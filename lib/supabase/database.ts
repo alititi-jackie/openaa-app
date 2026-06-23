@@ -57,7 +57,9 @@ export type Database = {
           entity_id: string | null
           entity_type: string | null
           id: string
+          ip_hash: string | null
           metadata: Json
+          user_agent: string | null
         }
         Insert: {
           action: string
@@ -68,7 +70,9 @@ export type Database = {
           entity_id?: string | null
           entity_type?: string | null
           id?: string
+          ip_hash?: string | null
           metadata?: Json
+          user_agent?: string | null
         }
         Update: {
           action?: string
@@ -79,7 +83,9 @@ export type Database = {
           entity_id?: string | null
           entity_type?: string | null
           id?: string
+          ip_hash?: string | null
           metadata?: Json
+          user_agent?: string | null
         }
         Relationships: [
           {
@@ -1445,34 +1451,46 @@ export type Database = {
       }
       post_admin_events: {
         Row: {
-          action: string
           actor_id: string | null
-          after_data: Json | null
-          before_data: Json | null
+          body: string | null
           created_at: string
+          event_type: string
           id: string
-          note: string | null
+          metadata: Json
+          notification_id: string | null
           post_id: string | null
+          status_after: string | null
+          status_before: string | null
+          template_key: string | null
+          title: string | null
         }
         Insert: {
-          action: string
           actor_id?: string | null
-          after_data?: Json | null
-          before_data?: Json | null
+          body?: string | null
           created_at?: string
+          event_type: string
           id?: string
-          note?: string | null
+          metadata?: Json
+          notification_id?: string | null
           post_id?: string | null
+          status_after?: string | null
+          status_before?: string | null
+          template_key?: string | null
+          title?: string | null
         }
         Update: {
-          action?: string
           actor_id?: string | null
-          after_data?: Json | null
-          before_data?: Json | null
+          body?: string | null
           created_at?: string
+          event_type?: string
           id?: string
-          note?: string | null
+          metadata?: Json
+          notification_id?: string | null
           post_id?: string | null
+          status_after?: string | null
+          status_before?: string | null
+          template_key?: string | null
+          title?: string | null
         }
         Relationships: [
           {
@@ -1480,6 +1498,13 @@ export type Database = {
             columns: ["actor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_admin_events_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
             referencedColumns: ["id"]
           },
           {
@@ -1501,6 +1526,7 @@ export type Database = {
           preferred_contact_method: string | null
           updated_at: string
           wechat: string | null
+          whatsapp: string | null
         }
         Insert: {
           contact_name?: string | null
@@ -1511,6 +1537,7 @@ export type Database = {
           preferred_contact_method?: string | null
           updated_at?: string
           wechat?: string | null
+          whatsapp?: string | null
         }
         Update: {
           contact_name?: string | null
@@ -1521,6 +1548,7 @@ export type Database = {
           preferred_contact_method?: string | null
           updated_at?: string
           wechat?: string | null
+          whatsapp?: string | null
         }
         Relationships: [
           {
@@ -1772,14 +1800,15 @@ export type Database = {
           deleted_at: string | null
           deleted_by: string | null
           detail: string
-          handled_at: string | null
-          handled_by: string | null
+          handler_id: string | null
           id: string
+          notify_author: boolean
           post_action: string | null
           post_id: string
           reason: string
           related_url: string | null
           reporter_id: string | null
+          resolved_at: string | null
           status: string
           updated_at: string
           visitor_id: string | null
@@ -1793,14 +1822,15 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           detail: string
-          handled_at?: string | null
-          handled_by?: string | null
+          handler_id?: string | null
           id?: string
+          notify_author?: boolean
           post_action?: string | null
           post_id: string
           reason: string
           related_url?: string | null
           reporter_id?: string | null
+          resolved_at?: string | null
           status?: string
           updated_at?: string
           visitor_id?: string | null
@@ -1814,14 +1844,15 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           detail?: string
-          handled_at?: string | null
-          handled_by?: string | null
+          handler_id?: string | null
           id?: string
+          notify_author?: boolean
           post_action?: string | null
           post_id?: string
           reason?: string
           related_url?: string | null
           reporter_id?: string | null
+          resolved_at?: string | null
           status?: string
           updated_at?: string
           visitor_id?: string | null
@@ -1835,8 +1866,8 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "post_reports_handled_by_fkey"
-            columns: ["handled_by"]
+            foreignKeyName: "post_reports_handler_id_fkey"
+            columns: ["handler_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1942,9 +1973,13 @@ export type Database = {
           deletion_error: string | null
           deletion_error_at: string | null
           expires_at: string | null
+          hidden_at: string | null
           id: string
           last_admin_action: string | null
           last_admin_action_at: string | null
+          last_admin_action_by: string | null
+          last_admin_action_reason: string | null
+          last_admin_action_template_key: string | null
           metadata: Json
           post_type: Database["public"]["Enums"]["post_type"]
           price_amount: number | null
@@ -1969,9 +2004,13 @@ export type Database = {
           deletion_error?: string | null
           deletion_error_at?: string | null
           expires_at?: string | null
+          hidden_at?: string | null
           id?: string
           last_admin_action?: string | null
           last_admin_action_at?: string | null
+          last_admin_action_by?: string | null
+          last_admin_action_reason?: string | null
+          last_admin_action_template_key?: string | null
           metadata?: Json
           post_type: Database["public"]["Enums"]["post_type"]
           price_amount?: number | null
@@ -1996,9 +2035,13 @@ export type Database = {
           deletion_error?: string | null
           deletion_error_at?: string | null
           expires_at?: string | null
+          hidden_at?: string | null
           id?: string
           last_admin_action?: string | null
           last_admin_action_at?: string | null
+          last_admin_action_by?: string | null
+          last_admin_action_reason?: string | null
+          last_admin_action_template_key?: string | null
           metadata?: Json
           post_type?: Database["public"]["Enums"]["post_type"]
           price_amount?: number | null
@@ -2032,6 +2075,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "posts_last_admin_action_by_fkey"
+            columns: ["last_admin_action_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       profiles: {
@@ -2055,7 +2105,9 @@ export type Database = {
           public_metadata: Json
           publish_email: string | null
           publish_email_mode: string | null
+          is_verified_user: boolean
           status: Database["public"]["Enums"]["profile_status"]
+          trust_level: number
           updated_at: string
           wechat_id: string | null
           whatsapp: string | null
@@ -2080,7 +2132,9 @@ export type Database = {
           public_metadata?: Json
           publish_email?: string | null
           publish_email_mode?: string | null
+          is_verified_user?: boolean
           status?: Database["public"]["Enums"]["profile_status"]
+          trust_level?: number
           updated_at?: string
           wechat_id?: string | null
           whatsapp?: string | null
@@ -2105,7 +2159,9 @@ export type Database = {
           public_metadata?: Json
           publish_email?: string | null
           publish_email_mode?: string | null
+          is_verified_user?: boolean
           status?: Database["public"]["Enums"]["profile_status"]
+          trust_level?: number
           updated_at?: string
           wechat_id?: string | null
           whatsapp?: string | null
@@ -2182,27 +2238,41 @@ export type Database = {
       }
       site_settings: {
         Row: {
+          created_at: string
           description: string | null
           is_public: boolean
           key: string
+          updated_by: string | null
           updated_at: string
           value: Json
         }
         Insert: {
+          created_at?: string
           description?: string | null
           is_public?: boolean
           key: string
+          updated_by?: string | null
           updated_at?: string
           value?: Json
         }
         Update: {
+          created_at?: string
           description?: string | null
           is_public?: boolean
           key?: string
+          updated_by?: string | null
           updated_at?: string
           value?: Json
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "site_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       support_ticket_events: {
         Row: {

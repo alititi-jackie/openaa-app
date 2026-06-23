@@ -47,6 +47,8 @@ create table public.site_settings (
   value jsonb not null default '{}'::jsonb,
   is_public boolean not null default false,
   description text,
+  updated_by uuid references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
@@ -91,6 +93,8 @@ create table public.profiles (
   publish_email text,
   bio text,
   location_area text,
+  trust_level integer not null default 0,
+  is_verified_user boolean not null default false,
   city_id text references public.cities(id),
   account_type public.account_type not null default 'personal',
   status public.profile_status not null default 'active',
@@ -283,6 +287,8 @@ create table public.admin_audit_logs (
   entity_id text,
   before_data jsonb,
   after_data jsonb,
+  ip_hash text,
+  user_agent text,
   metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
@@ -348,6 +354,7 @@ create table public.posts (
   currency text default 'USD',
   metadata jsonb not null default '{}'::jsonb,
   published_at timestamptz,
+  hidden_at timestamptz,
   expires_at timestamptz,
   deleted_at timestamptz,
   deleted_by uuid references public.profiles(id) on delete set null,
@@ -356,6 +363,9 @@ create table public.posts (
   deletion_error_at timestamptz,
   last_admin_action text,
   last_admin_action_at timestamptz,
+  last_admin_action_by uuid references public.profiles(id) on delete set null,
+  last_admin_action_template_key text,
+  last_admin_action_reason text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -419,6 +429,7 @@ create table public.post_contacts (
   contact_name text,
   phone text,
   wechat text,
+  whatsapp text,
   email text,
   preferred_contact_method text,
   created_at timestamptz not null default now(),
@@ -457,8 +468,9 @@ create table public.post_reports (
   admin_message_editable text,
   admin_message_fixed text,
   post_action text check (post_action is null or post_action in ('none', 'hide', 'delete')),
-  handled_by uuid references public.profiles(id) on delete set null,
-  handled_at timestamptz,
+  handler_id uuid references public.profiles(id) on delete set null,
+  resolved_at timestamptz,
+  notify_author boolean not null default false,
   deleted_at timestamptz,
   deleted_by uuid references public.profiles(id) on delete set null,
   created_at timestamptz not null default now(),
@@ -473,10 +485,14 @@ create table public.post_admin_events (
   id uuid primary key default gen_random_uuid(),
   post_id uuid references public.posts(id) on delete cascade,
   actor_id uuid references public.profiles(id) on delete set null,
-  action text not null,
-  before_data jsonb,
-  after_data jsonb,
-  note text,
+  event_type text not null,
+  template_key text,
+  status_before text,
+  status_after text,
+  title text,
+  body text,
+  notification_id uuid references public.notifications(id) on delete set null,
+  metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
 create index post_admin_events_post_id_created_at_idx on public.post_admin_events (post_id, created_at desc);
