@@ -523,6 +523,7 @@ create table public.navigation_links (
   description text,
   url text not null,
   icon text,
+  icon_image_asset_id uuid references public.image_assets(id) on delete set null,
   image_url text,
   open_mode text not null default 'same' check (open_mode in ('same', 'new')),
   sort_order integer not null default 0,
@@ -653,18 +654,24 @@ create index ads_placement_deleted_active_sort_idx on public.ads (placement, del
 
 create table public.dmv_questions (
   id uuid primary key default gen_random_uuid(),
+  state text not null default 'NY',
+  language text not null default 'zh-CN',
+  source_version text,
+  source_question_id text,
   category text not null,
-  question text not null,
+  question_text text not null,
   options jsonb not null,
-  answer_index integer not null,
+  correct_answer text not null,
   explanation text,
+  difficulty text,
   is_active boolean not null default true,
   sort_order integer not null default 0,
   metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-create index dmv_questions_active_category_idx on public.dmv_questions (is_active, category, sort_order);
+create unique index dmv_questions_source_uidx on public.dmv_questions (state, language, source_version, source_question_id) where source_version is not null and source_question_id is not null;
+create index dmv_questions_active_state_language_category_idx on public.dmv_questions (is_active, state, language, category, sort_order);
 
 create table public.dmv_user_progress (
   user_id uuid not null references public.profiles(id) on delete cascade,

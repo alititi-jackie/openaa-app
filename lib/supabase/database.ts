@@ -631,42 +631,57 @@ export type Database = {
       }
       dmv_questions: {
         Row: {
-          answer_index: number
           category: string
+          correct_answer: string
           created_at: string
+          difficulty: string | null
           explanation: string | null
           id: string
           is_active: boolean
+          language: string
           metadata: Json
           options: Json
-          question: string
+          question_text: string
           sort_order: number
+          source_question_id: string | null
+          source_version: string | null
+          state: string
           updated_at: string
         }
         Insert: {
-          answer_index: number
           category: string
+          correct_answer: string
           created_at?: string
+          difficulty?: string | null
           explanation?: string | null
           id?: string
           is_active?: boolean
+          language?: string
           metadata?: Json
           options: Json
-          question: string
+          question_text: string
           sort_order?: number
+          source_question_id?: string | null
+          source_version?: string | null
+          state?: string
           updated_at?: string
         }
         Update: {
-          answer_index?: number
           category?: string
+          correct_answer?: string
           created_at?: string
+          difficulty?: string | null
           explanation?: string | null
           id?: string
           is_active?: boolean
+          language?: string
           metadata?: Json
           options?: Json
-          question?: string
+          question_text?: string
           sort_order?: number
+          source_question_id?: string | null
+          source_version?: string | null
+          state?: string
           updated_at?: string
         }
         Relationships: []
@@ -1101,6 +1116,7 @@ export type Database = {
           deleted_by: string | null
           description: string | null
           icon: string | null
+          icon_image_asset_id: string | null
           id: string
           image_url: string | null
           is_active: boolean
@@ -1119,6 +1135,7 @@ export type Database = {
           deleted_by?: string | null
           description?: string | null
           icon?: string | null
+          icon_image_asset_id?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean
@@ -1137,6 +1154,7 @@ export type Database = {
           deleted_by?: string | null
           description?: string | null
           icon?: string | null
+          icon_image_asset_id?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean
@@ -1161,6 +1179,13 @@ export type Database = {
             columns: ["deleted_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "navigation_links_icon_image_asset_id_fkey"
+            columns: ["icon_image_asset_id"]
+            isOneToOne: false
+            referencedRelation: "image_assets"
             referencedColumns: ["id"]
           },
         ]
@@ -2852,4 +2877,3 @@ export const Constants = {
     },
   },
 } as const
-
