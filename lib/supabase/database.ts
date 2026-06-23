@@ -378,6 +378,8 @@ export type Database = {
       ads: {
         Row: {
           address: string | null
+          contact_name: string | null
+          content: string | null
           created_at: string
           deleted_at: string | null
           deleted_by: string | null
@@ -396,9 +398,13 @@ export type Database = {
           starts_at: string | null
           title: string
           updated_at: string
+          wechat: string | null
+          phone: string | null
         }
         Insert: {
           address?: string | null
+          contact_name?: string | null
+          content?: string | null
           created_at?: string
           deleted_at?: string | null
           deleted_by?: string | null
@@ -417,9 +423,13 @@ export type Database = {
           starts_at?: string | null
           title: string
           updated_at?: string
+          wechat?: string | null
+          phone?: string | null
         }
         Update: {
           address?: string | null
+          contact_name?: string | null
+          content?: string | null
           created_at?: string
           deleted_at?: string | null
           deleted_by?: string | null
@@ -438,6 +448,8 @@ export type Database = {
           starts_at?: string | null
           title?: string
           updated_at?: string
+          wechat?: string | null
+          phone?: string | null
         }
         Relationships: [
           {
@@ -909,16 +921,20 @@ export type Database = {
           deleted_by: string | null
           entity_id: string | null
           entity_type: string | null
+          external_host: string | null
           external_url: string | null
           height: number | null
           id: string
           is_deleted: boolean
+          is_public: boolean
           metadata: Json
           mime_type: string | null
           owner_id: string | null
           public_url: string | null
           size_bytes: number | null
           source_type: Database["public"]["Enums"]["image_source_type"]
+          path: string | null
+          status: string
           storage_path: string | null
           updated_at: string
           width: number | null
@@ -930,16 +946,20 @@ export type Database = {
           deleted_by?: string | null
           entity_id?: string | null
           entity_type?: string | null
+          external_host?: string | null
           external_url?: string | null
           height?: number | null
           id?: string
           is_deleted?: boolean
+          is_public?: boolean
           metadata?: Json
           mime_type?: string | null
           owner_id?: string | null
           public_url?: string | null
           size_bytes?: number | null
           source_type?: Database["public"]["Enums"]["image_source_type"]
+          path?: string | null
+          status?: string
           storage_path?: string | null
           updated_at?: string
           width?: number | null
@@ -951,16 +971,20 @@ export type Database = {
           deleted_by?: string | null
           entity_id?: string | null
           entity_type?: string | null
+          external_host?: string | null
           external_url?: string | null
           height?: number | null
           id?: string
           is_deleted?: boolean
+          is_public?: boolean
           metadata?: Json
           mime_type?: string | null
           owner_id?: string | null
           public_url?: string | null
           size_bytes?: number | null
           source_type?: Database["public"]["Enums"]["image_source_type"]
+          path?: string | null
+          status?: string
           storage_path?: string | null
           updated_at?: string
           width?: number | null
@@ -2341,6 +2365,7 @@ export type Database = {
           href: string
           icon: string | null
           id: string
+          image_asset_id: string | null
           is_active: boolean
           key: string | null
           metadata: Json
@@ -2355,6 +2380,7 @@ export type Database = {
           href: string
           icon?: string | null
           id?: string
+          image_asset_id?: string | null
           is_active?: boolean
           key?: string | null
           metadata?: Json
@@ -2369,6 +2395,7 @@ export type Database = {
           href?: string
           icon?: string | null
           id?: string
+          image_asset_id?: string | null
           is_active?: boolean
           key?: string | null
           metadata?: Json
@@ -2378,6 +2405,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "top_quick_links_image_asset_id_fkey"
+            columns: ["image_asset_id"]
+            isOneToOne: false
+            referencedRelation: "image_assets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "top_quick_links_city_id_fkey"
             columns: ["city_id"]
