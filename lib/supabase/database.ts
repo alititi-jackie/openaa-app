@@ -2045,6 +2045,8 @@ export type Database = {
           email: string | null
           email_verified: boolean
           id: string
+          last_active_at: string | null
+          last_login_at: string | null
           location_area: string | null
           nickname: string | null
           phone: string | null
@@ -2068,6 +2070,8 @@ export type Database = {
           email?: string | null
           email_verified?: boolean
           id: string
+          last_active_at?: string | null
+          last_login_at?: string | null
           location_area?: string | null
           nickname?: string | null
           phone?: string | null
@@ -2091,6 +2095,8 @@ export type Database = {
           email?: string | null
           email_verified?: boolean
           id?: string
+          last_active_at?: string | null
+          last_login_at?: string | null
           location_area?: string | null
           nickname?: string | null
           phone?: string | null

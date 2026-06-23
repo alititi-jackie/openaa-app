@@ -78,6 +78,8 @@ create table public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text,
   email_verified boolean not null default false,
+  last_login_at timestamptz,
+  last_active_at timestamptz,
   nickname text,
   avatar_url text,
   phone text,
@@ -99,6 +101,49 @@ create table public.profiles (
 );
 create index profiles_city_status_idx on public.profiles (city_id, status);
 create index profiles_account_status_idx on public.profiles (account_type, status);
+
+create or replace function public.handle_new_auth_user_profile()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (
+    id,
+    email,
+    email_verified,
+    nickname,
+    avatar_url,
+    last_login_at,
+    last_active_at
+  )
+  values (
+    new.id,
+    new.email,
+    new.email_confirmed_at is not null,
+    nullif(left(coalesce(new.raw_user_meta_data->>'nickname', new.raw_user_meta_data->>'name', new.raw_user_meta_data->>'full_name', split_part(coalesce(new.email, ''), '@', 1)), 80), ''),
+    nullif(new.raw_user_meta_data->>'avatar_url', ''),
+    coalesce(new.last_sign_in_at, now()),
+    coalesce(new.last_sign_in_at, now())
+  )
+  on conflict (id) do update set
+    email = excluded.email,
+    email_verified = excluded.email_verified,
+    nickname = coalesce(public.profiles.nickname, excluded.nickname),
+    avatar_url = coalesce(public.profiles.avatar_url, excluded.avatar_url),
+    last_login_at = coalesce(excluded.last_login_at, public.profiles.last_login_at),
+    last_active_at = coalesce(excluded.last_active_at, public.profiles.last_active_at),
+    updated_at = now();
+
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created_profile on auth.users;
+create trigger on_auth_user_created_profile
+  after insert on auth.users
+  for each row execute function public.handle_new_auth_user_profile();
 
 create table public.business_profiles (
   id uuid primary key default gen_random_uuid(),

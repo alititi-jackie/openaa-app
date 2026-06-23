@@ -36,13 +36,39 @@ function categoryFor(record: NewsPostRecord) {
   };
 }
 
-function imageUrl(record: NewsPostRecord) {
+function cleanUrl(value: string | null | undefined) {
+  const url = typeof value === "string" ? value.trim() : "";
+  return url.length > 0 ? url : null;
+}
+
+function storagePublicUrl(asset: NewsImageAsset) {
+  const baseUrl = cleanUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
+  const bucket = cleanUrl(asset.bucket);
+  const path = cleanUrl(asset.path) ?? cleanUrl(asset.storage_path);
+
+  if (!baseUrl || !bucket || !path) return null;
+  return `${baseUrl.replace(/\/+$/, "")}/storage/v1/object/public/${bucket}/${path.replace(/^\/+/, "")}`;
+}
+
+function coverImageAsset(record: NewsPostRecord) {
   const asset = firstOrNull<NewsImageAsset>(record.image_assets);
-  return asset?.external_url || asset?.public_url || null;
+
+  if (!asset || asset.is_deleted || (asset.status && asset.status !== "active")) {
+    return null;
+  }
+
+  return asset;
+}
+
+function imageUrl(record: NewsPostRecord) {
+  const asset = coverImageAsset(record);
+  if (!asset) return null;
+
+  return cleanUrl(asset.public_url) ?? cleanUrl(asset.external_url) ?? storagePublicUrl(asset);
 }
 
 function imageSource(record: NewsPostRecord) {
-  const asset = firstOrNull<NewsImageAsset>(record.image_assets);
+  const asset = coverImageAsset(record);
   if (asset?.source_type === "storage" || asset?.source_type === "external") return asset.source_type;
   return null;
 }

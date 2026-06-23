@@ -30,7 +30,7 @@ const newsPostSelect = `
   created_at,
   updated_at,
   news_categories(id,slug,name,description,sort_order,is_active),
-  image_assets(source_type,public_url,external_url)
+  image_assets(source_type,bucket,path,storage_path,public_url,external_url,status,is_deleted)
 `;
 
 const newsPostCategoryInnerSelect = newsPostSelect.replace("news_categories(id,slug,name,description,sort_order,is_active)", "news_categories!inner(id,slug,name,description,sort_order,is_active)");

@@ -73,6 +73,8 @@ export default async function ProfilePage() {
             recent={profileCounts.recent}
             messageCounts={messageCounts}
           />
+        ) : user ? (
+          <ProfilePendingHeader user={user} />
         ) : (
           <GuestHeader />
         )}
@@ -122,7 +124,7 @@ export default async function ProfilePage() {
           <MenuRow href="/feedback" title="📝 线索与建议" description="提交新闻线索、广告合作咨询、功能建议或回复管理员" />
           <MenuRow href="/profile/security" title="账号安全 / 修改密码" />
 
-          {profile ? <ProfileLogoutButton variant="compact" /> : <div className="p-4 text-[12px] text-zinc-400">登录后可使用更多功能</div>}
+          {user ? <ProfileLogoutButton variant="compact" /> : <div className="p-4 text-[12px] text-zinc-400">登录后可使用更多功能</div>}
         </section>
 
         <section className="space-y-3 pb-4">
@@ -183,6 +185,22 @@ function getAuthLines(user: User | null, email: string) {
   }
 
   return lines.length > 0 ? lines : ["账号信息：已登录"];
+}
+
+function ProfilePendingHeader({ user }: { user: User }) {
+  return (
+    <section className="rounded-2xl bg-white p-4 shadow-[0_2px_14px_rgba(0,0,0,0.06)] ring-1 ring-black/5">
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <div className="text-[13px] font-black text-zinc-900">已登录</div>
+          <div className="mt-0.5 truncate text-[11px] text-zinc-500">{user.email ?? "账号资料初始化中"}</div>
+        </div>
+        <Link href="/profile" className="shrink-0 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2 text-[13px] font-bold text-amber-800 hover:bg-amber-100">
+          刷新
+        </Link>
+      </div>
+    </section>
+  );
 }
 
 function GuestHeader() {

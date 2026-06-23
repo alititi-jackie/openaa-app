@@ -11,8 +11,13 @@ export type NewsCategory = {
 
 export type NewsImageAsset = {
   source_type: "storage" | "external" | null;
+  bucket?: string | null;
+  path?: string | null;
+  storage_path?: string | null;
   public_url: string | null;
   external_url: string | null;
+  status?: string | null;
+  is_deleted?: boolean | null;
 };
 
 export type NewsCategoryRecord = {
