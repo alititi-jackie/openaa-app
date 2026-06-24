@@ -3,6 +3,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LatestPostGroup } from "@/components/home/LatestPostsSection";
 import { createSupabasePublicClient } from "@/lib/supabase/public";
+import { getAdPlaceholderSetting } from "@/features/ads/placeholders";
 import type { PostListItem } from "@/components/posts/PostList";
 import { getPublicPosts } from "@/features/posts/queries";
 import type { PostType } from "@/features/posts/types";
@@ -55,9 +56,10 @@ export async function getHomeConfig(): Promise<HomeConfig> {
   const quickGridItems = mapQuickGridItems(quickGridSectionConfig);
   const utilityTools = mapUtilityTools(utilitySectionConfig).filter((item) => item.isVisible !== false);
   const tickerSettings = await getLatestTickerSettings(supabase);
-  const [topQuickLinks, banners, latestPostGroups] = await Promise.all([
+  const [topQuickLinks, banners, adPlaceholder, latestPostGroups] = await Promise.all([
     getTopQuickLinks(supabase, city),
     getHomeBanners(supabase, city),
+    getAdPlaceholderSetting(supabase),
     getLatestPostGroups(latestPostSections),
   ]);
   const tickerItems = await getLatestTickerItems(supabase, city, tickerSettings, latestPostGroups);
@@ -66,6 +68,7 @@ export async function getHomeConfig(): Promise<HomeConfig> {
     city,
     topQuickLinks,
     banners,
+    adPlaceholderImageUrl: adPlaceholder.imageUrl,
     tickerItems,
     tickerSettings,
     quickGridItems,
@@ -497,6 +500,7 @@ function fallbackHomeConfig(): HomeConfig {
     city: fallbackHomeCity,
     topQuickLinks: fallbackTopQuickLinks,
     banners: fallbackHomeBanners,
+    adPlaceholderImageUrl: null,
     tickerItems: fallbackTickerItems,
     tickerSettings: fallbackTickerSettings,
     quickGridItems: fallbackQuickGridItems,

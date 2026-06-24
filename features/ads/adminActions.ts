@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { hasAdminModulePermission } from "@/lib/permissions/admin";
 import { writeAdminAuditLog } from "@/lib/permissions/adminAuditLog";
 import type { AdminHomeActionState } from "@/features/admin-home/types";
+import { AD_PLACEHOLDER_SETTING_KEY, normalizeAdPlaceholderSetting } from "./placeholders";
 import { adPositions, normalizeAdPosition, type AdOpenMode } from "./types";
 
 type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
@@ -34,6 +35,11 @@ type ExistingAd = {
   starts_at: string | null;
   ends_at: string | null;
   sort_order: number;
+};
+
+type ImageAssetRow = {
+  id: string;
+  public_url: string | null;
 };
 
 const ok = (message: string): AdminHomeActionState => ({ ok: true, message });
@@ -155,7 +161,55 @@ export async function removeAdImage(_state: AdminHomeActionState, formData: Form
   if (!audited) return fail("图片已删除，但审计日志写入失败。");
 
   revalidateAds();
-  return ok("图片已删除，可以重新上传或填写外部链接。");
+  return ok("图片已删除，可以重新上传或填写外部图片链接。");
+}
+
+export async function updateAdPlaceholderImage(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
+  const context = await getAdminActionContext();
+  if (!context.ok) return fail(context.message);
+
+  const imageFile = readFile(formData, "placeholder_image_file");
+  if (!imageFile) return fail("请选择要上传的广告占位图。");
+
+  const before = await readAdPlaceholderSetting(context.supabase);
+  const imageAssetId = await uploadAdPlaceholderImageAsset(context, imageFile);
+  if (!imageAssetId) return fail("广告占位图保存失败，请确认图片格式和大小。");
+
+  const asset = await readImageAsset(context.supabase, imageAssetId);
+  if (!asset?.public_url) return fail("广告占位图已上传，但公开地址读取失败。");
+
+  const payload = {
+    key: AD_PLACEHOLDER_SETTING_KEY,
+    value: {
+      url: asset.public_url,
+      imageAssetId,
+      sourceType: "storage",
+    },
+    is_public: true,
+    description: "全站广告图片缺失或加载失败时使用的默认占位图。",
+    updated_by: context.userId,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error } = await context.supabase.from("site_settings").upsert(payload, { onConflict: "key" });
+  if (error) return fail("广告占位图设置保存失败，请确认广告管理权限。");
+
+  if (before.imageAssetId && before.imageAssetId !== imageAssetId) {
+    await markImageAssetDeleted(context.supabase, before.imageAssetId);
+  }
+
+  const audited = await writeAdminAuditLog({
+    actorId: context.userId,
+    action: "update_ad_placeholder_image",
+    entityType: "site_settings",
+    entityId: AD_PLACEHOLDER_SETTING_KEY,
+    beforeData: before,
+    afterData: payload,
+  });
+  if (!audited) return fail("广告占位图已保存，但审计日志写入失败。");
+
+  revalidateAds();
+  return ok("广告占位图已更新。");
 }
 
 async function getAdminActionContext(): Promise<AdminActionContext> {
@@ -250,6 +304,19 @@ async function uploadAdImageAsset(context: Extract<AdminActionContext, { ok: tru
 
   const imageId = crypto.randomUUID();
   const path = `ads/${context.userId}/${entityId || "draft"}/${imageId}.${validation.extension}`;
+  return uploadStorageImageAsset(context, file, path, "ad", entityId);
+}
+
+async function uploadAdPlaceholderImageAsset(context: Extract<AdminActionContext, { ok: true }>, file: File) {
+  const validation = validateImageFile(file);
+  if (!validation.ok) return false;
+
+  const imageId = crypto.randomUUID();
+  const path = `placeholders/${context.userId}/${imageId}.${validation.extension}`;
+  return uploadStorageImageAsset(context, file, path, "ad_placeholder", AD_PLACEHOLDER_SETTING_KEY);
+}
+
+async function uploadStorageImageAsset(context: Extract<AdminActionContext, { ok: true }>, file: File, path: string, entityType: string, entityId: string | null) {
   const { error: uploadError } = await context.supabase.storage.from("ad-images").upload(path, file, {
     contentType: file.type,
     upsert: false,
@@ -265,7 +332,7 @@ async function uploadAdImageAsset(context: Extract<AdminActionContext, { ok: tru
       path,
       public_url: publicUrlData.publicUrl,
       owner_id: context.userId,
-      entity_type: "ad",
+      entity_type: entityType,
       entity_id: entityId,
       mime_type: file.type,
       size_bytes: file.size,
@@ -314,6 +381,20 @@ async function readAd(supabase: SupabaseServerClient, id: string): Promise<Exist
     .is("deleted_at", null)
     .maybeSingle();
   return (data as ExistingAd | null) ?? null;
+}
+
+async function readAdPlaceholderSetting(supabase: SupabaseServerClient) {
+  const { data } = await supabase
+    .from("site_settings")
+    .select("value,updated_at")
+    .eq("key", AD_PLACEHOLDER_SETTING_KEY)
+    .maybeSingle();
+  return normalizeAdPlaceholderSetting(data);
+}
+
+async function readImageAsset(supabase: SupabaseServerClient, id: string) {
+  const { data } = await supabase.from("image_assets").select("id,public_url").eq("id", id).maybeSingle();
+  return (data as ImageAssetRow | null) ?? null;
 }
 
 async function hasInternalSlugConflict(supabase: SupabaseServerClient, slug: string, currentId: string | null) {

@@ -17,8 +17,16 @@ export type HomeBannerItem = {
   slug?: string | null;
 };
 
-export function HomeBanner({ item, items }: { item?: HomeBannerItem; items?: HomeBannerItem[] }) {
-  const slides = useMemo(() => (item ? [item] : (items ?? []).filter((banner) => normalizeImageUrl(banner.imageUrl))), [item, items]);
+export function HomeBanner({
+  item,
+  items,
+  fallbackImageUrl,
+}: {
+  item?: HomeBannerItem;
+  items?: HomeBannerItem[];
+  fallbackImageUrl?: string | null;
+}) {
+  const slides = useMemo(() => (item ? [item] : (items ?? [])).filter((banner) => banner.title || normalizeImageUrl(banner.imageUrl)), [item, items]);
 
   if (slides.length === 0) {
     return null;
@@ -36,7 +44,7 @@ export function HomeBanner({ item, items }: { item?: HomeBannerItem; items?: Hom
           className="banner-swiper"
         >
           {slides.map((slide, index) => (
-            <SwiperSlide key={`${slide.href}-${slide.imageUrl}-${index}`}>{renderSlideContent(slide, index)}</SwiperSlide>
+            <SwiperSlide key={`${slide.href}-${slide.imageUrl}-${index}`}>{renderSlideContent(slide, index, fallbackImageUrl)}</SwiperSlide>
           ))}
         </Swiper>
       </div>
@@ -44,13 +52,10 @@ export function HomeBanner({ item, items }: { item?: HomeBannerItem; items?: Hom
   );
 }
 
-function renderSlideContent(slide: HomeBannerItem, index: number) {
+function renderSlideContent(slide: HomeBannerItem, index: number, fallbackImageUrl?: string | null) {
   const imageUrl = normalizeImageUrl(slide.imageUrl);
   const isFirstSlide = index === 0;
-
-  if (!imageUrl) return null;
-
-  const image = <BannerImage src={imageUrl} title={slide.title} eager={isFirstSlide} />;
+  const image = <BannerImage src={imageUrl} title={slide.title} eager={isFirstSlide} fallbackImageUrl={fallbackImageUrl} />;
   const href = normalizeHref(slide);
   const openMode = normalizeOpenMode(slide);
 
@@ -96,17 +101,26 @@ function renderSlideContent(slide: HomeBannerItem, index: number) {
   return image;
 }
 
-function BannerImage({ src, title, eager }: { src: string; title: string; eager: boolean }) {
+function BannerImage({ src, title, eager, fallbackImageUrl }: { src: string; title: string; eager: boolean; fallbackImageUrl?: string | null }) {
   const [failed, setFailed] = useState(false);
+  const [fallbackFailed, setFallbackFailed] = useState(false);
+  const normalizedFallback = normalizeImageUrl(fallbackImageUrl);
+  const showFallbackImage = (!src || failed) && normalizedFallback && !fallbackFailed;
 
   return (
     <div className="relative h-[160px] w-full bg-zinc-100 sm:h-[180px] md:h-[200px]">
-      {failed ? (
-        <div className="flex h-full w-full flex-col items-center justify-center gap-2 px-4 text-center text-zinc-500">
-          <ImageOff size={24} />
-          <p className="line-clamp-1 text-sm font-bold text-zinc-700">{title}</p>
-          <p className="text-xs">广告图片暂时无法加载</p>
-        </div>
+      {showFallbackImage ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={normalizedFallback}
+          alt={title || "OpenAA 广告占位图"}
+          className="h-full w-full select-none bg-slate-100 object-contain"
+          draggable={false}
+          loading={eager ? "eager" : "lazy"}
+          onError={() => setFallbackFailed(true)}
+        />
+      ) : !src || failed ? (
+        <AdBannerPlaceholder title={title} />
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -118,6 +132,16 @@ function BannerImage({ src, title, eager }: { src: string; title: string; eager:
           onError={() => setFailed(true)}
         />
       )}
+    </div>
+  );
+}
+
+function AdBannerPlaceholder({ title }: { title: string }) {
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-slate-100 px-4 text-center text-slate-500">
+      <ImageOff size={24} />
+      <p className="line-clamp-1 text-sm font-bold text-slate-700">{title || "OpenAA 广告位"}</p>
+      <p className="text-xs font-semibold">广告图片暂时无法加载</p>
     </div>
   );
 }

@@ -3,13 +3,24 @@ import "server-only";
 import { hasAdminPermission } from "@/lib/permissions/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { QueryState } from "@/features/posts/types";
-import { normalizeAdPosition, normalizeAdStatusFilter, type AdLinkType, type AdPosition, type AdStatusFilter, type AdOpenMode, type AdminAdRow } from "./types";
+import { getAdPlaceholderSetting } from "./placeholders";
+import {
+  normalizeAdPosition,
+  normalizeAdStatusFilter,
+  type AdLinkType,
+  type AdOpenMode,
+  type AdPosition,
+  type AdStatusFilter,
+  type AdminAdPlaceholder,
+  type AdminAdRow,
+} from "./types";
 
 export type AdminAdsResult = {
   state: QueryState;
   canManageAds: boolean;
   activePosition: AdPosition;
   activeStatus: AdStatusFilter;
+  placeholder: AdminAdPlaceholder;
   ads: AdminAdRow[];
   error?: string;
 };
@@ -19,8 +30,13 @@ type RawAdRow = Omit<AdminAdRow, "image_url" | "image_source_type" | "position" 
   href: string | null;
   starts_at: string | null;
   ends_at: string | null;
-  image_assets?: { source_type: "storage" | "external" | null; public_url: string | null; external_url: string | null } | Array<{ source_type: "storage" | "external" | null; public_url: string | null; external_url: string | null }> | null;
+  image_assets?:
+    | { source_type: "storage" | "external" | null; public_url: string | null; external_url: string | null }
+    | Array<{ source_type: "storage" | "external" | null; public_url: string | null; external_url: string | null }>
+    | null;
 };
+
+const emptyPlaceholder: AdminAdPlaceholder = { imageUrl: null, imageAssetId: null, updatedAt: null };
 
 export async function getAdminAdsData(position?: string, status?: string): Promise<AdminAdsResult> {
   const supabase = await createSupabaseServerClient();
@@ -29,12 +45,14 @@ export async function getAdminAdsData(position?: string, status?: string): Promi
   const activeStatus = normalizeAdStatusFilter(status) ?? "all";
 
   if (!supabase) {
-    return { state: "missing_config", canManageAds, activePosition, activeStatus, ads: [] };
+    return { state: "missing_config", canManageAds, activePosition, activeStatus, placeholder: emptyPlaceholder, ads: [] };
   }
 
   if (!canManageAds) {
-    return { state: "ready", canManageAds, activePosition, activeStatus, ads: [] };
+    return { state: "ready", canManageAds, activePosition, activeStatus, placeholder: emptyPlaceholder, ads: [] };
   }
+
+  const placeholder = await getAdPlaceholderSetting(supabase);
 
   let query = supabase
     .from("ads")
@@ -49,7 +67,7 @@ export async function getAdminAdsData(position?: string, status?: string): Promi
 
   const { data, error } = await query;
   if (error) {
-    return { state: "error", canManageAds, activePosition, activeStatus, ads: [], error: "广告读取失败，请稍后再试。" };
+    return { state: "error", canManageAds, activePosition, activeStatus, placeholder, ads: [], error: "广告读取失败，请稍后再试。" };
   }
 
   return {
@@ -57,6 +75,7 @@ export async function getAdminAdsData(position?: string, status?: string): Promi
     canManageAds,
     activePosition,
     activeStatus,
+    placeholder,
     ads: ((data ?? []) as RawAdRow[]).map(mapAd),
   };
 }

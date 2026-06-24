@@ -27,6 +27,12 @@ export type AdminAdRow = {
   created_at: string;
 };
 
+export type AdminAdPlaceholder = {
+  imageUrl: string | null;
+  imageAssetId: string | null;
+  updatedAt: string | null;
+};
+
 export const adPositions: Array<{ key: AdPosition; label: string }> = [
   { key: "home", label: "首页广告" },
   { key: "jobs", label: "招聘广告" },

@@ -15,9 +15,10 @@ type AdDetail = {
   address: string | null;
 };
 
-export function AdDetailClient({ ad }: { ad: AdDetail }) {
+export function AdDetailClient({ ad, fallbackImageUrl }: { ad: AdDetail; fallbackImageUrl?: string | null }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
+  const canOpenLightbox = Boolean(ad.imageUrl && !imageFailed);
 
   useEffect(() => {
     if (!lightboxOpen) return;
@@ -40,13 +41,13 @@ export function AdDetailClient({ ad }: { ad: AdDetail }) {
             <button
               type="button"
               onClick={() => {
-                if (!imageFailed) setLightboxOpen(true);
+                if (canOpenLightbox) setLightboxOpen(true);
               }}
               className="group block w-full"
               aria-label="点击查看大图"
             >
-              <AdDetailImage ad={ad} imageFailed={imageFailed} onImageError={() => setImageFailed(true)} />
-              {!imageFailed ? (
+              <AdDetailImage ad={ad} imageFailed={imageFailed} fallbackImageUrl={fallbackImageUrl} onImageError={() => setImageFailed(true)} />
+              {canOpenLightbox ? (
                 <div className="pointer-events-none absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-black/30 px-2 py-1 text-[11px] text-white opacity-0 transition-opacity group-hover:opacity-100">
                   <ZoomIn size={12} />
                   <span>查看大图</span>
@@ -87,7 +88,7 @@ export function AdDetailClient({ ad }: { ad: AdDetail }) {
         <p className="mt-6 text-center text-[11px] text-zinc-400">此页面为内部广告详情页，内容由管理员维护。</p>
       </div>
 
-      {lightboxOpen && !imageFailed ? (
+      {lightboxOpen && canOpenLightbox ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" onClick={() => setLightboxOpen(false)}>
           <div className="relative h-[80vh] w-full max-w-5xl" onClick={(event) => event.stopPropagation()}>
             <button type="button" onClick={() => setLightboxOpen(false)} className="absolute right-2 top-2 z-10 flex items-center gap-1 rounded-full bg-black/60 px-3 py-2 text-sm text-white" aria-label="关闭">
@@ -103,8 +104,19 @@ export function AdDetailClient({ ad }: { ad: AdDetail }) {
   );
 }
 
-function AdDetailImage({ ad, imageFailed, onImageError }: { ad: AdDetail; imageFailed: boolean; onImageError: () => void }) {
-  if (imageFailed) {
+function AdDetailImage({ ad, imageFailed, fallbackImageUrl, onImageError }: { ad: AdDetail; imageFailed: boolean; fallbackImageUrl?: string | null; onImageError: () => void }) {
+  const [fallbackFailed, setFallbackFailed] = useState(false);
+  const normalizedFallback = normalizeImageUrl(fallbackImageUrl);
+  const showFallbackImage = (!ad.imageUrl || imageFailed) && normalizedFallback && !fallbackFailed;
+
+  if (showFallbackImage) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={normalizedFallback} alt={ad.title || "OpenAA 广告占位图"} onError={() => setFallbackFailed(true)} className="h-[240px] w-full bg-zinc-100 object-contain object-center md:h-[340px]" />
+    );
+  }
+
+  if (!ad.imageUrl || imageFailed) {
     return <AdImageFallback title={ad.title || ad.slug} className="h-[240px] md:h-[340px]" />;
   }
 
@@ -112,6 +124,10 @@ function AdDetailImage({ ad, imageFailed, onImageError }: { ad: AdDetail; imageF
     // eslint-disable-next-line @next/next/no-img-element
     <img src={ad.imageUrl} alt={ad.title} onError={onImageError} className="h-[240px] w-full object-contain object-center md:h-[340px]" />
   );
+}
+
+function normalizeImageUrl(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : "";
 }
 
 function AdImageFallback({ title, className = "" }: { title: string; className?: string }) {

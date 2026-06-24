@@ -17,7 +17,7 @@ export const fallbackHomeBanners: HomeBannerItem[] = [
     title: "纽约华人生活信息入口",
     description: "招聘、租房、二手、本地服务、DMV 学习和常用导航，先从一个清爽的移动端首页开始。",
     href: "/navigation",
-    imageUrl: "/og-default.png",
+    imageUrl: "",
   },
 ];
 

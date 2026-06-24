@@ -76,6 +76,7 @@ export type HomeConfig = {
   city: HomeCity;
   topQuickLinks: TopQuickLink[];
   banners: HomeBannerItem[];
+  adPlaceholderImageUrl: string | null;
   tickerItems: HomeTickerItem[];
   tickerSettings: HomeTickerSettings;
   quickGridItems: QuickGridItem[];

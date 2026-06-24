@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { AdDetailClient } from "@/components/ads/AdDetailClient";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { buildPageMetadata } from "@/lib/seo/metadata";
+import { getAdPlaceholderSetting } from "@/features/ads/placeholders";
 
 export const dynamic = "force-dynamic";
 
@@ -50,9 +51,9 @@ export default async function AdDetailPage({ params }: AdDetailPageProps) {
   if (error || !data) notFound();
 
   const ad = mapAdDetail(data as RawAdDetail);
-  if (!ad.imageUrl) notFound();
+  const adPlaceholder = await getAdPlaceholderSetting(supabase);
 
-  return <AdDetailClient ad={ad} />;
+  return <AdDetailClient ad={ad} fallbackImageUrl={adPlaceholder.imageUrl} />;
 }
 
 function mapAdDetail(row: RawAdDetail) {

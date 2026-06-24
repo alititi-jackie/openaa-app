@@ -2,11 +2,12 @@
 
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 
-import { deleteAd, toggleAdActive, upsertAd } from "@/features/ads/adminActions";
+import { deleteAd, toggleAdActive, updateAdPlaceholderImage, upsertAd } from "@/features/ads/adminActions";
 import {
   adPositions,
   adStatusFilters,
   type AdminAdRow,
+  type AdminAdPlaceholder,
   type AdOpenMode,
   type AdPosition,
   type AdStatusFilter,
@@ -20,12 +21,14 @@ type AdminAdsManagementProps = {
   ads: AdminAdRow[];
   activePosition: AdPosition;
   activeStatus: AdStatusFilter;
+  placeholder: AdminAdPlaceholder;
 };
 
 export function AdminAdsManagement({
   ads,
   activePosition,
   activeStatus,
+  placeholder,
 }: AdminAdsManagementProps) {
   const [editingAd, setEditingAd] = useState<AdminAdRow | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -197,6 +200,8 @@ export function AdminAdsManagement({
       </div>
 
       <AdsFilter activePosition={activePosition} activeStatus={activeStatus} />
+
+      <AdPlaceholderSettings placeholder={placeholder} />
 
       {isFormOpen ? (
         <form
@@ -512,6 +517,100 @@ function FilterLink({
     >
       {children}
     </a>
+  );
+}
+
+function AdPlaceholderSettings({ placeholder }: { placeholder: AdminAdPlaceholder }) {
+  const [state, formAction, pending] = useActionState(updateAdPlaceholderImage, initialState);
+  const [filePreviewUrl, setFilePreviewUrl] = useState("");
+  const [uploadMessage, setUploadMessage] = useState("");
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const previewUrl = filePreviewUrl || placeholder.imageUrl || "";
+
+  useEffect(() => {
+    return () => {
+      if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl);
+    };
+  }, [filePreviewUrl]);
+
+  useEffect(() => {
+    if (state.ok && state.message && fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, [state]);
+
+  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      event.target.value = "";
+      setUploadMessage("图片格式仅支持 JPG、PNG、WEBP");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      event.target.value = "";
+      setUploadMessage("图片大小不能超过 5MB");
+      return;
+    }
+
+    if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl);
+    setFilePreviewUrl(URL.createObjectURL(file));
+    setUploadMessage("已选择新的广告占位图");
+  }
+
+  return (
+    <form action={formAction} encType="multipart/form-data" className="space-y-4 rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+      <div className="flex flex-col gap-1">
+        <h3 className="text-base font-black text-slate-950">默认广告占位图</h3>
+        <p className="text-sm font-semibold text-slate-500">
+          当广告图片为空、外链失效或加载失败时，全站广告位会优先显示这里上传的占位图；未上传时显示内置灰色占位。
+        </p>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="space-y-3">
+          <label className="space-y-2 text-sm font-black text-slate-700">
+            上传占位图
+            <input
+              ref={fileInputRef}
+              name="placeholder_image_file"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={handleFileChange}
+              className="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 file:mr-4 file:rounded-xl file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-black file:text-blue-700"
+            />
+          </label>
+          <p className="text-xs font-semibold text-slate-500">仅支持本地上传图片，不支持外部图片 URL。建议使用横幅比例图片。</p>
+          {uploadMessage ? <p className="text-sm font-black text-blue-700">{uploadMessage}</p> : null}
+          {state.message ? (
+            <p className={`rounded-2xl px-4 py-3 text-sm font-black ${state.ok ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
+              {state.message}
+            </p>
+          ) : null}
+          <button
+            type="submit"
+            disabled={pending}
+            className="h-11 rounded-2xl bg-blue-600 px-5 text-sm font-black text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {pending ? "保存中..." : "保存占位图"}
+          </button>
+        </div>
+
+        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-50">
+          {previewUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={previewUrl} alt="默认广告占位图预览" className="h-36 w-full bg-slate-100 object-contain" />
+          ) : (
+            <div className="flex h-36 flex-col items-center justify-center gap-1 bg-slate-100 px-4 text-center text-slate-500">
+              <span className="text-sm font-black text-slate-700">OpenAA 广告位</span>
+              <span className="text-xs font-semibold">未上传默认占位图</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </form>
   );
 }
 

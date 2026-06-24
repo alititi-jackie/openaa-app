@@ -95,7 +95,7 @@ export function mapBanner(row: Record<string, unknown>): HomeBannerItem | null {
   const href = openMode === "internal" && slug ? `/ads/${slug}` : normalizeRoute(asString(row.external_url, asString(row.href, "/")));
   const title = rawTitle === asString(row.href) || rawTitle === asString(row.external_url) ? href : normalizeRoute(rawTitle);
 
-  if (!title || !imageUrl) {
+  if (!title) {
     return null;
   }
 
