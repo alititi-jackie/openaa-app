@@ -209,6 +209,25 @@ async function upsertContact(supabase: SupabaseServerClient, postId: string, val
   );
 }
 
+async function preserveIncompletePostAsDraft(supabase: SupabaseServerClient, postId: string, userId: string, reason: string) {
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from("posts")
+    .update({
+      status: "draft",
+      visibility: "private",
+      published_at: null,
+      updated_at: now,
+      metadata: { publish_incomplete_reason: reason, publish_incomplete_at: now },
+    })
+    .eq("id", postId)
+    .eq("author_id", userId);
+
+  if (error) {
+    logPostActionError("preserve incomplete post as draft failed", error, { postId, reason });
+  }
+}
+
 export async function createPost(values: PostFormValues): Promise<PostFormActionResult> {
   const validation = validatePostForm(values);
   if (!validation.valid) return { ok: false, message: "表单内容未填写完善，请检查后再发布。", fieldErrors: validation.errors };
@@ -233,13 +252,15 @@ export async function createPost(values: PostFormValues): Promise<PostFormAction
   const detailResult = await upsertDetail(context.supabase, post.id, values);
   if (detailResult.error) {
     logPostActionError("create post detail failed", detailResult.error, { postId: post.id, postType: values.postType });
-    return { ok: false, message: "内容已创建，但详情保存失败，请稍后编辑补充。" };
+    await preserveIncompletePostAsDraft(context.supabase, post.id, context.user.id, "detail_save_failed");
+    return { ok: false, message: "内容保存失败，已保留为草稿，请稍后编辑补充。" };
   }
 
   const contactResult = await upsertContact(context.supabase, post.id, values);
   if (contactResult.error) {
     logPostActionError("create post contact failed", contactResult.error, { postId: post.id });
-    return { ok: false, message: "内容已创建，但联系方式保存失败，请稍后编辑补充。" };
+    await preserveIncompletePostAsDraft(context.supabase, post.id, context.user.id, "contact_save_failed");
+    return { ok: false, message: "内容保存失败，已保留为草稿，请稍后补充联系方式。" };
   }
 
   await syncPostImages(context.supabase, context.user.id, values.postType, post.id, values.images);

@@ -185,7 +185,6 @@ export function detailPayloadForForm(postId: string, values: PostFormValues) {
         includes_housing: Boolean(values.job?.includes_housing),
         requires_work_authorization: values.job?.identity_requirement ? values.job.identity_requirement !== "none" : null,
         employer_type: values.job?.employer_type || values.job?.company_name || null,
-        updated_at: new Date().toISOString(),
       },
     };
   }
@@ -205,7 +204,6 @@ export function detailPayloadForForm(postId: string, values: PostFormValues) {
         utilities_included: Boolean(values.housing?.utilities_included),
         transit_nearby: values.housing?.transit_nearby || null,
         address_area: values.location_area || null,
-        updated_at: new Date().toISOString(),
       },
     };
   }
@@ -222,7 +220,6 @@ export function detailPayloadForForm(postId: string, values: PostFormValues) {
         negotiable: Boolean(values.marketplace?.negotiable),
         trade_area: values.marketplace?.trade_area || values.location_area || null,
         delivery_options: values.marketplace?.delivery_method ? [values.marketplace.delivery_method] : [],
-        updated_at: new Date().toISOString(),
       },
     };
   }
@@ -236,7 +233,6 @@ export function detailPayloadForForm(postId: string, values: PostFormValues) {
       business_hours: values.service?.business_hours_text ? { text: values.service.business_hours_text } : {},
       price_range: values.service?.price_range || values.service?.price_note || null,
       service_status: "active",
-      updated_at: new Date().toISOString(),
     },
   };
 }
