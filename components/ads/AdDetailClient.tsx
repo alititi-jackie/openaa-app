@@ -112,7 +112,7 @@ function AdDetailImage({ ad, imageFailed, fallbackImageUrl, onImageError }: { ad
   if (showFallbackImage) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={normalizedFallback} alt={ad.title || "OpenAA 广告占位图"} onError={() => setFallbackFailed(true)} className="h-[240px] w-full bg-zinc-100 object-contain object-center md:h-[340px]" />
+      <img src={normalizedFallback} alt={ad.title || "OpenAA 广告占位图"} onError={() => setFallbackFailed(true)} className="h-[240px] w-full object-contain object-center md:h-[340px]" />
     );
   }
 

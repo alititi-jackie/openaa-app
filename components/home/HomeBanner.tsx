@@ -114,7 +114,7 @@ function BannerImage({ src, title, eager, fallbackImageUrl }: { src: string; tit
         <img
           src={normalizedFallback}
           alt={title || "OpenAA 广告占位图"}
-          className="h-full w-full select-none bg-slate-100 object-contain"
+          className="h-full w-full select-none object-cover"
           draggable={false}
           loading={eager ? "eager" : "lazy"}
           onError={() => setFallbackFailed(true)}

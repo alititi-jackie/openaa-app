@@ -569,7 +569,7 @@ function AdPlaceholderSettings({ placeholder }: { placeholder: AdminAdPlaceholde
         </p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+      <div className="space-y-4">
         <div className="space-y-3">
           <label className="space-y-2 text-sm font-black text-slate-700">
             上传占位图
@@ -582,7 +582,7 @@ function AdPlaceholderSettings({ placeholder }: { placeholder: AdminAdPlaceholde
               className="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 file:mr-4 file:rounded-xl file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-black file:text-blue-700"
             />
           </label>
-          <p className="text-xs font-semibold text-slate-500">仅支持本地上传图片，不支持外部图片 URL。建议使用横幅比例图片。</p>
+          <p className="text-xs font-semibold text-slate-500">仅支持本地上传图片，不支持外部图片 URL。建议上传与广告横幅一致比例的图片。</p>
           {uploadMessage ? <p className="text-sm font-black text-blue-700">{uploadMessage}</p> : null}
           {state.message ? (
             <p className={`rounded-2xl px-4 py-3 text-sm font-black ${state.ok ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
@@ -598,12 +598,12 @@ function AdPlaceholderSettings({ placeholder }: { placeholder: AdminAdPlaceholde
           </button>
         </div>
 
-        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-50">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_40px_rgba(0,0,0,0.12)] ring-1 ring-black/5">
           {previewUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={previewUrl} alt="默认广告占位图预览" className="h-36 w-full bg-slate-100 object-contain" />
+            <img src={previewUrl} alt="默认广告占位图预览" className="h-[160px] w-full bg-slate-100 object-cover sm:h-[180px] md:h-[200px]" />
           ) : (
-            <div className="flex h-36 flex-col items-center justify-center gap-1 bg-slate-100 px-4 text-center text-slate-500">
+            <div className="flex h-[160px] flex-col items-center justify-center gap-1 bg-slate-100 px-4 text-center text-slate-500 sm:h-[180px] md:h-[200px]">
               <span className="text-sm font-black text-slate-700">OpenAA 广告位</span>
               <span className="text-xs font-semibold">未上传默认占位图</span>
             </div>
