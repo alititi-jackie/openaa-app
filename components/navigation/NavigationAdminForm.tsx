@@ -409,6 +409,9 @@ function NavigationLinkEditor({
         return;
       }
 
+      const normalizedUrl = result.normalizedUrl ?? values.url;
+      const savedValues = { ...values, url: normalizedUrl };
+      setValues(savedValues);
       const selectedCategory = categories.find((item) => item.id === values.categoryId);
       const savedLink: LocalLink = {
         id: result.id ?? link?.id ?? `temp-${Date.now()}`,
@@ -417,7 +420,7 @@ function NavigationLinkEditor({
         categorySlug: selectedCategory?.slug ?? link?.categorySlug ?? category.slug,
         title: values.title || titleFromUrl(values.url),
         description: values.description || null,
-        url: values.url,
+        url: normalizedUrl,
         icon: null,
         imageUrl: null,
         openMode: values.openMode,
@@ -429,7 +432,7 @@ function NavigationLinkEditor({
         updatedAt: new Date().toISOString(),
       };
 
-      onSaved(savedLink, mode === "create" ? createAddedMessage(values, category, categories) : createEditedMessage(values, original, category, categories));
+      onSaved(savedLink, mode === "create" ? createAddedMessage(savedValues, category, categories) : createEditedMessage(savedValues, original, category, categories));
     });
   }
 

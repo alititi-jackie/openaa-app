@@ -24,6 +24,12 @@ const inputClass = "min-h-10 rounded-xl border border-slate-200 px-3 py-2 text-s
 
 export function TopQuickLinksManagement({ topLinks }: { topLinks: AdminTopQuickLinkRow[] }) {
   const [creating, setCreating] = useState(false);
+  const [optimisticLinks, setOptimisticLinks] = useState<AdminTopQuickLinkRow[]>([]);
+  const optimisticById = new Map(optimisticLinks.map((link) => [link.id, link]));
+  const renderedLinks = [
+    ...optimisticLinks.filter((link) => !topLinks.some((item) => item.id === link.id)),
+    ...topLinks.map((link) => optimisticById.get(link.id) ?? link),
+  ];
 
   return (
     <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
@@ -44,7 +50,8 @@ export function TopQuickLinksManagement({ topLinks }: { topLinks: AdminTopQuickL
           <TopQuickLinkEditor
             mode="create"
             onCancel={() => setCreating(false)}
-            onSaved={() => {
+            onSaved={(link) => {
+              setOptimisticLinks((current) => [link, ...current.filter((item) => item.id !== link.id)]);
               setCreating(false);
             }}
           />
@@ -52,8 +59,16 @@ export function TopQuickLinksManagement({ topLinks }: { topLinks: AdminTopQuickL
       ) : null}
 
       <div className="mt-4 grid gap-3">
-        {topLinks.length > 0 ? (
-          topLinks.map((link, index) => <TopQuickLinkCard key={link.id} link={link} index={index} total={topLinks.length} />)
+        {renderedLinks.length > 0 ? (
+          renderedLinks.map((link, index) => (
+            <TopQuickLinkCard
+              key={link.id}
+              link={link}
+              index={index}
+              total={renderedLinks.length}
+              onLinkChange={(updatedLink) => setOptimisticLinks((current) => [updatedLink, ...current.filter((item) => item.id !== updatedLink.id)])}
+            />
+          ))
         ) : (
           <p className="rounded-xl border border-dashed border-slate-200 p-4 text-sm text-slate-500">暂无顶部快捷导航。</p>
         )}
@@ -62,7 +77,7 @@ export function TopQuickLinksManagement({ topLinks }: { topLinks: AdminTopQuickL
   );
 }
 
-function TopQuickLinkCard({ link, index, total }: { link: AdminTopQuickLinkRow; index: number; total: number }) {
+function TopQuickLinkCard({ link, index, total, onLinkChange }: { link: AdminTopQuickLinkRow; index: number; total: number; onLinkChange: (link: AdminTopQuickLinkRow) => void }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -147,8 +162,9 @@ function TopQuickLinkCard({ link, index, total }: { link: AdminTopQuickLinkRow; 
             mode="edit"
             link={link}
             onCancel={() => setEditing(false)}
-            onSaved={(message) => {
+            onSaved={(updatedLink, message) => {
               setEditing(false);
+              onLinkChange(updatedLink);
               setMessage({ ok: true, message });
             }}
           />
@@ -179,7 +195,7 @@ function TopQuickLinkEditor({
   mode: "create" | "edit";
   link?: AdminTopQuickLinkRow;
   onCancel: () => void;
-  onSaved: (message: string) => void;
+  onSaved: (link: AdminTopQuickLinkRow, message: string) => void;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -215,8 +231,22 @@ function TopQuickLinkEditor({
       setMessage(result);
       if (!result.ok) return;
 
+      const normalizedUrl = result.normalizedUrl ?? values.url;
+      const savedLink: AdminTopQuickLinkRow = {
+        id: result.id ?? link?.id ?? `temp-${Date.now()}`,
+        key: link?.key ?? `temp-${Date.now()}`,
+        title: values.title || titleFromUrl(normalizedUrl),
+        href: normalizedUrl,
+        open_mode: values.openMode,
+        icon: link?.icon ?? null,
+        sort_order: link?.sort_order ?? 0,
+        is_active: link?.is_active ?? true,
+        city_id: link?.city_id ?? null,
+      };
+
+      setValues((current) => ({ ...current, url: normalizedUrl, title: savedLink.title }));
       router.refresh();
-      onSaved(result.message);
+      onSaved(savedLink, result.message);
     });
   }
 

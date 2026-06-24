@@ -1,4 +1,5 @@
 import { ALLOWED_NAVIGATION_IMAGE_HOSTS, NAVIGATION_SLUG_PATTERN } from "./constants";
+import { normalizeWebsiteUrl } from "@/lib/validation/url";
 import type { NavigationOpenMode } from "./types";
 
 type ValidationResult<T> = { ok: true; value: T } | { ok: false; message: string };
@@ -26,29 +27,11 @@ function clampDisplayLimit(value: number) {
 }
 
 export function normalizeNavigationUrl(raw: string): ValidationResult<string> {
-  const value = raw.trim();
-  if (!value) return { ok: false, message: "请输入网址，例如 openaa.com" };
-
-  const lower = value.toLowerCase();
-  if (lower.startsWith("javascript:") || lower.startsWith("data:")) {
-    return { ok: false, message: "网址格式不正确。" };
-  }
-
-  if (value.startsWith("/")) {
-    if (value.startsWith("//")) return { ok: false, message: "网址格式不正确。" };
-    return { ok: true, value };
-  }
-
-  try {
-    const withProtocol = /^[a-z][a-z0-9+.-]*:\/\//i.test(value) ? value : `https://${value}`;
-    const url = new URL(withProtocol);
-    if (url.protocol !== "https:" && url.protocol !== "http:") return { ok: false, message: "网址格式不正确。" };
-    if (!url.hostname.includes(".") || /\s/.test(url.hostname)) return { ok: false, message: "网址格式不正确。" };
-    url.protocol = "https:";
-    return { ok: true, value: url.pathname === "/" && !url.search && !url.hash ? url.origin : url.toString() };
-  } catch {
-    return { ok: false, message: "网址格式不正确。" };
-  }
+  return normalizeWebsiteUrl(raw, {
+    allowInternalPath: true,
+    requiredMessage: "请输入网址，例如 openaa.com",
+    invalidMessage: "网址格式不正确。",
+  });
 }
 
 export function normalizeNavigationImageUrl(raw: string): ValidationResult<string | null> {

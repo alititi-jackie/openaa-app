@@ -9,7 +9,7 @@ import { validateNavigationCategoryForm, validateNavigationLinkForm, validateUse
 
 type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
 
-export type NavigationActionState = { ok: boolean; message: string; id?: string };
+export type NavigationActionState = { ok: boolean; message: string; id?: string; normalizedUrl?: string };
 
 type AdminActionContext =
   | { ok: false; message: string }
@@ -29,7 +29,7 @@ type UserActionContext =
 
 type SuperAdminNavigationActionContext = AdminActionContext;
 
-const ok = (message: string, id?: string): NavigationActionState => ({ ok: true, message, id });
+const ok = (message: string, id?: string, normalizedUrl?: string): NavigationActionState => ({ ok: true, message, id, normalizedUrl });
 const fail = (message: string): NavigationActionState => ({ ok: false, message });
 
 async function getAdminActionContext(): Promise<AdminActionContext> {
@@ -268,7 +268,7 @@ export async function upsertNavigationLink(_state: NavigationActionState, formDa
   }
 
   revalidateNavigation();
-  return ok("导航链接已保存。", result.data.id);
+  return ok("导航链接已保存。", result.data.id, value.url);
 }
 
 export async function toggleNavigationLinkFlag(_state: NavigationActionState, formData: FormData): Promise<NavigationActionState> {
@@ -390,7 +390,7 @@ export async function upsertUserNavigationLink(_state: NavigationActionState, fo
     return fail(userNavigationSaveErrorMessage(result.error));
   }
   revalidatePath("/navigation/my");
-  return ok(value.id ? "已更新我的导航。" : "已保存到我的导航。");
+  return ok(value.id ? "已更新我的导航。" : "已保存到我的导航。", undefined, value.url);
 }
 
 async function findDuplicateUserNavigationLink(context: Extract<UserActionContext, { ok: true }>, url: string, id: string | null) {

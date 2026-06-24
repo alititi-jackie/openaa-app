@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { hasAdminModulePermission } from "@/lib/permissions/admin";
 import { writeAdminAuditLog } from "@/lib/permissions/adminAuditLog";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { normalizeWebsiteUrl } from "@/lib/validation/url";
 import { defaultHomeSections, defaultLatestTicker, defaultTopQuickLinks } from "./defaults";
 import { fallbackLatestPostSections } from "@/features/home/fallbacks";
 import type { AdminHomeActionState } from "./types";
@@ -17,7 +18,7 @@ type AdminActionContext =
       userId: string;
     };
 
-const ok = (message: string): AdminHomeActionState => ({ ok: true, message });
+const ok = (message: string, id?: string, normalizedUrl?: string): AdminHomeActionState => ({ ok: true, message, id, normalizedUrl });
 const fail = (message: string): AdminHomeActionState => ({ ok: false, message });
 const auditFailure = () => fail("操作已执行，但审计日志写入失败，请联系管理员检查 admin_audit_logs。");
 
@@ -184,7 +185,7 @@ export async function upsertTopQuickLink(_state: AdminHomeActionState, formData:
   if (!context.ok) return fail(context.message);
 
   const id = readText(formData, "id");
-  const href = normalizeLink(readText(formData, "url"));
+  const href = normalizeWebsiteUrl(readText(formData, "url"), { allowInternalPath: true, requiredMessage: "URL 不能为空。", invalidMessage: "URL 格式不正确。" });
   const title = readText(formData, "title") || (href.ok ? titleFromUrl(href.value) : "");
   const openMode = readOpenMode(formData);
   const cityId = await getDefaultCityId(context.supabase);
@@ -216,7 +217,7 @@ export async function upsertTopQuickLink(_state: AdminHomeActionState, formData:
     return auditFailure();
   }
   revalidateAdminHome();
-  return ok("顶部快捷导航已保存。");
+  return ok("顶部快捷导航已保存。", result.data.id, href.value);
 }
 
 export async function setTopQuickLinkInactive(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {

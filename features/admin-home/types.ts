@@ -1,6 +1,8 @@
 export type AdminHomeActionState = {
   ok: boolean;
   message: string;
+  id?: string;
+  normalizedUrl?: string;
 };
 
 export type AdminHomeSectionRow = {
