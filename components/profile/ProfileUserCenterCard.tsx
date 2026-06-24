@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
@@ -29,15 +28,18 @@ export function ProfileUserCenterCard({
   messageCounts,
 }: ProfileUserCenterCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const [avatarFailed, setAvatarFailed] = useState(false);
   const username = profile.nickname || profile.email?.split("@")[0] || "用户";
   const filledItems = getFilledProfileItems(profile);
+  const avatarUrl = avatarFailed ? "" : profile.avatar_url;
 
   return (
     <section className="overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
       <div className="flex items-center gap-3 px-4 py-3">
         <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full">
-          {profile.avatar_url ? (
-            <Image src={profile.avatar_url} alt={username} fill className="object-cover" />
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={avatarUrl} alt={username} className="h-full w-full object-cover" onError={() => setAvatarFailed(true)} />
           ) : (
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#1976d2] text-[20px] font-bold text-white">
               {username[0]?.toUpperCase() ?? "?"}
