@@ -37,6 +37,7 @@ type WriteContext =
 const allowedPostTypes = new Set<PostType>(["job", "housing", "marketplace", "service"]);
 const manageablePostStatuses = new Set<PostStatus>(["draft", "pending_review", "published", "hidden", "expired", "deleted"]);
 const DEFAULT_DAILY_POST_LIMIT = 10;
+const allowedContactMethods = new Set(["phone", "wechat", "email"]);
 
 function logPostActionError(scope: string, error: unknown, context?: Record<string, unknown>) {
   console.error(`[posts] ${scope}`, { ...context, error });
@@ -195,6 +196,8 @@ async function upsertDetail(supabase: SupabaseServerClient, postId: string, valu
 }
 
 async function upsertContact(supabase: SupabaseServerClient, postId: string, values: PostFormValues) {
+  const preferredContactMethod = allowedContactMethods.has(values.contact.preferred_contact_method) ? values.contact.preferred_contact_method : null;
+
   return supabase.from("post_contacts").upsert(
     {
       post_id: postId,
@@ -202,7 +205,7 @@ async function upsertContact(supabase: SupabaseServerClient, postId: string, val
       phone: values.contact.phone.trim() || null,
       wechat: values.contact.wechat.trim() || null,
       email: values.contact.email.trim() || null,
-      preferred_contact_method: values.contact.preferred_contact_method,
+      preferred_contact_method: preferredContactMethod,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "post_id" },

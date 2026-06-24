@@ -48,8 +48,8 @@ function displayMetaValue(post: PostDetailView, label: string) {
   return post.detailMetaFields.find((field) => field.label === label)?.value ?? "";
 }
 
-function defaultPreferredContactMethod(value?: string | null): "phone" | "wechat" | "email" {
-  return value === "wechat" || value === "email" ? value : "phone";
+function defaultPreferredContactMethod(value?: string | null): "" | "phone" | "wechat" | "email" {
+  return value === "phone" || value === "wechat" || value === "email" ? value : "";
 }
 
 function optionValueOrEmpty(options: readonly PostOption[], value?: string | null) {
@@ -68,7 +68,7 @@ export function publishContactDefaultsFromProfile(profile?: ProfilePublishDefaul
     wechat: profile.wechat_id ?? "",
     email: email ?? "",
     location_area: profile.location_area ?? "",
-    preferred_contact_method: profile.preferred_contact_method ?? "phone",
+    preferred_contact_method: defaultPreferredContactMethod(profile.preferred_contact_method),
   };
 }
 
@@ -122,8 +122,7 @@ export function formValuesFromDetail(post: PostDetailView): PostFormValues {
       phone: post.contact?.phone ?? "",
       wechat: post.contact?.wechat ?? "",
       email: post.contact?.email ?? "",
-      preferred_contact_method:
-        post.contact?.preferred_contact_method === "wechat" || post.contact?.preferred_contact_method === "email" ? post.contact.preferred_contact_method : "phone",
+      preferred_contact_method: defaultPreferredContactMethod(post.contact?.preferred_contact_method),
     },
     images: post.images.map((image) => ({ imageAssetId: image.imageAssetId ?? undefined, url: image.url, caption: image.caption ?? "" })),
   };

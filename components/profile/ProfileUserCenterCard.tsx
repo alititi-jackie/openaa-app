@@ -200,7 +200,6 @@ function isProfileComplete(profile: Profile) {
     profile.default_publish_contact_name?.trim() &&
       (profile.phone?.trim() || profile.wechat_id?.trim()) &&
       profile.location_area?.trim() &&
-      profile.preferred_contact_method?.trim() &&
       profile.publish_email_mode?.trim(),
   );
 }

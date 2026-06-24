@@ -59,8 +59,8 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
     phone: initialProfile.phone ?? "",
     wechat_id: initialProfile.wechat_id ?? "",
     preferred_contact_method: ["phone", "wechat", "email"].includes(initialProfile.preferred_contact_method ?? "")
-      ? (initialProfile.preferred_contact_method ?? "email")
-      : "email",
+      ? (initialProfile.preferred_contact_method ?? "")
+      : "",
     default_publish_contact_name: initialProfile.default_publish_contact_name ?? "",
     publish_email_mode: initialProfile.publish_email_mode ?? "hidden",
     publish_email: initialProfile.publish_email ?? "",
@@ -245,9 +245,10 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
               onChange={(event) => updateProfileField("preferred_contact_method", event.target.value)}
               className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
             >
-              <option value="email">邮箱</option>
+              <option value="">未指定</option>
               <option value="phone">手机</option>
               <option value="wechat">微信</option>
+              <option value="email">邮箱</option>
             </select>
           </label>
           <Field label="发布信息联系人" value={profile.default_publish_contact_name} onChange={(value) => updateProfileField("default_publish_contact_name", value)} />

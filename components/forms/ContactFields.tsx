@@ -35,7 +35,8 @@ export function ContactFields({ value, errors, onChange }: ContactFieldsProps) {
         </FormField>
         <FormField label="首选联系方式">
           <SelectInput value={value.preferred_contact_method} onChange={(event) => set("preferred_contact_method", event.target.value)}>
-            <option value="phone">电话</option>
+            <option value="">未指定</option>
+            <option value="phone">手机</option>
             <option value="wechat">微信</option>
             <option value="email">邮箱</option>
           </SelectInput>

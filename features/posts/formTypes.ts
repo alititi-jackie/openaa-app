@@ -6,7 +6,7 @@ export type ContactInput = {
   phone: string;
   wechat: string;
   email: string;
-  preferred_contact_method: "phone" | "wechat" | "email";
+  preferred_contact_method: "" | "phone" | "wechat" | "email";
 };
 
 export type PublishContactDefaults = {
