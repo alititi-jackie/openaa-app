@@ -291,7 +291,9 @@ export async function getAdminPostNotificationTemplates(): Promise<AdminPostNoti
   try {
     const adminSupabase = createSupabaseAdminClient();
     const templates = await getActiveNotificationTemplates(adminSupabase);
-    return templates.map((template) => ({ key: template.key, title: template.title, body: template.body }));
+    return templates
+      .filter((template) => template.target_type === "post" && template.type === "content")
+      .map((template) => ({ key: template.key, title: template.title, body: template.body }));
   } catch (error) {
     console.error("[admin/user-posts] Failed to read notification templates", error);
     return [];

@@ -1366,26 +1366,38 @@ export type Database = {
       notification_templates: {
         Row: {
           body: string
+          created_at: string
+          id: string
           is_active: boolean
           key: string
           metadata: Json
+          target_type: string | null
           title: string
+          type: string
           updated_at: string
         }
         Insert: {
           body: string
+          created_at?: string
+          id?: string
           is_active?: boolean
           key: string
           metadata?: Json
+          target_type?: string | null
           title: string
+          type?: string
           updated_at?: string
         }
         Update: {
           body?: string
+          created_at?: string
+          id?: string
           is_active?: boolean
           key?: string
           metadata?: Json
+          target_type?: string | null
           title?: string
+          type?: string
           updated_at?: string
         }
         Relationships: []
@@ -1395,9 +1407,12 @@ export type Database = {
           action_url: string | null
           body: string
           created_at: string
+          created_by: string | null
+          data: Json
           deleted_at: string | null
           id: string
           is_read: boolean
+          link_url: string | null
           metadata: Json
           read_at: string | null
           target_id: string | null
@@ -1411,9 +1426,12 @@ export type Database = {
           action_url?: string | null
           body: string
           created_at?: string
+          created_by?: string | null
+          data?: Json
           deleted_at?: string | null
           id?: string
           is_read?: boolean
+          link_url?: string | null
           metadata?: Json
           read_at?: string | null
           target_id?: string | null
@@ -1427,9 +1445,12 @@ export type Database = {
           action_url?: string | null
           body?: string
           created_at?: string
+          created_by?: string | null
+          data?: Json
           deleted_at?: string | null
           id?: string
           is_read?: boolean
+          link_url?: string | null
           metadata?: Json
           read_at?: string | null
           target_id?: string | null
@@ -1440,6 +1461,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "notifications_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "notifications_user_id_fkey"
             columns: ["user_id"]

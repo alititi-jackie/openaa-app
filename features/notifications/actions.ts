@@ -45,7 +45,7 @@ export async function markNotificationRead(_state: NotificationActionState, form
 
   const { data, error } = await context.adminSupabase
     .from("notifications")
-    .update({ read_at: new Date().toISOString() })
+    .update({ read_at: new Date().toISOString(), is_read: true, updated_at: new Date().toISOString() })
     .eq("id", id)
     .eq("user_id", context.user.id)
     .is("deleted_at", null)
@@ -73,7 +73,7 @@ export async function softDeleteNotification(_state: NotificationActionState, fo
 
   const { data, error } = await context.adminSupabase
     .from("notifications")
-    .update({ deleted_at: new Date().toISOString() })
+    .update({ deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
     .eq("id", id)
     .eq("user_id", context.user.id)
     .is("deleted_at", null)
@@ -95,7 +95,7 @@ export async function markAllNotificationsRead(): Promise<void> {
 
   await context.adminSupabase
     .from("notifications")
-    .update({ read_at: new Date().toISOString() })
+    .update({ read_at: new Date().toISOString(), is_read: true, updated_at: new Date().toISOString() })
     .eq("user_id", context.user.id)
     .is("deleted_at", null)
     .is("read_at", null);

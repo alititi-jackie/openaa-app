@@ -35,6 +35,7 @@ export type NotificationTemplate = {
   type: string;
   target_type: string | null;
   is_active: boolean;
+  metadata: Record<string, unknown>;
 };
 
 const DEFAULT_NOTIFICATION_TYPE = "system";
@@ -150,24 +151,24 @@ export async function sendNotificationFromTemplate({
 export async function getNotificationTemplate(key: string, supabase = createSupabaseAdminClient()): Promise<NotificationTemplate | null> {
   const { data, error } = await supabase
     .from("notification_templates")
-    .select("id,key,title,body,type,target_type,is_active")
+    .select("id,key,title,body,type,target_type,is_active,metadata")
     .eq("key", key)
     .eq("is_active", true)
     .maybeSingle();
 
   if (error || !data) return null;
-  return data as NotificationTemplate;
+  return normalizeTemplate(data);
 }
 
 export async function getActiveNotificationTemplates(supabase = createSupabaseAdminClient()): Promise<NotificationTemplate[]> {
   const { data, error } = await supabase
     .from("notification_templates")
-    .select("id,key,title,body,type,target_type,is_active")
+    .select("id,key,title,body,type,target_type,is_active,metadata")
     .eq("is_active", true)
     .order("key", { ascending: true });
 
   if (error) return [];
-  return (data ?? []) as NotificationTemplate[];
+  return ((data ?? []) as unknown[]).map(normalizeTemplate);
 }
 
 export async function getNotificationRecipients(scope: "all" | "active", supabase = createSupabaseAdminClient()) {
@@ -243,6 +244,34 @@ function normalizeNotificationInput(input: NotificationInput) {
       metadata,
     },
   };
+}
+
+function normalizeTemplate(value: unknown): NotificationTemplate {
+  const row = value as {
+    id?: string | null;
+    key: string;
+    title: string;
+    body: string;
+    type?: string | null;
+    target_type?: string | null;
+    is_active: boolean;
+    metadata?: Record<string, unknown> | null;
+  };
+  const metadata = row.metadata ?? {};
+  return {
+    id: row.id ?? row.key,
+    key: row.key,
+    title: row.title,
+    body: row.body,
+    type: row.type?.trim() || stringFromMetadata(metadata.type) || DEFAULT_NOTIFICATION_TYPE,
+    target_type: row.target_type ?? stringFromMetadata(metadata.target_type),
+    is_active: row.is_active,
+    metadata,
+  };
+}
+
+function stringFromMetadata(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
 function normalizeOptionalText(value?: string | null) {

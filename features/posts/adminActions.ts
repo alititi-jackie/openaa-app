@@ -410,6 +410,7 @@ export async function setAdminPostStatus(_state: AdminPostActionState, formData:
     statusAfter: status,
     title: eventTitle,
     body: eventBody,
+    notificationId: notificationResult.ok ? notificationResult.notificationId ?? null : null,
   });
 
   revalidatePost(before.post_type, id);
@@ -461,6 +462,7 @@ export async function sendAdminPostAuthorNotification(_state: AdminPostActionSta
     statusAfter: post.status,
     title,
     body,
+    notificationId: notificationResult.notificationId ?? null,
   });
   revalidatePath("/admin/user-posts");
   return ok("通知已发送。");
@@ -520,6 +522,7 @@ export async function restoreDeletedPost(_state: AdminPostActionState, formData:
     statusAfter: "hidden",
     title: readText(formData, "notification_title"),
     body: readText(formData, "notification_body"),
+    notificationId: notificationResult.ok ? notificationResult.notificationId ?? null : null,
   });
   revalidatePost(before.post_type, id);
   if (!notificationResult.ok) return ok(`已恢复；通知发送失败：${notificationResult.message}`);
