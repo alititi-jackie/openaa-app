@@ -2653,6 +2653,7 @@ export type Database = {
           icon: string | null
           id: string
           is_active: boolean
+          open_mode: string
           sort_order: number
           title: string
           updated_at: string
@@ -2664,6 +2665,7 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean
+          open_mode?: string
           sort_order?: number
           title: string
           updated_at?: string
@@ -2675,6 +2677,7 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean
+          open_mode?: string
           sort_order?: number
           title?: string
           updated_at?: string

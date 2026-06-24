@@ -31,23 +31,23 @@ export function normalizeNavigationUrl(raw: string): ValidationResult<string> {
 
   const lower = value.toLowerCase();
   if (lower.startsWith("javascript:") || lower.startsWith("data:")) {
-    return { ok: false, message: "请输入有效网址。" };
+    return { ok: false, message: "网址格式不正确。" };
   }
 
   if (value.startsWith("/")) {
-    if (value.startsWith("//")) return { ok: false, message: "请输入有效网址。" };
+    if (value.startsWith("//")) return { ok: false, message: "网址格式不正确。" };
     return { ok: true, value };
   }
 
   try {
     const withProtocol = /^[a-z][a-z0-9+.-]*:\/\//i.test(value) ? value : `https://${value}`;
     const url = new URL(withProtocol);
-    if (url.protocol !== "https:" && url.protocol !== "http:") return { ok: false, message: "请输入有效网址。" };
-    if (!url.hostname.includes(".") || /\s/.test(url.hostname)) return { ok: false, message: "请输入有效网址。" };
+    if (url.protocol !== "https:" && url.protocol !== "http:") return { ok: false, message: "网址格式不正确。" };
+    if (!url.hostname.includes(".") || /\s/.test(url.hostname)) return { ok: false, message: "网址格式不正确。" };
     url.protocol = "https:";
     return { ok: true, value: url.pathname === "/" && !url.search && !url.hash ? url.origin : url.toString() };
   } catch {
-    return { ok: false, message: "请输入有效网址。" };
+    return { ok: false, message: "网址格式不正确。" };
   }
 }
 

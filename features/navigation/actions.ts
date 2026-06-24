@@ -79,13 +79,13 @@ async function getRecycleBinNavigationActionContext(): Promise<AdminActionContex
 
 async function getUserActionContext(): Promise<UserActionContext> {
   const supabase = await createSupabaseServerClient();
-  if (!supabase) return { ok: false, message: "Supabase 环境变量未配置，暂时无法保存我的导航。" };
+  if (!supabase) return { ok: false, message: "保存失败，请稍后再试。" };
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return { ok: false, message: "请先登录后再管理我的导航。" };
+  if (!user) return { ok: false, message: "登录状态失效，请重新登录。" };
   return { ok: true, supabase, userId: user.id };
 }
 
@@ -361,6 +361,10 @@ export async function upsertUserNavigationLink(_state: NavigationActionState, fo
   if (!validation.ok) return fail(validation.message);
   const value = validation.value;
   const sortOrder = value.id ? value.sortOrder : await nextUserNavigationSortOrder(context);
+  const duplicateCheck = await findDuplicateUserNavigationLink(context, value.url, value.id);
+  if (!duplicateCheck.ok) return fail("保存失败，请稍后再试。");
+  if (duplicateCheck.exists) return fail("该网址已存在。");
+
   const payload = {
     title: value.title,
     url: value.url,
@@ -375,9 +379,50 @@ export async function upsertUserNavigationLink(_state: NavigationActionState, fo
     ? await context.supabase.from("user_navigation_links").update(payload).eq("id", value.id).eq("user_id", context.userId).select("id").single()
     : await context.supabase.from("user_navigation_links").insert({ ...payload, user_id: context.userId }).select("id").single();
 
-  if (result.error || !result.data) return fail("我的导航保存失败。");
+  if (result.error || !result.data) {
+    console.error("[navigation] user navigation upsert failed", {
+      userId: context.userId,
+      linkId: value.id,
+      url: value.url,
+      error: result.error,
+    });
+
+    return fail(userNavigationSaveErrorMessage(result.error));
+  }
   revalidatePath("/navigation/my");
   return ok(value.id ? "已更新我的导航。" : "已保存到我的导航。");
+}
+
+async function findDuplicateUserNavigationLink(context: Extract<UserActionContext, { ok: true }>, url: string, id: string | null) {
+  let query = context.supabase
+    .from("user_navigation_links")
+    .select("id")
+    .eq("user_id", context.userId)
+    .eq("url", url)
+    .eq("is_active", true)
+    .limit(1);
+
+  if (id) query = query.neq("id", id);
+
+  const { data, error } = await query;
+  if (error) {
+    console.error("[navigation] user navigation duplicate check failed", {
+      userId: context.userId,
+      linkId: id,
+      url,
+      error,
+    });
+
+    return { ok: false as const, exists: false };
+  }
+
+  return { ok: true as const, exists: (data ?? []).length > 0 };
+}
+
+function userNavigationSaveErrorMessage(error: { code?: string; message?: string } | null) {
+  if (error?.code === "23505") return "该网址已存在。";
+  if (error?.code === "42501" || error?.message?.toLowerCase().includes("row-level security")) return "登录状态失效，请重新登录。";
+  return "保存失败，请稍后再试。";
 }
 
 export async function deleteUserNavigationLink(_state: NavigationActionState, formData: FormData): Promise<NavigationActionState> {
