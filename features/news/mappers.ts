@@ -1,6 +1,13 @@
 import { DEFAULT_NEWS_CATEGORIES, NEWS_DEFAULT_DESCRIPTION } from "./constants";
 import type { AdminNewsPost, NewsCategory, NewsCategoryRecord, NewsImageAsset, NewsPostCard, NewsPostDetail, NewsPostRecord } from "./types";
 
+const NEWS_DATE_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  timeZone: "America/New_York",
+};
+
 function firstOrNull<T>(value: T[] | T | null | undefined): T | null {
   if (!value) return null;
   return Array.isArray(value) ? (value[0] ?? null) : value;
@@ -88,7 +95,7 @@ export function formatNewsDate(value: string | null) {
   if (!value) return "待发布";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" });
+  return date.toLocaleDateString("zh-CN", NEWS_DATE_FORMAT_OPTIONS);
 }
 
 export function mapNewsPostToCard(record: NewsPostRecord): NewsPostCard {

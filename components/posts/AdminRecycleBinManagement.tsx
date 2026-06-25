@@ -22,6 +22,11 @@ import type {
   RecycleBinRetentionSettings,
 } from "@/features/posts/adminQueries";
 
+const DATE_TIME_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
+  hour12: false,
+  timeZone: "America/New_York",
+};
+
 const initialActionState: AdminPostActionState = { ok: true, message: "" };
 const restoreNotificationDefault = {
   templateKey: "admin_post_restored",
@@ -303,5 +308,5 @@ function sourceLabel(source: RecycleBinItem["deletedSource"]) {
 function formatDateTime(value: string | null) {
   if (!value) return "未记录";
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "未记录" : date.toLocaleString("zh-CN", { hour12: false });
+  return Number.isNaN(date.getTime()) ? "未记录" : date.toLocaleString("zh-CN", DATE_TIME_FORMAT_OPTIONS);
 }
