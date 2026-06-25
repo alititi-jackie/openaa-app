@@ -10,6 +10,14 @@ import { adminExemptionOptions, adminRoleOptions, getAdminRoleLabel, getAdminSta
 import type { AdminAuthorizationConfig, AdminCandidate, AdminRoleListItem, AdminsPermissions } from "@/features/admins/adminQueries";
 import type { AdminRoleName } from "@/lib/supabase/types";
 
+const DATE_TIME_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
+  month: "short",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "America/New_York",
+};
+
 export function AdminRoleStats({ admins }: { admins: AdminRoleListItem[] }) {
   const active = admins.filter((admin) => admin.isActive).length;
   const inactive = admins.length - active;
@@ -224,7 +232,7 @@ export function formatDateTime(value: string | null) {
   if (!value) return "未记录";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "未记录";
-  return date.toLocaleString("zh-CN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleString("zh-CN", DATE_TIME_FORMAT_OPTIONS);
 }
 
 function buildPageHref({ page, q, role, status }: { page: number; q?: string; role?: string; status?: string }) {

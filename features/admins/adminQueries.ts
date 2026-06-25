@@ -121,12 +121,36 @@ export async function getAdminsData({
   if (!permissions.superAdmin) return emptyResult("ready", permissions, currentRole?.role ?? null, normalizedPage);
   if (!supabase) return emptyResult("missing_config", permissions, currentRole?.role ?? null, normalizedPage, "Supabase 环境变量未配置，暂时无法读取管理员授权。");
 
+  const search = q?.trim() ?? "";
+  const searchUserIds = search ? await findAdminSearchUserIds(supabase, search) : null;
+  const authorizationConfig = await fetchAdminAuthorizationConfig(supabase);
+
   let query = supabase
     .from("admin_roles")
     .select("id,user_id,role,is_active,note,granted_at,revoked_at,last_admin_login_at", { count: "exact" })
     .order("granted_at", { ascending: false });
 
   if (currentRole?.user_id) query = query.neq("user_id", currentRole.user_id);
+  if (searchUserIds) {
+    if (searchUserIds.length === 0) {
+      const candidates = search.length >= 2 ? await searchCandidates(supabase, search, []) : [];
+      const currentAdmin = await buildCurrentAdmin(supabase, currentRole, authorizationConfig);
+      return {
+        state: "ready",
+        currentRole: currentRole?.role ?? null,
+        currentAdmin,
+        permissions,
+        admins: [],
+        candidates,
+        authorizationConfig,
+        page: normalizedPage,
+        pageSize: PAGE_SIZE,
+        pageCount: 1,
+        totalCount: 0,
+      };
+    }
+    query = query.in("user_id", searchUserIds);
+  }
   if (role && role !== "all") query = query.eq("role", role);
   if (status === "active") query = query.eq("is_active", true);
   if (status === "inactive") query = query.eq("is_active", false);
@@ -141,17 +165,14 @@ export async function getAdminsData({
   const allRows = currentRoleRow ? [...rows, currentRoleRow] : rows;
   const profileMap = await fetchProfileMap(supabase, allRows.map((item) => item.user_id));
   const userIds = allRows.map((item) => item.user_id);
-  const [authorizationConfig, moduleMap, permissionMap, exemptionMap] = await Promise.all([
-    fetchAdminAuthorizationConfig(supabase),
+  const [moduleMap, permissionMap, exemptionMap] = await Promise.all([
     fetchAdminModuleMap(supabase, userIds),
     fetchAdminPermissionMap(supabase, userIds),
     fetchAdminExemptionMap(supabase, userIds),
   ]);
   const admins = rows.map((item) => mapAdminRole(item, profileMap.get(item.user_id), currentRole?.user_id ?? null, moduleMap, permissionMap, exemptionMap, authorizationConfig));
   const currentAdmin = currentRoleRow ? mapAdminRole(currentRoleRow, profileMap.get(currentRoleRow.user_id), currentRoleRow.user_id, moduleMap, permissionMap, exemptionMap, authorizationConfig) : null;
-  const search = q?.trim();
-  const filteredAdmins = search ? filterAdmins(admins, search) : admins;
-  const candidates = search && search.length >= 2 ? await searchCandidates(supabase, search, rows) : [];
+  const candidates = search.length >= 2 ? await searchCandidates(supabase, search, rows) : [];
   const totalCount = count ?? 0;
 
   return {
@@ -159,7 +180,7 @@ export async function getAdminsData({
     currentRole: currentRole?.role ?? null,
     currentAdmin,
     permissions,
-    admins: filteredAdmins,
+    admins,
     candidates,
     authorizationConfig,
     page: normalizedPage,
@@ -231,6 +252,32 @@ async function fetchAdminRoleMap(supabase: NonNullable<Awaited<ReturnType<typeof
     map.set(role.user_id, role);
   }
   return map;
+}
+
+async function findAdminSearchUserIds(supabase: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>, search: string) {
+  const keyword = search.replace(/[%_,]/g, "").slice(0, 80);
+  if (!keyword) return [];
+  const filters = [`email.ilike.%${keyword}%`, `nickname.ilike.%${keyword}%`];
+  if (isUuid(keyword)) filters.push(`id.eq.${keyword}`);
+  const { data, error } = await supabase.from("profiles").select("id").or(filters.join(",")).limit(100);
+  if (error || !data) return [];
+  return (data as Array<{ id: string }>).map((profile) => profile.id);
+}
+
+async function buildCurrentAdmin(
+  supabase: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>,
+  currentRole: NonNullable<Awaited<ReturnType<typeof getCurrentAdminRole>>> | null,
+  authorizationConfig: AdminAuthorizationConfig,
+) {
+  if (!currentRole) return null;
+  const currentRoleRow = { ...currentRole, revoked_at: null };
+  const profileMap = await fetchProfileMap(supabase, [currentRole.user_id]);
+  const [moduleMap, permissionMap, exemptionMap] = await Promise.all([
+    fetchAdminModuleMap(supabase, [currentRole.user_id]),
+    fetchAdminPermissionMap(supabase, [currentRole.user_id]),
+    fetchAdminExemptionMap(supabase, [currentRole.user_id]),
+  ]);
+  return mapAdminRole(currentRoleRow, profileMap.get(currentRole.user_id), currentRole.user_id, moduleMap, permissionMap, exemptionMap, authorizationConfig);
 }
 
 async function fetchAdminModuleMap(supabase: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>, userIds: string[]) {
@@ -340,11 +387,6 @@ function mapAdminRole(
     permissionKeys: Array.from(new Set(permissionKeys)).sort(),
     exemptionKeys: row.role === "super_admin" ? adminExemptionOptions.map((option) => option.key) : (exemptionMap.get(row.user_id) ?? []),
   };
-}
-
-function filterAdmins(admins: AdminRoleListItem[], search: string) {
-  const lowered = search.toLowerCase();
-  return admins.filter((admin) => admin.userId.toLowerCase().includes(lowered) || admin.email?.toLowerCase().includes(lowered) || admin.nickname?.toLowerCase().includes(lowered));
 }
 
 function emptyResult(state: AdminsData["state"], permissions: AdminsPermissions, currentRole: AdminRoleName | null, page: number, error?: string): AdminsData {

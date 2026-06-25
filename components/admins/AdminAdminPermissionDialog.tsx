@@ -11,6 +11,14 @@ import { getAdminRoleLabel, getAdminStatusLabel } from "@/features/admins/adminR
 import type { AdminAuthorizationConfig, AdminRoleListItem, AdminsPermissions } from "@/features/admins/adminQueries";
 import type { AdminRoleName } from "@/lib/supabase/types";
 
+const DATE_TIME_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
+  month: "short",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "America/New_York",
+};
+
 export function AdminAdminManageDialog({
   admin,
   permissions,
@@ -158,5 +166,5 @@ function formatDateTime(value: string | null) {
   if (!value) return "未记录";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "未记录";
-  return date.toLocaleString("zh-CN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleString("zh-CN", DATE_TIME_FORMAT_OPTIONS);
 }
