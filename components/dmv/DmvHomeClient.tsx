@@ -71,7 +71,7 @@ const practiceCards = [
 const quickTools = [
   { title: "罚单查询", desc: "交通罚单与处理指引", href: "/dmv/tickets", Icon: AlertTriangle, external: false },
   { title: "纽约 DMV 笔试练习", desc: "查看题库、练习模式、模拟考试与错题练习", href: "#dmv-practice-section", Icon: BookOpen, external: false, scrollTarget: "dmv-practice-section" },
-  { title: "DMV 小工具", desc: "文件检查、6 Points、REAL ID 工具", href: "https://openaa.com/tool/dmv/document-checker.html", Icon: Car, external: true },
+  { title: "DMV 小工具", desc: "文件检查、6 Points、REAL ID 工具", href: "/dmv#dmv-quick-tools-section", Icon: Car, external: false },
   { title: "驾照申请", desc: "Learner Permit 官方入口", href: "https://dmv.ny.gov/driver-license/get-learner-permit", Icon: FileText, external: true },
   { title: "驾照更新", desc: "到期续期与资料要求", href: "https://dmv.ny.gov/driver-license/renew-license", Icon: RefreshCw, external: true },
   { title: "地址变更", desc: "搬家后地址更新入口", href: "https://dmv.ny.gov/address-change/how-change-your-address", Icon: MapPin, external: true },
