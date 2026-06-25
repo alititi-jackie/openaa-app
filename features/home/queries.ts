@@ -48,14 +48,17 @@ export async function getHomeConfig(): Promise<HomeConfig> {
 
   const city = await getDefaultCity(supabase);
   const sections = await getHomeSections(supabase);
+  const hasConfiguredHomeSections = Object.keys(sections).length > 0;
   const latestSectionConfig = getSection(sections, HOME_SECTION_KEYS.latestPosts);
   const utilitySectionConfig = getSection(sections, HOME_SECTION_KEYS.utilityTools);
   const quickGridSectionConfig = getSection(sections, HOME_SECTION_KEYS.quickGrid);
   const seoSectionConfig = getSection(sections, HOME_SECTION_KEYS.seoContent);
 
-  const latestPostSections = latestSectionConfig?.is_visible === false ? [] : mapLatestPostSections(latestSectionConfig).filter((section) => section.isVisible);
-  const quickGridItems = quickGridSectionConfig?.is_visible === false ? [] : mapQuickGridItems(quickGridSectionConfig);
-  const utilityTools = utilitySectionConfig?.is_visible === false ? [] : mapUtilityTools(utilitySectionConfig).filter((item) => item.isVisible !== false);
+  const latestPostSections =
+    latestSectionConfig?.is_visible === false || (!latestSectionConfig && hasConfiguredHomeSections) ? [] : mapLatestPostSections(latestSectionConfig).filter((section) => section.isVisible);
+  const quickGridItems = quickGridSectionConfig?.is_visible === false || (!quickGridSectionConfig && hasConfiguredHomeSections) ? [] : mapQuickGridItems(quickGridSectionConfig);
+  const utilityTools =
+    utilitySectionConfig?.is_visible === false || (!utilitySectionConfig && hasConfiguredHomeSections) ? [] : mapUtilityTools(utilitySectionConfig).filter((item) => item.isVisible !== false);
   const tickerSettings = await getLatestTickerSettings(supabase);
   const [topQuickLinks, banners, adPlaceholder, latestPostGroups] = await Promise.all([
     getTopQuickLinks(supabase, city),
@@ -76,10 +79,10 @@ export async function getHomeConfig(): Promise<HomeConfig> {
     utilityTools,
     latestPostGroups,
     latestPostsTitle: latestSectionConfig?.title || "最新发布",
-    latestPostsVisible: latestSectionConfig?.is_visible !== false && latestPostSections.length > 0,
-    utilityToolsVisible: utilitySectionConfig?.is_visible !== false && utilityTools.length > 0,
-    quickGridVisible: quickGridSectionConfig?.is_visible !== false && quickGridItems.length > 0,
-    seo: mapSeoContent(seoSectionConfig),
+    latestPostsVisible: latestSectionConfig?.is_visible !== false && !(!latestSectionConfig && hasConfiguredHomeSections) && latestPostSections.length > 0,
+    utilityToolsVisible: utilitySectionConfig?.is_visible !== false && !(!utilitySectionConfig && hasConfiguredHomeSections) && utilityTools.length > 0,
+    quickGridVisible: quickGridSectionConfig?.is_visible !== false && !(!quickGridSectionConfig && hasConfiguredHomeSections) && quickGridItems.length > 0,
+    seo: !seoSectionConfig && hasConfiguredHomeSections ? { ...fallbackSeoContent, isVisible: false } : mapSeoContent(seoSectionConfig),
   };
 }
 
@@ -257,14 +260,16 @@ export async function getHomeSections(client?: HomeSupabaseClient | null) {
 
 export async function getUtilityTools() {
   const sections = await getHomeSections();
+  const hasConfiguredHomeSections = Object.keys(sections).length > 0;
   const section = getSection(sections, HOME_SECTION_KEYS.utilityTools);
-  return section?.is_visible === false ? [] : mapUtilityTools(section);
+  return section?.is_visible === false || (!section && hasConfiguredHomeSections) ? [] : mapUtilityTools(section);
 }
 
 export async function getLatestPostSections() {
   const sections = await getHomeSections();
+  const hasConfiguredHomeSections = Object.keys(sections).length > 0;
   const section = getSection(sections, HOME_SECTION_KEYS.latestPosts);
-  return section?.is_visible === false ? [] : mapLatestPostSections(section).filter((item) => item.isVisible);
+  return section?.is_visible === false || (!section && hasConfiguredHomeSections) ? [] : mapLatestPostSections(section).filter((item) => item.isVisible);
 }
 
 export async function getHomeSeoContent() {
