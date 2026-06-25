@@ -34,7 +34,7 @@ export const fallbackTickerSettings: HomeTickerSettings = {
     { sectionKey: "news", sectionName: "新闻", isEnabled: true, sortOrder: 10, displayCount: 5 },
     { sectionKey: "jobs", sectionName: "招聘", isEnabled: true, sortOrder: 20, displayCount: 3 },
     { sectionKey: "housing", sectionName: "房屋", isEnabled: true, sortOrder: 30, displayCount: 3 },
-    { sectionKey: "marketplace", sectionName: "二手 / 市场", isEnabled: true, sortOrder: 40, displayCount: 3 },
+    { sectionKey: "marketplace", sectionName: "二手", isEnabled: true, sortOrder: 40, displayCount: 3 },
     { sectionKey: "services", sectionName: "本地服务", isEnabled: true, sortOrder: 50, displayCount: 3 },
   ],
 };

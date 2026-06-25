@@ -4,23 +4,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LatestPostGroup } from "@/components/home/LatestPostsSection";
 import { createSupabasePublicClient } from "@/lib/supabase/public";
 import { getAdPlaceholderSetting } from "@/features/ads/placeholders";
+import { fallbackLatestPostSections, fallbackHomeBanners, fallbackHomeCity, fallbackQuickGridItems, fallbackSeoContent, fallbackTickerItems, fallbackTickerSettings, fallbackTopQuickLinks, fallbackUtilityTools } from "./fallbacks";
+import { getHomeTickerSectionDefaults, homeTickerSections, normalizeHomeTickerSectionKey } from "./tickerSections";
 import type { PostListItem } from "@/components/posts/PostList";
 import { getPublicPosts } from "@/features/posts/queries";
 import type { PostType } from "@/features/posts/types";
 import { getLatestNews } from "@/features/news/queries";
 import { formatNewsDate } from "@/features/news/mappers";
 import { HOME_AD_PLACEMENT, HOME_SECTION_KEYS } from "./constants";
-import {
-  fallbackHomeBanners,
-  fallbackHomeCity,
-  fallbackLatestPostSections,
-  fallbackQuickGridItems,
-  fallbackSeoContent,
-  fallbackTickerItems,
-  fallbackTickerSettings,
-  fallbackTopQuickLinks,
-  fallbackUtilityTools,
-} from "./fallbacks";
 import {
   mapBanner,
   mapHomeSections,
@@ -31,7 +22,7 @@ import {
   mapTopQuickLink,
   mapUtilityTools,
 } from "./mappers";
-import type { HomeCity, HomeConfig, HomeLatestPostSectionConfig, HomeSectionRecord } from "./types";
+import type { HomeCity, HomeConfig, HomeLatestPostSectionConfig, HomeSectionRecord, HomeTickerSectionSettings } from "./types";
 
 type HomeSupabaseClient = SupabaseClient;
 
@@ -224,16 +215,7 @@ export async function getLatestTickerSettings(client?: HomeSupabaseClient | null
         isEnabled: typeof global?.is_enabled === "boolean" ? global.is_enabled : fallbackTickerSettings.global.isEnabled,
         intervalSeconds: clampTickerNumber(global?.interval_seconds, 3, 10, fallbackTickerSettings.global.intervalSeconds),
       },
-      sections:
-        sections && sections.length > 0
-          ? sections.map((section) => ({
-              sectionKey: String(section.section_key),
-              sectionName: String(section.section_name),
-              isEnabled: section.is_enabled !== false,
-              sortOrder: clampTickerNumber(section.sort_order, 0, 9999, 0),
-              displayCount: clampTickerNumber(section.display_count, 1, 20, 3),
-            }))
-          : fallbackTickerSettings.sections,
+      sections: normalizeTickerSectionRows(sections),
     };
   } catch (error) {
     warnHomeConfig("latest_ticker_settings", error);
@@ -412,7 +394,10 @@ function mapLatestPostGroupsToTickerItems(groups: LatestPostGroup[], settings = 
   const hasSectionSettings = settings.sections.length > 0;
   const candidates = groups
     .filter((group) => group.isVisible !== false)
-    .filter((group) => !hasSectionSettings || enabledSectionKeys.has(normalizeTickerModule(group.key)))
+    .filter((group) => {
+      const sectionKey = normalizeTickerModule(group.key);
+      return sectionKey !== null && (!hasSectionSettings || enabledSectionKeys.has(sectionKey));
+    })
     .flatMap((group) =>
       group.posts
         .map((post) => mapLatestPostToTickerCandidate(group, post))
@@ -465,7 +450,8 @@ function dateValue(value?: string | null) {
 }
 
 function buildTickerLabel(group: LatestPostGroup, post: PostListItem) {
-  const channel = group.navLabel || group.title;
+  const normalizedSectionKey = normalizeTickerModule(group.key);
+  const channel = normalizedSectionKey ? getHomeTickerSectionDefaults(normalizedSectionKey).sectionName : group.navLabel || group.title;
   const detail = tickerPostDetail(post);
   const title = post.title.trim();
 
@@ -503,13 +489,42 @@ function applyTickerSectionSettings<T extends { module?: string | null }>(items:
     result.push(...sectionItems.slice(0, section.displayCount));
   }
 
-  result.push(...items.filter((item) => !configuredKeys.has(normalizeTickerModule(item.module))));
+  result.push(...items.filter((item) => {
+    const sectionKey = normalizeTickerModule(item.module);
+    return sectionKey !== null && !configuredKeys.has(sectionKey);
+  }));
   return result;
 }
 
 function normalizeTickerModule(module?: string | null) {
-  if (module === "marketplace") return "marketplace";
-  return module ?? "";
+  return normalizeHomeTickerSectionKey(module);
+}
+
+function normalizeTickerSectionRows(rows?: Array<{ section_key: unknown; section_name: unknown; is_enabled: boolean | null; sort_order: unknown; display_count: unknown }> | null) {
+  if (!rows || rows.length === 0) return fallbackTickerSettings.sections;
+
+  const sectionMap = new Map<string, HomeTickerSectionSettings>();
+  for (const row of rows) {
+    const sectionKey = normalizeHomeTickerSectionKey(String(row.section_key));
+    if (!sectionKey || sectionMap.has(sectionKey)) continue;
+
+    const defaults = getHomeTickerSectionDefaults(sectionKey);
+    sectionMap.set(sectionKey, {
+      sectionKey,
+      sectionName: defaults.sectionName,
+      isEnabled: row.is_enabled !== false,
+      sortOrder: clampTickerNumber(row.sort_order, 0, 9999, defaults.sortOrder),
+      displayCount: clampTickerNumber(row.display_count, 1, 20, defaults.displayCount),
+    });
+  }
+
+  return homeTickerSections.map((section) => sectionMap.get(section.sectionKey) ?? {
+    sectionKey: section.sectionKey,
+    sectionName: section.sectionName,
+    isEnabled: true,
+    sortOrder: section.sortOrder,
+    displayCount: section.displayCount,
+  });
 }
 
 function clampTickerNumber(value: unknown, min: number, max: number, fallback: number) {

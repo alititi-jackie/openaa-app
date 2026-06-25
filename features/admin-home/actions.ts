@@ -7,6 +7,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { normalizeWebsiteUrl } from "@/lib/validation/url";
 import { defaultHomeSections, defaultLatestTicker, defaultTopQuickLinks } from "./defaults";
 import { fallbackLatestPostSections } from "@/features/home/fallbacks";
+import { normalizeHomeTickerSectionKey } from "@/features/home/tickerSections";
 import type { AdminHomeActionState } from "./types";
 
 type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
@@ -368,7 +369,7 @@ export async function updateLatestTickerSettings(_state: AdminHomeActionState, f
   const sectionPayloads = [];
 
   for (const rawSectionKey of sectionKeys) {
-    const sectionKey = normalizeTickerSectionKey(rawSectionKey);
+    const sectionKey = normalizeHomeTickerSectionKey(rawSectionKey);
     if (!sectionKey) continue;
 
     const displayCount = readIntegerInRange(formData, `display_count_${sectionKey}`, "显示数量", 1, 20);
@@ -623,10 +624,6 @@ function readIntegerInRange(formData: FormData, key: string, label: string, min:
 function normalizeTickerModule(value: string) {
   if (value === "news" || value === "jobs" || value === "housing" || value === "marketplace" || value === "services") return value;
   return "news";
-}
-
-function normalizeTickerSectionKey(value: string) {
-  return value.trim().slice(0, 64);
 }
 
 function readDateTime(formData: FormData, key: string) {

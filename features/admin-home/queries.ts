@@ -2,6 +2,7 @@ import "server-only";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { hasAdminPermission } from "@/lib/permissions/admin";
+import { getHomeTickerSectionDefaults, homeTickerSections, normalizeHomeTickerSectionKey } from "@/features/home/tickerSections";
 import type { AdminHomeBannerRow, AdminHomePermissions, AdminHomeSectionRow, AdminTickerGlobalSettingsRow, AdminTickerRow, AdminTickerSectionSettingsRow, AdminTopQuickLinkRow } from "./types";
 
 type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
@@ -95,13 +96,29 @@ async function readTickerSectionSettings(supabase: SupabaseServerClient): Promis
     .order("sort_order", { ascending: true });
 
   if (error || !data || data.length === 0) return defaultTickerSectionSettings();
-  return data.map((row) => ({
-    section_key: String(row.section_key),
-    section_name: String(row.section_name),
-    is_enabled: row.is_enabled !== false,
-    sort_order: clampNumber(row.sort_order, 0, 9999, 0),
-    display_count: clampNumber(row.display_count, 1, 20, 3),
-  }));
+
+  const sectionMap = new Map<string, AdminTickerSectionSettingsRow>();
+  for (const row of data) {
+    const sectionKey = normalizeHomeTickerSectionKey(row.section_key);
+    if (!sectionKey || sectionMap.has(sectionKey)) continue;
+
+    const defaults = getHomeTickerSectionDefaults(sectionKey);
+    sectionMap.set(sectionKey, {
+      section_key: sectionKey,
+      section_name: defaults.sectionName,
+      is_enabled: row.is_enabled !== false,
+      sort_order: clampNumber(row.sort_order, 0, 9999, defaults.sortOrder),
+      display_count: clampNumber(row.display_count, 1, 20, defaults.displayCount),
+    });
+  }
+
+  return homeTickerSections.map((section) => sectionMap.get(section.sectionKey) ?? {
+    section_key: section.sectionKey,
+    section_name: section.sectionName,
+    is_enabled: true,
+    sort_order: section.sortOrder,
+    display_count: section.displayCount,
+  });
 }
 
 async function readHomeBanners(supabase: SupabaseServerClient, status?: string): Promise<AdminHomeBannerRow[]> {
@@ -142,13 +159,13 @@ function defaultTickerGlobalSettings(): AdminTickerGlobalSettingsRow {
 }
 
 function defaultTickerSectionSettings(): AdminTickerSectionSettingsRow[] {
-  return [
-    { section_key: "news", section_name: "新闻", is_enabled: true, sort_order: 10, display_count: 5 },
-    { section_key: "jobs", section_name: "招聘", is_enabled: true, sort_order: 20, display_count: 3 },
-    { section_key: "housing", section_name: "房屋", is_enabled: true, sort_order: 30, display_count: 3 },
-    { section_key: "marketplace", section_name: "二手 / 市场", is_enabled: true, sort_order: 40, display_count: 3 },
-    { section_key: "services", section_name: "本地服务", is_enabled: true, sort_order: 50, display_count: 3 },
-  ];
+  return homeTickerSections.map((section) => ({
+    section_key: section.sectionKey,
+    section_name: section.sectionName,
+    is_enabled: true,
+    sort_order: section.sortOrder,
+    display_count: section.displayCount,
+  }));
 }
 
 function clampNumber(value: unknown, min: number, max: number, fallback: number) {
