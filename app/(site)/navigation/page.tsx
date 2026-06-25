@@ -29,6 +29,7 @@ export default async function NavigationPage({ searchParams }: NavigationPagePro
       title="美国华人常用网站导航"
       description="政府办事、银行金融、购物通讯、AI 工具、视频社交和生活服务常用入口。"
     >
+      <h1 className="sr-only">OpenAA Navigation</h1>
       <NavigationMyCard />
 
       {data.state !== "ready" ? (
