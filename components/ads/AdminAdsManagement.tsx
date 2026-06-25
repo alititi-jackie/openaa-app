@@ -450,14 +450,17 @@ function ExternalFields({ ad }: { ad: AdminAdRow | null }) {
         <input
           name="external_url"
           defaultValue={ad?.external_url ?? ""}
-          placeholder="https://example.com"
+          placeholder="example.com 或 https://example.com"
           required
           className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm font-bold text-slate-900 outline-none focus:border-blue-500"
         />
-        <span className="block text-xs font-semibold text-slate-500">
+        <span className="hidden">
           必须以 http:// 或 https:// 开头。
         </span>
       </label>
+      <p className="md:col-start-2 text-xs font-semibold text-slate-500">
+        可填写 /jobs 这类站内链接；外部域名会自动补全为 https://。
+      </p>
     </div>
   );
 }

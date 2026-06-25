@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { hasAdminModulePermission } from "@/lib/permissions/admin";
 import { writeAdminAuditLog } from "@/lib/permissions/adminAuditLog";
+import { normalizeWebsiteUrl } from "@/lib/validation/url";
 import type { AdminHomeActionState } from "@/features/admin-home/types";
 import { AD_PLACEHOLDER_SETTING_KEY, normalizeAdPlaceholderSetting } from "./placeholders";
 import { adPositions, normalizeAdPosition, type AdOpenMode } from "./types";
@@ -230,7 +231,7 @@ async function getAdminActionContext(): Promise<AdminActionContext> {
 
 function normalizeAdPayload(formData: FormData, openMode: AdOpenMode, position: NonNullable<ReturnType<typeof normalizeAdPosition>>, imageAssetId: string | null, isActive: boolean, startsAt: string | null, endsAt: string | null) {
   const title = readText(formData, "title");
-  const externalUrl = readText(formData, "external_url");
+  const externalUrl = normalizeAdLinkInput(readText(formData, "external_url"));
   const slug = normalizeAdSlug(readText(formData, "slug"));
   const content = readText(formData, "content") || null;
   const contactName = readText(formData, "contact_name") || null;
@@ -481,13 +482,21 @@ function normalizeAdSlug(value: string) {
   return value.trim().toLowerCase();
 }
 
+function normalizeAdLinkInput(value: string) {
+  const result = normalizeAdLinkUrl(value);
+  return result.ok ? result.value : value.trim();
+}
+
+function normalizeAdLinkUrl(value: string) {
+  return normalizeWebsiteUrl(value, {
+    allowInternalPath: true,
+    requiredMessage: "外部广告必须填写有效链接地址。",
+    invalidMessage: "外部广告必须填写有效链接地址。",
+  });
+}
+
 function isHttpUrl(value: string) {
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
+  return normalizeAdLinkUrl(value).ok;
 }
 
 function isHttpsUrl(value: string) {
