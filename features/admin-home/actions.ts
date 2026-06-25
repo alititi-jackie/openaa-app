@@ -359,7 +359,6 @@ export async function updateLatestTickerSettings(_state: AdminHomeActionState, f
     id: 1,
     is_enabled: isEnabled,
     interval_seconds: intervalSeconds.value,
-    updated_at: new Date().toISOString(),
   };
 
   const globalResult = await context.supabase.from("latest_ticker_global_settings").upsert(globalPayload, { onConflict: "id" });
@@ -368,19 +367,21 @@ export async function updateLatestTickerSettings(_state: AdminHomeActionState, f
   const sectionKeys = formData.getAll("section_key").filter((value): value is string => typeof value === "string");
   const sectionPayloads = [];
 
-  for (const sectionKey of sectionKeys) {
+  for (const rawSectionKey of sectionKeys) {
+    const sectionKey = normalizeTickerSectionKey(rawSectionKey);
+    if (!sectionKey) continue;
+
     const displayCount = readIntegerInRange(formData, `display_count_${sectionKey}`, "显示数量", 1, 20);
     const sortOrder = readInteger(formData, `sort_order_${sectionKey}`, "排序");
     if (!displayCount.ok) return fail(displayCount.message);
     if (!sortOrder.ok) return fail(sortOrder.message);
 
     sectionPayloads.push({
-      section_key: normalizeTickerModule(sectionKey),
+      section_key: sectionKey,
       section_name: readText(formData, `section_name_${sectionKey}`) || sectionKey,
       is_enabled: formData.get(`is_enabled_${sectionKey}`) === "on",
       sort_order: sortOrder.value,
       display_count: displayCount.value,
-      updated_at: new Date().toISOString(),
     });
   }
 
@@ -622,6 +623,10 @@ function readIntegerInRange(formData: FormData, key: string, label: string, min:
 function normalizeTickerModule(value: string) {
   if (value === "news" || value === "jobs" || value === "housing" || value === "marketplace" || value === "services") return value;
   return "news";
+}
+
+function normalizeTickerSectionKey(value: string) {
+  return value.trim().slice(0, 64);
 }
 
 function readDateTime(formData: FormData, key: string) {
