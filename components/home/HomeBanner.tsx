@@ -138,10 +138,12 @@ function BannerImage({ src, title, eager, fallbackImageUrl }: { src: string; tit
 
 function AdBannerPlaceholder({ title }: { title: string }) {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-slate-100 px-4 text-center text-slate-500">
-      <ImageOff size={24} />
-      <p className="line-clamp-1 text-sm font-bold text-slate-700">{title || "OpenAA 广告位"}</p>
-      <p className="text-xs font-semibold">广告图片暂时无法加载</p>
+    <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-slate-100 via-white to-blue-50 px-4 text-center text-slate-500">
+      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/85 shadow-sm ring-1 ring-slate-200">
+        <ImageOff size={22} aria-hidden="true" />
+      </div>
+      <p className="line-clamp-1 text-sm font-black text-slate-800">{title || "OpenAA 广告位"}</p>
+      <p className="text-xs font-semibold text-slate-500">OpenAA 官方广告展示位</p>
     </div>
   );
 }

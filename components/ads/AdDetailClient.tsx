@@ -132,10 +132,12 @@ function normalizeImageUrl(value: unknown) {
 
 function AdImageFallback({ title, className = "" }: { title: string; className?: string }) {
   return (
-    <div className={`flex w-full flex-col items-center justify-center gap-2 bg-zinc-100 px-4 text-center text-zinc-500 ${className}`}>
-      <ImageOff size={26} />
-      <p className="text-sm font-bold text-zinc-700">{title}</p>
-      <p className="text-xs">广告图片暂时无法加载</p>
+    <div className={`flex w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-slate-100 via-white to-blue-50 px-4 text-center text-slate-500 ${className}`}>
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/85 shadow-sm ring-1 ring-slate-200">
+        <ImageOff size={24} aria-hidden="true" />
+      </div>
+      <p className="text-sm font-black text-slate-800">{title || "OpenAA 广告位"}</p>
+      <p className="text-xs font-semibold">OpenAA 官方广告展示位</p>
     </div>
   );
 }

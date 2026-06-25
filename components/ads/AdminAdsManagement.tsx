@@ -565,7 +565,7 @@ function AdPlaceholderSettings({ placeholder }: { placeholder: AdminAdPlaceholde
       <div className="flex flex-col gap-1">
         <h3 className="text-base font-black text-slate-950">默认广告占位图</h3>
         <p className="text-sm font-semibold text-slate-500">
-          当广告图片为空、外链失效或加载失败时，全站广告位会优先显示这里上传的占位图；未上传时显示内置灰色占位。
+          当广告图片为空、外链失效或加载失败时，全站广告位会优先显示这里上传的占位图；未上传时显示内置广告位占位。
         </p>
       </div>
 
