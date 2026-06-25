@@ -150,13 +150,30 @@ export async function handleMessageReport(_state: AdminHomeActionState, formData
     }
   }
 
+  const postAdminEventWritten = await writeReportPostAdminEvent(context.supabase, {
+    postId: post.id,
+    actorId: context.userId,
+    postAction,
+    reason,
+    statusBefore: post.status,
+    statusAfter: reportPostStatusAfter(postAction, post.status),
+    title: notifyAuthor ? "你发布的信息已被平台处理" : null,
+    body: notifyAuthor ? `${reportPayload.admin_message_editable}\n\n${fixedMessage}` : null,
+    notificationId,
+    metadata: {
+      source: "report_handling",
+      report_id: id,
+      notification_failed: notificationFailed,
+    },
+  });
+
   await writeAdminAuditLog({
     actorId: context.userId,
     action: "handle_report",
     entityType: "post_reports",
     entityId: id,
     beforeData: before,
-    afterData: { ...reportPayload, notification_id: notificationId, notification_failed: notificationFailed },
+    afterData: { ...reportPayload, notification_id: notificationId, notification_failed: notificationFailed, post_admin_event_written: postAdminEventWritten },
   });
 
   revalidateMessages();
@@ -302,6 +319,66 @@ function revalidatePost(type: PostType, id: string) {
   revalidatePath(`${POST_TYPE_TO_ROUTE[type]}/${id}`);
   revalidatePath("/admin/user-posts");
   revalidatePath("/admin/recycle-bin");
+}
+
+async function writeReportPostAdminEvent(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  {
+    postId,
+    actorId,
+    postAction,
+    reason,
+    statusBefore,
+    statusAfter,
+    title,
+    body,
+    notificationId,
+    metadata,
+  }: {
+    postId: string;
+    actorId: string;
+    postAction: string;
+    reason: string;
+    statusBefore: string | null;
+    statusAfter: string | null;
+    title: string | null;
+    body: string | null;
+    notificationId: string | null;
+    metadata: Record<string, unknown>;
+  },
+) {
+  const { error } = await supabase.from("post_admin_events").insert({
+    post_id: postId,
+    actor_id: actorId,
+    event_type: `report_${postAction}`,
+    template_key: reason,
+    status_before: statusBefore,
+    status_after: statusAfter,
+    title,
+    body,
+    notification_id: notificationId,
+    metadata,
+  });
+
+  if (error) {
+    console.error("[admin/messages] Failed to write post admin event", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      postId,
+      postAction,
+    });
+    return false;
+  }
+
+  return true;
+}
+
+function reportPostStatusAfter(action: string, fallback: string | null) {
+  if (action === "hide") return "hidden";
+  if (action === "delete") return "deleted";
+  return fallback;
 }
 
 function readLimitInput(formData: FormData, key: string) {
