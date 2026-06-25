@@ -668,7 +668,14 @@ function AdListItem({ ad, onEdit }: { ad: AdminAdRow; onEdit: () => void }) {
                 {ad.is_active ? "停用" : "启用"}
               </button>
             </form>
-            <form action={deleteAction}>
+            <form
+              action={deleteAction}
+              onSubmit={(event) => {
+                if (!window.confirm(`确认删除广告“${ad.title}”吗？删除后前台将不再展示。`)) {
+                  event.preventDefault();
+                }
+              }}
+            >
               <input type="hidden" name="id" value={ad.id} />
               <button
                 type="submit"
