@@ -129,15 +129,10 @@ export async function getHomeBanners(client?: HomeSupabaseClient | null, city = 
     return fallbackHomeBanners;
   }
 
-  const ads = await readHomeAds(supabase);
+  const [banners, ads] = await Promise.all([readHomeBanners(supabase, city), readHomeAds(supabase)]);
+  const items = [...banners, ...ads];
 
-  if (ads.length > 0) {
-    return ads;
-  }
-
-  const banners = await readHomeBanners(supabase, city);
-
-  return banners.length > 0 ? banners : fallbackHomeBanners;
+  return items.length > 0 ? items : fallbackHomeBanners;
 }
 
 export async function getLatestTickerItems(
