@@ -118,7 +118,7 @@ function needsInnerDetailFilter(type: PostType, filters: PublicPostFilters) {
 function detailFilterColumn(type: PostType, kind: "mode" | "category" | "area" | "priceLow" | "priceHigh" | "price") {
   if (type === "job") {
     return {
-      mode: "category",
+      mode: "subcategory",
       category: "post_details_jobs.job_category",
       area: "post_details_jobs.work_area",
       priceLow: "post_details_jobs.wage_min",
