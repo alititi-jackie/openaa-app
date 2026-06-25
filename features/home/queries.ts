@@ -48,14 +48,14 @@ export async function getHomeConfig(): Promise<HomeConfig> {
 
   const city = await getDefaultCity(supabase);
   const sections = await getHomeSections(supabase);
-  const latestSectionConfig = getVisibleSection(sections, HOME_SECTION_KEYS.latestPosts);
-  const utilitySectionConfig = getVisibleSection(sections, HOME_SECTION_KEYS.utilityTools);
-  const quickGridSectionConfig = getVisibleSection(sections, HOME_SECTION_KEYS.quickGrid);
-  const seoSectionConfig = getVisibleSection(sections, HOME_SECTION_KEYS.seoContent);
+  const latestSectionConfig = getSection(sections, HOME_SECTION_KEYS.latestPosts);
+  const utilitySectionConfig = getSection(sections, HOME_SECTION_KEYS.utilityTools);
+  const quickGridSectionConfig = getSection(sections, HOME_SECTION_KEYS.quickGrid);
+  const seoSectionConfig = getSection(sections, HOME_SECTION_KEYS.seoContent);
 
-  const latestPostSections = mapLatestPostSections(latestSectionConfig).filter((section) => section.isVisible);
-  const quickGridItems = mapQuickGridItems(quickGridSectionConfig);
-  const utilityTools = mapUtilityTools(utilitySectionConfig).filter((item) => item.isVisible !== false);
+  const latestPostSections = latestSectionConfig?.is_visible === false ? [] : mapLatestPostSections(latestSectionConfig).filter((section) => section.isVisible);
+  const quickGridItems = quickGridSectionConfig?.is_visible === false ? [] : mapQuickGridItems(quickGridSectionConfig);
+  const utilityTools = utilitySectionConfig?.is_visible === false ? [] : mapUtilityTools(utilitySectionConfig).filter((item) => item.isVisible !== false);
   const tickerSettings = await getLatestTickerSettings(supabase);
   const [topQuickLinks, banners, adPlaceholder, latestPostGroups] = await Promise.all([
     getTopQuickLinks(supabase, city),
@@ -76,9 +76,9 @@ export async function getHomeConfig(): Promise<HomeConfig> {
     utilityTools,
     latestPostGroups,
     latestPostsTitle: latestSectionConfig?.title || "最新发布",
-    latestPostsVisible: Boolean(latestSectionConfig?.is_visible ?? true) && latestPostSections.length > 0,
-    utilityToolsVisible: Boolean(utilitySectionConfig?.is_visible ?? true) && utilityTools.length > 0,
-    quickGridVisible: Boolean(quickGridSectionConfig?.is_visible ?? true) && quickGridItems.length > 0,
+    latestPostsVisible: latestSectionConfig?.is_visible !== false && latestPostSections.length > 0,
+    utilityToolsVisible: utilitySectionConfig?.is_visible !== false && utilityTools.length > 0,
+    quickGridVisible: quickGridSectionConfig?.is_visible !== false && quickGridItems.length > 0,
     seo: mapSeoContent(seoSectionConfig),
   };
 }
@@ -257,17 +257,19 @@ export async function getHomeSections(client?: HomeSupabaseClient | null) {
 
 export async function getUtilityTools() {
   const sections = await getHomeSections();
-  return mapUtilityTools(getVisibleSection(sections, HOME_SECTION_KEYS.utilityTools));
+  const section = getSection(sections, HOME_SECTION_KEYS.utilityTools);
+  return section?.is_visible === false ? [] : mapUtilityTools(section);
 }
 
 export async function getLatestPostSections() {
   const sections = await getHomeSections();
-  return mapLatestPostSections(getVisibleSection(sections, HOME_SECTION_KEYS.latestPosts)).filter((section) => section.isVisible);
+  const section = getSection(sections, HOME_SECTION_KEYS.latestPosts);
+  return section?.is_visible === false ? [] : mapLatestPostSections(section).filter((item) => item.isVisible);
 }
 
 export async function getHomeSeoContent() {
   const sections = await getHomeSections();
-  return mapSeoContent(getVisibleSection(sections, HOME_SECTION_KEYS.seoContent));
+  return mapSeoContent(getSection(sections, HOME_SECTION_KEYS.seoContent));
 }
 
 async function getDefaultCity(supabase: HomeSupabaseClient): Promise<HomeCity> {
@@ -467,9 +469,8 @@ function tickerPostDetail(post: PostListItem) {
     .find(Boolean);
 }
 
-function getVisibleSection(sections: Record<string, HomeSectionRecord>, key: string) {
-  const section = sections[key];
-  return section?.is_visible === false ? undefined : section;
+function getSection(sections: Record<string, HomeSectionRecord>, key: string) {
+  return sections[key];
 }
 
 function applyTickerSectionSettings<T extends { module?: string | null }>(items: T[], settings = fallbackTickerSettings) {
