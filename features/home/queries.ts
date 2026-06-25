@@ -147,6 +147,13 @@ export async function getLatestTickerItems(
     return [];
   }
 
+  if (supabase) {
+    const configuredItems = await getConfiguredTickerItems(supabase, city, settings);
+    if (configuredItems.length > 0) {
+      return configuredItems;
+    }
+  }
+
   const dynamicItems = latestPostGroups
     ? mapLatestPostGroupsToTickerItems(latestPostGroups, settings)
     : mapLatestPostGroupsToTickerItems(await getLatestPostGroups(fallbackLatestPostSections.filter((section) => section.isVisible), supabase), settings);
@@ -159,8 +166,7 @@ export async function getLatestTickerItems(
     return fallbackTickerItems;
   }
 
-  const configuredItems = await getConfiguredTickerItems(supabase, city, settings);
-  return configuredItems.length > 0 ? configuredItems : fallbackTickerItems;
+  return fallbackTickerItems;
 }
 
 async function getConfiguredTickerItems(supabase: HomeSupabaseClient, city = fallbackHomeCity, settings = fallbackTickerSettings) {
@@ -179,8 +185,9 @@ async function getConfiguredTickerItems(supabase: HomeSupabaseClient, city = fal
       return fallbackTickerItems;
     }
 
+    const meaningfulRows = (data ?? []).filter((row) => !isPlaceholderTickerTitle(row.title));
     const items = applyTickerSectionSettings(
-      (data ?? [])
+      meaningfulRows
       .map((row) => mapTickerItem({ ...(row as Record<string, unknown>), city_id: city.slug }))
       .filter((item): item is NonNullable<typeof item> => item !== null),
       settings,
@@ -191,6 +198,12 @@ async function getConfiguredTickerItems(supabase: HomeSupabaseClient, city = fal
     warnHomeConfig("latest_ticker", error);
     return [];
   }
+}
+
+function isPlaceholderTickerTitle(value: unknown) {
+  if (typeof value !== "string") return true;
+  const normalized = value.trim();
+  return normalized === "" || normalized === "??" || normalized === "????" || /^\?+$/.test(normalized);
 }
 
 export async function getLatestTickerSettings(client?: HomeSupabaseClient | null) {
