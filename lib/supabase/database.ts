@@ -1479,12 +1479,16 @@ export type Database = {
       }
       post_admin_events: {
         Row: {
+          action: string | null
           actor_id: string | null
+          after_data: Json | null
+          before_data: Json | null
           body: string | null
           created_at: string
           event_type: string
           id: string
           metadata: Json
+          note: string | null
           notification_id: string | null
           post_id: string | null
           status_after: string | null
@@ -1493,12 +1497,16 @@ export type Database = {
           title: string | null
         }
         Insert: {
+          action?: string | null
           actor_id?: string | null
+          after_data?: Json | null
+          before_data?: Json | null
           body?: string | null
           created_at?: string
           event_type: string
           id?: string
           metadata?: Json
+          note?: string | null
           notification_id?: string | null
           post_id?: string | null
           status_after?: string | null
@@ -1507,12 +1515,16 @@ export type Database = {
           title?: string | null
         }
         Update: {
+          action?: string | null
           actor_id?: string | null
+          after_data?: Json | null
+          before_data?: Json | null
           body?: string | null
           created_at?: string
           event_type?: string
           id?: string
           metadata?: Json
+          note?: string | null
           notification_id?: string | null
           post_id?: string | null
           status_after?: string | null
@@ -1828,6 +1840,8 @@ export type Database = {
           deleted_at: string | null
           deleted_by: string | null
           detail: string
+          handled_at: string | null
+          handled_by: string | null
           handler_id: string | null
           id: string
           notify_author: boolean
@@ -1850,6 +1864,8 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           detail: string
+          handled_at?: string | null
+          handled_by?: string | null
           handler_id?: string | null
           id?: string
           notify_author?: boolean
@@ -1872,6 +1888,8 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           detail?: string
+          handled_at?: string | null
+          handled_by?: string | null
           handler_id?: string | null
           id?: string
           notify_author?: boolean
@@ -1889,6 +1907,13 @@ export type Database = {
           {
             foreignKeyName: "post_reports_deleted_by_fkey"
             columns: ["deleted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_reports_handled_by_fkey"
+            columns: ["handled_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
