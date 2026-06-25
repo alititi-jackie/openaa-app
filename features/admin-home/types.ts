@@ -6,7 +6,6 @@ export type AdminHomeActionState = {
 };
 
 export type AdminHomeSectionRow = {
-  id: string;
   key: string;
   title: string;
   description: string | null;

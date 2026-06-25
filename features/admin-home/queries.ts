@@ -51,7 +51,7 @@ export async function getAdminHomePermissions(): Promise<AdminHomePermissions> {
 async function readHomeSections(supabase: SupabaseServerClient): Promise<AdminHomeSectionRow[]> {
   const { data, error } = await supabase
     .from("home_sections")
-    .select("id,key,title,description,module,config,is_visible,sort_order")
+    .select("key,title,description,module,config,is_visible,sort_order")
     .order("sort_order", { ascending: true });
 
   if (error) return [];
