@@ -6,6 +6,14 @@ import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { updateDailyPostLimit } from "@/features/settings/adminActions";
 import type { AdminSettingsData, AdminSiteSetting } from "@/features/settings/adminQueries";
 
+const DATE_TIME_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
+  month: "short",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "America/New_York",
+};
+
 export function AdminSettingsPermissionBadges({ canManageSettings }: { canManageSettings: boolean }) {
   return <AdminPermissionBadge allowed={canManageSettings} label="manage_settings" />;
 }
@@ -88,5 +96,5 @@ function formatDateTime(value: string | null) {
   if (!value) return "未记录";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "未记录";
-  return date.toLocaleString("zh-CN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleString("zh-CN", DATE_TIME_FORMAT_OPTIONS);
 }
