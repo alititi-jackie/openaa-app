@@ -2,14 +2,12 @@ import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { DEFAULT_CITY_SLUG, POST_TYPE_TO_ROUTE } from "@/features/posts/constants";
 import type { PostType } from "@/features/posts/types";
+import { readReportLimitSettings, type ReportLimitSettings } from "@/features/reports/settings";
 import { isReportReason } from "@/features/reports/types";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
-
-const REPORT_DAILY_VISITOR_LIMIT = 5;
-const REPORT_DAILY_USER_LIMIT = 20;
 
 type ProfileContact = {
   email: string | null;
@@ -67,7 +65,13 @@ export async function POST(request: NextRequest) {
   if (!post) return NextResponse.json({ error: "这条信息当前不可举报。" }, { status: 404 });
   if (user && post.author_id === user.id) return NextResponse.json({ error: "不能举报自己发布的信息。" }, { status: 400 });
 
-  const rateLimit = await checkReportRateLimit(supabase, request, user?.id ?? visitorId, Boolean(user));
+  const settings = await readReportLimitSettings(supabase);
+  const totalLimit = await checkReportTotalLimit(supabase, settings);
+  if (!totalLimit.allowed) {
+    return NextResponse.json({ error: "今日举报提交数量已达上限，请明天再试。" }, { status: 429 });
+  }
+
+  const rateLimit = await checkReportRateLimit(supabase, request, user?.id ?? visitorId, Boolean(user), settings);
   if (!rateLimit.allowed) {
     return NextResponse.json({ error: "今日提交次数已达上限，请明天再试。" }, { status: 429 });
   }
@@ -132,14 +136,42 @@ async function readProfileContact(supabase: ReturnType<typeof createSupabaseAdmi
   return (data as ProfileContact | null) ?? null;
 }
 
-async function checkReportRateLimit(supabase: ReturnType<typeof createSupabaseAdminClient>, request: NextRequest, actorId: string, isUser: boolean) {
+async function checkReportTotalLimit(supabase: ReturnType<typeof createSupabaseAdminClient>, settings: ReportLimitSettings) {
+  const { start, end } = dayWindow();
+  const { count, error } = await supabase
+    .from("post_reports")
+    .select("id", { count: "exact", head: true })
+    .gte("created_at", start.toISOString())
+    .lt("created_at", end.toISOString());
+
+  if (error) return { allowed: true };
+  return { allowed: (count ?? 0) < settings.totalDailyLimit };
+}
+
+async function checkReportRateLimit(supabase: ReturnType<typeof createSupabaseAdminClient>, request: NextRequest, actorId: string, isUser: boolean, settings: ReportLimitSettings) {
   const now = new Date();
-  const windowStart = new Date(now);
-  windowStart.setHours(0, 0, 0, 0);
+  const { start: windowStart } = dayWindow(now);
   const action = isUser ? "report_post_user" : "report_post_visitor";
   const actor = isUser ? actorId : `${actorId}:${readClientIp(request)}`;
-  const maxCount = isUser ? REPORT_DAILY_USER_LIMIT : REPORT_DAILY_VISITOR_LIMIT;
+  const maxCount = isUser ? settings.userDailyLimit : settings.visitorDailyLimit;
+  const ipActor = readClientIp(request);
 
+  const [actorLimit, ipLimit] = await Promise.all([
+    readRateLimitRecord(supabase, actor, action, windowStart),
+    readRateLimitRecord(supabase, ipActor, "report_post_ip", windowStart),
+  ]);
+
+  if (actorLimit.currentCount >= maxCount || ipLimit.currentCount >= settings.ipDailyLimit) return { allowed: false };
+
+  await Promise.all([
+    writeRateLimitRecord(supabase, actorLimit.id, actor, action, windowStart, actorLimit.currentCount + 1, now),
+    writeRateLimitRecord(supabase, ipLimit.id, ipActor, "report_post_ip", windowStart, ipLimit.currentCount + 1, now),
+  ]);
+
+  return { allowed: true };
+}
+
+async function readRateLimitRecord(supabase: ReturnType<typeof createSupabaseAdminClient>, actor: string, action: string, windowStart: Date) {
   const { data } = await supabase
     .from("rate_limits")
     .select("id,count")
@@ -148,16 +180,26 @@ async function checkReportRateLimit(supabase: ReturnType<typeof createSupabaseAd
     .eq("window_start", windowStart.toISOString())
     .maybeSingle();
 
-  const currentCount = typeof data?.count === "number" ? data.count : 0;
-  if (currentCount >= maxCount) return { allowed: false };
+  return {
+    id: data?.id ?? null,
+    currentCount: typeof data?.count === "number" ? data.count : 0,
+  };
+}
 
-  if (data?.id) {
-    await supabase.from("rate_limits").update({ count: currentCount + 1, updated_at: now.toISOString() }).eq("id", data.id);
+async function writeRateLimitRecord(supabase: ReturnType<typeof createSupabaseAdminClient>, id: string | null, actor: string, action: string, windowStart: Date, count: number, now: Date) {
+  if (id) {
+    await supabase.from("rate_limits").update({ count, updated_at: now.toISOString() }).eq("id", id);
   } else {
-    await supabase.from("rate_limits").insert({ actor_id: actor, action, window_start: windowStart.toISOString(), count: 1, metadata: { source: "reports_api" } });
+    await supabase.from("rate_limits").insert({ actor_id: actor, action, window_start: windowStart.toISOString(), count, metadata: { source: "reports_api" } });
   }
+}
 
-  return { allowed: true };
+function dayWindow(base = new Date()) {
+  const start = new Date(base);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return { start, end };
 }
 
 function readText(payload: Record<string, unknown>, key: string) {

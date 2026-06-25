@@ -4,6 +4,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { hasAdminModule } from "@/lib/permissions/admin";
 import { POST_TYPE_LABELS, POST_TYPE_TO_ROUTE } from "@/features/posts/constants";
 import type { PostType } from "@/features/posts/types";
+import { DEFAULT_REPORT_LIMIT_SETTINGS, readReportLimitSettings, type ReportLimitSettings } from "@/features/reports/settings";
 import { REPORT_REASON_LABELS, REPORT_AUTHOR_MESSAGE_TEMPLATES, type ReportReason } from "@/features/reports/types";
 import { SUPPORT_TICKET_STATUS_LABELS, SUPPORT_TICKET_TYPE_LABELS, type SupportTicketStatus, type SupportTicketType } from "@/features/support/types";
 
@@ -70,6 +71,7 @@ export type AdminMessagesData = {
     activeStatus: ReportStatusTab;
     totals: Record<ReportStatusTab, number>;
     items: AdminMessageReport[];
+    settings: ReportLimitSettings;
   };
   feedback: {
     activeStatus: FeedbackStatusTab;
@@ -164,15 +166,16 @@ export async function getAdminMessagesData({
     return emptyResult("missing_config", reportStatus, feedbackStatus, feedbackType, q, "Supabase service role 环境变量未配置。");
   }
 
-  const [reports, feedback, contactUsers] = await Promise.all([
+  const [reports, feedback, contactUsers, reportSettings] = await Promise.all([
     readReports(supabase, reportStatus),
     readFeedback(supabase, feedbackStatus, feedbackType),
     searchUsers(supabase, q),
+    readReportLimitSettings(supabase),
   ]);
 
   return {
     state: "ready",
-    reports,
+    reports: { ...reports, settings: reportSettings },
     feedback,
     contactUsers: { q, mode: q.trim().length >= 2 ? "search" : "recent", users: contactUsers },
   };
@@ -381,7 +384,7 @@ function emptyResult(
   return {
     state,
     error,
-    reports: { activeStatus: reportStatus, totals: emptyTotals, items: [] },
+    reports: { activeStatus: reportStatus, totals: emptyTotals, items: [], settings: DEFAULT_REPORT_LIMIT_SETTINGS },
     feedback: { activeStatus: feedbackStatus, activeType: feedbackType, totals: emptyFeedbackTotals, items: [] },
     contactUsers: { q, mode: q.trim().length >= 2 ? "search" : "recent", users: [] },
   };

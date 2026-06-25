@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { AdminHomeActionState } from "@/features/admin-home/types";
 import { POST_TYPE_TO_ROUTE } from "@/features/posts/constants";
 import type { PostType } from "@/features/posts/types";
+import { REPORT_LIMIT_RANGE, REPORT_LIMIT_SETTING_KEYS, readReportLimitSettings } from "@/features/reports/settings";
 import { REPORT_AUTHOR_MESSAGE_TEMPLATES, isReportReason } from "@/features/reports/types";
 import { sendNotificationToUser } from "@/features/notifications/service";
 import { writeAdminAuditLog } from "@/lib/permissions/adminAuditLog";
@@ -19,6 +20,60 @@ type ActionContext =
   | { ok: true; userId: string; supabase: ReturnType<typeof createSupabaseAdminClient> };
 
 const ADMIN_REPLY_FOOTER = "如需联系管理员，请在“我的”页面的线索与建议中选择“回复管理员”。";
+
+const reportLimitDescriptions = {
+  [REPORT_LIMIT_SETTING_KEYS.userDailyLimit]: "Maximum post reports a signed-in user can submit per day.",
+  [REPORT_LIMIT_SETTING_KEYS.visitorDailyLimit]: "Maximum post reports an anonymous visitor can submit per day.",
+  [REPORT_LIMIT_SETTING_KEYS.ipDailyLimit]: "Maximum post reports one IP address can submit per day.",
+  [REPORT_LIMIT_SETTING_KEYS.totalDailyLimit]: "Maximum post reports the whole site can accept per day.",
+};
+
+export async function updateReportLimitSettings(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
+  const context = await getMessagesActionContext();
+  if (!context.ok) return fail(context.message);
+
+  const nextSettings = {
+    userDailyLimit: readLimitInput(formData, "report_daily_user_limit"),
+    visitorDailyLimit: readLimitInput(formData, "report_daily_visitor_limit"),
+    ipDailyLimit: readLimitInput(formData, "report_daily_ip_limit"),
+    totalDailyLimit: readLimitInput(formData, "report_daily_total_limit"),
+  };
+
+  const invalid = Object.values(nextSettings).some((value) => value === null);
+  if (invalid) return fail(`请输入 ${REPORT_LIMIT_RANGE.min}~${REPORT_LIMIT_RANGE.max} 之间的整数。`);
+  if (
+    nextSettings.userDailyLimit! > nextSettings.totalDailyLimit! ||
+    nextSettings.visitorDailyLimit! > nextSettings.totalDailyLimit! ||
+    nextSettings.ipDailyLimit! > nextSettings.totalDailyLimit!
+  ) {
+    return fail("单个用户、访客或 IP 的每日上限不能大于全站每日总上限。");
+  }
+
+  const before = await readReportLimitSettings(context.supabase);
+  const now = new Date().toISOString();
+  const rows = [
+    settingPayload(REPORT_LIMIT_SETTING_KEYS.userDailyLimit, nextSettings.userDailyLimit!, context.userId, now),
+    settingPayload(REPORT_LIMIT_SETTING_KEYS.visitorDailyLimit, nextSettings.visitorDailyLimit!, context.userId, now),
+    settingPayload(REPORT_LIMIT_SETTING_KEYS.ipDailyLimit, nextSettings.ipDailyLimit!, context.userId, now),
+    settingPayload(REPORT_LIMIT_SETTING_KEYS.totalDailyLimit, nextSettings.totalDailyLimit!, context.userId, now),
+  ];
+
+  const { error } = await context.supabase.from("site_settings").upsert(rows, { onConflict: "key" });
+  if (error) return fail("举报限制保存失败，请稍后再试。");
+
+  const audited = await writeAdminAuditLog({
+    actorId: context.userId,
+    action: "update_report_limit_settings",
+    entityType: "site_settings",
+    entityId: "report_limits",
+    beforeData: before,
+    afterData: nextSettings,
+  });
+  if (!audited) return fail("设置已保存，但审计日志写入失败，请联系管理员检查 admin_audit_logs。");
+
+  revalidateMessages();
+  return ok("举报限制已保存。");
+}
 
 export async function handleMessageReport(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
   const context = await getMessagesActionContext();
@@ -247,6 +302,24 @@ function revalidatePost(type: PostType, id: string) {
   revalidatePath(`${POST_TYPE_TO_ROUTE[type]}/${id}`);
   revalidatePath("/admin/user-posts");
   revalidatePath("/admin/recycle-bin");
+}
+
+function readLimitInput(formData: FormData, key: string) {
+  const value = formData.get(key);
+  const parsed = typeof value === "string" ? Number(value) : Number.NaN;
+  if (!Number.isInteger(parsed) || parsed < REPORT_LIMIT_RANGE.min || parsed > REPORT_LIMIT_RANGE.max) return null;
+  return parsed;
+}
+
+function settingPayload(key: keyof typeof reportLimitDescriptions, limit: number, userId: string, now: string) {
+  return {
+    key,
+    value: { limit },
+    description: reportLimitDescriptions[key],
+    is_public: false,
+    updated_by: userId,
+    updated_at: now,
+  };
 }
 
 function readText(formData: FormData, key: string) {

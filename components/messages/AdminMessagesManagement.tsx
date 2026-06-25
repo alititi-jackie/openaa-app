@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AdminActionForm, AdminCheckbox, AdminSelect, AdminTextInput, AdminTextarea } from "@/components/admin/AdminActionForm";
-import { contactUserFromMessages, handleMessageReport, markFeedbackViewed, softDeleteFeedback, softDeleteMessageReport } from "@/features/messages/adminActions";
+import { contactUserFromMessages, handleMessageReport, markFeedbackViewed, softDeleteFeedback, softDeleteMessageReport, updateReportLimitSettings } from "@/features/messages/adminActions";
 import type { AdminFeedbackItem, AdminMessageReport, AdminMessagesData, AdminUserSummary, FeedbackStatusTab, MessageTab, ReportStatusTab } from "@/features/messages/adminQueries";
 import { reportReasonOptions } from "@/features/reports/types";
 import { supportTicketTypeOptions } from "@/features/support/types";
@@ -59,6 +59,7 @@ function PendingTabCount({ value, activeTab }: { value: number; activeTab: boole
 export function ReportsPanel({ data }: { data: AdminMessagesData["reports"] }) {
   return (
     <div className="space-y-4">
+      <ReportLimitSettingsPanel settings={data.settings} />
       <StatusTabs
         baseHref="/admin/messages?tab=reports"
         active={data.activeStatus}
@@ -75,6 +76,25 @@ export function ReportsPanel({ data }: { data: AdminMessagesData["reports"] }) {
         </div>
       )}
     </div>
+  );
+}
+
+function ReportLimitSettingsPanel({ settings }: { settings: AdminMessagesData["reports"]["settings"] }) {
+  return (
+    <details className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+      <summary className="cursor-pointer text-sm font-black text-slate-900">举报限制设置</summary>
+      <AdminActionForm action={updateReportLimitSettings} submitLabel="保存举报限制" className="mt-3 space-y-3">
+        <div className="grid gap-3 md:grid-cols-4">
+          <AdminTextInput label="登录用户每天" name="report_daily_user_limit" type="number" defaultValue={settings.userDailyLimit} required />
+          <AdminTextInput label="匿名访客每天" name="report_daily_visitor_limit" type="number" defaultValue={settings.visitorDailyLimit} required />
+          <AdminTextInput label="同一 IP 每天" name="report_daily_ip_limit" type="number" defaultValue={settings.ipDailyLimit} required />
+          <AdminTextInput label="全站每天总量" name="report_daily_total_limit" type="number" defaultValue={settings.totalDailyLimit} required />
+        </div>
+        <p className="rounded-xl bg-white px-3 py-2 text-xs font-bold leading-5 text-slate-500">
+          数量范围 1~1000。单个登录用户、匿名访客和 IP 的每日上限不能大于全站每日总量。
+        </p>
+      </AdminActionForm>
+    </details>
   );
 }
 
