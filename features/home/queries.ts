@@ -37,9 +37,10 @@ type HomeSupabaseClient = SupabaseClient;
 
 const MAX_DYNAMIC_TICKER_ITEMS = 10;
 const MAX_DYNAMIC_TICKER_ITEMS_PER_SECTION = 2;
+const HOME_PUBLIC_FETCH_TIMEOUT_MS = 8000;
 
 export async function getHomeConfig(): Promise<HomeConfig> {
-  const supabase = createSupabasePublicClient();
+  const supabase = createSupabasePublicClient({ cache: "no-store", timeoutMs: HOME_PUBLIC_FETCH_TIMEOUT_MS });
 
   if (!supabase) {
     return fallbackHomeConfig();
@@ -60,7 +61,7 @@ export async function getHomeConfig(): Promise<HomeConfig> {
     getTopQuickLinks(supabase, city),
     getHomeBanners(supabase, city),
     getAdPlaceholderSetting(supabase),
-    getLatestPostGroups(latestPostSections),
+    getLatestPostGroups(latestPostSections, supabase),
   ]);
   const tickerItems = await getLatestTickerItems(supabase, city, tickerSettings, latestPostGroups);
 
@@ -149,7 +150,7 @@ export async function getLatestTickerItems(
 
   const dynamicItems = latestPostGroups
     ? mapLatestPostGroupsToTickerItems(latestPostGroups, settings)
-    : mapLatestPostGroupsToTickerItems(await getLatestPostGroups(fallbackLatestPostSections.filter((section) => section.isVisible)), settings);
+    : mapLatestPostGroupsToTickerItems(await getLatestPostGroups(fallbackLatestPostSections.filter((section) => section.isVisible), supabase), settings);
 
   if (dynamicItems.length > 0) {
     return dynamicItems;
@@ -348,16 +349,23 @@ async function readHomeAds(supabase: HomeSupabaseClient) {
   }
 }
 
-async function getLatestPostGroups(sections: HomeLatestPostSectionConfig[]) {
-  return Promise.all(sections.map(async (section) => {
+async function getLatestPostGroups(sections: HomeLatestPostSectionConfig[], client?: HomeSupabaseClient | null) {
+  return Promise.all(sections.map((section) => getLatestPostGroup(section, client)));
+}
+
+async function getLatestPostGroup(section: HomeLatestPostSectionConfig, client?: HomeSupabaseClient | null): Promise<LatestPostGroup> {
+  try {
     if (section.postType === "news") {
-      const result = await getLatestNews(section.limitCount);
+      const result = await getLatestNews(section.limitCount, client ?? undefined);
       return { ...section, posts: result.data.map(mapNewsToHomePost) };
     }
 
-    const result = await getPublicPosts({ type: section.postType as PostType, limit: section.limitCount });
+    const result = await getPublicPosts({ type: section.postType as PostType, limit: section.limitCount, client: client ?? undefined });
     return { ...section, posts: result.data };
-  }));
+  } catch (error) {
+    warnHomeConfig(`latest_posts.${section.key}`, error);
+    return { ...section, posts: [] };
+  }
 }
 
 function mapNewsToHomePost(post: Awaited<ReturnType<typeof getLatestNews>>["data"][number]): PostListItem {

@@ -248,7 +248,7 @@ async function fetchAuthors(authorIds: Array<string | null | undefined>, client?
 }
 
 export async function getPublicPosts(params: PublicPostsParams): Promise<PostsQueryResult<PostCardView[]>> {
-  const supabase = createSupabasePublicClient();
+  const supabase = params.client ?? createSupabasePublicClient();
 
   if (!supabase) {
     return emptyResult([]);

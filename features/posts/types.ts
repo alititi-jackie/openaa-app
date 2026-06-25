@@ -1,3 +1,5 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 export type PostType = "job" | "housing" | "marketplace" | "service";
 
 export type PostStatus = "draft" | "pending_review" | "published" | "hidden" | "rejected" | "expired" | "deleted";
@@ -196,6 +198,7 @@ export type PublicPostsParams = {
   limit?: number;
   showImageIndicator?: boolean;
   filters?: Partial<PublicPostFilters>;
+  client?: SupabaseClient;
 };
 
 export type ContactReveal = PostContactRecord;

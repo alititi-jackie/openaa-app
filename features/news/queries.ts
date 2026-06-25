@@ -8,6 +8,7 @@ import { fallbackNewsCategories, mapNewsCategory, mapNewsPostToAdmin, mapNewsPos
 import type { AdminNewsPermissions, AdminNewsPost, NewsCategory, NewsCategoryRecord, NewsDetailContext, NewsListParams, NewsPostCard, NewsPostDetail, NewsPostRecord, NewsQueryResult, NewsStatus } from "./types";
 
 type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
+type SupabasePublicClient = NonNullable<ReturnType<typeof createSupabasePublicClient>>;
 
 const newsPostSelect = `
   id,
@@ -65,8 +66,8 @@ export async function getNewsCategories(): Promise<NewsQueryResult<NewsCategory[
   }
 }
 
-export async function getPublishedNewsList(params: NewsListParams = {}): Promise<NewsQueryResult<NewsPostCard[]>> {
-  const supabase = createSupabasePublicClient();
+export async function getPublishedNewsList(params: NewsListParams = {}, client?: SupabasePublicClient): Promise<NewsQueryResult<NewsPostCard[]>> {
+  const supabase = client ?? createSupabasePublicClient();
   if (!supabase) return missingConfig([]);
 
   try {
@@ -136,8 +137,8 @@ export async function getPinnedNews(limit = 3): Promise<NewsQueryResult<NewsPost
   return { ...list, data: list.data.filter((post) => post.isPinned).slice(0, limit) };
 }
 
-export async function getLatestNews(limit = 4): Promise<NewsQueryResult<NewsPostCard[]>> {
-  const list = await getPublishedNewsList({ limit });
+export async function getLatestNews(limit = 4, client?: SupabasePublicClient): Promise<NewsQueryResult<NewsPostCard[]>> {
+  const list = await getPublishedNewsList({ limit }, client);
   return { ...list, data: list.data.slice(0, limit) };
 }
 
