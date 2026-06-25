@@ -21,14 +21,10 @@ const defaultHighlights = [
   "使用建议：先从首页选择频道，再结合发布时间、区域、分类和详情内容判断是否继续浏览或联系",
 ];
 
-function countChineseSeoLength(value: string) {
-  return value.replace(/\s/g, "").length;
-}
-
 function contentToParagraphs(content?: string) {
   const normalized = content?.trim() ?? "";
 
-  if (!normalized || countChineseSeoLength(normalized) < 600) {
+  if (!normalized) {
     return { title: defaultTitle, paragraphs: defaultParagraphs, highlights: defaultHighlights };
   }
 
