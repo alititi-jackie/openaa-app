@@ -151,7 +151,7 @@ export async function getImageAssetBusinessReferenceMap(
     .select("image_asset_id")
     .limit(10000);
   if (dmvQuestionsError) {
-    protectAllOnError();
+    if (!isMissingOptionalReference(dmvQuestionsError)) protectAllOnError();
   } else {
     for (const row of (dmvQuestions ?? []) as DmvQuestionRow[]) addAssetReference(row.image_asset_id, "正在被 DMV 题库使用");
   }
@@ -198,4 +198,10 @@ function stringifyReferenceValue(value: unknown): string {
 
 function normalizeUrl(value: string | null | undefined) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function isMissingOptionalReference(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const record = error as { code?: unknown; message?: unknown };
+  return record.code === "42703" || (typeof record.message === "string" && record.message.includes("column") && record.message.includes("does not exist"));
 }
