@@ -339,7 +339,9 @@ export async function getAdminPostsData(params: AdminPostsParams = {}): Promise<
   if (params.q) {
     const keyword = sanitizeSearchTerm(params.q);
     if (keyword) {
-      query = query.or(`title.ilike.%${keyword}%,summary.ilike.%${keyword}%,body.ilike.%${keyword}%`);
+      query = isUuid(keyword)
+        ? query.eq("id", keyword)
+        : query.or(`title.ilike.%${keyword}%,summary.ilike.%${keyword}%,body.ilike.%${keyword}%`);
     }
   }
 
