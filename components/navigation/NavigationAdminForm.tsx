@@ -340,7 +340,7 @@ function NavigationLinkAdminCard({
       <AdminConfirmDialog
         open={deleteOpen}
         title="确认删除网站？"
-        description="删除后无法恢复。"
+        description="删除后不会在前台显示，并会进入回收站。"
         confirmLabel="确认删除"
         cancelLabel="取消"
         tone="danger"
