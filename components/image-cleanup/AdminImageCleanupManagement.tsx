@@ -227,7 +227,7 @@ function formatDateTime(value: string | null) {
   if (!value) return "未记录";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "未记录";
-  return date.toLocaleString("zh-CN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleString("zh-CN", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
 function riskLabel(value: AdminImageAssetItem["cleanupRisk"]) {
