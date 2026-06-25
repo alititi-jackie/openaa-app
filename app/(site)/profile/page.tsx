@@ -177,8 +177,9 @@ function getAuthLines(user: User | null, email: string) {
   if (primaryProvider) providers.add(primaryProvider);
 
   const lines: string[] = [];
-  if (email && (providers.has("email") || !providers.has("google"))) {
-    lines.push(`邮箱登录：${email}`);
+  const accountEmail = email.trim();
+  if (accountEmail) {
+    lines.push(accountEmail);
   }
   if (providers.has("google")) {
     lines.push("Google 登录：已绑定");

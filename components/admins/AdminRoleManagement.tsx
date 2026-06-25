@@ -110,12 +110,12 @@ export function AdminRolesList({ admins, permissions, authorizationConfig }: { a
         <article key={admin.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className={`rounded-full px-2.5 py-1 text-xs font-black ${admin.isActive ? "bg-emerald-50 text-emerald-700" : "bg-slate-200 text-slate-600"}`}>{getAdminStatusLabel(admin.isActive)}</span>
-                <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-black text-blue-700">{formatRoleLabel(admin.role)}</span>
-              </div>
-              <h3 className="mt-2 truncate font-black text-slate-950">{admin.nickname || admin.email || "未命名管理员"}</h3>
+              <h3 className="truncate font-black text-slate-950">{getAdminDisplayName(admin.nickname, admin.email)}</h3>
               <p className="mt-1 break-all text-sm text-slate-600">{admin.email || "未绑定邮箱"}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-black text-blue-700">角色：{formatRoleLabel(admin.role)}</span>
+                <span className={`rounded-full px-2.5 py-1 text-xs font-black ${admin.isActive ? "bg-emerald-50 text-emerald-700" : "bg-slate-200 text-slate-600"}`}>状态：{getAdminStatusLabel(admin.isActive)}</span>
+              </div>
               <p className="mt-1 break-all font-mono text-xs text-slate-400">{admin.userId}</p>
               <p className="mt-2 text-xs font-semibold text-slate-500">授权：{formatDateTime(admin.grantedAt)} · 最近后台登录：{formatDateTime(admin.lastAdminLoginAt)}</p>
               <AdminGrantSummary admin={admin} />
@@ -164,6 +164,13 @@ function SummaryRow({ label, items, emptyLabel }: { label: string; items: string
       </div>
     </div>
   );
+}
+
+function getAdminDisplayName(nickname: string | null, email: string | null) {
+  const name = nickname?.trim();
+  if (name) return name;
+  const emailPrefix = email?.split("@")[0]?.trim();
+  return emailPrefix || "未命名管理员";
 }
 
 function GrantAdminForm({ candidate, permissions, authorizationConfig }: { candidate: AdminCandidate; permissions: AdminsPermissions; authorizationConfig: AdminAuthorizationConfig }) {

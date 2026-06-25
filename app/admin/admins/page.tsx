@@ -59,7 +59,8 @@ export default function AdminAdminsPage({ searchParams }: AdminAdminsPageProps) 
 
             {data.currentAdmin ? (
               <AdminCurrentAccountCard
-                displayName={data.currentAdmin.email ?? data.currentAdmin.nickname}
+                displayName={data.currentAdmin.nickname}
+                email={data.currentAdmin.email}
                 role={data.currentAdmin.role}
                 isActive={data.currentAdmin.isActive}
               />
