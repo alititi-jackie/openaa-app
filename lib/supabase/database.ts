@@ -1953,6 +1953,7 @@ export type Database = {
           created_at: string
           id: string
           post_id: string
+          user_agent: string | null
           user_id: string | null
           visitor_id: string | null
         }
@@ -1960,6 +1961,7 @@ export type Database = {
           created_at?: string
           id?: string
           post_id: string
+          user_agent?: string | null
           user_id?: string | null
           visitor_id?: string | null
         }
@@ -1967,6 +1969,7 @@ export type Database = {
           created_at?: string
           id?: string
           post_id?: string
+          user_agent?: string | null
           user_id?: string | null
           visitor_id?: string | null
         }
