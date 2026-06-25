@@ -1998,6 +1998,7 @@ export type Database = {
           deleted_at: string | null
           deleted_by: string | null
           deleted_source: string | null
+          deletion_source: string | null
           deletion_error: string | null
           deletion_error_at: string | null
           expires_at: string | null
@@ -2029,6 +2030,7 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           deleted_source?: string | null
+          deletion_source?: string | null
           deletion_error?: string | null
           deletion_error_at?: string | null
           expires_at?: string | null
@@ -2060,6 +2062,7 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           deleted_source?: string | null
+          deletion_source?: string | null
           deletion_error?: string | null
           deletion_error_at?: string | null
           expires_at?: string | null
