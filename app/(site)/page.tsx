@@ -27,7 +27,7 @@ export default async function HomePage() {
       <LatestTicker items={homeConfig.tickerItems} intervalSeconds={homeConfig.tickerSettings.global.intervalSeconds} enabled={homeConfig.tickerSettings.global.isEnabled} />
       {homeConfig.quickGridVisible ? <QuickGrid items={homeConfig.quickGridItems} /> : null}
       <UtilityCards items={homeConfig.utilityTools} isVisible={homeConfig.utilityToolsVisible} />
-      <LatestPostsSection groups={homeConfig.latestPostGroups} isVisible={homeConfig.latestPostsVisible} />
+      <LatestPostsSection groups={homeConfig.latestPostGroups} title={homeConfig.latestPostsTitle} isVisible={homeConfig.latestPostsVisible} />
       <SeoContentCard title={homeConfig.seo.title} content={homeConfig.seo.content} isVisible={homeConfig.seo.isVisible} />
     </div>
   );

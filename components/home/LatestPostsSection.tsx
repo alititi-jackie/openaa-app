@@ -14,7 +14,7 @@ export type LatestPostGroup = {
   isVisible?: boolean;
 };
 
-export function LatestPostsSection({ groups, isVisible = true }: { groups: LatestPostGroup[]; isVisible?: boolean }) {
+export function LatestPostsSection({ groups, title = "最新发布", isVisible = true }: { groups: LatestPostGroup[]; title?: string; isVisible?: boolean }) {
   const visibleGroups = groups.filter((group) => group.isVisible !== false);
 
   if (!isVisible || visibleGroups.length === 0) {
@@ -22,7 +22,7 @@ export function LatestPostsSection({ groups, isVisible = true }: { groups: Lates
   }
 
   return (
-    <HomeSectionShell title="最新发布">
+    <HomeSectionShell title={title}>
       <LatestPostsList groups={visibleGroups} />
     </HomeSectionShell>
   );

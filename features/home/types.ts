@@ -82,6 +82,7 @@ export type HomeConfig = {
   quickGridItems: QuickGridItem[];
   utilityTools: UtilityCardItem[];
   latestPostGroups: LatestPostGroup[];
+  latestPostsTitle: string;
   latestPostsVisible: boolean;
   utilityToolsVisible: boolean;
   quickGridVisible: boolean;
