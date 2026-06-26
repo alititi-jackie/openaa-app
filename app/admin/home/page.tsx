@@ -1,9 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
+import type { ReactNode } from "react";
 import { AdminActionForm, AdminCheckbox, AdminSelect, AdminTextarea, AdminTextInput } from "@/components/admin/AdminActionForm";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminTopActions } from "@/components/admin/AdminTopActions";
-import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { createDefaultHomeConfig, removeHomeBannerImage, updateHomeSection, updateLatestPostsSection, updateLatestTickerSettings, upsertHomeBanner, upsertLatestTicker } from "@/features/admin-home/actions";
@@ -46,6 +46,7 @@ export default function AdminHomePage({ searchParams }: AdminHomePageProps) {
         if (!canManageAny) {
           return <AdminPageHeader title="首页配置管理" description="当前管理员没有首页配置相关权限。" />;
         }
+        const showDefaultConfigPrompt = data.permissions.manageHomeSections && data.homeSections.length === 0;
 
         return (
           <div className="space-y-4">
@@ -60,16 +61,20 @@ export default function AdminHomePage({ searchParams }: AdminHomePageProps) {
               </Link>
             </AdminPageHeader>
 
-            {data.permissions.manageHomeSections ? (
-              <AdminCard title="创建默认配置" description="当新 Supabase 还没有首页配置时，可以创建一套与当前 fallback 一致的默认配置。">
-                <AdminActionForm action={createDefaultHomeConfig} submitLabel="创建默认配置">
-                  <p className="text-sm leading-6 text-slate-600">会写入 home_sections；如果当前账号也有对应权限，会同时写入 top_quick_links 和 latest_ticker。</p>
+            {showDefaultConfigPrompt ? (
+              <section className="rounded-2xl border border-amber-100 bg-amber-50 p-4 shadow-sm">
+                <div className="mb-3">
+                  <h2 className="text-lg font-black text-amber-950">初始化首页配置</h2>
+                  <p className="mt-1 text-sm leading-6 text-amber-800">当前数据库还没有首页配置。可以创建一套默认配置，之后再按需要编辑各模块。</p>
+                </div>
+                <AdminActionForm action={createDefaultHomeConfig} submitLabel="创建默认首页配置">
+                  <p className="text-sm leading-6 text-amber-800">会写入 home_sections；如果当前账号也有对应权限，会同时写入 top_quick_links 和 latest_ticker。</p>
                 </AdminActionForm>
-              </AdminCard>
+              </section>
             ) : null}
 
             {data.permissions.manageHomeSections ? (
-              <AdminCard title="首页模块" description="控制 quick_grid、utility_tools、latest_posts、seo_content 等模块的显隐、标题、排序和 config。">
+              <HomeConfigPanel title="首页模块" description="控制首页入口、实用工具、最新发布和 SEO 内容。" summary={getHomeModulesPanelSummary(data.homeSections)}>
                 <div className="grid gap-4">
                   {data.homeSections.length > 0 ? (
                     data.homeSections.map((section) =>
@@ -79,11 +84,11 @@ export default function AdminHomePage({ searchParams }: AdminHomePageProps) {
                     <p className="text-sm text-slate-500">暂无 home_sections 配置，可先创建默认配置。</p>
                   )}
                 </div>
-              </AdminCard>
+              </HomeConfigPanel>
             ) : null}
 
             {data.permissions.manageLatestTicker ? (
-              <AdminCard title="最新动态" description="管理首页单行 latest_ticker。">
+              <HomeConfigPanel title="最新动态 / 信息滚动条" description="管理首页单行滚动信息和五类内容来源。" summary={getTickerPanelSummary(data.tickerGlobalSettings, data.tickerSectionSettings, data.tickerItems)}>
                 <div className="grid gap-4">
                   <TickerSettingsForm globalSettings={data.tickerGlobalSettings} sections={data.tickerSectionSettings} />
                   {data.tickerItems.map((item) => (
@@ -91,11 +96,11 @@ export default function AdminHomePage({ searchParams }: AdminHomePageProps) {
                   ))}
                   <TickerForm />
                 </div>
-              </AdminCard>
+              </HomeConfigPanel>
             ) : null}
 
             {data.permissions.manageHomeSections ? (
-              <AdminCard title="首页 Banner" description="管理首页 Banner 图片、链接、启用状态和排期。支持上传图片，也支持 https://img.openaa.com/ 外部 URL。">
+              <HomeConfigPanel title="首页 Banner" description="管理首页 Banner 图片、链接、启用状态和排期。" summary={getBannerPanelSummary(data.banners)}>
                 <div className="grid gap-4">
                   <BannerStatusFilter status={params?.bannerStatus} />
                   {data.banners.map((banner) => (
@@ -103,22 +108,137 @@ export default function AdminHomePage({ searchParams }: AdminHomePageProps) {
                   ))}
                   <BannerForm />
                 </div>
-              </AdminCard>
+              </HomeConfigPanel>
             ) : null}
-</div>
+          </div>
         );
       }}
     </AdminAuthGate>
   );
 }
 
+function HomeConfigPanel({
+  title,
+  description,
+  summary,
+  children,
+}: {
+  title: string;
+  description?: string;
+  summary: string[];
+  children: ReactNode;
+}) {
+  return (
+    <details className="group rounded-2xl border border-slate-100 bg-white shadow-sm [&>summary::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-start justify-between gap-4 p-4">
+        <div className="min-w-0">
+          <h2 className="text-lg font-black text-slate-950">{title}</h2>
+          {description ? <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p> : null}
+          <SummaryPills items={summary} className="mt-3" />
+        </div>
+        <span className="shrink-0 rounded-full bg-slate-950 px-3 py-1.5 text-xs font-black text-white group-open:hidden">展开编辑</span>
+        <span className="hidden shrink-0 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-700 group-open:inline-flex">收起</span>
+      </summary>
+      <div className="border-t border-slate-100 p-4 pt-4">
+        {children}
+      </div>
+    </details>
+  );
+}
+
+function NestedConfigPanel({
+  title,
+  summary,
+  children,
+  tone = "slate",
+}: {
+  title: string;
+  summary: string[];
+  children: ReactNode;
+  tone?: "slate" | "blue";
+}) {
+  const toneClass = tone === "blue" ? "border-blue-100 bg-blue-50" : "border-slate-100 bg-slate-50";
+
+  return (
+    <details className={`group rounded-2xl border p-3 [&>summary::-webkit-details-marker]:hidden ${toneClass}`}>
+      <summary className="flex cursor-pointer list-none items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-black text-slate-900">{title}</p>
+          <SummaryPills items={summary} className="mt-2" />
+        </div>
+        <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-700 ring-1 ring-slate-200 group-open:hidden">编辑</span>
+        <span className="hidden shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-700 ring-1 ring-slate-200 group-open:inline-flex">收起</span>
+      </summary>
+      <div className="mt-3 border-t border-white/70 pt-3">
+        {children}
+      </div>
+    </details>
+  );
+}
+
+function SummaryPills({ items, className = "" }: { items: string[]; className?: string }) {
+  return items.length > 0 ? (
+    <div className={`flex flex-wrap gap-2 ${className}`}>
+      {items.map((item, index) => (
+        <span key={`${item}-${index}`} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 ring-1 ring-slate-200">
+          {item}
+        </span>
+      ))}
+    </div>
+  ) : null;
+}
+
+function getHomeModulesPanelSummary(sections: AdminHomeSectionRow[]) {
+  const visibleCount = sections.filter((section) => section.is_visible).length;
+  return [`模块 ${sections.length}`, `显示中 ${visibleCount}`, `隐藏 ${sections.length - visibleCount}`];
+}
+
+function getTickerPanelSummary(globalSettings: AdminTickerGlobalSettingsRow, sections: AdminTickerSectionSettingsRow[], items: AdminTickerRow[]) {
+  return [
+    globalSettings.is_enabled ? "滚动条开启" : "滚动条关闭",
+    `间隔 ${globalSettings.interval_seconds} 秒`,
+    ...sections.map((section) => `${section.section_name} ${section.is_enabled ? section.display_count : "隐藏"}`),
+    `手动动态 ${items.length}`,
+  ];
+}
+
+function getBannerPanelSummary(banners: AdminHomeBannerRow[]) {
+  const activeCount = banners.filter((banner) => banner.computed_status === "active").length;
+  const inactiveCount = banners.filter((banner) => banner.computed_status === "inactive").length;
+  const scheduledCount = banners.filter((banner) => banner.computed_status === "scheduled").length;
+  const expiredCount = banners.filter((banner) => banner.computed_status === "expired").length;
+  return [`Banner ${banners.length}`, `正在显示 ${activeCount}`, `停用 ${inactiveCount}`, `未开始 ${scheduledCount}`, `已过期 ${expiredCount}`];
+}
+
+function getTickerItemSummary(item?: AdminTickerRow) {
+  if (!item) return ["新建", "默认启用"];
+  const moduleLabel = tickerModuleOptions.find((option) => option.value === item.module)?.label ?? item.module ?? "未指定";
+  return [item.is_enabled ? "启用" : "停用", moduleLabel, item.href || "无链接", `排序 ${item.sort_order}`];
+}
+
+function getBannerItemSummary(banner?: AdminHomeBannerRow) {
+  if (!banner) return ["新建", "需要图片"];
+  const statusLabelMap: Record<AdminHomeBannerRow["computed_status"], string> = {
+    active: "正在显示",
+    inactive: "已停用",
+    scheduled: "未开始",
+    expired: "已过期",
+  };
+  return [
+    statusLabelMap[banner.computed_status],
+    banner.href || "无链接",
+    banner.image_url ? "有图片" : "无图片",
+    `排序 ${banner.sort_order}`,
+  ];
+}
+
 function LatestPostsSectionForm({ section }: { section: AdminHomeSectionRow }) {
   const currentSections = mapLatestPostSections(section);
   const formSections = fallbackLatestPostSections.map((fallback) => currentSections.find((item) => item.key === fallback.key || item.postType === fallback.postType) ?? fallback);
+  const summary = getHomeSectionSummary(section);
 
   return (
-    <div className="rounded-2xl border border-blue-100 bg-blue-50 p-3">
-      <HomeSectionSummary section={section} />
+    <NestedConfigPanel title={summary.title} summary={[section.key, section.is_visible ? "显示中" : "已隐藏", ...summary.items]} tone="blue">
       <AdminActionForm action={updateLatestPostsSection} submitLabel="保存最新发布模块">
         <div className="grid gap-3 md:grid-cols-2">
           <AdminTextInput label="模块标题" name="section_title" defaultValue={section.title} required />
@@ -154,14 +274,15 @@ function LatestPostsSectionForm({ section }: { section: AdminHomeSectionRow }) {
           最新发布按旧站方式纵向展示招聘、房屋、二手、本地服务和新闻；二手在新站统一使用 /marketplace。
         </p>
       </AdminActionForm>
-    </div>
+    </NestedConfigPanel>
   );
 }
 
 function HomeSectionForm({ section }: { section: AdminHomeSectionRow }) {
+  const summary = getHomeSectionSummary(section);
+
   return (
-    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
-      <HomeSectionSummary section={section} />
+    <NestedConfigPanel title={summary.title} summary={[section.key, section.is_visible ? "显示中" : "已隐藏", ...summary.items]}>
       <AdminActionForm action={updateHomeSection} submitLabel="保存模块">
         <input type="hidden" name="key" value={section.key} />
         <div className="grid gap-3 md:grid-cols-2">
@@ -173,33 +294,7 @@ function HomeSectionForm({ section }: { section: AdminHomeSectionRow }) {
         <AdminCheckbox label="显示模块" name="is_visible" defaultChecked={section.is_visible} />
         <AdminTextarea label="Config JSON" name="config" rows={10} defaultValue={JSON.stringify(section.config ?? {}, null, 2)} />
       </AdminActionForm>
-    </div>
-  );
-}
-
-function HomeSectionSummary({ section }: { section: AdminHomeSectionRow }) {
-  const summary = getHomeSectionSummary(section);
-
-  return (
-    <div className="mb-3 rounded-xl border border-slate-200 bg-white p-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-slate-950 px-2.5 py-1 text-xs font-black text-white">{section.key}</span>
-        <span className={section.is_visible ? "rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700 ring-1 ring-emerald-100" : "rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600 ring-1 ring-slate-200"}>
-          {section.is_visible ? "正在显示" : "已隐藏"}
-        </span>
-      </div>
-      <p className="mt-2 text-sm font-bold text-slate-800">{summary.title}</p>
-      <p className="mt-1 text-xs leading-5 text-slate-500">{summary.description}</p>
-      {summary.items.length > 0 ? (
-        <div className="mt-2 flex flex-wrap gap-2">
-          {summary.items.map((item) => (
-            <span key={item} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
-              {item}
-            </span>
-          ))}
-        </div>
-      ) : null}
-    </div>
+    </NestedConfigPanel>
   );
 }
 
@@ -252,7 +347,7 @@ function getHomeSectionSummary(section: AdminHomeSectionRow) {
 
 function TickerSettingsForm({ globalSettings, sections }: { globalSettings: AdminTickerGlobalSettingsRow; sections: AdminTickerSectionSettingsRow[] }) {
   return (
-    <div className="rounded-2xl border border-blue-100 bg-blue-50 p-3">
+    <NestedConfigPanel title="滚动条设置" summary={getTickerPanelSummary(globalSettings, sections, [])} tone="blue">
       <AdminActionForm action={updateLatestTickerSettings} submitLabel="保存滚动条设置">
         <div className="grid gap-3 md:grid-cols-2">
           <AdminTextInput label="滚动间隔（秒）" name="interval_seconds" type="number" defaultValue={globalSettings.interval_seconds} />
@@ -277,7 +372,7 @@ function TickerSettingsForm({ globalSettings, sections }: { globalSettings: Admi
           ))}
         </div>
       </AdminActionForm>
-    </div>
+    </NestedConfigPanel>
   );
 }
 
@@ -285,13 +380,13 @@ const tickerModuleOptions = [
   { value: "news", label: "新闻" },
   { value: "jobs", label: "招聘" },
   { value: "housing", label: "房屋" },
-  { value: "marketplace", label: "二手 / 市场" },
+  { value: "marketplace", label: "二手" },
   { value: "services", label: "本地服务" },
 ];
 
 function TickerForm({ item }: { item?: AdminTickerRow }) {
   return (
-    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+    <NestedConfigPanel title={item ? item.title : "新增动态"} summary={getTickerItemSummary(item)}>
       <AdminActionForm action={upsertLatestTicker} submitLabel={item ? "保存动态" : "新增动态"}>
         <input type="hidden" name="id" value={item?.id ?? ""} />
         <div className="grid gap-3 md:grid-cols-2">
@@ -304,7 +399,7 @@ function TickerForm({ item }: { item?: AdminTickerRow }) {
         </div>
         <AdminCheckbox label="启用" name="is_enabled" defaultChecked={item?.is_enabled ?? true} />
       </AdminActionForm>
-    </div>
+    </NestedConfigPanel>
   );
 }
 
@@ -327,7 +422,7 @@ function BannerStatusFilter({ status }: { status?: string }) {
 
 function BannerForm({ banner }: { banner?: AdminHomeBannerRow }) {
   return (
-    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+    <NestedConfigPanel title={banner ? banner.title : "新增 Banner"} summary={getBannerItemSummary(banner)}>
       {banner ? <BannerStatusBadge banner={banner} /> : null}
       {banner?.image_url ? (
         <div className="mb-3 overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -361,7 +456,7 @@ function BannerForm({ banner }: { banner?: AdminHomeBannerRow }) {
           <AdminCheckbox label="我确认移除这张 Banner 图" name="confirm_remove_image" />
         </AdminActionForm>
       ) : null}
-    </div>
+    </NestedConfigPanel>
   );
 }
 
