@@ -422,6 +422,7 @@ function NewsPostEditor({
       {removedCover ? <input type="hidden" name="remove_cover_image" value="on" /> : null}
 
       <div className="grid gap-3 md:grid-cols-2">
+        <SelectField label="分类" name="category_id" value={values.categoryId} onChange={(value) => setValue("categoryId", value)} options={categories.flatMap((category) => (category.id ? [{ value: category.id, label: category.name }] : []))} />
         <TextField label="标题" name="title" value={values.title} onChange={updateTitle} required />
         <TextField
           label="Slug"
@@ -433,15 +434,11 @@ function NewsPostEditor({
           }}
           required
         />
-        <SelectField label="分类" name="category_id" value={values.categoryId} onChange={(value) => setValue("categoryId", value)} options={categories.flatMap((category) => (category.id ? [{ value: category.id, label: category.name }] : []))} />
-        <SelectField label="状态" name="status" value={values.status} onChange={(value) => setValue("status", value as NewsStatus)} options={statusOptions.filter((option) => option.value !== "deleted" && (option.value !== "published" || permissions.publishNews || post?.status === "published"))} />
-        <TextField label="发布时间" name="published_at" type="datetime-local" value={values.publishedAt} onChange={(value) => setValue("publishedAt", value)} />
-        <TextField label="置顶到期" name="pinned_until" type="datetime-local" value={values.pinnedUntil} onChange={(value) => setValue("pinnedUntil", value)} />
-        <TextField label="置顶排序" name="pinned_order" type="number" min={0} value={String(values.pinnedOrder)} onChange={(value) => setValue("pinnedOrder", Math.max(0, Number(value) || 0))} />
         <TextField label="SEO title" name="seo_title" value={values.seoTitle} onChange={(value) => setValue("seoTitle", value)} />
       </div>
 
       <TextareaField label="摘要" name="excerpt" rows={3} value={values.excerpt} onChange={(value) => setValue("excerpt", value)} />
+      <TextareaField label="SEO description" name="seo_description" rows={3} value={values.seoDescription} onChange={(value) => setValue("seoDescription", value)} />
       <TextareaField label="正文" name="body" rows={9} value={values.body} onChange={(value) => setValue("body", value)} required />
 
       <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
@@ -513,11 +510,19 @@ function NewsPostEditor({
         ) : null}
       </div>
 
-      <TextareaField label="SEO description" name="seo_description" rows={3} value={values.seoDescription} onChange={(value) => setValue("seoDescription", value)} />
+      <div className="grid gap-3 md:grid-cols-2">
+        <SelectField label="状态" name="status" value={values.status} onChange={(value) => setValue("status", value as NewsStatus)} options={statusOptions.filter((option) => option.value !== "deleted" && (option.value !== "published" || permissions.publishNews || post?.status === "published"))} />
+        <TextField label="发布时间" name="published_at" type="datetime-local" value={values.publishedAt} onChange={(value) => setValue("publishedAt", value)} />
+      </div>
 
       <div className="flex flex-wrap gap-4">
         <CheckboxField label="推荐" name="is_featured" checked={values.isFeatured} onChange={(checked) => setValue("isFeatured", checked)} />
         <CheckboxField label="置顶" name="is_pinned" checked={values.isPinned} onChange={(checked) => setValue("isPinned", checked)} />
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <TextField label="置顶排序" name="pinned_order" type="number" min={0} value={String(values.pinnedOrder)} onChange={(value) => setValue("pinnedOrder", Math.max(0, Number(value) || 0))} />
+        <TextField label="置顶到期" name="pinned_until" type="datetime-local" value={values.pinnedUntil} onChange={(value) => setValue("pinnedUntil", value)} />
       </div>
 
       {message ? <p className="text-sm font-semibold text-red-600">{message}</p> : null}
