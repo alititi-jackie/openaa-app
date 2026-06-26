@@ -181,6 +181,44 @@ export async function updateLatestPostsSection(_state: AdminHomeActionState, for
   return ok("最新发布模块已保存。");
 }
 
+export async function updateSeoContentSection(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
+  const context = await getAdminActionContext("manage_home_sections");
+  if (!context.ok) return fail(context.message);
+
+  const seoTitle = readText(formData, "seo_title");
+  const seoContent = readText(formData, "seo_content");
+
+  if (!seoTitle) return fail("SEO 标题不能为空。");
+  if (!seoContent) return fail("SEO 正文不能为空。");
+
+  const { data: existing } = await context.supabase
+    .from("home_sections")
+    .select("key,title,description,module,is_visible,sort_order")
+    .eq("key", "seo_content")
+    .maybeSingle();
+
+  const payload = {
+    key: "seo_content",
+    title: existing?.title || "SEO 文案",
+    description: existing?.description ?? "首页 SEO 文案配置。",
+    module: existing?.module || "home",
+    config: {
+      title: seoTitle,
+      content: seoContent,
+    },
+    is_visible: true,
+    sort_order: typeof existing?.sort_order === "number" ? existing.sort_order : 90,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error } = await context.supabase.from("home_sections").upsert(payload, { onConflict: "key" });
+  if (error) return fail("OpenAA SEO 保存失败，请稍后再试。");
+
+  if (!(await auditLog(context, "update_seo_content_section", "home_sections", "seo_content", payload))) return auditFailure();
+  revalidateAdminHome();
+  return ok("OpenAA SEO 已保存。");
+}
+
 export async function upsertTopQuickLink(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
   const context = await getAdminActionContext("manage_top_links");
   if (!context.ok) return fail(context.message);
@@ -827,6 +865,7 @@ function titleFromUrl(value: string) {
 function revalidateAdminHome() {
   revalidatePath("/");
   revalidatePath("/admin/home");
+  revalidatePath("/admin/home-config");
   revalidatePath("/admin/navigation");
   revalidatePath("/admin/top-links");
 }

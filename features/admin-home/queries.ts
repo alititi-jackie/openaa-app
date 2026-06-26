@@ -3,11 +3,11 @@ import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { hasAdminPermission } from "@/lib/permissions/admin";
 import { getHomeTickerSectionDefaults, homeTickerSections, normalizeHomeTickerSectionKey } from "@/features/home/tickerSections";
-import type { AdminHomeBannerRow, AdminHomePermissions, AdminHomeSectionRow, AdminTickerGlobalSettingsRow, AdminTickerRow, AdminTickerSectionSettingsRow, AdminTopQuickLinkRow } from "./types";
+import type { AdminHomePermissions, AdminHomeSectionRow, AdminTickerGlobalSettingsRow, AdminTickerRow, AdminTickerSectionSettingsRow, AdminTopQuickLinkRow } from "./types";
 
 type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
 
-export async function getAdminHomeConfigData(bannerStatus?: string) {
+export async function getAdminHomeConfigData() {
   const supabase = await createSupabaseServerClient();
   const permissions = await getAdminHomePermissions();
 
@@ -15,16 +15,15 @@ export async function getAdminHomeConfigData(bannerStatus?: string) {
     return emptyAdminHomeData(permissions);
   }
 
-  const [homeSections, topLinks, tickerItems, tickerGlobalSettings, tickerSectionSettings, banners] = await Promise.all([
+  const [homeSections, topLinks, tickerItems, tickerGlobalSettings, tickerSectionSettings] = await Promise.all([
     permissions.manageHomeSections ? readHomeSections(supabase) : Promise.resolve([]),
     permissions.manageTopLinks ? readTopLinks(supabase) : Promise.resolve([]),
     permissions.manageLatestTicker ? readTicker(supabase) : Promise.resolve([]),
     permissions.manageLatestTicker ? readTickerGlobalSettings(supabase) : Promise.resolve(defaultTickerGlobalSettings()),
     permissions.manageLatestTicker ? readTickerSectionSettings(supabase) : Promise.resolve(defaultTickerSectionSettings()),
-    permissions.manageHomeSections ? readHomeBanners(supabase, bannerStatus) : Promise.resolve([]),
   ]);
 
-  return { permissions, homeSections, topLinks, tickerItems, tickerGlobalSettings, tickerSectionSettings, banners };
+  return { permissions, homeSections, topLinks, tickerItems, tickerGlobalSettings, tickerSectionSettings };
 }
 
 export async function getAdminTopLinksData() {
@@ -121,27 +120,6 @@ async function readTickerSectionSettings(supabase: SupabaseServerClient): Promis
   }).sort((a, b) => a.sort_order - b.sort_order);
 }
 
-async function readHomeBanners(supabase: SupabaseServerClient, status?: string): Promise<AdminHomeBannerRow[]> {
-  const { data, error } = await supabase
-    .from("home_banners")
-    .select("id,title,subtitle,href,open_mode,image_asset_id,city_id,sort_order,is_active,starts_at,ends_at,image_assets(source_type,public_url,external_url)")
-    .order("sort_order", { ascending: true });
-
-  if (error) return [];
-
-  const banners = (data ?? []).map((row) => {
-    const imageAsset = Array.isArray(row.image_assets) ? row.image_assets[0] : row.image_assets;
-    return {
-      ...row,
-      image_url: imageAsset?.external_url ?? imageAsset?.public_url ?? null,
-      image_source_type: imageAsset?.source_type ?? null,
-      computed_status: getBannerComputedStatus(row),
-    } as AdminHomeBannerRow;
-  });
-
-  return status && status !== "all" ? banners.filter((banner) => banner.computed_status === status) : banners;
-}
-
 function emptyAdminHomeData(permissions: AdminHomePermissions) {
   return {
     permissions,
@@ -150,7 +128,6 @@ function emptyAdminHomeData(permissions: AdminHomePermissions) {
     tickerItems: [] as AdminTickerRow[],
     tickerGlobalSettings: defaultTickerGlobalSettings(),
     tickerSectionSettings: defaultTickerSectionSettings(),
-    banners: [] as AdminHomeBannerRow[],
   };
 }
 
@@ -172,15 +149,4 @@ function clampNumber(value: unknown, min: number, max: number, fallback: number)
   const numeric = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(numeric)) return fallback;
   return Math.min(max, Math.max(min, Math.trunc(numeric)));
-}
-
-function getBannerComputedStatus(row: { is_active: boolean; starts_at: string | null; ends_at: string | null }): AdminHomeBannerRow["computed_status"] {
-  if (!row.is_active) return "inactive";
-  const now = Date.now();
-  const startsAt = row.starts_at ? new Date(row.starts_at).getTime() : null;
-  const endsAt = row.ends_at ? new Date(row.ends_at).getTime() : null;
-
-  if (startsAt && startsAt > now) return "scheduled";
-  if (endsAt && endsAt < now) return "expired";
-  return "active";
 }
