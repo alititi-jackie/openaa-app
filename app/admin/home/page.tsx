@@ -353,13 +353,11 @@ function LatestPostsSectionForm({ section }: { section: AdminHomeSectionRow }) {
 
   return (
     <AdminActionForm action={updateLatestPostsSection} submitLabel="保存最新发布模块">
+      <input type="hidden" name="section_title" value={section.title} />
+      <input type="hidden" name="section_description" value={section.description ?? ""} />
       <input type="hidden" name="section_sort_order" value={section.sort_order} />
-      <div className="grid gap-3 md:grid-cols-2">
-        <AdminTextInput label="模块标题" name="section_title" defaultValue={section.title} required />
-        <AdminTextInput label="模块说明" name="section_description" defaultValue={section.description} />
-        <div className="flex items-end">
-          <AdminCheckbox label="显示最新发布模块" name="section_is_visible" defaultChecked={section.is_visible} />
-        </div>
+      <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+        <AdminCheckbox label="显示最新发布模块" name="section_is_visible" defaultChecked={section.is_visible} />
       </div>
 
       <div className="grid gap-3">
