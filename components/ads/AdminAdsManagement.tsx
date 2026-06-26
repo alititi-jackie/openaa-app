@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 
 import { AdminDateRangeFields, toAdminDateInputValue } from "@/components/admin/AdminDateRangeFields";
+import { AdminHighlightCard } from "@/components/admin/AdminHighlightCard";
 import { deleteAd, toggleAdActive, updateAdPlaceholderImage, upsertAd } from "@/features/ads/adminActions";
 import {
   adPositions,
@@ -428,7 +429,7 @@ export function AdminAdsManagement({
         ) : (
           <div className="space-y-3">
             {filteredAds.map((ad) => (
-              <AdListItem key={ad.id} ad={ad} onEdit={() => startEdit(ad)} />
+              <AdListItem key={ad.id} ad={ad} active={editingAd?.id === ad.id} onEdit={() => startEdit(ad)} />
             ))}
           </div>
         )}
@@ -688,7 +689,7 @@ function AdPlaceholderSettings({ placeholder }: { placeholder: AdminAdPlaceholde
   );
 }
 
-function AdListItem({ ad, onEdit }: { ad: AdminAdRow; onEdit: () => void }) {
+function AdListItem({ ad, active, onEdit }: { ad: AdminAdRow; active: boolean; onEdit: () => void }) {
   const positionLabel = adPositions.find((position) => position.key === ad.position)?.label ?? ad.position;
   const target = ad.open_mode === "internal" ? `/ads/${ad.slug}` : ad.external_url;
   const actionState = useMemo<AdminHomeActionState>(() => ({ ok: true, message: "" }), []);
@@ -696,7 +697,7 @@ function AdListItem({ ad, onEdit }: { ad: AdminAdRow; onEdit: () => void }) {
   const [, deleteAction, deletePending] = useActionState(deleteAd, actionState);
 
   return (
-    <article className="rounded-3xl border border-slate-200 bg-slate-50 p-3">
+    <AdminHighlightCard active={active}>
       <div className="grid gap-3 sm:grid-cols-[120px_1fr]">
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
           {ad.image_url ? (
@@ -766,7 +767,7 @@ function AdListItem({ ad, onEdit }: { ad: AdminAdRow; onEdit: () => void }) {
           </div>
         </div>
       </div>
-    </article>
+    </AdminHighlightCard>
   );
 }
 
