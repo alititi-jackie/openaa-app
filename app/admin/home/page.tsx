@@ -234,7 +234,7 @@ function OrderedHomeSectionCard({
 
   return (
     <HomeConfigPanel title={title} description={description} summary={[section.is_visible ? "显示中" : "已隐藏", `项目 ${items.length}`]}>
-      <OrderedHomeSectionForm section={section} items={items} />
+      <OrderedHomeSectionForm section={section} kind={kind} items={items} />
     </HomeConfigPanel>
   );
 }
@@ -252,15 +252,18 @@ function LatestPostsSectionCard({ section }: { section?: AdminHomeSectionRow }) 
 
 function OrderedHomeSectionForm({
   section,
+  kind,
   items,
 }: {
   section: AdminHomeSectionRow;
+  kind: OrderedHomeSectionKind;
   items: Array<{ label: string; isVisible: boolean; raw: Record<string, unknown> }>;
 }) {
   const config = { ...(section.config ?? {}), items: items.map((item, index) => ({ ...item.raw, sort_order: (index + 1) * 10 })) };
+  const isQuickGrid = kind === "quick_grid";
 
   return (
-    <AdminActionForm action={updateHomeSection} submitLabel="保存模块">
+    <AdminActionForm action={updateHomeSection} submitLabel={isQuickGrid ? "" : "保存模块"}>
       <input type="hidden" name="key" value={section.key} />
       <input type="hidden" name="title" value={section.title} />
       <input type="hidden" name="description" value={section.description ?? ""} />
@@ -268,7 +271,21 @@ function OrderedHomeSectionForm({
       <input type="hidden" name="config" value={JSON.stringify(config)} />
 
       <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
-        <AdminCheckbox label="显示整个模块" name="is_visible" defaultChecked={section.is_visible} />
+        {isQuickGrid ? (
+          <>
+            {section.is_visible ? <input type="hidden" name="is_visible" value="on" /> : null}
+            <button
+              type="submit"
+              name="intent"
+              value="toggle_section_visibility"
+              className="inline-flex min-h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-black text-slate-700"
+            >
+              {section.is_visible ? "隐藏整个模块" : "打开显示整个模块"}
+            </button>
+          </>
+        ) : (
+          <AdminCheckbox label="显示整个模块" name="is_visible" defaultChecked={section.is_visible} />
+        )}
       </div>
 
       <div className="grid gap-3">

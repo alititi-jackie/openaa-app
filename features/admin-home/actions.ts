@@ -105,10 +105,10 @@ export async function updateHomeSection(_state: AdminHomeActionState, formData: 
   const key = readText(formData, "key");
   const title = readText(formData, "title");
   const sortOrder = readInteger(formData, "sort_order", "模块排序");
-  const isVisible = formData.get("is_visible") === "on";
+  const intent = readText(formData, "intent");
+  const isVisible = intent === "toggle_section_visibility" ? formData.get("is_visible") !== "on" : formData.get("is_visible") === "on";
   const description = readText(formData, "description") || null;
   const config = readJsonObject(formData, "config");
-  const intent = readText(formData, "intent");
 
   if (!key || !title) return fail("模块 key 和标题不能为空。");
   if (!sortOrder.ok) return fail(sortOrder.message);
@@ -134,7 +134,7 @@ export async function updateHomeSection(_state: AdminHomeActionState, formData: 
 
   if (!(await auditLog(context, "update_home_section", "home_sections", key, payload))) return auditFailure();
   revalidateAdminHome();
-  return ok(intent.startsWith("move_") ? `模块「${title}」排序已保存。` : intent.startsWith("toggle_visibility:") ? `模块「${title}」显示状态已保存。` : `模块「${title}」已保存。`);
+  return ok(intent.startsWith("move_") ? `模块「${title}」排序已保存。` : intent.startsWith("toggle_visibility:") || intent === "toggle_section_visibility" ? `模块「${title}」显示状态已保存。` : `模块「${title}」已保存。`);
 }
 
 export async function updateLatestPostsSection(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
