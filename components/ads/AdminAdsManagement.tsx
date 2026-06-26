@@ -459,26 +459,29 @@ function InternalFields({ ad }: { ad: AdminAdRow | null }) {
         </label>
       </div>
       <label className="space-y-2 text-sm font-black text-slate-700">
-        详情内容（可选）
+        详细内容 <span className="text-red-600">*</span>
         <textarea
           name="content"
           defaultValue={ad?.content ?? ""}
+          required
           rows={5}
           className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:border-blue-500"
         />
       </label>
       <div className="grid gap-4 md:grid-cols-2">
         <label className="space-y-2 text-sm font-black text-slate-700">
-          联系人（可选）
-          <input name="contact_name" defaultValue={ad?.contact_name ?? ""} className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm font-bold outline-none focus:border-blue-500" />
+          联系人 <span className="text-red-600">*</span>
+          <input name="contact_name" defaultValue={ad?.contact_name ?? ""} required className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm font-bold outline-none focus:border-blue-500" />
         </label>
         <label className="space-y-2 text-sm font-black text-slate-700">
-          联系电话（可选）
+          联系电话
           <input name="phone" defaultValue={ad?.phone ?? ""} className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm font-bold outline-none focus:border-blue-500" />
+          <span className="block text-xs font-semibold text-slate-500">与微信至少填写一项</span>
         </label>
         <label className="space-y-2 text-sm font-black text-slate-700">
-          微信号（可选）
+          微信号
           <input name="wechat" defaultValue={ad?.wechat ?? ""} className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm font-bold outline-none focus:border-blue-500" />
+          <span className="block text-xs font-semibold text-slate-500">与电话至少填写一项</span>
         </label>
         <label className="space-y-2 text-sm font-black text-slate-700">
           地址（可选）

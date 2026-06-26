@@ -244,6 +244,9 @@ function normalizeAdPayload(formData: FormData, openMode: AdOpenMode, position: 
 
   if (openMode === "internal") {
     if (!slug || !slugRegex.test(slug)) return { ok: false as const, message: "内部广告必须填写有效 slug，只能使用小写字母、数字和短横线。" };
+    if (!content) return { ok: false as const, message: "内部广告必须填写详细内容。" };
+    if (!contactName) return { ok: false as const, message: "内部广告必须填写联系人。" };
+    if (!phone && !wechat) return { ok: false as const, message: "内部广告联系电话和微信至少填写一项。" };
     return {
       ok: true as const,
       payload: {
