@@ -232,24 +232,25 @@ export function AdminAdsManagement({
       </div>
 
       {isFormOpen ? (
-        <form
-          ref={formRef}
-          action={formAction}
-          encType="multipart/form-data"
-          className="space-y-5 rounded-[28px] border border-blue-100 bg-white p-4 shadow-sm sm:p-5"
-        >
-          <input type="hidden" name="id" value={editingAd?.id ?? ""} />
-          <input type="hidden" name="image_asset_id" value={currentImageAssetId ?? ""} />
-          <input type="hidden" name="sort_order" value={editingAd?.sort_order ?? 0} />
+        <AdminHighlightCard active className="p-0">
+          <form
+            ref={formRef}
+            action={formAction}
+            encType="multipart/form-data"
+            className="space-y-5 rounded-2xl bg-white p-4 sm:p-5"
+          >
+            <input type="hidden" name="id" value={editingAd?.id ?? ""} />
+            <input type="hidden" name="image_asset_id" value={currentImageAssetId ?? ""} />
+            <input type="hidden" name="sort_order" value={editingAd?.sort_order ?? 0} />
 
-          <div className="flex flex-col gap-1">
-            <h3 className="text-base font-black text-slate-950">
-              {editingAd ? "编辑广告" : "新增广告"}
-            </h3>
-            <p className="text-sm font-semibold text-slate-500">
-              广告位置、图片和打开方式为必填。外部图片链接仅支持 https。
-            </p>
-          </div>
+            <div className="flex flex-col gap-1">
+              <h3 className="text-base font-black text-slate-950">
+                {editingAd ? "编辑广告" : "新增广告"}
+              </h3>
+              <p className="text-sm font-semibold text-slate-500">
+                广告位置、图片和打开方式为必填。外部图片链接仅支持 https。
+              </p>
+            </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <label className="space-y-2 text-sm font-black text-slate-700">
@@ -414,7 +415,8 @@ export function AdminAdsManagement({
               {pending ? "处理中..." : editingAd ? "保存修改" : "提交广告"}
             </button>
           </div>
-        </form>
+          </form>
+        </AdminHighlightCard>
       ) : null}
 
       <div className="space-y-3 rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
@@ -429,7 +431,7 @@ export function AdminAdsManagement({
         ) : (
           <div className="space-y-3">
             {filteredAds.map((ad) => (
-              <AdListItem key={ad.id} ad={ad} active={editingAd?.id === ad.id} onEdit={() => startEdit(ad)} />
+              <AdListItem key={ad.id} ad={ad} onEdit={() => startEdit(ad)} />
             ))}
           </div>
         )}
@@ -689,7 +691,7 @@ function AdPlaceholderSettings({ placeholder }: { placeholder: AdminAdPlaceholde
   );
 }
 
-function AdListItem({ ad, active, onEdit }: { ad: AdminAdRow; active: boolean; onEdit: () => void }) {
+function AdListItem({ ad, onEdit }: { ad: AdminAdRow; onEdit: () => void }) {
   const positionLabel = adPositions.find((position) => position.key === ad.position)?.label ?? ad.position;
   const target = ad.open_mode === "internal" ? `/ads/${ad.slug}` : ad.external_url;
   const actionState = useMemo<AdminHomeActionState>(() => ({ ok: true, message: "" }), []);
@@ -697,7 +699,7 @@ function AdListItem({ ad, active, onEdit }: { ad: AdminAdRow; active: boolean; o
   const [, deleteAction, deletePending] = useActionState(deleteAd, actionState);
 
   return (
-    <AdminHighlightCard active={active}>
+    <AdminHighlightCard>
       <div className="grid gap-3 sm:grid-cols-[120px_1fr]">
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
           {ad.image_url ? (
