@@ -713,21 +713,19 @@ function AdListItem({ ad, onEdit }: { ad: AdminAdRow; onEdit: () => void }) {
           )}
         </div>
         <div className="min-w-0 space-y-2">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex flex-col gap-2">
             <div className="min-w-0">
               <h4 className="truncate text-base font-black text-slate-950">{ad.title}</h4>
               <p className="truncate text-xs font-semibold text-slate-500">{target || "未设置目标"}</p>
             </div>
-            <span className={`w-fit rounded-full px-3 py-1 text-xs font-black ${ad.is_active ? "bg-emerald-50 text-emerald-700" : "bg-slate-200 text-slate-600"}`}>
-              {ad.is_active ? "启用" : "停用"}
-            </span>
-          </div>
-          <div className="grid gap-2 text-xs font-bold text-slate-500 sm:grid-cols-3">
-            <span>{positionLabel}</span>
-            <span>{ad.open_mode === "internal" ? "内部页" : "外部链接"}</span>
-            <span>
-              {formatAdDate(ad.start_date) || "—"} 至 {formatAdDate(ad.end_date, true) || "—"}
-            </span>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-bold text-slate-500">
+              <span className={`rounded-full px-2.5 py-1 font-black ${ad.is_active ? "bg-emerald-50 text-emerald-700" : "bg-slate-200 text-slate-600"}`}>
+                {ad.is_active ? "启用" : "停用"}
+              </span>
+              <span>{positionLabel}</span>
+              <span>{ad.open_mode === "internal" ? "内部页" : "外部链接"}</span>
+              <span>日期：{formatAdDate(ad.start_date) || "—"} 至 {formatAdDate(ad.end_date, true) || "—"}</span>
+            </div>
           </div>
           <div className="grid grid-cols-3 gap-2 pt-1">
             <button
