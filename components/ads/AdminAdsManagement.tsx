@@ -251,7 +251,7 @@ export function AdminAdsManagement({
 
           <div className="grid gap-4 md:grid-cols-2">
             <label className="space-y-2 text-sm font-black text-slate-700">
-              广告位置 *
+              广告位置 <span className="text-red-600">*</span>
               <select
                 name="position"
                 required
@@ -271,7 +271,7 @@ export function AdminAdsManagement({
           <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h4 className="text-sm font-black text-slate-900">广告图片 *</h4>
+                <h4 className="text-sm font-black text-slate-900">广告图片 <span className="text-red-600">*</span></h4>
                 <p className="mt-1 text-xs font-semibold text-slate-500">
                   图片只能二选一。要更换图片，请先删除当前图片。
                 </p>
@@ -355,7 +355,7 @@ export function AdminAdsManagement({
           </div>
 
           <label className="space-y-2 text-sm font-black text-slate-700">
-            打开方式 *
+            打开方式 <span className="text-red-600">*</span>
             <select
               name="open_mode"
               required
@@ -437,7 +437,7 @@ function InternalFields({ ad }: { ad: AdminAdRow | null }) {
     <div className="space-y-4 rounded-3xl border border-slate-200 bg-white p-4">
       <div className="grid gap-4 md:grid-cols-2">
         <label className="space-y-2 text-sm font-black text-slate-700">
-          页面标识 (slug) *
+          页面标识 (slug) <span className="text-red-600">*</span>
           <input
             name="slug"
             defaultValue={ad?.slug ?? ""}
@@ -449,7 +449,7 @@ function InternalFields({ ad }: { ad: AdminAdRow | null }) {
           </span>
         </label>
         <label className="space-y-2 text-sm font-black text-slate-700">
-          标题 *
+          标题 <span className="text-red-600">*</span>
           <input
             name="title"
             defaultValue={ad?.title ?? ""}
@@ -496,7 +496,7 @@ function ExternalFields({ ad }: { ad: AdminAdRow | null }) {
   return (
     <div className="grid gap-4 rounded-3xl border border-slate-200 bg-white p-4 md:grid-cols-2">
       <label className="space-y-2 text-sm font-black text-slate-700">
-        标题 *
+        标题 <span className="text-red-600">*</span>
         <input
           name="title"
           defaultValue={ad?.title ?? ""}
@@ -505,7 +505,7 @@ function ExternalFields({ ad }: { ad: AdminAdRow | null }) {
         />
       </label>
       <label className="space-y-2 text-sm font-black text-slate-700">
-        外部链接地址 *
+        外部链接地址 <span className="text-red-600">*</span>
         <input
           name="external_url"
           defaultValue={ad?.external_url ?? ""}

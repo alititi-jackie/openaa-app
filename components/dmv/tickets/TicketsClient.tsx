@@ -221,7 +221,7 @@ export default function TicketsClient() {
           {/* State */}
           <div>
             <label className="block text-sm font-medium text-zinc-700 mb-1" htmlFor="state">
-              所属州 <span className="text-red-500">*</span>
+              所属州 <span className="text-red-600">*</span>
             </label>
             <select
               id="state"
@@ -257,7 +257,7 @@ export default function TicketsClient() {
           {/* Ticket type */}
           <div>
             <label className="block text-sm font-medium text-zinc-700 mb-1" htmlFor="ticketType">
-              罚单类型 <span className="text-red-500">*</span>
+              罚单类型 <span className="text-red-600">*</span>
             </label>
             <select
               id="ticketType"

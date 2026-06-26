@@ -598,7 +598,9 @@ function TextField({
 }) {
   return (
     <label className="grid gap-1.5 text-sm font-bold text-slate-700">
-      <span>{label}</span>
+      <span>
+        {label} {required ? <span className="text-red-600">*</span> : null}
+      </span>
       <input
         name={name}
         value={value}
@@ -633,7 +635,9 @@ function TextareaField({
 }) {
   return (
     <label className="grid gap-1.5 text-sm font-bold text-slate-700">
-      <span>{label}</span>
+      <span>
+        {label} {required ? <span className="text-red-600">*</span> : null}
+      </span>
       <textarea name={name} value={value} rows={rows} required={required} onChange={(event) => onChange(event.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-900 outline-none focus:border-blue-500" />
     </label>
   );

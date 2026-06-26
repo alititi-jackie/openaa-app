@@ -493,7 +493,9 @@ function TextField({
 }) {
   return (
     <label className="grid gap-1.5 text-sm font-bold text-slate-700">
-      <span>{label}</span>
+      <span>
+        {label} {required ? <span className="text-red-600">*</span> : null}
+      </span>
       <input
         value={value}
         type={type}
