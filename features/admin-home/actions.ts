@@ -149,7 +149,10 @@ export async function updateLatestPostsSection(_state: AdminHomeActionState, for
   const intent = readText(formData, "intent");
   const sections = [];
   for (const fallback of fallbackLatestPostSections) {
-    const limit = readIntegerInRange(formData, `limit_count_${fallback.key}`, `${fallback.title}显示数量`, 1, 20);
+    const limit =
+      fallback.key === "news"
+        ? readIntegerInRange(formData, `limit_count_${fallback.key}`, `${fallback.title}显示数量`, 0, 100)
+        : readIntegerInRange(formData, `limit_count_${fallback.key}`, `${fallback.title}显示数量`, 1, 20);
     const sortOrder = readInteger(formData, `sort_order_${fallback.key}`, `${fallback.title}排序`);
     if (!limit.ok) return fail(limit.message);
     if (!sortOrder.ok) return fail(sortOrder.message);
@@ -230,7 +233,7 @@ export async function updateLatestPostsSection(_state: AdminHomeActionState, for
 
   const newsSection = sections.find((section) => section.key === "news");
   if (newsSection) {
-    newsSection.limit_count = Math.max(1, newsCategories.filter((category) => category.is_visible).reduce((total, category) => total + category.limit_count, 0));
+    newsSection.limit_count = newsCategories.filter((category) => category.is_visible).reduce((total, category) => total + category.limit_count, 0);
   }
 
   const payload = {
@@ -572,101 +575,6 @@ export async function updateLatestTickerSettings(_state: AdminHomeActionState, f
   return ok(intent.startsWith("move_") ? "自动动态排序已保存。" : "自动动态设置已保存。");
 }
 
-export async function upsertHomeBanner(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
-  const context = await getAdminActionContext("manage_home_sections");
-  if (!context.ok) return fail(context.message);
-
-  const id = readText(formData, "id");
-  const title = readText(formData, "title");
-  const subtitle = readText(formData, "subtitle") || null;
-  const href = normalizeOptionalLink(readText(formData, "href"));
-  const imageUrl = normalizeImageUrl(readText(formData, "image_url"));
-  const imageFile = readFile(formData, "image_file");
-  const openMode = readOpenMode(formData);
-  const isActive = formData.get("is_active") === "on";
-  const sortOrder = readInteger(formData, "sort_order", "Banner 排序");
-  const startsAt = readDateTime(formData, "starts_at");
-  const endsAt = readDateTime(formData, "ends_at");
-  const cityId = await getDefaultCityId(context.supabase);
-
-  if (!title) return fail("Banner 标题不能为空。");
-  if (!href.ok) return fail(href.message);
-  if (!imageUrl.ok) return fail(imageUrl.message);
-  if (!sortOrder.ok) return fail(sortOrder.message);
-  if (!id && !imageUrl.value && !imageFile) return fail("新增 Banner 需要上传图片或填写 https://img.openaa.com/ 图片 URL。");
-
-  const before = id ? await readHomeBanner(context.supabase, id) : null;
-  const imageAssetId = imageFile
-    ? await uploadHomeBannerImageAsset(context, imageFile, id || null)
-    : imageUrl.value
-      ? await upsertExternalImageAsset(context, imageUrl.value, id || null)
-      : readText(formData, "image_asset_id") || null;
-  if (imageAssetId === false) return fail("图片保存失败，请确认上传的是 5MB 以内的 JPG、PNG、WebP，或填写 https://img.openaa.com/ 地址。");
-
-  const payload = {
-    title,
-    subtitle,
-    href: href.value,
-    open_mode: openMode,
-    image_asset_id: imageAssetId,
-    city_id: cityId,
-    is_active: isActive,
-    sort_order: sortOrder.value,
-    starts_at: startsAt,
-    ends_at: endsAt,
-  };
-
-  const result = id
-    ? await context.supabase.from("home_banners").update(payload).eq("id", id).select("id").single()
-    : await context.supabase.from("home_banners").insert(payload).select("id").single();
-
-  if (result.error || !result.data) return fail("首页 Banner 保存失败。");
-
-  if (imageAssetId && !id) {
-    await context.supabase.from("image_assets").update({ entity_id: result.data.id }).eq("id", imageAssetId).eq("owner_id", context.userId);
-  }
-
-  if (imageAssetId && before?.image_asset_id && before.image_asset_id !== imageAssetId) {
-    await markImageAssetDeleted(context.supabase, before.image_asset_id);
-  }
-
-  if (!(await auditLog(context, id ? "update_home_banner" : "create_home_banner", "home_banners", result.data.id, payload))) {
-    return auditFailure();
-  }
-  revalidateAdminHome();
-  return ok("首页 Banner 已保存。");
-}
-
-export async function removeHomeBannerImage(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
-  const context = await getAdminActionContext("manage_home_sections");
-  if (!context.ok) return fail(context.message);
-
-  const id = readText(formData, "id");
-  if (!id) return fail("缺少 Banner ID。");
-  if (formData.get("confirm_remove_image") !== "on") return fail("请先勾选确认移除图片。");
-
-  const before = await readHomeBanner(context.supabase, id);
-  if (!before) return fail("Banner 不存在。");
-  if (!before.image_asset_id) return fail("这条 Banner 没有可移除的图片。");
-
-  const result = await context.supabase.from("home_banners").update({ image_asset_id: null, updated_at: new Date().toISOString() }).eq("id", id);
-  if (result.error) return fail("Banner 图片移除失败。");
-
-  await markImageAssetDeleted(context.supabase, before.image_asset_id);
-
-  if (!(await auditLog(context, "remove_home_banner_image", "home_banners", id, { image_asset_id: null }))) {
-    return auditFailure();
-  }
-
-  revalidateAdminHome();
-  return ok("Banner 图片已移除。");
-}
-
-async function readHomeBanner(supabase: SupabaseServerClient, id: string) {
-  const { data } = await supabase.from("home_banners").select("id,image_asset_id").eq("id", id).maybeSingle();
-  return data ?? null;
-}
-
 async function readTopQuickLinkForUpdate(supabase: SupabaseServerClient, id: string) {
   const { data } = await supabase.from("top_quick_links").select("id,sort_order,is_active,icon").eq("id", id).maybeSingle();
   return data ?? null;
@@ -675,82 +583,6 @@ async function readTopQuickLinkForUpdate(supabase: SupabaseServerClient, id: str
 async function getFirstTopQuickLinkSortOrder(supabase: SupabaseServerClient) {
   const { data } = await supabase.from("top_quick_links").select("sort_order").order("sort_order", { ascending: true }).limit(1).maybeSingle();
   return typeof data?.sort_order === "number" ? data.sort_order - 10 : 0;
-}
-
-async function upsertExternalImageAsset(context: Extract<AdminActionContext, { ok: true }>, imageUrl: string, entityId: string | null) {
-  try {
-    const externalHost = new URL(imageUrl).hostname.toLowerCase();
-    const { data, error } = await context.supabase
-      .from("image_assets")
-      .insert({
-        source_type: "external",
-        external_url: imageUrl,
-        external_host: externalHost,
-        owner_id: context.userId,
-        entity_type: "home_banner",
-        entity_id: entityId,
-        status: "active",
-        is_public: true,
-      })
-      .select("id")
-      .single();
-
-    if (error || !data) return false;
-    return data.id as string;
-  } catch {
-    return false;
-  }
-}
-
-async function uploadHomeBannerImageAsset(context: Extract<AdminActionContext, { ok: true }>, file: File, entityId: string | null) {
-  const validation = validateImageFile(file);
-  if (!validation.ok) return false;
-
-  const imageId = crypto.randomUUID();
-  const path = `home-banners/${context.userId}/${entityId || "draft"}/${imageId}.${validation.extension}`;
-  const { error: uploadError } = await context.supabase.storage.from("home-banner-images").upload(path, file, {
-    contentType: file.type,
-    upsert: false,
-  });
-
-  if (uploadError) return false;
-
-  const { data: publicUrlData } = context.supabase.storage.from("home-banner-images").getPublicUrl(path);
-  const { data, error } = await context.supabase
-    .from("image_assets")
-    .insert({
-      source_type: "storage",
-      bucket: "home-banner-images",
-      path,
-      public_url: publicUrlData.publicUrl,
-      owner_id: context.userId,
-      entity_type: "home_banner",
-      entity_id: entityId,
-      mime_type: file.type,
-      size_bytes: file.size,
-      status: "active",
-      is_public: true,
-    })
-    .select("id")
-    .single();
-
-  if (error || !data) return false;
-  return data.id as string;
-}
-
-async function markImageAssetDeleted(supabase: SupabaseServerClient, imageAssetId: string) {
-  await supabase
-    .from("image_assets")
-    .update({ status: "deleted", deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-    .eq("id", imageAssetId);
-}
-
-function validateImageFile(file: File): { ok: true; extension: "jpg" | "png" | "webp" } | { ok: false } {
-  if (!file || file.size <= 0 || file.size > 5 * 1024 * 1024) return { ok: false };
-  if (file.type === "image/jpeg") return { ok: true, extension: "jpg" };
-  if (file.type === "image/png") return { ok: true, extension: "png" };
-  if (file.type === "image/webp") return { ok: true, extension: "webp" };
-  return { ok: false };
 }
 
 async function hasPermission(supabase: SupabaseServerClient, permissionKey: string) {
@@ -912,11 +744,6 @@ function moveLatestPostSectionPayloads<T extends { key: string; sort_order: numb
   return { ok: true };
 }
 
-function readFile(formData: FormData, key: string) {
-  const value = formData.get(key);
-  return value instanceof File && value.size > 0 ? value : null;
-}
-
 function readInteger(formData: FormData, key: string, label: string): { ok: true; value: number } | { ok: false; message: string } {
   const raw = readText(formData, key);
   if (!raw) return { ok: true, value: 0 };
@@ -957,41 +784,6 @@ function readJsonObject(formData: FormData, key: string): { ok: true; value: Rec
     return { ok: true, value: parsed as Record<string, unknown> };
   } catch {
     return { ok: false, message: "配置 JSON 格式不正确。" };
-  }
-}
-
-function normalizeLink(raw: string): { ok: true; value: string } | { ok: false; message: string } {
-  if (!raw) return { ok: false, message: "URL 不能为空。" };
-  if (raw.startsWith("/") && !raw.startsWith("//")) {
-    return { ok: true, value: raw };
-  }
-
-  try {
-    const url = new URL(raw);
-    if (url.protocol !== "https:") return { ok: false, message: "外部链接必须使用 https。" };
-    return { ok: true, value: url.toString() };
-  } catch {
-    return { ok: false, message: "URL 格式不正确。" };
-  }
-}
-
-function normalizeOptionalLink(raw: string): { ok: true; value: string | null } | { ok: false; message: string } {
-  if (!raw) return { ok: true, value: null };
-  const link = normalizeLink(raw);
-  return link.ok ? link : link;
-}
-
-function normalizeImageUrl(raw: string): { ok: true; value: string | null } | { ok: false; message: string } {
-  if (!raw) return { ok: true, value: null };
-
-  try {
-    const url = new URL(raw);
-    if (url.protocol !== "https:" || url.hostname.toLowerCase() !== "img.openaa.com") {
-      return { ok: false, message: "图片 URL 必须是 https://img.openaa.com/ 下的地址。" };
-    }
-    return { ok: true, value: url.toString() };
-  } catch {
-    return { ok: false, message: "图片 URL 格式不正确。" };
   }
 }
 

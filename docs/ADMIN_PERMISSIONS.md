@@ -43,10 +43,10 @@ Phase 10 adds the first home-configuration admin UI:
 
 Permission points:
 
-- `manage_home_sections`: update `home_sections` and `home_banners`.
+- `manage_home_sections`: update `home_sections`.
 - `manage_top_links`: create, edit, sort, and disable `top_quick_links`.
 - `manage_latest_ticker`: create and edit `latest_ticker`.
-- `manage_ads`: reserved for a broader ads screen; Phase 10 does not implement full ads CRUD.
+- `manage_ads`: manage ads, including the home top ad placement.
 
 Every server action checks the relevant permission before writing and inserts an `admin_audit_logs` row. The UI may hide sections for admins without permissions, but permission checks in server actions are the security boundary.
 

@@ -13,8 +13,8 @@ The home page reads public configuration through `features/home/queries.ts`. Com
 Supported sources:
 
 - `top_quick_links`: city quick links in the Header dropdown.
-- `home_banners`: primary home banner data.
-- `ads`: optional fallback for home banner placement when no active home banner exists.
+- `ads`: primary home banner/ad data for the `home` placement.
+- `home_banners`: legacy home banner table retained for compatibility and image-reference protection.
 - `latest_ticker`: one-line latest-dynamics ticker.
 - `home_sections`: module visibility, ordering, and module-specific config.
 - `posts`: latest public posts for the home aggregation module.
@@ -89,11 +89,13 @@ The current implementation maps configured entries to the existing icon set by r
 
 ## Banner And Ads
 
-Banner reads prefer active `home_banners` rows within the start/end window. If none are available, the home page can use active `ads` rows whose placement is `home`.
+The admin home page no longer edits home banners directly. Home top ad placement should be configured in `/admin/ads`.
+
+The public read layer still understands legacy `home_banners` rows for compatibility, but new home-top advertising should use active `ads` rows whose placement is `home`.
 
 Images are mapped from `image_assets.public_url` or `image_assets.external_url`. External images should use the approved external image host such as `img.openaa.com`; the home page does not upload or import images in this phase.
 
-If no configured banner or home ad is readable, the existing fallback banner is used.
+If no configured home ad or compatible legacy banner is readable, the existing fallback banner is used.
 
 ## Latest Ticker
 
@@ -115,12 +117,12 @@ If no readable config exists, the fallback SEO copy is used. If the module is di
 
 Phase 10 adds:
 
-- `/admin/home`: manages `home_sections`, `latest_ticker`, and `home_banners`.
+- `/admin/home`: manages `home_sections` and `latest_ticker`; it shows a note that the home top ad placement is configured in ad management.
 - `/admin/top-links`: manages `top_quick_links`.
 
 Permissions:
 
-- `manage_home_sections`: update home modules and home banners.
+- `manage_home_sections`: update home modules.
 - `manage_top_links`: create, edit, sort, and disable top quick links.
 - `manage_latest_ticker`: create and edit latest ticker rows.
 - `manage_ads`: reserved for broader ad management. Phase 10 does not build a full ads CRUD screen.
@@ -135,10 +137,8 @@ Default configuration:
 
 Banner image policy:
 
-- Phase 10 supports external image URLs for home banners.
-- External images must use `https://img.openaa.com/`.
-- The backend stores external images in `image_assets` with `source_type = external`.
-- Upload-based banner management is reserved for a later media-admin phase.
+- Home top ad images are managed through the ad management flow and ad image fallback rules.
+- The legacy `home_banners` table is not edited from `/admin/home`.
 
 Schema patch:
 

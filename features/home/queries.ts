@@ -120,10 +120,11 @@ export async function getHomeBanners(client?: HomeSupabaseClient | null, city = 
     return fallbackHomeBanners;
   }
 
-  const [banners, ads] = await Promise.all([readHomeBanners(supabase, city), readHomeAds(supabase)]);
-  const items = [...banners, ...ads];
+  const [legacyBanners, ads] = await Promise.all([readHomeBanners(supabase, city), readHomeAds(supabase)]);
 
-  return items.length > 0 ? items : fallbackHomeBanners;
+  if (ads.length > 0) return ads;
+  if (legacyBanners.length > 0) return legacyBanners;
+  return fallbackHomeBanners;
 }
 
 export async function getLatestTickerItems(
