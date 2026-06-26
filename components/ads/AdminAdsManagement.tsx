@@ -25,6 +25,8 @@ type AdminAdsManagementProps = {
   activePosition: AdPosition;
   activeStatus: AdStatusFilter;
   placeholder: AdminAdPlaceholder;
+  positionCounts?: Record<AdPosition, number>;
+  statusCounts?: Record<AdStatusFilter, number>;
 };
 
 export function AdminAdsManagement({
@@ -32,6 +34,8 @@ export function AdminAdsManagement({
   activePosition,
   activeStatus,
   placeholder,
+  positionCounts,
+  statusCounts,
 }: AdminAdsManagementProps) {
   const [editingAd, setEditingAd] = useState<AdminAdRow | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -219,7 +223,7 @@ export function AdminAdsManagement({
     <section className="space-y-5">
       <AdPlaceholderSettings placeholder={placeholder} />
 
-      <AdsFilter activePosition={activePosition} activeStatus={activeStatus} />
+      <AdsFilter activePosition={activePosition} activeStatus={activeStatus} positionCounts={positionCounts} statusCounts={statusCounts} />
 
       <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
         <button
@@ -535,9 +539,13 @@ function ExternalFields({ ad }: { ad: AdminAdRow | null }) {
 function AdsFilter({
   activePosition,
   activeStatus,
+  positionCounts,
+  statusCounts,
 }: {
   activePosition: AdPosition;
   activeStatus: AdStatusFilter;
+  positionCounts?: Record<AdPosition, number>;
+  statusCounts?: Record<AdStatusFilter, number>;
 }) {
   return (
     <div className="space-y-3 rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
@@ -549,6 +557,7 @@ function AdsFilter({
             active={position.key === activePosition}
           >
             {position.label.replace("广告", "")}
+            <CountBadge active={position.key === activePosition} count={positionCounts?.[position.key] ?? 0} />
           </FilterLink>
         ))}
       </div>
@@ -560,6 +569,7 @@ function AdsFilter({
             active={filter.key === activeStatus}
           >
             {filter.label}
+            <CountBadge active={filter.key === activeStatus} count={statusCounts?.[filter.key] ?? 0} />
           </FilterLink>
         ))}
       </div>
@@ -587,6 +597,14 @@ function FilterLink({
     >
       {children}
     </a>
+  );
+}
+
+function CountBadge({ active, count }: { active: boolean; count: number }) {
+  return (
+    <span className={`ml-2 rounded-full px-2 py-0.5 text-[11px] font-black ${active ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>
+      {count}
+    </span>
   );
 }
 
@@ -730,7 +748,7 @@ function AdListItem({ ad, onEdit }: { ad: AdminAdRow; onEdit: () => void }) {
               <span>日期：{formatAdDate(ad.start_date) || "—"} 至 {formatAdDate(ad.end_date, true) || "—"}</span>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-2 pt-1">
+          <div className="grid grid-cols-2 gap-2 pt-1 sm:grid-cols-4">
             <button
               type="button"
               onClick={onEdit}
@@ -738,6 +756,20 @@ function AdListItem({ ad, onEdit }: { ad: AdminAdRow; onEdit: () => void }) {
             >
               编辑
             </button>
+            {target ? (
+              <a
+                href={target}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm font-black text-slate-700 transition hover:bg-slate-100"
+              >
+                查看前台
+              </a>
+            ) : (
+              <span className="inline-flex h-10 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-sm font-black text-slate-400">
+                查看前台
+              </span>
+            )}
             <form action={toggleAction}>
               <input type="hidden" name="id" value={ad.id} />
               <input type="hidden" name="next_active" value={ad.is_active ? "false" : "true"} />

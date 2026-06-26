@@ -5,6 +5,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { QueryState } from "@/features/posts/types";
 import { getAdPlaceholderSetting } from "./placeholders";
 import {
+  adPositions,
+  adStatusFilters,
   normalizeAdPosition,
   normalizeAdStatusFilter,
   type AdLinkType,
@@ -22,6 +24,8 @@ export type AdminAdsResult = {
   activeStatus: AdStatusFilter;
   placeholder: AdminAdPlaceholder;
   ads: AdminAdRow[];
+  positionCounts?: Record<AdPosition, number>;
+  statusCounts?: Record<AdStatusFilter, number>;
   error?: string;
 };
 
@@ -37,6 +41,8 @@ type RawAdRow = Omit<AdminAdRow, "image_url" | "image_source_type" | "position" 
 };
 
 const emptyPlaceholder: AdminAdPlaceholder = { imageUrl: null, imageAssetId: null, updatedAt: null };
+const emptyPositionCounts = Object.fromEntries(adPositions.map((position) => [position.key, 0])) as Record<AdPosition, number>;
+const emptyStatusCounts = Object.fromEntries(adStatusFilters.map((status) => [status.key, 0])) as Record<AdStatusFilter, number>;
 
 export async function getAdminAdsData(position?: string, status?: string): Promise<AdminAdsResult> {
   const supabase = await createSupabaseServerClient();
@@ -45,14 +51,15 @@ export async function getAdminAdsData(position?: string, status?: string): Promi
   const activeStatus = normalizeAdStatusFilter(status) ?? "all";
 
   if (!supabase) {
-    return { state: "missing_config", canManageAds, activePosition, activeStatus, placeholder: emptyPlaceholder, ads: [] };
+    return { state: "missing_config", canManageAds, activePosition, activeStatus, placeholder: emptyPlaceholder, ads: [], positionCounts: emptyPositionCounts, statusCounts: emptyStatusCounts };
   }
 
   if (!canManageAds) {
-    return { state: "ready", canManageAds, activePosition, activeStatus, placeholder: emptyPlaceholder, ads: [] };
+    return { state: "ready", canManageAds, activePosition, activeStatus, placeholder: emptyPlaceholder, ads: [], positionCounts: emptyPositionCounts, statusCounts: emptyStatusCounts };
   }
 
   const placeholder = await getAdPlaceholderSetting(supabase);
+  const counts = await getAdFilterCounts(supabase, activePosition, activeStatus);
 
   let query = supabase
     .from("ads")
@@ -76,8 +83,41 @@ export async function getAdminAdsData(position?: string, status?: string): Promi
     activePosition,
     activeStatus,
     placeholder,
+    positionCounts: counts.positionCounts,
+    statusCounts: counts.statusCounts,
     ads: ((data ?? []) as RawAdRow[]).map(mapAd),
   };
+}
+
+async function getAdFilterCounts(supabase: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>, activePosition: AdPosition, activeStatus: AdStatusFilter) {
+  const positionCounts = { ...emptyPositionCounts };
+  const statusCounts = { ...emptyStatusCounts };
+
+  const { data, error } = await supabase
+    .from("ads")
+    .select("placement,is_active")
+    .is("deleted_at", null);
+
+  if (error) {
+    return { positionCounts, statusCounts };
+  }
+
+  for (const row of (data ?? []) as Array<{ placement: string | null; is_active: boolean | null }>) {
+    const rowPosition = normalizeAdPosition(row.placement);
+    if (!rowPosition) continue;
+
+    const rowStatus: Exclude<AdStatusFilter, "all"> = row.is_active === false ? "inactive" : "active";
+    if (activeStatus === "all" || activeStatus === rowStatus) {
+      positionCounts[rowPosition] += 1;
+    }
+
+    if (rowPosition === activePosition) {
+      statusCounts.all += 1;
+      statusCounts[rowStatus] += 1;
+    }
+  }
+
+  return { positionCounts, statusCounts };
 }
 
 function mapAd(row: RawAdRow): AdminAdRow {

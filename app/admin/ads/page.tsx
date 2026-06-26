@@ -58,7 +58,14 @@ export default function AdminAdsPage({ searchParams }: AdminAdsPageProps) {
               <AdminPermissionBadge allowed={data.canManageAds} label="manage_ads" />
             </AdminPageHeader>
             {data.state === "error" ? <AdminAlert>广告后台读取暂时不可用：{data.error ?? "请稍后再试。"}</AdminAlert> : null}
-            <AdminAdsManagement ads={data.ads} activePosition={data.activePosition} activeStatus={data.activeStatus} placeholder={data.placeholder} />
+            <AdminAdsManagement
+              ads={data.ads}
+              activePosition={data.activePosition}
+              activeStatus={data.activeStatus}
+              placeholder={data.placeholder}
+              positionCounts={data.positionCounts}
+              statusCounts={data.statusCounts}
+            />
           </div>
         );
       }}

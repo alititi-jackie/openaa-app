@@ -52,7 +52,7 @@ export async function getHomeConfig(): Promise<HomeConfig> {
   const tickerSettings = await getLatestTickerSettings(supabase);
   const [topQuickLinks, banners, adPlaceholder, latestPostGroups] = await Promise.all([
     getTopQuickLinks(supabase, city),
-    getHomeBanners(supabase, city),
+    getHomeBanners(supabase),
     getAdPlaceholderSetting(supabase),
     getLatestPostGroups(latestPostSections, supabase),
   ]);
@@ -113,17 +113,15 @@ export async function getTopQuickLinks(client?: HomeSupabaseClient | null, city 
   }
 }
 
-export async function getHomeBanners(client?: HomeSupabaseClient | null, city = fallbackHomeCity) {
+export async function getHomeBanners(client?: HomeSupabaseClient | null) {
   const supabase = client ?? createSupabasePublicClient();
 
   if (!supabase) {
     return fallbackHomeBanners;
   }
 
-  const [legacyBanners, ads] = await Promise.all([readHomeBanners(supabase, city), readHomeAds(supabase)]);
-
+  const ads = await readHomeAds(supabase);
   if (ads.length > 0) return ads;
-  if (legacyBanners.length > 0) return legacyBanners;
   return fallbackHomeBanners;
 }
 
@@ -289,37 +287,6 @@ async function getDefaultCity(supabase: HomeSupabaseClient): Promise<HomeCity> {
   } catch (error) {
     warnHomeConfig("cities", error);
     return fallbackHomeCity;
-  }
-}
-
-async function readHomeBanners(supabase: HomeSupabaseClient, city: HomeCity) {
-  try {
-    const now = new Date().toISOString();
-    let query = supabase
-      .from("home_banners")
-      .select("id,title,subtitle,href,open_mode,is_active,sort_order,starts_at,ends_at,city_id,image_assets(public_url,external_url)")
-      .eq("is_active", true)
-      .or(`starts_at.is.null,starts_at.lte.${now}`)
-      .or(`ends_at.is.null,ends_at.gt.${now}`)
-      .order("sort_order", { ascending: true });
-
-    if (city.id) {
-      query = query.or(`city_id.is.null,city_id.eq.${city.id}`);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      warnHomeConfig("home_banners", error.message);
-      return [];
-    }
-
-    return (data ?? [])
-      .map((row) => mapBanner(row as Record<string, unknown>))
-      .filter((item): item is NonNullable<typeof item> => item !== null);
-  } catch (error) {
-    warnHomeConfig("home_banners", error);
-    return [];
   }
 }
 
