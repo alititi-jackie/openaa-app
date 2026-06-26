@@ -199,9 +199,9 @@ export function AdminAdsManagement({
         </div>
       </div>
 
-      <AdsFilter activePosition={activePosition} activeStatus={activeStatus} />
-
       <AdPlaceholderSettings placeholder={placeholder} />
+
+      <AdsFilter activePosition={activePosition} activeStatus={activeStatus} />
 
       {isFormOpen ? (
         <form
@@ -564,15 +564,22 @@ function AdPlaceholderSettings({ placeholder }: { placeholder: AdminAdPlaceholde
   }
 
   return (
-    <form action={formAction} encType="multipart/form-data" className="space-y-4 rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-      <div className="flex flex-col gap-1">
-        <h3 className="text-base font-black text-slate-950">默认广告占位图</h3>
+    <details className="group rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+        <div className="min-w-0">
+          <h3 className="text-base font-black text-slate-950">默认广告占位图</h3>
+          <p className="mt-1 text-xs font-semibold text-slate-500">{placeholder.imageUrl ? "已设置" : "未设置"}</p>
+        </div>
+        <span className="inline-flex min-h-9 shrink-0 items-center rounded-xl bg-slate-950 px-3 py-1.5 text-xs font-black text-white">
+          <span className="group-open:hidden">展开</span>
+          <span className="hidden group-open:inline">收起</span>
+        </span>
+      </summary>
+
+      <form action={formAction} encType="multipart/form-data" className="mt-4 space-y-4 border-t border-slate-100 pt-4">
         <p className="text-sm font-semibold text-slate-500">
           当广告图片为空、外链失效或加载失败时，全站广告位会优先显示这里上传的占位图；未上传时显示内置广告位占位。
         </p>
-      </div>
-
-      <div className="space-y-4">
         <div className="space-y-3">
           <label className="space-y-2 text-sm font-black text-slate-700">
             上传占位图
@@ -612,8 +619,8 @@ function AdPlaceholderSettings({ placeholder }: { placeholder: AdminAdPlaceholde
             </div>
           )}
         </div>
-      </div>
-    </form>
+      </form>
+    </details>
   );
 }
 
