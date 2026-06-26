@@ -7,7 +7,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { normalizeWebsiteUrl } from "@/lib/validation/url";
 import { defaultHomeSections, defaultLatestTicker, defaultTopQuickLinks } from "./defaults";
 import { HOME_SECTION_KEYS } from "@/features/home/constants";
-import { fallbackLatestPostSections } from "@/features/home/fallbacks";
+import { fallbackLatestNewsCategories, fallbackLatestPostSections } from "@/features/home/fallbacks";
 import { normalizeHomeTickerSectionKey } from "@/features/home/tickerSections";
 import type { AdminHomeActionState } from "./types";
 
@@ -146,9 +146,10 @@ export async function updateLatestPostsSection(_state: AdminHomeActionState, for
   const sectionSortOrder = readInteger(formData, "section_sort_order", "最新发布模块排序");
   if (!sectionSortOrder.ok) return fail(sectionSortOrder.message);
 
+  const intent = readText(formData, "intent");
   const sections = [];
   for (const fallback of fallbackLatestPostSections) {
-    const limit = readIntegerInRange(formData, `limit_count_${fallback.key}`, `${fallback.title}显示数量`, 1, 30);
+    const limit = readIntegerInRange(formData, `limit_count_${fallback.key}`, `${fallback.title}显示数量`, 1, 20);
     const sortOrder = readInteger(formData, `sort_order_${fallback.key}`, `${fallback.title}排序`);
     if (!limit.ok) return fail(limit.message);
     if (!sortOrder.ok) return fail(sortOrder.message);
@@ -168,11 +169,68 @@ export async function updateLatestPostsSection(_state: AdminHomeActionState, for
     });
   }
 
-  const intent = readText(formData, "intent");
   if (intent.startsWith("move_up:") || intent.startsWith("move_down:")) {
     const [directionIntent, sectionKey] = intent.split(":");
     const moved = moveLatestPostSectionPayloads(sections, sectionKey, directionIntent === "move_up" ? "up" : "down");
     if (!moved.ok) return fail(moved.message);
+  }
+
+  if (intent.startsWith("toggle:")) {
+    const sectionKey = intent.split(":")[1];
+    const section = sections.find((item) => item.key === sectionKey);
+    if (!section) return fail("最新发布分区不存在。");
+    section.is_visible = !section.is_visible;
+  }
+
+  if (intent.startsWith("increment:") || intent.startsWith("decrement:")) {
+    const [countIntent, sectionKey] = intent.split(":");
+    const section = sections.find((item) => item.key === sectionKey);
+    if (!section) return fail("最新发布分区不存在。");
+    if (section.key !== "news") {
+      section.limit_count = clampAdminCount(section.limit_count + (countIntent === "increment" ? 1 : -1), 1, 20);
+    }
+  }
+
+  const newsCategories = [];
+  for (const fallback of fallbackLatestNewsCategories) {
+    const limit = readIntegerInRange(formData, `news_limit_count_${fallback.key}`, `${fallback.title}显示数量`, 1, 20);
+    const sortOrder = readInteger(formData, `news_sort_order_${fallback.key}`, `${fallback.title}排序`);
+    if (!limit.ok) return fail(limit.message);
+    if (!sortOrder.ok) return fail(sortOrder.message);
+
+    newsCategories.push({
+      key: fallback.key,
+      title: readText(formData, `news_title_${fallback.key}`) || fallback.title,
+      category_slug: readText(formData, `news_category_slug_${fallback.key}`) || fallback.categorySlug,
+      is_visible: formData.get(`news_is_visible_${fallback.key}`) === "on",
+      sort_order: sortOrder.value,
+      limit_count: limit.value,
+    });
+  }
+
+  if (intent.startsWith("news_move_up:") || intent.startsWith("news_move_down:")) {
+    const [directionIntent, categoryKey] = intent.split(":");
+    const moved = moveLatestPostSectionPayloads(newsCategories, categoryKey, directionIntent === "news_move_up" ? "up" : "down");
+    if (!moved.ok) return fail(moved.message);
+  }
+
+  if (intent.startsWith("news_toggle:")) {
+    const categoryKey = intent.split(":")[1];
+    const category = newsCategories.find((item) => item.key === categoryKey);
+    if (!category) return fail("新闻分类不存在。");
+    category.is_visible = !category.is_visible;
+  }
+
+  if (intent.startsWith("news_increment:") || intent.startsWith("news_decrement:")) {
+    const [countIntent, categoryKey] = intent.split(":");
+    const category = newsCategories.find((item) => item.key === categoryKey);
+    if (!category) return fail("新闻分类不存在。");
+    category.limit_count = clampAdminCount(category.limit_count + (countIntent === "news_increment" ? 1 : -1), 1, 20);
+  }
+
+  const newsSection = sections.find((section) => section.key === "news");
+  if (newsSection) {
+    newsSection.limit_count = Math.max(1, newsCategories.filter((category) => category.is_visible).reduce((total, category) => total + category.limit_count, 0));
   }
 
   const payload = {
@@ -180,8 +238,8 @@ export async function updateLatestPostsSection(_state: AdminHomeActionState, for
     title: sectionTitle,
     description: sectionDescription,
     module: "home",
-    config: { sections },
-    is_visible: formData.get("section_is_visible") === "on",
+    config: { sections, news_categories: newsCategories },
+    is_visible: intent === "toggle_section_visibility" ? formData.get("section_is_visible") !== "on" : formData.get("section_is_visible") === "on",
     sort_order: sectionSortOrder.value,
     updated_at: new Date().toISOString(),
   };
@@ -189,9 +247,9 @@ export async function updateLatestPostsSection(_state: AdminHomeActionState, for
   const { error } = await context.supabase.from("home_sections").upsert(payload, { onConflict: "key" });
   if (error) return fail("最新发布模块保存失败，请检查字段后重试。");
 
-  if (!(await auditLog(context, intent.startsWith("move_") ? "move_latest_posts_section" : "update_latest_posts_section", "home_sections", "latest_posts", payload))) return auditFailure();
+  if (!(await auditLog(context, intent.includes("move_") ? "move_latest_posts_section" : "update_latest_posts_section", "home_sections", "latest_posts", payload))) return auditFailure();
   revalidateAdminHome();
-  return ok(intent.startsWith("move_") ? "最新发布分区排序已保存。" : "最新发布模块已保存。");
+  return ok(intent.includes("move_") ? "最新发布排序已保存。" : "最新发布模块已保存。");
 }
 
 export async function updateSeoContentSection(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
@@ -486,6 +544,21 @@ export async function updateLatestTickerSettings(_state: AdminHomeActionState, f
     if (!sectionKey) return fail("缺少要排序的自动动态分类。");
     const moved = moveTickerSectionPayloads(sectionPayloads, sectionKey, directionIntent === "move_up" ? "up" : "down");
     if (!moved.ok) return fail(moved.message);
+  }
+
+  if (intent.startsWith("toggle:")) {
+    const sectionKey = normalizeHomeTickerSectionKey(intent.split(":")[1]);
+    const section = sectionKey ? sectionPayloads.find((item) => item.section_key === sectionKey) : null;
+    if (!section) return fail("自动动态分类不存在。");
+    section.is_enabled = !section.is_enabled;
+  }
+
+  if (intent.startsWith("increment:") || intent.startsWith("decrement:")) {
+    const [countIntent, rawSectionKey] = intent.split(":");
+    const sectionKey = normalizeHomeTickerSectionKey(rawSectionKey);
+    const section = sectionKey ? sectionPayloads.find((item) => item.section_key === sectionKey) : null;
+    if (!section) return fail("自动动态分类不存在。");
+    section.display_count = clampAdminCount(section.display_count + (countIntent === "increment" ? 1 : -1), 1, 20);
   }
 
   const sectionsResult = await context.supabase.from("latest_ticker_sections").upsert(sectionPayloads, { onConflict: "section_key" });
@@ -861,6 +934,11 @@ function readIntegerInRange(formData: FormData, key: string, label: string, min:
   if (!value.ok) return value;
   if (value.value < min || value.value > max) return { ok: false, message: `${label} 必须在 ${min} 到 ${max} 之间。` };
   return value;
+}
+
+function clampAdminCount(value: number, min: number, max: number) {
+  if (!Number.isFinite(value)) return min;
+  return Math.min(max, Math.max(min, Math.trunc(value)));
 }
 
 function readDateTime(formData: FormData, key: string) {

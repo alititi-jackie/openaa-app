@@ -3,8 +3,8 @@ import type { QuickGridItem } from "@/components/home/QuickGrid";
 import type { UtilityCardItem, UtilityIconKey, UtilityTheme } from "@/components/home/UtilityCards";
 import type { TopQuickLink } from "@/features/navigation/topQuickLinks";
 import { canonicalizeMainSiteHref } from "@/lib/seo/siteConfig";
-import { fallbackLatestPostSections, fallbackQuickGridItems, fallbackSeoContent, fallbackTickerItems, fallbackUtilityTools } from "./fallbacks";
-import type { HomeLatestPostSectionConfig, HomeSectionRecord, HomeSeoContent, HomeTickerItem } from "./types";
+import { fallbackLatestNewsCategories, fallbackLatestPostSections, fallbackQuickGridItems, fallbackSeoContent, fallbackTickerItems, fallbackUtilityTools } from "./fallbacks";
+import type { HomeLatestNewsCategoryConfig, HomeLatestPostSectionConfig, HomeSectionRecord, HomeSeoContent, HomeTickerItem } from "./types";
 
 export function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
@@ -194,6 +194,7 @@ export function mapLatestPostSections(section?: HomeSectionRecord): HomeLatestPo
   if (sections.length === 0) {
     return [];
   }
+  const newsCategories = mapLatestNewsCategories(section);
 
   const mapped = sections
     .map((item, index): HomeLatestPostSectionConfig | null => {
@@ -213,16 +214,47 @@ export function mapLatestPostSections(section?: HomeSectionRecord): HomeLatestPo
         route: normalizeRoute(asString(record.route, fallback.route)),
         isVisible: asBoolean(record.is_visible, asBoolean(record.isVisible, true)),
         sortOrder: asNumber(record.sort_order, index),
-        limitCount: clamp(asNumber(record.limit_count, fallback.limitCount), 1, 30),
+        limitCount: clamp(asNumber(record.limit_count, fallback.limitCount), 1, 20),
         layout: normalizeLayout(record.layout, fallback.layout),
         description: asString(record.description, fallback.description),
         emptyMessage: asString(record.emptyMessage, asString(record.empty_message, fallback.emptyMessage)),
+        newsCategories: postType === "news" ? newsCategories : undefined,
       };
     })
     .filter((item): item is HomeLatestPostSectionConfig => item !== null)
     .sort((a, b) => a.sortOrder - b.sortOrder);
 
   return mapped;
+}
+
+export function mapLatestNewsCategories(section?: HomeSectionRecord): HomeLatestNewsCategoryConfig[] {
+  const rows = Array.isArray(section?.config?.news_categories) ? section.config.news_categories : [];
+  const source = rows.length > 0 ? rows : fallbackLatestNewsCategories;
+  const mapped = source
+    .map((item, index): HomeLatestNewsCategoryConfig | null => {
+      const record = asRecord(item);
+      const categorySlug = asString(record.categorySlug, asString(record.category_slug, asString(record.slug, asString(record.key))));
+      const fallback = fallbackLatestNewsCategories.find((value) => value.categorySlug === categorySlug || value.key === categorySlug);
+
+      if (!categorySlug || !fallback) {
+        return null;
+      }
+
+      return {
+        key: fallback.key,
+        title: fallback.title,
+        categorySlug: fallback.categorySlug,
+        isVisible: asBoolean(record.is_visible, asBoolean(record.isVisible, fallback.isVisible)),
+        sortOrder: asNumber(record.sort_order, asNumber(record.sortOrder, index)),
+        limitCount: clamp(asNumber(record.limit_count, asNumber(record.limitCount, fallback.limitCount)), 1, 20),
+      };
+    })
+    .filter((item): item is HomeLatestNewsCategoryConfig => item !== null);
+
+  const configured = new Map(mapped.map((item) => [item.categorySlug, item]));
+  return fallbackLatestNewsCategories
+    .map((fallback) => configured.get(fallback.categorySlug) ?? fallback)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
 export function mapQuickGridItems(section?: HomeSectionRecord): QuickGridItem[] {

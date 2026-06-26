@@ -63,6 +63,16 @@ export type HomeLatestPostSectionConfig = {
   layout: "grid" | "media" | "news";
   description: string;
   emptyMessage: string;
+  newsCategories?: HomeLatestNewsCategoryConfig[];
+};
+
+export type HomeLatestNewsCategoryConfig = {
+  key: string;
+  title: string;
+  categorySlug: string;
+  isVisible: boolean;
+  sortOrder: number;
+  limitCount: number;
 };
 
 export type HomeQuickGridConfigItem = Omit<QuickGridItem, "icon"> & {

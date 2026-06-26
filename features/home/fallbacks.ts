@@ -1,10 +1,11 @@
 import { BookOpenCheck, BriefcaseBusiness, Building2, CarFront, Map, Newspaper, ShoppingBag, Store } from "lucide-react";
 import { getFallbackTopQuickLinks } from "@/features/navigation/topQuickLinks";
+import { DEFAULT_NEWS_CATEGORIES } from "@/features/news/constants";
 import { DEFAULT_HOME_CITY_NAME, DEFAULT_HOME_CITY_SLUG } from "./constants";
 import type { HomeBannerItem } from "@/components/home/HomeBanner";
 import type { QuickGridItem } from "@/components/home/QuickGrid";
 import type { UtilityCardItem } from "@/components/home/UtilityCards";
-import type { HomeCity, HomeLatestPostSectionConfig, HomeSeoContent, HomeTickerItem, HomeTickerSettings } from "./types";
+import type { HomeCity, HomeLatestNewsCategoryConfig, HomeLatestPostSectionConfig, HomeSeoContent, HomeTickerItem, HomeTickerSettings } from "./types";
 
 export const fallbackHomeCity: HomeCity = {
   id: null,
@@ -124,6 +125,15 @@ export const fallbackLatestPostSections: HomeLatestPostSectionConfig[] = [
     emptyMessage: "暂无最新信息",
   },
 ];
+
+export const fallbackLatestNewsCategories: HomeLatestNewsCategoryConfig[] = DEFAULT_NEWS_CATEGORIES.map((category) => ({
+  key: category.slug,
+  title: category.name,
+  categorySlug: category.slug,
+  isVisible: true,
+  sortOrder: category.sort_order,
+  limitCount: 3,
+}));
 
 export const fallbackSeoContent: HomeSeoContent = {
   title: "OpenAA 纽约华人生活入口",

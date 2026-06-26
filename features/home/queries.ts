@@ -4,12 +4,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LatestPostGroup } from "@/components/home/LatestPostsSection";
 import { createSupabasePublicClient } from "@/lib/supabase/public";
 import { getAdPlaceholderSetting } from "@/features/ads/placeholders";
-import { fallbackLatestPostSections, fallbackHomeBanners, fallbackHomeCity, fallbackQuickGridItems, fallbackSeoContent, fallbackTickerItems, fallbackTickerSettings, fallbackTopQuickLinks, fallbackUtilityTools } from "./fallbacks";
+import { fallbackLatestNewsCategories, fallbackLatestPostSections, fallbackHomeBanners, fallbackHomeCity, fallbackQuickGridItems, fallbackSeoContent, fallbackTickerItems, fallbackTickerSettings, fallbackTopQuickLinks, fallbackUtilityTools } from "./fallbacks";
 import { getHomeTickerSectionDefaults, homeTickerSections, normalizeHomeTickerSectionKey } from "./tickerSections";
 import type { PostListItem } from "@/components/posts/PostList";
 import { getPublicPosts } from "@/features/posts/queries";
 import type { PostType } from "@/features/posts/types";
-import { getLatestNews } from "@/features/news/queries";
+import { getPublishedNewsList } from "@/features/news/queries";
+import type { NewsPostCard } from "@/features/news/types";
 import { formatNewsDate } from "@/features/news/mappers";
 import { HOME_AD_PLACEMENT, HOME_SECTION_KEYS } from "./constants";
 import {
@@ -355,8 +356,8 @@ async function getLatestPostGroups(sections: HomeLatestPostSectionConfig[], clie
 async function getLatestPostGroup(section: HomeLatestPostSectionConfig, client?: HomeSupabaseClient | null): Promise<LatestPostGroup> {
   try {
     if (section.postType === "news") {
-      const result = await getLatestNews(section.limitCount, client ?? undefined);
-      return { ...section, posts: result.data.map(mapNewsToHomePost) };
+      const posts = await getLatestNewsForHomeSection(section, client);
+      return { ...section, posts };
     }
 
     const result = await getPublicPosts({ type: section.postType as PostType, limit: section.limitCount, client: client ?? undefined });
@@ -365,6 +366,32 @@ async function getLatestPostGroup(section: HomeLatestPostSectionConfig, client?:
     warnHomeConfig(`latest_posts.${section.key}`, error);
     return { ...section, posts: [] };
   }
+}
+
+async function getLatestNewsForHomeSection(section: HomeLatestPostSectionConfig, client?: HomeSupabaseClient | null): Promise<PostListItem[]> {
+  const categories = (section.newsCategories ?? fallbackLatestNewsCategories)
+    .filter((category) => category.isVisible !== false)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  if (categories.length === 0) {
+    return [];
+  }
+
+  const lists = await Promise.all(
+    categories.map((category) => getPublishedNewsList({ categorySlug: category.categorySlug, limit: category.limitCount }, client ?? undefined)),
+  );
+  const seen = new Set<string>();
+  const posts: PostListItem[] = [];
+
+  for (const result of lists) {
+    for (const post of result.data) {
+      if (seen.has(post.id)) continue;
+      seen.add(post.id);
+      posts.push(mapNewsToHomePost(post));
+    }
+  }
+
+  return posts;
 }
 
 async function getTickerPostGroups(
@@ -412,7 +439,7 @@ function canReuseLatestPostGroupsForTicker(sections: HomeLatestPostSectionConfig
   });
 }
 
-function mapNewsToHomePost(post: Awaited<ReturnType<typeof getLatestNews>>["data"][number]): PostListItem {
+function mapNewsToHomePost(post: NewsPostCard): PostListItem {
   return {
     id: post.id,
     title: post.title,

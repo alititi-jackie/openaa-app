@@ -38,13 +38,15 @@ export function AdminActionForm({
       {children}
       <div className={footerClassName}>
         {footerStart}
-        <button
-          type="submit"
-          disabled={pending}
-          className={submitClassName}
-        >
-          {pending ? "保存中..." : submitLabel}
-        </button>
+        {submitLabel ? (
+          <button
+            type="submit"
+            disabled={pending}
+            className={submitClassName}
+          >
+            {pending ? "保存中..." : submitLabel}
+          </button>
+        ) : null}
         {state.message ? (
           <p className={state.ok ? "text-sm font-semibold text-emerald-700" : "text-sm font-semibold text-red-600"}>{state.message}</p>
         ) : null}

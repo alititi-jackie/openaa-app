@@ -1,4 +1,4 @@
-import { fallbackLatestPostSections, fallbackQuickGridItems, fallbackSeoContent, fallbackTickerItems, fallbackTopQuickLinks, fallbackUtilityTools } from "@/features/home/fallbacks";
+import { fallbackLatestNewsCategories, fallbackLatestPostSections, fallbackQuickGridItems, fallbackSeoContent, fallbackTickerItems, fallbackTopQuickLinks, fallbackUtilityTools } from "@/features/home/fallbacks";
 import { HOME_SECTION_KEYS } from "@/features/home/constants";
 
 export const defaultHomeSections = [
@@ -45,7 +45,9 @@ export const defaultHomeSections = [
     sort_order: 30,
     config: {
       sections: fallbackLatestPostSections.map((section) => ({
+        key: section.key,
         title: section.title,
+        nav_label: section.navLabel,
         post_type: section.postType,
         route: section.route,
         is_visible: section.isVisible,
@@ -54,6 +56,14 @@ export const defaultHomeSections = [
         layout: section.layout,
         description: section.description,
         empty_message: section.emptyMessage,
+      })),
+      news_categories: fallbackLatestNewsCategories.map((category) => ({
+        key: category.key,
+        title: category.title,
+        category_slug: category.categorySlug,
+        is_visible: category.isVisible,
+        sort_order: category.sortOrder,
+        limit_count: category.limitCount,
       })),
     },
   },

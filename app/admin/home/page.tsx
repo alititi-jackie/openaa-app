@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ArrowDown, ArrowUp, Power, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Minus, Plus, Power, Trash2 } from "lucide-react";
 import { AdminActionForm, AdminCheckbox, AdminTextarea, AdminTextInput } from "@/components/admin/AdminActionForm";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminTopActions } from "@/components/admin/AdminTopActions";
@@ -12,7 +12,7 @@ import { getAdminHomeConfigData } from "@/features/admin-home/queries";
 import type { AdminHomeSectionRow, AdminTickerGlobalSettingsRow, AdminTickerRow, AdminTickerSectionSettingsRow } from "@/features/admin-home/types";
 import { HOME_SECTION_KEYS } from "@/features/home/constants";
 import { fallbackLatestPostSections, fallbackQuickGridItems, fallbackSeoContent, fallbackUtilityTools } from "@/features/home/fallbacks";
-import { mapLatestPostSections } from "@/features/home/mappers";
+import { mapLatestNewsCategories, mapLatestPostSections } from "@/features/home/mappers";
 import { hasAdminModule } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -208,6 +208,92 @@ function SummaryPills({ items, className = "" }: { items: string[]; className?: 
   ) : null;
 }
 
+function ConfigControlRow({
+  title,
+  isVisible,
+  index,
+  total,
+  moveUpIntent,
+  moveDownIntent,
+  toggleIntent,
+  decrementIntent,
+  incrementIntent,
+  count,
+  countLabel,
+  children,
+}: {
+  title: string;
+  isVisible: boolean;
+  index: number;
+  total: number;
+  moveUpIntent: string;
+  moveDownIntent: string;
+  toggleIntent: string;
+  decrementIntent?: string;
+  incrementIntent?: string;
+  count?: number;
+  countLabel?: string;
+  children?: ReactNode;
+}) {
+  const statusText = countLabel ?? (typeof count === "number" ? `显示 ${count} 条` : "");
+
+  return (
+    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+      {children}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-black text-slate-950">{title}</p>
+          <p className="mt-1 text-xs font-semibold text-slate-500">
+            {isVisible ? "当前显示" : "当前隐藏"}
+            {statusText ? ` · ${statusText}` : ""}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <IconSubmitButton intent={moveUpIntent} disabled={index === 0} label={`${title}上移`}>
+            <ArrowUp size={16} aria-hidden="true" />
+          </IconSubmitButton>
+          <IconSubmitButton intent={moveDownIntent} disabled={index === total - 1} label={`${title}下移`}>
+            <ArrowDown size={16} aria-hidden="true" />
+          </IconSubmitButton>
+          {decrementIntent ? (
+            <IconSubmitButton intent={decrementIntent} disabled={typeof count === "number" && count <= 1} label={`${title}减少显示数量`}>
+              <Minus size={16} aria-hidden="true" />
+            </IconSubmitButton>
+          ) : null}
+          {incrementIntent ? (
+            <IconSubmitButton intent={incrementIntent} disabled={typeof count === "number" && count >= 20} label={`${title}增加显示数量`}>
+              <Plus size={16} aria-hidden="true" />
+            </IconSubmitButton>
+          ) : null}
+          <button
+            type="submit"
+            name="intent"
+            value={toggleIntent}
+            className="inline-flex min-h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-black text-slate-700"
+          >
+            {isVisible ? "隐藏" : "显示"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IconSubmitButton({ intent, disabled, label, children }: { intent: string; disabled?: boolean; label: string; children: ReactNode }) {
+  return (
+    <button
+      type="submit"
+      name="intent"
+      value={intent}
+      disabled={disabled}
+      className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+      aria-label={label}
+    >
+      {children}
+    </button>
+  );
+}
+
 function MissingSectionNotice({ title }: { title: string }) {
   return (
     <HomeConfigPanel title={title} description="当前数据库缺少这一项首页配置。" summary={["缺少配置"]}>
@@ -234,7 +320,7 @@ function OrderedHomeSectionCard({
 
   return (
     <HomeConfigPanel title={title} description={description} summary={[section.is_visible ? "显示中" : "已隐藏", `项目 ${items.length}`]}>
-      <OrderedHomeSectionForm section={section} kind={kind} items={items} />
+      <OrderedHomeSectionForm section={section} items={items} />
     </HomeConfigPanel>
   );
 }
@@ -252,18 +338,15 @@ function LatestPostsSectionCard({ section }: { section?: AdminHomeSectionRow }) 
 
 function OrderedHomeSectionForm({
   section,
-  kind,
   items,
 }: {
   section: AdminHomeSectionRow;
-  kind: OrderedHomeSectionKind;
   items: Array<{ label: string; isVisible: boolean; raw: Record<string, unknown> }>;
 }) {
   const config = { ...(section.config ?? {}), items: items.map((item, index) => ({ ...item.raw, sort_order: (index + 1) * 10 })) };
-  const isQuickGrid = kind === "quick_grid";
 
   return (
-    <AdminActionForm action={updateHomeSection} submitLabel={isQuickGrid ? "" : "保存模块"}>
+    <AdminActionForm action={updateHomeSection} submitLabel="">
       <input type="hidden" name="key" value={section.key} />
       <input type="hidden" name="title" value={section.title} />
       <input type="hidden" name="description" value={section.description ?? ""} />
@@ -271,64 +354,31 @@ function OrderedHomeSectionForm({
       <input type="hidden" name="config" value={JSON.stringify(config)} />
 
       <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
-        {isQuickGrid ? (
-          <>
-            {section.is_visible ? <input type="hidden" name="is_visible" value="on" /> : null}
-            <button
-              type="submit"
-              name="intent"
-              value="toggle_section_visibility"
-              className="inline-flex min-h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-black text-slate-700"
-            >
-              {section.is_visible ? "隐藏整个模块" : "打开显示整个模块"}
-            </button>
-          </>
-        ) : (
-          <AdminCheckbox label="显示整个模块" name="is_visible" defaultChecked={section.is_visible} />
-        )}
+        {section.is_visible ? <input type="hidden" name="is_visible" value="on" /> : null}
+        <button
+          type="submit"
+          name="intent"
+          value="toggle_section_visibility"
+          className="inline-flex min-h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-black text-slate-700"
+        >
+          {section.is_visible ? "隐藏整个模块" : "打开显示整个模块"}
+        </button>
       </div>
 
       <div className="grid gap-3">
         {items.map((item, index) => (
-          <div key={`${item.label}-${index}`} className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <p className="truncate text-sm font-black text-slate-950">{item.label}</p>
-                <p className="mt-1 text-xs font-semibold text-slate-500">{item.isVisible ? "当前显示" : "当前隐藏"}</p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <input type="hidden" name={`item_visible_${index}`} value={item.isVisible ? "on" : "off"} />
-                <button
-                  type="submit"
-                  name="intent"
-                  value={`move_up:${index}`}
-                  disabled={index === 0}
-                  className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
-                  aria-label={`${item.label}上移`}
-                >
-                  <ArrowUp size={16} aria-hidden="true" />
-                </button>
-                <button
-                  type="submit"
-                  name="intent"
-                  value={`move_down:${index}`}
-                  disabled={index === items.length - 1}
-                  className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
-                  aria-label={`${item.label}下移`}
-                >
-                  <ArrowDown size={16} aria-hidden="true" />
-                </button>
-                <button
-                  type="submit"
-                  name="intent"
-                  value={`toggle_visibility:${index}`}
-                  className="inline-flex min-h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-black text-slate-700"
-                >
-                  {item.isVisible ? "隐藏" : "显示"}
-                </button>
-              </div>
-            </div>
-          </div>
+          <ConfigControlRow
+            key={`${item.label}-${index}`}
+            title={item.label}
+            isVisible={item.isVisible}
+            index={index}
+            total={items.length}
+            moveUpIntent={`move_up:${index}`}
+            moveDownIntent={`move_down:${index}`}
+            toggleIntent={`toggle_visibility:${index}`}
+          >
+            <input type="hidden" name={`item_visible_${index}`} value={item.isVisible ? "on" : "off"} />
+          </ConfigControlRow>
         ))}
       </div>
     </AdminActionForm>
@@ -367,53 +417,81 @@ function LatestPostsSectionForm({ section }: { section: AdminHomeSectionRow }) {
     ...currentSections,
     ...fallbackLatestPostSections.filter((fallback) => !currentKeys.has(fallback.key)),
   ];
+  const newsCategories = mapLatestNewsCategories(section);
+  const latestNewsCount = newsCategories.filter((item) => item.isVisible !== false).reduce((total, item) => total + item.limitCount, 0);
 
   return (
-    <AdminActionForm action={updateLatestPostsSection} submitLabel="保存最新发布模块">
+    <AdminActionForm action={updateLatestPostsSection} submitLabel="">
       <input type="hidden" name="section_title" value={section.title} />
       <input type="hidden" name="section_description" value={section.description ?? ""} />
       <input type="hidden" name="section_sort_order" value={section.sort_order} />
       <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
-        <AdminCheckbox label="显示最新发布模块" name="section_is_visible" defaultChecked={section.is_visible} />
+        {section.is_visible ? <input type="hidden" name="section_is_visible" value="on" /> : null}
+        <button
+          type="submit"
+          name="intent"
+          value="toggle_section_visibility"
+          className="inline-flex min-h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-black text-slate-700"
+        >
+          {section.is_visible ? "隐藏整个模块" : "打开显示整个模块"}
+        </button>
       </div>
 
       <div className="grid gap-3">
         {formSections.map((item, index) => (
-          <TickerItemConfigPanel key={item.key} title={item.title} summary={getLatestPostSectionSummary(item)}>
+          <ConfigControlRow
+            key={item.key}
+            title={item.title}
+            isVisible={item.isVisible !== false}
+            index={index}
+            total={formSections.length}
+            moveUpIntent={`move_up:${item.key}`}
+            moveDownIntent={`move_down:${item.key}`}
+            decrementIntent={item.key === "news" ? undefined : `decrement:${item.key}`}
+            incrementIntent={item.key === "news" ? undefined : `increment:${item.key}`}
+            toggleIntent={`toggle:${item.key}`}
+            count={item.key === "news" ? undefined : item.limitCount}
+            countLabel={item.key === "news" ? `数量由新闻分类决定（当前 ${latestNewsCount} 条）` : undefined}
+          >
             <input type="hidden" name={`sort_order_${item.key}`} value={item.sortOrder} />
-            <div className="grid gap-3 md:grid-cols-2">
-              <AdminTextInput label="模块标题" name={`title_${item.key}`} defaultValue={item.title} required />
-              <AdminTextInput label="顶部入口文字" name={`nav_label_${item.key}`} defaultValue={item.navLabel ?? item.title} required />
-              <AdminTextInput label="显示数量" name={`limit_count_${item.key}`} type="number" defaultValue={item.limitCount} />
-              <AdminTextInput label="说明" name={`description_${item.key}`} defaultValue={item.description} />
-              <AdminTextInput label="无数据提示" name={`empty_message_${item.key}`} defaultValue={item.emptyMessage ?? "暂无最新信息"} />
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <AdminCheckbox label="显示这个最新发布分区" name={`is_visible_${item.key}`} defaultChecked={item.isVisible !== false} />
-              <button
-                type="submit"
-                name="intent"
-                value={`move_up:${item.key}`}
-                disabled={index === 0}
-                className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
-                aria-label={`${item.title}上移`}
-              >
-                <ArrowUp size={16} aria-hidden="true" />
-              </button>
-              <button
-                type="submit"
-                name="intent"
-                value={`move_down:${item.key}`}
-                disabled={index === formSections.length - 1}
-                className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
-                aria-label={`${item.title}下移`}
-              >
-                <ArrowDown size={16} aria-hidden="true" />
-              </button>
-            </div>
-          </TickerItemConfigPanel>
+            <input type="hidden" name={`title_${item.key}`} value={item.title} />
+            <input type="hidden" name={`nav_label_${item.key}`} value={item.navLabel ?? item.title} />
+            <input type="hidden" name={`limit_count_${item.key}`} value={item.key === "news" ? Math.max(1, latestNewsCount) : item.limitCount} />
+            <input type="hidden" name={`description_${item.key}`} value={item.description} />
+            <input type="hidden" name={`empty_message_${item.key}`} value={item.emptyMessage ?? "暂无最新信息"} />
+            <input type="hidden" name={`is_visible_${item.key}`} value={item.isVisible !== false ? "on" : "off"} />
+          </ConfigControlRow>
         ))}
       </div>
+
+      <NestedConfigPanel title="新闻分类设置" summary={[`分类 ${newsCategories.length}`, `显示 ${newsCategories.filter((item) => item.isVisible !== false).length}`]}>
+        <p className="rounded-xl bg-white px-3 py-2 text-xs font-semibold leading-5 text-slate-500">
+          新闻主板块不单独设置数量，首页最新新闻数量由下方已显示分类的数量相加决定。
+        </p>
+        <div className="mt-3 grid gap-3">
+          {newsCategories.map((category, index) => (
+            <ConfigControlRow
+              key={category.key}
+              title={category.title}
+              isVisible={category.isVisible !== false}
+              index={index}
+              total={newsCategories.length}
+              moveUpIntent={`news_move_up:${category.key}`}
+              moveDownIntent={`news_move_down:${category.key}`}
+              decrementIntent={`news_decrement:${category.key}`}
+              incrementIntent={`news_increment:${category.key}`}
+              toggleIntent={`news_toggle:${category.key}`}
+              count={category.limitCount}
+            >
+              <input type="hidden" name={`news_category_slug_${category.key}`} value={category.categorySlug} />
+              <input type="hidden" name={`news_title_${category.key}`} value={category.title} />
+              <input type="hidden" name={`news_sort_order_${category.key}`} value={category.sortOrder} />
+              <input type="hidden" name={`news_limit_count_${category.key}`} value={category.limitCount} />
+              <input type="hidden" name={`news_is_visible_${category.key}`} value={category.isVisible !== false ? "on" : "off"} />
+            </ConfigControlRow>
+          ))}
+        </div>
+      </NestedConfigPanel>
     </AdminActionForm>
   );
 }
@@ -508,43 +586,28 @@ function TickerGlobalSettingsForm({ globalSettings }: { globalSettings: AdminTic
 function AutomaticTickerPanel({ sections }: { sections: AdminTickerSectionSettingsRow[] }) {
   return (
     <NestedConfigPanel title="自动动态" summary={getAutomaticTickerSummary(sections)} tone="blue">
-      <AdminActionForm action={updateLatestTickerSettings} submitLabel="保存自动动态设置">
+      <AdminActionForm action={updateLatestTickerSettings} submitLabel="">
         <div className="grid gap-3">
           {sections.map((section, index) => (
-            <div key={section.section_key} className="rounded-xl border border-blue-100 bg-white p-3">
+            <ConfigControlRow
+              key={section.section_key}
+              title={section.section_name}
+              isVisible={section.is_enabled}
+              index={index}
+              total={sections.length}
+              moveUpIntent={`move_up:${section.section_key}`}
+              moveDownIntent={`move_down:${section.section_key}`}
+              decrementIntent={`decrement:${section.section_key}`}
+              incrementIntent={`increment:${section.section_key}`}
+              toggleIntent={`toggle:${section.section_key}`}
+              count={section.display_count}
+            >
               <input type="hidden" name="section_key" value={section.section_key} />
               <input type="hidden" name={`section_name_${section.section_key}`} value={section.section_name} />
               <input type="hidden" name={`sort_order_${section.section_key}`} value={section.sort_order} />
-              <div className="grid gap-3 md:grid-cols-[1fr_120px_auto_auto]">
-                <div className="text-sm font-black text-slate-800">{section.section_name}</div>
-                <AdminTextInput label="显示数量" name={`display_count_${section.section_key}`} type="number" defaultValue={section.display_count} />
-                <div className="flex items-end">
-                  <AdminCheckbox label="显示" name={`is_enabled_${section.section_key}`} defaultChecked={section.is_enabled} />
-                </div>
-                <div className="flex items-end gap-2">
-                  <button
-                    type="submit"
-                    name="intent"
-                    value={`move_up:${section.section_key}`}
-                    disabled={index === 0}
-                    className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
-                    aria-label={`${section.section_name}上移`}
-                  >
-                    <ArrowUp size={16} aria-hidden="true" />
-                  </button>
-                  <button
-                    type="submit"
-                    name="intent"
-                    value={`move_down:${section.section_key}`}
-                    disabled={index === sections.length - 1}
-                    className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
-                    aria-label={`${section.section_name}下移`}
-                  >
-                    <ArrowDown size={16} aria-hidden="true" />
-                  </button>
-                </div>
-              </div>
-            </div>
+              <input type="hidden" name={`display_count_${section.section_key}`} value={section.display_count} />
+              <input type="hidden" name={`is_enabled_${section.section_key}`} value={section.is_enabled ? "on" : "off"} />
+            </ConfigControlRow>
           ))}
         </div>
       </AdminActionForm>
@@ -576,14 +639,6 @@ function getAutomaticTickerSummary(sections: AdminTickerSectionSettingsRow[]) {
 
 function getTickerItemSummary(item: AdminTickerRow) {
   return [item.is_enabled ? "启用" : "停用", item.href ? "有链接" : "无链接"];
-}
-
-function getLatestPostSectionSummary(item: ReturnType<typeof mapLatestPostSections>[number]) {
-  return [
-    item.isVisible !== false ? "显示" : "隐藏",
-    `显示 ${item.limitCount} 条`,
-    item.route,
-  ];
 }
 
 function TickerForm({ item, index, total }: { item: AdminTickerRow; index: number; total: number }) {
