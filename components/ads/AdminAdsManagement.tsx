@@ -181,17 +181,6 @@ export function AdminAdsManagement({
 
   return (
     <section className="space-y-5">
-      <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-        <div className="flex flex-col gap-1">
-          <div>
-            <h2 className="text-lg font-black text-slate-950">广告管理</h2>
-            <p className="mt-1 text-sm font-semibold text-slate-500">
-              按位置管理广告图、详情页、外部链接、启用状态与排序。
-            </p>
-          </div>
-        </div>
-      </div>
-
       <AdPlaceholderSettings placeholder={placeholder} />
 
       <AdsFilter activePosition={activePosition} activeStatus={activeStatus} />
