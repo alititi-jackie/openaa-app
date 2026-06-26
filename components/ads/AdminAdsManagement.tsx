@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 
+import { AdminDateRangeFields, toAdminDateInputValue } from "@/components/admin/AdminDateRangeFields";
 import { deleteAd, toggleAdActive, updateAdPlaceholderImage, upsertAd } from "@/features/ads/adminActions";
 import {
   adPositions,
@@ -371,7 +372,7 @@ export function AdminAdsManagement({
 
           {openMode === "internal" ? <InternalFields ad={editingAd} /> : <ExternalFields ad={editingAd} />}
 
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
             <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700">
               <input
                 name="is_active"
@@ -382,8 +383,12 @@ export function AdminAdsManagement({
               />
               立即启用
             </label>
-            <DateInput key={`start-${editingAd?.id ?? "new"}-${editingAd?.start_date ?? ""}`} label="开始日期（可选）" name="start_date" value={editingAd?.start_date ?? null} />
-            <DateInput key={`end-${editingAd?.id ?? "new"}-${editingAd?.end_date ?? ""}`} label="结束日期（可选）" name="end_date" value={editingAd?.end_date ?? null} endDate />
+            <AdminDateRangeFields
+              startName="start_date"
+              endName="end_date"
+              startValue={editingAd?.start_date ?? null}
+              endValue={editingAd?.end_date ?? null}
+            />
           </div>
 
           {state.message ? (
@@ -767,86 +772,8 @@ function AdListItem({ ad, onEdit }: { ad: AdminAdRow; onEdit: () => void }) {
   );
 }
 
-function DateInput({
-  label,
-  name,
-  value,
-  endDate = false,
-}: {
-  label: string;
-  name: string;
-  value: string | null;
-  endDate?: boolean;
-}) {
-  const inputId = `${name}-${label}`;
-  const [inputValue, setInputValue] = useState(toDateInputValue(value, endDate));
-
-  return (
-    <div className="space-y-2 text-sm font-black text-slate-700">
-      <label htmlFor={inputId}>{label}</label>
-      <div className="flex gap-2">
-        <input
-          id={inputId}
-          name={name}
-          type="date"
-          value={inputValue}
-          onChange={(event) => setInputValue(event.target.value)}
-          className="h-12 min-w-0 flex-1 rounded-2xl border border-slate-200 px-4 text-sm font-bold text-slate-900 outline-none focus:border-blue-500"
-        />
-        <button
-          type="button"
-          onClick={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            setInputValue("");
-          }}
-          className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 transition hover:bg-slate-50"
-        >
-          清除
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function formatAdDate(value: string | null, endDate = false) {
-  return toDateInputValue(value, endDate);
-}
-
-function toDateInputValue(value: string | null, endDate = false) {
-  if (!value) {
-    return "";
-  }
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-  const parts = datePartsInNewYork(date);
-  if (endDate && parts.hour === 0 && parts.minute === 0 && parts.second === 0) {
-    const previousDay = new Date(date.getTime() - 24 * 60 * 60 * 1000);
-    return datePartsInNewYork(previousDay).date;
-  }
-  return parts.date;
-}
-
-function datePartsInNewYork(date: Date) {
-  const formatter = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/New_York",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hourCycle: "h23",
-  });
-  const parts = Object.fromEntries(formatter.formatToParts(date).map((part) => [part.type, part.value]));
-  return {
-    date: `${parts.year}-${parts.month}-${parts.day}`,
-    hour: Number(parts.hour),
-    minute: Number(parts.minute),
-    second: Number(parts.second),
-  };
+  return toAdminDateInputValue(value, endDate);
 }
 
 function isHttpsUrl(value: string) {
