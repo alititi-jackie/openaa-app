@@ -182,26 +182,29 @@ export function AdminAdsManagement({
   return (
     <section className="space-y-5">
       <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-1">
           <div>
             <h2 className="text-lg font-black text-slate-950">广告管理</h2>
             <p className="mt-1 text-sm font-semibold text-slate-500">
               按位置管理广告图、详情页、外部链接、启用状态与排序。
             </p>
           </div>
-          <button
-            type="button"
-            onClick={startCreate}
-            className="inline-flex h-11 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-black text-white shadow-sm transition hover:bg-blue-700"
-          >
-            新增广告
-          </button>
         </div>
       </div>
 
       <AdPlaceholderSettings placeholder={placeholder} />
 
       <AdsFilter activePosition={activePosition} activeStatus={activeStatus} />
+
+      <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+        <button
+          type="button"
+          onClick={startCreate}
+          className="inline-flex h-11 w-full items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-black text-white shadow-sm transition hover:bg-blue-700 sm:w-auto"
+        >
+          新增广告
+        </button>
+      </div>
 
       {isFormOpen ? (
         <form
@@ -637,7 +640,13 @@ function AdListItem({ ad, onEdit }: { ad: AdminAdRow; onEdit: () => void }) {
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
           {ad.image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={ad.image_url} alt={ad.title} className="h-28 w-full object-cover sm:h-full" />
+            <img
+              src={ad.image_url}
+              alt={ad.title}
+              loading="lazy"
+              decoding="async"
+              className="h-28 w-full object-cover sm:h-full"
+            />
           ) : (
             <div className="flex h-28 items-center justify-center text-xs font-black text-slate-400">无图片</div>
           )}
