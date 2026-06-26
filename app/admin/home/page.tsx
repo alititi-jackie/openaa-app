@@ -345,14 +345,16 @@ function getHomeSectionSummary(section: AdminHomeSectionRow) {
 
 function TickerGlobalSettingsForm({ globalSettings }: { globalSettings: AdminTickerGlobalSettingsRow }) {
   return (
-    <AdminActionForm action={updateLatestTickerGlobalSettings} submitLabel="保存全局设置" className="rounded-2xl border border-blue-100 bg-blue-50 p-3">
-      <div className="grid gap-3 md:grid-cols-2">
-        <AdminTextInput label="滚动间隔（秒）" name="interval_seconds" type="number" defaultValue={globalSettings.interval_seconds} />
-        <div className="flex items-end">
-          <AdminCheckbox label="启用最新动态滚动条" name="global_is_enabled" defaultChecked={globalSettings.is_enabled} />
+    <NestedConfigPanel title="全局设置" summary={[globalSettings.is_enabled ? "滚动条开启" : "滚动条关闭", `间隔 ${globalSettings.interval_seconds} 秒`]} tone="blue">
+      <AdminActionForm action={updateLatestTickerGlobalSettings} submitLabel="保存全局设置">
+        <div className="grid gap-3 md:grid-cols-2">
+          <AdminTextInput label="滚动间隔（秒）" name="interval_seconds" type="number" defaultValue={globalSettings.interval_seconds} />
+          <div className="flex items-end">
+            <AdminCheckbox label="启用最新动态滚动条" name="global_is_enabled" defaultChecked={globalSettings.is_enabled} />
+          </div>
         </div>
-      </div>
-    </AdminActionForm>
+      </AdminActionForm>
+    </NestedConfigPanel>
   );
 }
 
