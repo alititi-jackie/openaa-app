@@ -130,7 +130,7 @@ export const adminRoleDefaultModules: Record<AdminRoleName, AdminModuleKey[]> = 
   support: ["messages"],
   moderator: ["user-posts", "messages", "recycle-bin"],
   editor: ["news", "navigation", "home", "ads"],
-  admin: ["user-posts", "messages", "news", "navigation", "home", "ads", "users", "settings", "audit-logs"],
+  admin: ["user-posts", "messages", "news", "navigation", "home", "ads", "users", "audit-logs"],
   super_admin: [
     "user-posts",
     "messages",
@@ -140,7 +140,6 @@ export const adminRoleDefaultModules: Record<AdminRoleName, AdminModuleKey[]> = 
     "ads",
     "recycle-bin",
     "users",
-    "settings",
     "audit-logs",
     "admin-access",
   ],

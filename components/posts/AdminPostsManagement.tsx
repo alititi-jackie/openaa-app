@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useActionState, useMemo, useState } from "react";
 import { AdminActionButton } from "@/components/admin/AdminActionButton";
+import { AdminActionForm, AdminTextInput } from "@/components/admin/AdminActionForm";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { AdminPostManageDialog } from "@/components/posts/AdminPostManageDialog";
 import { type AdminPostActionState } from "@/features/posts/adminActions";
 import type { AdminPostListItem, AdminPostNotificationTemplate, AdminPostsPermissions as AdminPostsPermissionSet } from "@/features/posts/adminQueries";
 import { POST_TYPE_LABELS, PUBLIC_POST_TYPES } from "@/features/posts/constants";
 import { postStatusTone } from "@/features/posts/display";
+import { updateDailyPostLimit } from "@/features/settings/adminActions";
 import type { PostStatus, PostType } from "@/features/posts/types";
 
 type TemplateOption = {
@@ -82,6 +84,35 @@ export function AdminPostsFilter({ type, status, q, author }: { type?: string; s
         筛选
       </button>
     </form>
+  );
+}
+
+export function DailyPostLimitPanel({ dailyPostLimit, canManage }: { dailyPostLimit: number; canManage: boolean }) {
+  return (
+    <details className="group rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
+      <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+        <div className="min-w-0">
+          <p className="text-sm font-black text-slate-950">每日发布上限</p>
+          <p className="mt-1 text-xs font-semibold text-slate-500">每个账号每天最多可发布 {dailyPostLimit} 条信息</p>
+        </div>
+        <span className="inline-flex min-h-9 items-center rounded-xl bg-slate-950 px-3 py-1.5 text-xs font-black text-white">
+          <span className="group-open:hidden">展开</span>
+          <span className="hidden group-open:inline">收起</span>
+        </span>
+      </summary>
+      <div className="mt-3 border-t border-slate-100 pt-3">
+        {canManage ? (
+          <AdminActionForm action={updateDailyPostLimit} submitLabel="保存发布上限" className="space-y-3">
+            <AdminTextInput label="每日发布上限" name="daily_post_limit" type="number" defaultValue={dailyPostLimit} required />
+            <p className="rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold leading-5 text-slate-500">
+              允许范围：1~100。保存后会立即影响普通用户每日发布数量，并记录后台审计日志。
+            </p>
+          </AdminActionForm>
+        ) : (
+          <p className="rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-500">当前账号只能查看发布上限，不能修改。</p>
+        )}
+      </div>
+    </details>
   );
 }
 

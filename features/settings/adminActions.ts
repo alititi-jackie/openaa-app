@@ -42,7 +42,7 @@ export async function updateDailyPostLimit(_state: AdminHomeActionState, formDat
   const audited = await writeAuditLog(context, "update_site_setting", DAILY_POST_LIMIT_KEY, before, payload);
   if (!audited) return fail("设置已保存，但审计日志写入失败，请联系管理员检查 admin_audit_logs。");
 
-  revalidatePath("/admin/settings");
+  revalidatePath("/admin/user-posts");
   return ok(`每日发布上限已保存为 ${parsedLimit} 条。`);
 }
 
@@ -55,8 +55,8 @@ async function getAdminSettingsActionContext(): Promise<AdminSettingsActionConte
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, message: "请先登录管理员账号。" };
 
-  if (!(await hasAdminModulePermission("settings", "manage_settings"))) {
-    return { ok: false, message: "当前账号没有站点设置模块权限。" };
+  if (!(await hasAdminModulePermission("user-posts", "moderate_posts"))) {
+    return { ok: false, message: "当前账号没有用户发布信息管理权限。" };
   }
 
   return { ok: true, supabase, userId: user.id };

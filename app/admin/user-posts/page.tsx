@@ -6,9 +6,10 @@ import { AdminFilterBar } from "@/components/admin/AdminFilterBar";
 import { AdminListCard } from "@/components/admin/AdminListCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminTopActions } from "@/components/admin/AdminTopActions";
-import { AdminPostsFilter, AdminPostsList, AdminPostsPagination, AdminPostsPermissionBadges } from "@/components/posts/AdminPostsManagement";
+import { AdminPostsFilter, AdminPostsList, AdminPostsPagination, AdminPostsPermissionBadges, DailyPostLimitPanel } from "@/components/posts/AdminPostsManagement";
 import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { getAdminPostNotificationTemplates, getAdminPostsData } from "@/features/posts/adminQueries";
+import { getDailyPostLimitData } from "@/features/settings/adminQueries";
 import type { PostStatus, PostType } from "@/features/posts/types";
 import { hasAdminModule } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -51,6 +52,7 @@ export default function AdminUserPostsPage({ searchParams }: AdminUserPostsPageP
         });
         const canRead = data.permissions.viewPosts || data.permissions.moderatePosts;
         const templates = data.permissions.moderatePosts ? await getAdminPostNotificationTemplates() : [];
+        const dailyPostLimit = await getDailyPostLimitData();
 
         if (!canRead) {
           return (
@@ -77,6 +79,9 @@ export default function AdminUserPostsPage({ searchParams }: AdminUserPostsPageP
               {params?.author ? <p className="mb-3 rounded-xl bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700">正在按作者筛选：{params.author}</p> : null}
               <AdminPostsFilter type={params?.type} status={params?.status} q={params?.q} author={params?.author} />
             </AdminFilterBar>
+
+            {dailyPostLimit.state === "error" ? <AdminAlert>每日发布上限读取暂时不可用：{dailyPostLimit.error ?? "请稍后再试。"}</AdminAlert> : null}
+            <DailyPostLimitPanel dailyPostLimit={dailyPostLimit.dailyPostLimit} canManage={data.permissions.moderatePosts} />
 
             <AdminListCard
               title="用户发布信息列表"

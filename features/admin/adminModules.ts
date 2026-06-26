@@ -6,7 +6,6 @@ import {
   MessageSquareText,
   Newspaper,
   ScrollText,
-  Settings,
   Shield,
   Trash2,
   Users,
@@ -22,7 +21,6 @@ export type AdminModuleKey =
   | "ads"
   | "recycle-bin"
   | "users"
-  | "settings"
   | "audit-logs"
   | "admin-access";
 
@@ -183,17 +181,6 @@ export const ADMIN_MODULES: AdminModule[] = [
     groupDescription: "管理广告、站点规则、图片维护和审计记录。",
     icon: Megaphone,
     permissionKeys: ["manage_ads"],
-  },
-  {
-    key: "settings",
-    title: "站点设置",
-    description: "管理每日发帖上限等基础站点规则，使用新站后台权限和审计日志。",
-    href: "/admin/settings",
-    group: "operations",
-    groupTitle: "运营设置",
-    groupDescription: "管理广告、站点规则、图片维护和审计记录。",
-    icon: Settings,
-    permissionKeys: ["view_settings", "manage_settings", "manage_rate_limits", "manage_sensitive_words", "view_search_logs"],
   },
   {
     key: "audit-logs",
