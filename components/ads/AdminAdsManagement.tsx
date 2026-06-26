@@ -240,7 +240,6 @@ export function AdminAdsManagement({
           <form
             ref={formRef}
             action={formAction}
-            encType="multipart/form-data"
             className="space-y-5 rounded-2xl bg-white p-4 sm:p-5"
           >
             <input type="hidden" name="id" value={editingAd?.id ?? ""} />
@@ -661,7 +660,7 @@ function AdPlaceholderSettings({ placeholder }: { placeholder: AdminAdPlaceholde
         </span>
       </summary>
 
-      <form action={formAction} encType="multipart/form-data" className="mt-4 space-y-4 border-t border-slate-100 pt-4">
+      <form action={formAction} className="mt-4 space-y-4 border-t border-slate-100 pt-4">
         <p className="text-sm font-semibold text-slate-500">
           当广告图片为空、外链失效或加载失败时，全站广告位会优先显示这里上传的占位图；未上传时显示内置广告位占位。
         </p>
