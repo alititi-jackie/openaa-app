@@ -10,8 +10,8 @@ export function AdminHighlightCard({ active = false, className = "", children }:
   return (
     <div
       className={[
-        "rounded-3xl border p-3 transition-colors",
-        active ? "border-[#1976d2] bg-blue-50/30 ring-2 ring-blue-100" : "border-slate-200 bg-slate-50",
+        "rounded-2xl border bg-white p-3 shadow-sm transition-colors",
+        active ? "border-[#1976d2]" : "border-slate-100",
         className,
       ]
         .filter(Boolean)
