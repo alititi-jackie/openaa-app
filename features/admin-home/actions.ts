@@ -379,7 +379,10 @@ export async function upsertLatestTicker(_state: AdminHomeActionState, formData:
   }
 
   const title = readText(formData, "title");
-  const href = normalizeWebsiteUrl(readText(formData, "href"), { allowInternalPath: true, requiredMessage: "手动动态链接不能为空。", invalidMessage: "手动动态链接格式不正确。" });
+  const rawHref = readText(formData, "href");
+  const href = rawHref
+    ? normalizeWebsiteUrl(rawHref, { allowInternalPath: true, requiredMessage: "手动动态链接不能为空。", invalidMessage: "手动动态链接格式不正确。" })
+    : ({ ok: true, value: null } as const);
   const isEnabled = formData.get("is_enabled") === "on";
   const sortOrder = id ? readInteger(formData, "sort_order", "手动动态排序") : await readNextManualTickerSortOrder(context.supabase);
   const startsAt = readDateTime(formData, "starts_at");

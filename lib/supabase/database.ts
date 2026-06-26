@@ -1016,7 +1016,7 @@ export type Database = {
         Row: {
           created_at: string
           ends_at: string | null
-          href: string
+          href: string | null
           id: string
           is_enabled: boolean
           metadata: Json
@@ -1029,7 +1029,7 @@ export type Database = {
         Insert: {
           created_at?: string
           ends_at?: string | null
-          href: string
+          href?: string | null
           id?: string
           is_enabled?: boolean
           metadata?: Json
@@ -1042,7 +1042,7 @@ export type Database = {
         Update: {
           created_at?: string
           ends_at?: string | null
-          href?: string
+          href?: string | null
           id?: string
           is_enabled?: boolean
           metadata?: Json

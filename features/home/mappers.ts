@@ -58,8 +58,9 @@ export function mapTopQuickLink(row: Record<string, unknown>): TopQuickLink | nu
 
 export function mapTickerItem(row: Record<string, unknown>): HomeTickerItem | null {
   const rawLabel = asString(row.title);
-  const href = normalizeRoute(asString(row.href, "/news"));
-  const label = isPlaceholderTickerLabel(rawLabel) ? fallbackTickerLabelForRoute(href) : rawLabel;
+  const rawHref = asString(row.href);
+  const href = rawHref ? normalizeRoute(rawHref) : null;
+  const label = isPlaceholderTickerLabel(rawLabel) ? fallbackTickerLabelForRoute(href ?? "/news") : rawLabel;
 
   if (!label) {
     return null;

@@ -129,15 +129,15 @@ function HomeConfigPanel({
   children: ReactNode;
 }) {
   return (
-    <details className="group rounded-2xl border border-slate-100 bg-white shadow-sm [&>summary::-webkit-details-marker]:hidden">
+    <details className="group/home-config-panel rounded-2xl border border-slate-100 bg-white shadow-sm [&>summary::-webkit-details-marker]:hidden">
       <summary className="flex cursor-pointer list-none items-start justify-between gap-4 p-4">
         <div className="min-w-0">
           <h2 className="text-lg font-black text-slate-950">{title}</h2>
           {description ? <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p> : null}
           <SummaryPills items={summary} className="mt-3" />
         </div>
-        <span className="shrink-0 rounded-full bg-slate-950 px-3 py-1.5 text-xs font-black text-white group-open:hidden">展开编辑</span>
-        <span className="hidden shrink-0 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-700 group-open:inline-flex">收起</span>
+        <span className="shrink-0 rounded-full bg-slate-950 px-3 py-1.5 text-xs font-black text-white group-open/home-config-panel:hidden">展开编辑</span>
+        <span className="hidden shrink-0 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-700 group-open/home-config-panel:inline-flex">收起</span>
       </summary>
       <div className="border-t border-slate-100 p-4 pt-4">{children}</div>
     </details>
@@ -158,14 +158,38 @@ function NestedConfigPanel({
   const toneClass = tone === "blue" ? "border-blue-100 bg-blue-50" : "border-slate-100 bg-slate-50";
 
   return (
-    <details className={`group rounded-2xl border p-3 [&>summary::-webkit-details-marker]:hidden ${toneClass}`}>
+    <details className={`group/nested-config-panel rounded-2xl border p-3 [&>summary::-webkit-details-marker]:hidden ${toneClass}`}>
       <summary className="flex cursor-pointer list-none items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-black text-slate-900">{title}</p>
           <SummaryPills items={summary} className="mt-2" />
         </div>
-        <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-700 ring-1 ring-slate-200 group-open:hidden">展开</span>
-        <span className="hidden shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-700 ring-1 ring-slate-200 group-open:inline-flex">收起</span>
+        <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-700 ring-1 ring-slate-200 group-open/nested-config-panel:hidden">展开</span>
+        <span className="hidden shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-700 ring-1 ring-slate-200 group-open/nested-config-panel:inline-flex">收起</span>
+      </summary>
+      <div className="mt-3 border-t border-white/70 pt-3">{children}</div>
+    </details>
+  );
+}
+
+function TickerItemConfigPanel({
+  title,
+  summary,
+  children,
+}: {
+  title: string;
+  summary: string[];
+  children: ReactNode;
+}) {
+  return (
+    <details className="group/ticker-item-panel rounded-2xl border border-slate-100 bg-slate-50 p-3 [&>summary::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-black text-slate-900">{title}</p>
+          <SummaryPills items={summary} className="mt-2" />
+        </div>
+        <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-700 ring-1 ring-slate-200 group-open/ticker-item-panel:hidden">展开</span>
+        <span className="hidden shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-700 ring-1 ring-slate-200 group-open/ticker-item-panel:inline-flex">收起</span>
       </summary>
       <div className="mt-3 border-t border-white/70 pt-3">{children}</div>
     </details>
@@ -425,11 +449,7 @@ function getTickerItemSummary(item: AdminTickerRow) {
 
 function TickerForm({ item, index, total }: { item: AdminTickerRow; index: number; total: number }) {
   return (
-    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
-      <div className="mb-3">
-        <p className="text-sm font-black text-slate-900">{item.title}</p>
-        <SummaryPills items={getTickerItemSummary(item)} className="mt-2" />
-      </div>
+    <TickerItemConfigPanel title={item.title} summary={getTickerItemSummary(item)}>
       <AdminActionForm
         action={upsertLatestTicker}
         submitLabel="保存动态"
@@ -480,7 +500,7 @@ function TickerForm({ item, index, total }: { item: AdminTickerRow; index: numbe
         <input type="hidden" name="sort_order" value={item.sort_order} />
         <div className="grid gap-3 md:grid-cols-2">
           <AdminTextInput label="标题" name="title" defaultValue={item.title} required />
-          <AdminTextInput label="链接" name="href" defaultValue={item.href} placeholder="/news 或 https://openaa.com/news" required />
+          <AdminTextInput label="链接（可选）" name="href" defaultValue={item.href} placeholder="/news 或 https://openaa.com/news" />
           <AdminTextInput label="开始时间" name="starts_at" type="datetime-local" defaultValue={toDateTimeLocal(item.starts_at)} />
           <AdminTextInput label="结束时间" name="ends_at" type="datetime-local" defaultValue={toDateTimeLocal(item.ends_at)} />
         </div>
@@ -489,7 +509,7 @@ function TickerForm({ item, index, total }: { item: AdminTickerRow; index: numbe
           <AdminCheckbox label="确认删除这条动态" name="confirm_delete" />
         </div>
       </AdminActionForm>
-    </div>
+    </TickerItemConfigPanel>
   );
 }
 

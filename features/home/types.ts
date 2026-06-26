@@ -13,7 +13,7 @@ export type HomeCity = {
 
 export type HomeTickerItem = {
   label: string;
-  href: string;
+  href: string | null;
   module?: string | null;
 };
 

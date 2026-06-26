@@ -2,5 +2,5 @@ export type ChannelKey = "jobs" | "housing" | "marketplace" | "services" | "news
 
 export type ChannelTickerItem = {
   label: string;
-  href: string;
+  href: string | null;
 };

@@ -12,7 +12,7 @@ export function LatestTicker({
   intervalSeconds,
   enabled = true,
 }: {
-  items: Array<{ label: string; href: string }>;
+  items: Array<{ label: string; href: string | null }>;
   intervalSeconds?: number;
   enabled?: boolean;
 }) {
@@ -68,20 +68,38 @@ export function LatestTicker({
     return null;
   }
 
+  const content = (
+    <>
+      <Zap size={15} className="mr-2 shrink-0 text-blue-400" aria-hidden="true" />
+      <span className="flex-1 truncate font-medium">{item.label}</span>
+      {item.href ? <ChevronRight size={14} className="ml-1 shrink-0 text-zinc-400" aria-hidden="true" /> : null}
+    </>
+  );
+  const className = "flex h-11 min-w-0 items-center rounded-full border border-zinc-100 bg-zinc-50 pl-4 pr-3 text-sm text-zinc-600 shadow-sm transition-colors hover:bg-zinc-100";
+
   return (
     <section className="min-w-0">
-      <Link
-        href={item.href}
-        className="flex h-11 min-w-0 items-center rounded-full border border-zinc-100 bg-zinc-50 pl-4 pr-3 text-sm text-zinc-600 shadow-sm transition-colors hover:bg-zinc-100"
-        aria-label={`查看最新动态：${item.label}`}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        onClick={handleClick}
-      >
-        <Zap size={15} className="mr-2 shrink-0 text-blue-400" aria-hidden="true" />
-        <span className="flex-1 truncate font-medium">{item.label}</span>
-        <ChevronRight size={14} className="ml-1 shrink-0 text-zinc-400" aria-hidden="true" />
-      </Link>
+      {item.href ? (
+        <Link
+          href={item.href}
+          className={className}
+          aria-label={`查看最新动态：${item.label}`}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onClick={handleClick}
+        >
+          {content}
+        </Link>
+      ) : (
+        <div
+          className={className}
+          aria-label={`最新动态：${item.label}`}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          {content}
+        </div>
+      )}
     </section>
   );
 }
