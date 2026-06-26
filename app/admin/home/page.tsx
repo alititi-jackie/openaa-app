@@ -11,7 +11,7 @@ import { createDefaultHomeConfig, updateHomeSection, updateLatestPostsSection, u
 import { getAdminHomeConfigData } from "@/features/admin-home/queries";
 import type { AdminHomeSectionRow, AdminTickerGlobalSettingsRow, AdminTickerRow, AdminTickerSectionSettingsRow } from "@/features/admin-home/types";
 import { HOME_SECTION_KEYS } from "@/features/home/constants";
-import { fallbackLatestPostSections, fallbackSeoContent } from "@/features/home/fallbacks";
+import { fallbackLatestPostSections, fallbackQuickGridItems, fallbackSeoContent, fallbackUtilityTools } from "@/features/home/fallbacks";
 import { mapLatestPostSections } from "@/features/home/mappers";
 import { hasAdminModule } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -81,8 +81,8 @@ export default function AdminHomePage() {
 
             {data.permissions.manageHomeSections ? (
               <>
-                <GenericHomeSectionCard section={quickGridSection} title="首页 8 宫格入口" description="控制首页主要频道入口的标题、显示状态和配置内容。" />
-                <GenericHomeSectionCard section={utilityToolsSection} title="实用工具模块" description="控制 DMV、导航、指南等工具卡片。" />
+                <OrderedHomeSectionCard section={quickGridSection} kind="quick_grid" title="首页 8 宫格入口" description="控制首页主要频道入口的显示状态和顺序。" />
+                <OrderedHomeSectionCard section={utilityToolsSection} kind="utility_tools" title="实用工具模块" description="控制 DMV、导航、指南等工具卡片的显示状态和顺序。" />
                 <LatestPostsSectionCard section={latestPostsSection} />
                 <OpenAASeoCard section={seoContentSection} />
               </>
@@ -129,7 +129,7 @@ function HomeConfigPanel({
   children: ReactNode;
 }) {
   return (
-    <details className="group/home-config-panel rounded-2xl border border-slate-100 bg-white shadow-sm [&>summary::-webkit-details-marker]:hidden">
+    <details className="group/home-config-panel rounded-2xl border border-slate-100 bg-white shadow-sm open:border-[#1976d2] [&>summary::-webkit-details-marker]:hidden">
       <summary className="flex cursor-pointer list-none items-start justify-between gap-4 p-4">
         <div className="min-w-0">
           <h2 className="text-lg font-black text-slate-950">{title}</h2>
@@ -216,13 +216,25 @@ function MissingSectionNotice({ title }: { title: string }) {
   );
 }
 
-function GenericHomeSectionCard({ section, title, description }: { section?: AdminHomeSectionRow; title: string; description: string }) {
+type OrderedHomeSectionKind = "quick_grid" | "utility_tools";
+
+function OrderedHomeSectionCard({
+  section,
+  kind,
+  title,
+  description,
+}: {
+  section?: AdminHomeSectionRow;
+  kind: OrderedHomeSectionKind;
+  title: string;
+  description: string;
+}) {
   if (!section) return <MissingSectionNotice title={title} />;
-  const summary = getHomeSectionSummary(section);
+  const items = getOrderedHomeSectionItems(section, kind);
 
   return (
-    <HomeConfigPanel title={title} description={description} summary={[section.is_visible ? "显示中" : "已隐藏", ...summary.items]}>
-      <HomeSectionForm section={section} />
+    <HomeConfigPanel title={title} description={description} summary={[section.is_visible ? "显示中" : "已隐藏", `项目 ${items.length}`]}>
+      <OrderedHomeSectionForm section={section} items={items} />
     </HomeConfigPanel>
   );
 }
@@ -235,6 +247,74 @@ function LatestPostsSectionCard({ section }: { section?: AdminHomeSectionRow }) 
     <HomeConfigPanel title="最新发布模块" description="控制首页招聘、房屋、二手、本地服务和新闻的最新内容区。" summary={[section.is_visible ? "显示中" : "已隐藏", ...summary.items]}>
       <LatestPostsSectionForm section={section} />
     </HomeConfigPanel>
+  );
+}
+
+function OrderedHomeSectionForm({
+  section,
+  items,
+}: {
+  section: AdminHomeSectionRow;
+  items: Array<{ label: string; isVisible: boolean; raw: Record<string, unknown> }>;
+}) {
+  const config = { ...(section.config ?? {}), items: items.map((item, index) => ({ ...item.raw, sort_order: (index + 1) * 10 })) };
+
+  return (
+    <AdminActionForm action={updateHomeSection} submitLabel="保存模块">
+      <input type="hidden" name="key" value={section.key} />
+      <input type="hidden" name="title" value={section.title} />
+      <input type="hidden" name="description" value={section.description ?? ""} />
+      <input type="hidden" name="sort_order" value={section.sort_order} />
+      <input type="hidden" name="config" value={JSON.stringify(config)} />
+
+      <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+        <AdminCheckbox label="显示整个模块" name="is_visible" defaultChecked={section.is_visible} />
+      </div>
+
+      <div className="grid gap-3">
+        {items.map((item, index) => (
+          <div key={`${item.label}-${index}`} className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-black text-slate-950">{item.label}</p>
+                <p className="mt-1 text-xs font-semibold text-slate-500">{item.isVisible ? "当前显示" : "当前隐藏"}</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <input type="hidden" name={`item_visible_${index}`} value={item.isVisible ? "on" : "off"} />
+                <button
+                  type="submit"
+                  name="intent"
+                  value={`move_up:${index}`}
+                  disabled={index === 0}
+                  className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label={`${item.label}上移`}
+                >
+                  <ArrowUp size={16} aria-hidden="true" />
+                </button>
+                <button
+                  type="submit"
+                  name="intent"
+                  value={`move_down:${index}`}
+                  disabled={index === items.length - 1}
+                  className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label={`${item.label}下移`}
+                >
+                  <ArrowDown size={16} aria-hidden="true" />
+                </button>
+                <button
+                  type="submit"
+                  name="intent"
+                  value={`toggle_visibility:${index}`}
+                  className="inline-flex min-h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-black text-slate-700"
+                >
+                  {item.isVisible ? "隐藏" : "显示"}
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </AdminActionForm>
   );
 }
 
@@ -323,19 +403,34 @@ function LatestPostsSectionForm({ section }: { section: AdminHomeSectionRow }) {
   );
 }
 
-function HomeSectionForm({ section }: { section: AdminHomeSectionRow }) {
-  return (
-    <AdminActionForm action={updateHomeSection} submitLabel="保存模块">
-      <input type="hidden" name="key" value={section.key} />
-      <input type="hidden" name="sort_order" value={section.sort_order} />
-      <div className="grid gap-3 md:grid-cols-2">
-        <AdminTextInput label="标题" name="title" defaultValue={section.title} required />
-        <AdminTextInput label="描述" name="description" defaultValue={section.description} />
-      </div>
-      <AdminCheckbox label="显示模块" name="is_visible" defaultChecked={section.is_visible} />
-      <AdminTextarea label="Config JSON" name="config" rows={10} defaultValue={JSON.stringify(section.config ?? {}, null, 2)} />
-    </AdminActionForm>
-  );
+function getOrderedHomeSectionItems(section: AdminHomeSectionRow, kind: OrderedHomeSectionKind) {
+  const configItems = Array.isArray(section.config?.items) ? section.config.items : [];
+  const fallbackItems = kind === "quick_grid" ? fallbackQuickGridItems : fallbackUtilityTools;
+  const sourceItems = configItems.length > 0 ? configItems : fallbackItems;
+
+  return sourceItems
+    .map((item, index) => {
+      const raw = item && typeof item === "object" && !Array.isArray(item) ? { ...(item as Record<string, unknown>) } : {};
+      const label =
+        typeof raw.label === "string" && raw.label.trim()
+          ? raw.label.trim()
+          : typeof raw.title === "string" && raw.title.trim()
+            ? raw.title.trim()
+            : `项目 ${index + 1}`;
+      const sortOrder = Number(raw.sort_order ?? raw.sortOrder ?? index + 1);
+      const isVisible = typeof raw.is_visible === "boolean" ? raw.is_visible : typeof raw.isVisible === "boolean" ? raw.isVisible : true;
+
+      return {
+        label,
+        isVisible,
+        raw: {
+          ...raw,
+          sort_order: Number.isFinite(sortOrder) ? sortOrder : index + 1,
+          is_visible: isVisible,
+        },
+      };
+    })
+    .sort((a, b) => Number(a.raw.sort_order) - Number(b.raw.sort_order));
 }
 
 function getHomeSectionSummary(section: AdminHomeSectionRow) {

@@ -6,6 +6,7 @@ import { writeAdminAuditLog } from "@/lib/permissions/adminAuditLog";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { normalizeWebsiteUrl } from "@/lib/validation/url";
 import { defaultHomeSections, defaultLatestTicker, defaultTopQuickLinks } from "./defaults";
+import { HOME_SECTION_KEYS } from "@/features/home/constants";
 import { fallbackLatestPostSections } from "@/features/home/fallbacks";
 import { normalizeHomeTickerSectionKey } from "@/features/home/tickerSections";
 import type { AdminHomeActionState } from "./types";
@@ -107,10 +108,15 @@ export async function updateHomeSection(_state: AdminHomeActionState, formData: 
   const isVisible = formData.get("is_visible") === "on";
   const description = readText(formData, "description") || null;
   const config = readJsonObject(formData, "config");
+  const intent = readText(formData, "intent");
 
   if (!key || !title) return fail("模块 key 和标题不能为空。");
   if (!sortOrder.ok) return fail(sortOrder.message);
   if (!config.ok) return fail(config.message);
+  if (key === HOME_SECTION_KEYS.quickGrid || key === HOME_SECTION_KEYS.utilityTools) {
+    const normalized = normalizeOrderedHomeSectionItems(config.value, formData, intent);
+    if (!normalized.ok) return fail(normalized.message);
+  }
 
   const payload = {
     key,
@@ -128,7 +134,7 @@ export async function updateHomeSection(_state: AdminHomeActionState, formData: 
 
   if (!(await auditLog(context, "update_home_section", "home_sections", key, payload))) return auditFailure();
   revalidateAdminHome();
-  return ok(`模块「${title}」已保存。`);
+  return ok(intent.startsWith("move_") ? `模块「${title}」排序已保存。` : intent.startsWith("toggle_visibility:") ? `模块「${title}」显示状态已保存。` : `模块「${title}」已保存。`);
 }
 
 export async function updateLatestPostsSection(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
@@ -764,6 +770,44 @@ function moveTickerSectionPayloads<T extends { section_key: string; sort_order: 
     const original = payloads.find((payload) => payload.section_key === moved.section_key);
     if (original) original.sort_order = moved.sort_order;
   }
+
+  return { ok: true };
+}
+
+function normalizeOrderedHomeSectionItems(config: Record<string, unknown>, formData: FormData, intent: string): { ok: true } | { ok: false; message: string } {
+  if (!Array.isArray(config.items)) return { ok: false, message: "模块配置缺少 items 列表。" };
+
+  const items = config.items
+    .map((item, index) => {
+      const record = item && typeof item === "object" && !Array.isArray(item) ? { ...(item as Record<string, unknown>) } : {};
+      const currentOrder = Number(record.sort_order ?? record.sortOrder ?? index + 1);
+      return {
+        ...record,
+        is_visible: formData.get(`item_visible_${index}`) === "on",
+        sort_order: Number.isFinite(currentOrder) ? currentOrder : index + 1,
+      };
+    });
+
+  if (intent.startsWith("toggle_visibility:")) {
+    const index = Number(intent.split(":")[1]);
+    if (!Number.isInteger(index) || index < 0 || index >= items.length) return { ok: false, message: "要切换的项目不存在。" };
+    items[index].is_visible = !items[index].is_visible;
+  }
+
+  if (intent.startsWith("move_up:") || intent.startsWith("move_down:")) {
+    const index = Number(intent.split(":")[1]);
+    if (!Number.isInteger(index) || index < 0 || index >= items.length) return { ok: false, message: "要排序的项目不存在。" };
+    const targetIndex = intent.startsWith("move_up:") ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= items.length) return { ok: false, message: "这个项目已经在边界位置。" };
+    const current = items[index];
+    items[index] = items[targetIndex];
+    items[targetIndex] = current;
+  }
+
+  config.items = items.map((item, index) => ({
+    ...item,
+    sort_order: (index + 1) * 10,
+  }));
 
   return { ok: true };
 }
