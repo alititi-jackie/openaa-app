@@ -16,6 +16,7 @@ import type { AdminHomeActionState } from "@/features/admin-home/types";
 
 const initialState: AdminHomeActionState = { ok: true, message: "" };
 type ImageSourceLock = "uploaded" | "external";
+type ImageInputMode = "external" | "upload";
 
 type AdminAdsManagementProps = {
   ads: AdminAdRow[];
@@ -36,6 +37,7 @@ export function AdminAdsManagement({
   const [imageUrl, setImageUrl] = useState("");
   const [currentImageAssetId, setCurrentImageAssetId] = useState<string | null>(null);
   const [imageSourceLock, setImageSourceLock] = useState<ImageSourceLock | null>(null);
+  const [imageMode, setImageMode] = useState<ImageInputMode>("external");
   const [filePreviewUrl, setFilePreviewUrl] = useState("");
   const [uploadMessage, setUploadMessage] = useState("");
   const [state, formAction, pending] = useActionState(upsertAd, initialState);
@@ -43,10 +45,9 @@ export function AdminAdsManagement({
   const formRef = useRef<HTMLFormElement | null>(null);
 
   const trimmedImageUrl = imageUrl.trim();
-  const hasImage = Boolean(filePreviewUrl || trimmedImageUrl);
+  const hasImage = Boolean(filePreviewUrl || trimmedImageUrl || currentImageAssetId);
+  const hasLockedImage = Boolean(filePreviewUrl || currentImageAssetId);
   const previewUrl = filePreviewUrl || trimmedImageUrl;
-  const uploadDisabled = imageSourceLock === "external";
-  const urlDisabled = imageSourceLock === "uploaded";
 
   useEffect(() => {
     if (state.ok && state.message) {
@@ -74,6 +75,7 @@ export function AdminAdsManagement({
     setImageUrl("");
     setCurrentImageAssetId(null);
     setImageSourceLock(null);
+    setImageMode("external");
     setFilePreviewUrl("");
     setUploadMessage("");
     if (fileInputRef.current) {
@@ -106,6 +108,7 @@ export function AdminAdsManagement({
     setImageUrl(ad.image_url ?? "");
     setCurrentImageAssetId(ad.image_asset_id ?? null);
     setImageSourceLock(ad.image_source_type === "storage" ? "uploaded" : ad.image_url ? "external" : null);
+    setImageMode(ad.image_source_type === "storage" ? "upload" : "external");
     setFilePreviewUrl("");
     setUploadMessage("");
     if (fileInputRef.current) {
@@ -118,6 +121,7 @@ export function AdminAdsManagement({
     setImageUrl("");
     setCurrentImageAssetId(null);
     setImageSourceLock(null);
+    setImageMode("external");
     setUploadMessage("");
     if (filePreviewUrl) {
       URL.revokeObjectURL(filePreviewUrl);
@@ -133,7 +137,7 @@ export function AdminAdsManagement({
     if (!file) {
       return;
     }
-    if (imageSourceLock === "external") {
+    if (imageMode !== "upload" || imageSourceLock === "external") {
       event.target.value = "";
       setUploadMessage("请先删除外部图片链接，再上传图片");
       return;
@@ -156,6 +160,27 @@ export function AdminAdsManagement({
     setCurrentImageAssetId(null);
     setImageSourceLock("uploaded");
     setUploadMessage("已选择上传图片");
+  }
+
+  function selectImageMode(mode: ImageInputMode) {
+    if (hasLockedImage) {
+      setUploadMessage("请先删除当前图片，再切换图片方式");
+      return;
+    }
+    setImageMode(mode);
+    setUploadMessage("");
+    if (mode === "external") {
+      if (filePreviewUrl) {
+        URL.revokeObjectURL(filePreviewUrl);
+      }
+      setFilePreviewUrl("");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+    setImageUrl("");
+    setImageSourceLock(null);
   }
 
   function handleImageUrlBlur() {
@@ -241,66 +266,81 @@ export function AdminAdsManagement({
                 ))}
               </select>
             </label>
-
-            <label className="space-y-2 text-sm font-black text-slate-700">
-              打开方式 *
-              <select
-                name="open_mode"
-                required
-                value={openMode}
-                onChange={(event) => setOpenMode(event.target.value as AdOpenMode)}
-                className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-base font-bold text-slate-900 outline-none focus:border-blue-500"
-              >
-                <option value="internal">内部详情页</option>
-                <option value="external_new">外部链接 - 新窗口</option>
-                <option value="external_same">外部链接 - 当前窗口</option>
-              </select>
-            </label>
           </div>
 
           <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <label className="space-y-2 text-sm font-black text-slate-700">
-                上传广告图
-                <input
-                  ref={fileInputRef}
-                  name="image_file"
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  disabled={uploadDisabled}
-                  onChange={handleFileChange}
-                  className="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 file:mr-4 file:rounded-xl file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-black file:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                />
-              </label>
-
-              <label className="space-y-2 text-sm font-black text-slate-700">
-                或使用外部图片链接
-                <input
-                  name="image_url"
-                  value={imageUrl}
-                  disabled={urlDisabled}
-                  onChange={(event) => setImageUrl(event.target.value)}
-                  onBlur={handleImageUrlBlur}
-                  placeholder="外部图片 URL，例如 https://img.openaa.com/banners/xxx.jpg"
-                  className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-900 outline-none focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-                />
-              </label>
-            </div>
-
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm font-semibold text-slate-500">
-                图片只能二选一。要更换图片，请先删除当前图片。
-              </p>
+              <div>
+                <h4 className="text-sm font-black text-slate-900">广告图片 *</h4>
+                <p className="mt-1 text-xs font-semibold text-slate-500">
+                  图片只能二选一。要更换图片，请先删除当前图片。
+                </p>
+              </div>
               {hasImage ? (
                 <button
                   type="button"
                   onClick={clearImage}
                   className="h-10 rounded-2xl border border-red-200 bg-white px-4 text-sm font-black text-red-600 transition hover:bg-red-50"
                 >
-                  删除图片
+                  删除当前图片
                 </button>
               ) : null}
             </div>
+
+            {!hasLockedImage ? (
+              <div className="inline-flex w-full rounded-2xl border border-slate-200 bg-white p-1 sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => selectImageMode("external")}
+                  className={`h-10 flex-1 rounded-xl px-4 text-sm font-black transition sm:flex-none ${
+                    imageMode === "external" ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  外部链接
+                </button>
+                <button
+                  type="button"
+                  onClick={() => selectImageMode("upload")}
+                  className={`h-10 flex-1 rounded-xl px-4 text-sm font-black transition sm:flex-none ${
+                    imageMode === "upload" ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  直接上传
+                </button>
+              </div>
+            ) : (
+              <p className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-slate-600">
+                当前图片来源：{imageSourceLock === "uploaded" || imageMode === "upload" ? "直接上传" : "外部链接"}
+              </p>
+            )}
+
+            {!hasLockedImage && imageMode === "external" ? (
+              <label className="space-y-2 text-sm font-black text-slate-700">
+                外部图片链接
+                <input
+                  name="image_url"
+                  value={imageUrl}
+                  onChange={(event) => setImageUrl(event.target.value)}
+                  onBlur={handleImageUrlBlur}
+                  placeholder="外部图片 URL，例如 https://img.openaa.com/banners/xxx.jpg"
+                  className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-900 outline-none focus:border-blue-500"
+                />
+              </label>
+            ) : null}
+
+            {!hasLockedImage && imageMode === "upload" ? (
+              <label className="space-y-2 text-sm font-black text-slate-700">
+                直接上传
+                <input
+                  ref={fileInputRef}
+                  name="image_file"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={handleFileChange}
+                  className="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 file:mr-4 file:rounded-xl file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-black file:text-blue-700"
+                />
+              </label>
+            ) : null}
 
             {uploadMessage ? (
               <p className="text-sm font-black text-blue-700">{uploadMessage}</p>
@@ -313,6 +353,21 @@ export function AdminAdsManagement({
               </div>
             ) : null}
           </div>
+
+          <label className="space-y-2 text-sm font-black text-slate-700">
+            打开方式 *
+            <select
+              name="open_mode"
+              required
+              value={openMode}
+              onChange={(event) => setOpenMode(event.target.value as AdOpenMode)}
+              className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-base font-bold text-slate-900 outline-none focus:border-blue-500"
+            >
+              <option value="internal">内部详情页</option>
+              <option value="external_new">外部链接 - 新窗口</option>
+              <option value="external_same">外部链接 - 当前窗口</option>
+            </select>
+          </label>
 
           {openMode === "internal" ? <InternalFields ad={editingAd} /> : <ExternalFields ad={editingAd} />}
 
