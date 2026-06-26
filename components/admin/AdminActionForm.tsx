@@ -34,7 +34,7 @@ export function AdminActionForm({
   }, [onSuccess, state]);
 
   return (
-    <form action={formAction} encType="multipart/form-data" className={className}>
+    <form action={formAction} className={className}>
       {children}
       <div className={footerClassName}>
         {footerStart}

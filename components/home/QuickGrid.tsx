@@ -27,6 +27,7 @@ export function QuickGrid({ items }: { items: QuickGridItem[] }) {
         {items.map((item) => {
           const Icon = item.icon;
           const theme = quickGridThemes[item.label] ?? quickGridThemes["导航"];
+          const itemKey = `${item.href}-${item.label}`;
           const className = cn(
             "flex min-h-[84px] flex-col items-center justify-center gap-2 rounded-2xl px-1 text-center text-[14px] font-medium leading-tight text-slate-800 transition active:scale-95 md:min-h-[106px] lg:min-h-[116px]",
             theme.hover,
@@ -42,14 +43,14 @@ export function QuickGrid({ items }: { items: QuickGridItem[] }) {
 
           if (item.label === "导航" && item.href === "/navigation") {
             return (
-              <NavigationAwareLink key={item.href} className={className}>
+              <NavigationAwareLink key={itemKey} className={className}>
                 {content}
               </NavigationAwareLink>
             );
           }
 
           return (
-            <Link key={item.href} href={item.href} className={className}>
+            <Link key={itemKey} href={item.href} className={className}>
               {content}
             </Link>
           );
