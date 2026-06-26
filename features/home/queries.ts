@@ -26,8 +26,6 @@ import type { HomeCity, HomeConfig, HomeLatestPostSectionConfig, HomeSectionReco
 
 type HomeSupabaseClient = SupabaseClient;
 
-const MAX_DYNAMIC_TICKER_ITEMS = 10;
-const MAX_DYNAMIC_TICKER_ITEMS_PER_SECTION = 2;
 const HOME_PUBLIC_FETCH_TIMEOUT_MS = 8000;
 
 export async function getHomeConfig(): Promise<HomeConfig> {
@@ -57,7 +55,8 @@ export async function getHomeConfig(): Promise<HomeConfig> {
     getAdPlaceholderSetting(supabase),
     getLatestPostGroups(latestPostSections, supabase),
   ]);
-  const tickerItems = await getLatestTickerItems(supabase, city, tickerSettings, latestPostGroups);
+  const tickerPostGroups = await getTickerPostGroups(latestPostSections, tickerSettings, latestPostGroups, supabase);
+  const tickerItems = await getLatestTickerItems(supabase, city, tickerSettings, tickerPostGroups);
 
   return {
     city,
@@ -147,7 +146,7 @@ export async function getLatestTickerItems(
 
   const dynamicItems = latestPostGroups
     ? mapLatestPostGroupsToTickerItems(latestPostGroups, settings)
-    : mapLatestPostGroupsToTickerItems(await getLatestPostGroups(fallbackLatestPostSections.filter((section) => section.isVisible), supabase), settings);
+    : mapLatestPostGroupsToTickerItems(await getTickerPostGroups(fallbackLatestPostSections.filter((section) => section.isVisible), settings, undefined, supabase), settings);
 
   if (dynamicItems.length > 0) {
     return dynamicItems;
@@ -157,7 +156,7 @@ export async function getLatestTickerItems(
     return fallbackTickerItems;
   }
 
-  return fallbackTickerItems;
+  return [];
 }
 
 async function getConfiguredTickerItems(supabase: HomeSupabaseClient, city = fallbackHomeCity, settings = fallbackTickerSettings) {
@@ -366,6 +365,51 @@ async function getLatestPostGroup(section: HomeLatestPostSectionConfig, client?:
   }
 }
 
+async function getTickerPostGroups(
+  sections: HomeLatestPostSectionConfig[],
+  settings = fallbackTickerSettings,
+  existingGroups?: LatestPostGroup[],
+  client?: HomeSupabaseClient | null,
+) {
+  const tickerSections = expandTickerPostSectionLimits(sections, settings);
+  if (tickerSections.length === 0) return [];
+
+  if (existingGroups && canReuseLatestPostGroupsForTicker(tickerSections, existingGroups)) {
+    return existingGroups;
+  }
+
+  return getLatestPostGroups(tickerSections, client);
+}
+
+function expandTickerPostSectionLimits(sections: HomeLatestPostSectionConfig[], settings = fallbackTickerSettings) {
+  const enabledTickerSections = settings.sections.filter((section) => section.isEnabled);
+  if (enabledTickerSections.length === 0) return [];
+
+  const tickerLimits = new Map<string, number>();
+  for (const section of enabledTickerSections) {
+    const sectionKey = normalizeTickerModule(section.sectionKey);
+    if (sectionKey) tickerLimits.set(sectionKey, section.displayCount);
+  }
+
+  return sections
+    .map((section) => {
+      const sectionKey = normalizeTickerModule(section.key);
+      if (!sectionKey || !tickerLimits.has(sectionKey)) return null;
+      return {
+        ...section,
+        limitCount: Math.max(section.limitCount, tickerLimits.get(sectionKey) ?? section.limitCount),
+      };
+    })
+    .filter((section): section is HomeLatestPostSectionConfig => section !== null);
+}
+
+function canReuseLatestPostGroupsForTicker(sections: HomeLatestPostSectionConfig[], groups: LatestPostGroup[]) {
+  return sections.every((section) => {
+    const group = groups.find((item) => normalizeTickerModule(item.key) === normalizeTickerModule(section.key));
+    return group && group.posts.length >= section.limitCount;
+  });
+}
+
 function mapNewsToHomePost(post: Awaited<ReturnType<typeof getLatestNews>>["data"][number]): PostListItem {
   return {
     id: post.id,
@@ -386,27 +430,27 @@ function mapNewsToHomePost(post: Awaited<ReturnType<typeof getLatestNews>>["data
 }
 
 function mapLatestPostGroupsToTickerItems(groups: LatestPostGroup[], settings = fallbackTickerSettings) {
-  const enabledSectionKeys = new Set(
-    settings.sections
-      .filter((section) => section.isEnabled)
-      .map((section) => section.sectionKey),
-  );
-  const hasSectionSettings = settings.sections.length > 0;
-  const candidates = groups
-    .filter((group) => group.isVisible !== false)
-    .filter((group) => {
-      const sectionKey = normalizeTickerModule(group.key);
-      return sectionKey !== null && (!hasSectionSettings || enabledSectionKeys.has(sectionKey));
-    })
-    .flatMap((group) =>
-      group.posts
+  const sectionGroups = new Map<string, LatestPostGroup>();
+  for (const group of groups) {
+    const sectionKey = normalizeTickerModule(group.key);
+    if (!sectionKey || group.isVisible === false || sectionGroups.has(sectionKey)) continue;
+    sectionGroups.set(sectionKey, group);
+  }
+
+  const candidates = settings.sections
+    .filter((section) => section.isEnabled)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .flatMap((section) => {
+      const sectionKey = normalizeTickerModule(section.sectionKey);
+      const group = sectionKey ? sectionGroups.get(sectionKey) : null;
+      if (!group) return [];
+
+      return group.posts
         .map((post) => mapLatestPostToTickerCandidate(group, post))
         .filter((item): item is TickerCandidate => item !== null)
         .sort(compareTickerCandidates)
-        .slice(0, MAX_DYNAMIC_TICKER_ITEMS_PER_SECTION),
-    )
-    .sort(compareTickerCandidates)
-    .slice(0, MAX_DYNAMIC_TICKER_ITEMS);
+        .slice(0, section.displayCount);
+    });
 
   return candidates.map((item) => ({ label: item.label, href: item.href, module: item.module }));
 }
