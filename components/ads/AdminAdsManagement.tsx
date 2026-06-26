@@ -90,6 +90,15 @@ export function AdminAdsManagement({
     scrollToForm();
   }
 
+  function toggleCreate() {
+    if (isFormOpen && !editingAd) {
+      resetForm(true);
+      return;
+    }
+
+    startCreate();
+  }
+
   function startEdit(ad: AdminAdRow) {
     setIsFormOpen(true);
     setEditingAd(ad);
@@ -188,10 +197,10 @@ export function AdminAdsManagement({
       <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
         <button
           type="button"
-          onClick={startCreate}
+          onClick={toggleCreate}
           className="inline-flex h-11 w-full items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-black text-white shadow-sm transition hover:bg-blue-700 sm:w-auto"
         >
-          新增广告
+          {isFormOpen && !editingAd ? "取消新增" : "新增广告"}
         </button>
       </div>
 
