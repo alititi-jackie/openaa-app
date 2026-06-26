@@ -313,42 +313,69 @@ export async function upsertLatestTicker(_state: AdminHomeActionState, formData:
   if (!context.ok) return fail(context.message);
 
   const id = readText(formData, "id");
+  const intent = readText(formData, "intent") || "save";
+
+  if (intent === "move_up" || intent === "move_down") {
+    if (!id) return fail("缺少手动动态 ID。");
+    return moveLatestTickerItem(context, id, intent === "move_up" ? "up" : "down");
+  }
+
+  if (intent === "enable" || intent === "disable") {
+    if (!id) return fail("缺少手动动态 ID。");
+    const isEnabled = intent === "enable";
+    const { error } = await context.supabase.from("latest_ticker").update({ is_enabled: isEnabled, updated_at: new Date().toISOString() }).eq("id", id);
+    if (error) return fail(isEnabled ? "手动动态启用失败。" : "手动动态停用失败。");
+    if (!(await auditLog(context, isEnabled ? "enable_latest_ticker" : "disable_latest_ticker", "latest_ticker", id, { is_enabled: isEnabled }))) return auditFailure();
+    revalidateAdminHome();
+    return ok(isEnabled ? "手动动态已启用。" : "手动动态已停用。");
+  }
+
+  if (intent === "delete") {
+    if (!id) return fail("缺少手动动态 ID。");
+    if (formData.get("confirm_delete") !== "on") return fail("请先勾选确认删除这条动态。");
+    const { error } = await context.supabase.from("latest_ticker").delete().eq("id", id);
+    if (error) return fail("手动动态删除失败。");
+    if (!(await auditLog(context, "delete_latest_ticker", "latest_ticker", id, { deleted: true }))) return auditFailure();
+    revalidateAdminHome();
+    return ok("手动动态已删除。");
+  }
+
   const title = readText(formData, "title");
-  const href = normalizeOptionalLink(readText(formData, "href"));
-  const tickerModule = normalizeTickerModule(readText(formData, "module"));
+  const href = normalizeWebsiteUrl(readText(formData, "href"), { allowInternalPath: true, requiredMessage: "手动动态链接不能为空。", invalidMessage: "手动动态链接格式不正确。" });
   const isEnabled = formData.get("is_enabled") === "on";
-  const sortOrder = readInteger(formData, "sort_order", "最新动态排序");
+  const sortOrder = id ? readInteger(formData, "sort_order", "手动动态排序") : await readNextManualTickerSortOrder(context.supabase);
   const startsAt = readDateTime(formData, "starts_at");
   const endsAt = readDateTime(formData, "ends_at");
 
-  if (!title) return fail("最新动态标题不能为空。");
+  if (!title) return fail("手动动态标题不能为空。");
   if (!href.ok) return fail(href.message);
   if (!sortOrder.ok) return fail(sortOrder.message);
 
   const payload = {
     title,
     href: href.value,
-    module: tickerModule,
+    module: "manual",
     is_enabled: isEnabled,
     sort_order: sortOrder.value,
     starts_at: startsAt,
     ends_at: endsAt,
+    updated_at: new Date().toISOString(),
   };
 
   const result = id
     ? await context.supabase.from("latest_ticker").update(payload).eq("id", id).select("id").single()
     : await context.supabase.from("latest_ticker").insert(payload).select("id").single();
 
-  if (result.error || !result.data) return fail("最新动态保存失败。");
+  if (result.error || !result.data) return fail("手动动态保存失败。");
 
   if (!(await auditLog(context, id ? "update_latest_ticker" : "create_latest_ticker", "latest_ticker", result.data.id, payload))) {
     return auditFailure();
   }
   revalidateAdminHome();
-  return ok("最新动态已保存。");
+  return ok(id ? "手动动态已保存。" : "手动动态已新增。");
 }
 
-export async function updateLatestTickerSettings(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
+export async function updateLatestTickerGlobalSettings(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
   const context = await getAdminActionContext("manage_latest_ticker");
   if (!context.ok) return fail(context.message);
 
@@ -364,6 +391,18 @@ export async function updateLatestTickerSettings(_state: AdminHomeActionState, f
 
   const globalResult = await context.supabase.from("latest_ticker_global_settings").upsert(globalPayload, { onConflict: "id" });
   if (globalResult.error) return fail("最新动态全局设置保存失败。");
+
+  if (!(await auditLog(context, "update_latest_ticker_global_settings", "latest_ticker", "global_settings", { global: globalPayload }))) {
+    return auditFailure();
+  }
+
+  revalidateAdminHome();
+  return ok("最新动态全局设置已保存。");
+}
+
+export async function updateLatestTickerSettings(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
+  const context = await getAdminActionContext("manage_latest_ticker");
+  if (!context.ok) return fail(context.message);
 
   const sectionKeys = formData.getAll("section_key").filter((value): value is string => typeof value === "string");
   const sectionPayloads = [];
@@ -386,15 +425,24 @@ export async function updateLatestTickerSettings(_state: AdminHomeActionState, f
     });
   }
 
+  const intent = readText(formData, "intent");
+  if (intent.startsWith("move_up:") || intent.startsWith("move_down:")) {
+    const [directionIntent, rawSectionKey] = intent.split(":");
+    const sectionKey = normalizeHomeTickerSectionKey(rawSectionKey);
+    if (!sectionKey) return fail("缺少要排序的自动动态分类。");
+    const moved = moveTickerSectionPayloads(sectionPayloads, sectionKey, directionIntent === "move_up" ? "up" : "down");
+    if (!moved.ok) return fail(moved.message);
+  }
+
   const sectionsResult = await context.supabase.from("latest_ticker_sections").upsert(sectionPayloads, { onConflict: "section_key" });
   if (sectionsResult.error) return fail("最新动态分区设置保存失败。");
 
-  if (!(await auditLog(context, "update_latest_ticker_settings", "latest_ticker", "settings", { global: globalPayload, sections: sectionPayloads }))) {
+  if (!(await auditLog(context, intent.startsWith("move_") ? "move_latest_ticker_section" : "update_latest_ticker_sections", "latest_ticker", "sections", { sections: sectionPayloads }))) {
     return auditFailure();
   }
 
   revalidateAdminHome();
-  return ok("最新动态滚动条设置已保存。");
+  return ok(intent.startsWith("move_") ? "自动动态排序已保存。" : "自动动态设置已保存。");
 }
 
 export async function upsertHomeBanner(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
@@ -597,6 +645,81 @@ function readText(formData: FormData, key: string) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+async function readNextManualTickerSortOrder(supabase: SupabaseServerClient): Promise<{ ok: true; value: number } | { ok: false; message: string }> {
+  const { data, error } = await supabase
+    .from("latest_ticker")
+    .select("sort_order")
+    .order("sort_order", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) return { ok: false, message: "读取手动动态排序失败。" };
+  const firstSortOrder = typeof data?.sort_order === "number" ? data.sort_order : 10;
+  return { ok: true, value: firstSortOrder - 10 };
+}
+
+async function moveLatestTickerItem(context: Extract<AdminActionContext, { ok: true }>, id: string, direction: "up" | "down"): Promise<AdminHomeActionState> {
+  const { data, error } = await context.supabase
+    .from("latest_ticker")
+    .select("id,sort_order,title")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  if (error || !data) return fail("读取手动动态排序失败。");
+
+  const items = data.map((item, index) => ({ id: item.id, sort_order: (index + 1) * 10 }));
+  const currentIndex = items.findIndex((item) => item.id === id);
+  if (currentIndex < 0) return fail("手动动态不存在。");
+
+  const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+  if (targetIndex < 0 || targetIndex >= items.length) return fail(direction === "up" ? "这条动态已经在最前面。" : "这条动态已经在最后面。");
+
+  const currentOrder = items[currentIndex].sort_order;
+  items[currentIndex].sort_order = items[targetIndex].sort_order;
+  items[targetIndex].sort_order = currentOrder;
+
+  const updates = await Promise.all(
+    items.map((item) =>
+      context.supabase
+        .from("latest_ticker")
+        .update({ sort_order: item.sort_order, updated_at: new Date().toISOString() })
+        .eq("id", item.id),
+    ),
+  );
+  if (updates.some((result) => result.error)) return fail("手动动态排序保存失败。");
+  if (!(await auditLog(context, "move_latest_ticker", "latest_ticker", id, { direction }))) return auditFailure();
+
+  revalidateAdminHome();
+  return ok("手动动态排序已更新。");
+}
+
+function moveTickerSectionPayloads<T extends { section_key: string; sort_order: number }>(payloads: T[], sectionKey: string, direction: "up" | "down"): { ok: true } | { ok: false; message: string } {
+  const sorted = payloads
+    .map((payload, index) => ({ ...payload, sort_order: Number.isFinite(payload.sort_order) ? payload.sort_order : (index + 1) * 10 }))
+    .sort((a, b) => a.sort_order - b.sort_order);
+  const currentIndex = sorted.findIndex((payload) => payload.section_key === sectionKey);
+  if (currentIndex < 0) return { ok: false, message: "自动动态分类不存在。" };
+
+  const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+  if (targetIndex < 0 || targetIndex >= sorted.length) {
+    return { ok: false, message: direction === "up" ? "这个分类已经在最前面。" : "这个分类已经在最后面。" };
+  }
+
+  const currentOrder = sorted[currentIndex].sort_order;
+  sorted[currentIndex].sort_order = sorted[targetIndex].sort_order;
+  sorted[targetIndex].sort_order = currentOrder;
+  sorted.sort((a, b) => a.sort_order - b.sort_order).forEach((payload, index) => {
+    payload.sort_order = (index + 1) * 10;
+  });
+
+  for (const moved of sorted) {
+    const original = payloads.find((payload) => payload.section_key === moved.section_key);
+    if (original) original.sort_order = moved.sort_order;
+  }
+
+  return { ok: true };
+}
+
 function readFile(formData: FormData, key: string) {
   const value = formData.get(key);
   return value instanceof File && value.size > 0 ? value : null;
@@ -619,11 +742,6 @@ function readIntegerInRange(formData: FormData, key: string, label: string, min:
   if (!value.ok) return value;
   if (value.value < min || value.value > max) return { ok: false, message: `${label} 必须在 ${min} 到 ${max} 之间。` };
   return value;
-}
-
-function normalizeTickerModule(value: string) {
-  if (value === "news" || value === "jobs" || value === "housing" || value === "marketplace" || value === "services") return value;
-  return "news";
 }
 
 function readDateTime(formData: FormData, key: string) {

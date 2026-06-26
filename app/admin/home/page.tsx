@@ -1,12 +1,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { ReactNode } from "react";
+import { ArrowDown, ArrowUp, Power, Trash2 } from "lucide-react";
 import { AdminActionForm, AdminCheckbox, AdminSelect, AdminTextarea, AdminTextInput } from "@/components/admin/AdminActionForm";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminTopActions } from "@/components/admin/AdminTopActions";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
-import { createDefaultHomeConfig, removeHomeBannerImage, updateHomeSection, updateLatestPostsSection, updateLatestTickerSettings, upsertHomeBanner, upsertLatestTicker } from "@/features/admin-home/actions";
+import { createDefaultHomeConfig, removeHomeBannerImage, updateHomeSection, updateLatestPostsSection, updateLatestTickerGlobalSettings, updateLatestTickerSettings, upsertHomeBanner, upsertLatestTicker } from "@/features/admin-home/actions";
 import { getAdminHomeConfigData } from "@/features/admin-home/queries";
 import type { AdminHomeBannerRow, AdminHomeSectionRow, AdminTickerGlobalSettingsRow, AdminTickerRow, AdminTickerSectionSettingsRow } from "@/features/admin-home/types";
 import { fallbackLatestPostSections } from "@/features/home/fallbacks";
@@ -90,11 +91,9 @@ export default function AdminHomePage({ searchParams }: AdminHomePageProps) {
             {data.permissions.manageLatestTicker ? (
               <HomeConfigPanel title="最新动态 / 信息滚动条" description="管理首页单行滚动信息和五类内容来源。" summary={getTickerPanelSummary(data.tickerGlobalSettings, data.tickerSectionSettings, data.tickerItems)}>
                 <div className="grid gap-4">
-                  <TickerSettingsForm globalSettings={data.tickerGlobalSettings} sections={data.tickerSectionSettings} />
-                  {data.tickerItems.map((item) => (
-                    <TickerForm key={item.id} item={item} />
-                  ))}
-                  <TickerForm />
+                  <TickerGlobalSettingsForm globalSettings={data.tickerGlobalSettings} />
+                  <AutomaticTickerPanel sections={data.tickerSectionSettings} />
+                  <ManualTickerPanel items={data.tickerItems} />
                 </div>
               </HomeConfigPanel>
             ) : null}
@@ -211,9 +210,8 @@ function getBannerPanelSummary(banners: AdminHomeBannerRow[]) {
 }
 
 function getTickerItemSummary(item?: AdminTickerRow) {
-  if (!item) return ["新建", "默认启用"];
-  const moduleLabel = tickerModuleOptions.find((option) => option.value === item.module)?.label ?? item.module ?? "未指定";
-  return [item.is_enabled ? "启用" : "停用", moduleLabel, item.href || "无链接", `排序 ${item.sort_order}`];
+  if (!item) return ["新增排在最前", "默认启用"];
+  return [item.is_enabled ? "启用" : "停用", item.href || "无链接", `排序 ${item.sort_order}`];
 }
 
 function getBannerItemSummary(banner?: AdminHomeBannerRow) {
@@ -345,27 +343,56 @@ function getHomeSectionSummary(section: AdminHomeSectionRow) {
   };
 }
 
-function TickerSettingsForm({ globalSettings, sections }: { globalSettings: AdminTickerGlobalSettingsRow; sections: AdminTickerSectionSettingsRow[] }) {
+function TickerGlobalSettingsForm({ globalSettings }: { globalSettings: AdminTickerGlobalSettingsRow }) {
   return (
-    <NestedConfigPanel title="滚动条设置" summary={getTickerPanelSummary(globalSettings, sections, [])} tone="blue">
-      <AdminActionForm action={updateLatestTickerSettings} submitLabel="保存滚动条设置">
-        <div className="grid gap-3 md:grid-cols-2">
-          <AdminTextInput label="滚动间隔（秒）" name="interval_seconds" type="number" defaultValue={globalSettings.interval_seconds} />
-          <div className="flex items-end">
-            <AdminCheckbox label="启用最新动态滚动条" name="global_is_enabled" defaultChecked={globalSettings.is_enabled} />
-          </div>
+    <AdminActionForm action={updateLatestTickerGlobalSettings} submitLabel="保存全局设置" className="rounded-2xl border border-blue-100 bg-blue-50 p-3">
+      <div className="grid gap-3 md:grid-cols-2">
+        <AdminTextInput label="滚动间隔（秒）" name="interval_seconds" type="number" defaultValue={globalSettings.interval_seconds} />
+        <div className="flex items-end">
+          <AdminCheckbox label="启用最新动态滚动条" name="global_is_enabled" defaultChecked={globalSettings.is_enabled} />
         </div>
+      </div>
+    </AdminActionForm>
+  );
+}
+
+function AutomaticTickerPanel({ sections }: { sections: AdminTickerSectionSettingsRow[] }) {
+  return (
+    <NestedConfigPanel title="自动动态" summary={getAutomaticTickerSummary(sections)} tone="blue">
+      <AdminActionForm action={updateLatestTickerSettings} submitLabel="保存自动动态设置">
         <div className="grid gap-3">
-          {sections.map((section) => (
+          {sections.map((section, index) => (
             <div key={section.section_key} className="rounded-xl border border-blue-100 bg-white p-3">
               <input type="hidden" name="section_key" value={section.section_key} />
               <input type="hidden" name={`section_name_${section.section_key}`} value={section.section_name} />
-              <div className="grid gap-3 md:grid-cols-[1fr_120px_120px_auto]">
+              <input type="hidden" name={`sort_order_${section.section_key}`} value={section.sort_order} />
+              <div className="grid gap-3 md:grid-cols-[1fr_120px_auto_auto]">
                 <div className="text-sm font-black text-slate-800">{section.section_name}</div>
-                <AdminTextInput label="排序" name={`sort_order_${section.section_key}`} type="number" defaultValue={section.sort_order} />
                 <AdminTextInput label="显示数量" name={`display_count_${section.section_key}`} type="number" defaultValue={section.display_count} />
                 <div className="flex items-end">
                   <AdminCheckbox label="显示" name={`is_enabled_${section.section_key}`} defaultChecked={section.is_enabled} />
+                </div>
+                <div className="flex items-end gap-2">
+                  <button
+                    type="submit"
+                    name="intent"
+                    value={`move_up:${section.section_key}`}
+                    disabled={index === 0}
+                    className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label={`${section.section_name}上移`}
+                  >
+                    <ArrowUp size={16} aria-hidden="true" />
+                  </button>
+                  <button
+                    type="submit"
+                    name="intent"
+                    value={`move_down:${section.section_key}`}
+                    disabled={index === sections.length - 1}
+                    className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label={`${section.section_name}下移`}
+                  >
+                    <ArrowDown size={16} aria-hidden="true" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -376,30 +403,105 @@ function TickerSettingsForm({ globalSettings, sections }: { globalSettings: Admi
   );
 }
 
-const tickerModuleOptions = [
-  { value: "news", label: "新闻" },
-  { value: "jobs", label: "招聘" },
-  { value: "housing", label: "房屋" },
-  { value: "marketplace", label: "二手" },
-  { value: "services", label: "本地服务" },
-];
-
-function TickerForm({ item }: { item?: AdminTickerRow }) {
+function ManualTickerPanel({ items }: { items: AdminTickerRow[] }) {
   return (
-    <NestedConfigPanel title={item ? item.title : "新增动态"} summary={getTickerItemSummary(item)}>
-      <AdminActionForm action={upsertLatestTicker} submitLabel={item ? "保存动态" : "新增动态"}>
+    <NestedConfigPanel title="手动动态" summary={[`现有 ${items.length}`, "支持新增、启停、删除和排序"]}>
+      <div className="grid gap-4">
+        <TickerForm />
+        {items.length > 0 ? (
+          items.map((item, index) => (
+            <TickerForm key={item.id} item={item} index={index} total={items.length} />
+          ))
+        ) : (
+          <p className="rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-500">暂无手动动态。</p>
+        )}
+      </div>
+    </NestedConfigPanel>
+  );
+}
+
+function getAutomaticTickerSummary(sections: AdminTickerSectionSettingsRow[]) {
+  const enabledCount = sections.filter((section) => section.is_enabled).length;
+  return [`来源 ${sections.length}`, `显示 ${enabledCount}`, `隐藏 ${sections.length - enabledCount}`];
+}
+
+function TickerForm({ item, index = 0, total = 0 }: { item?: AdminTickerRow; index?: number; total?: number }) {
+  const isExisting = Boolean(item);
+
+  return (
+    <div className={item ? "rounded-2xl border border-slate-100 bg-slate-50 p-3" : "rounded-2xl border border-blue-100 bg-blue-50 p-3"}>
+      <div className="mb-3">
+        <p className="text-sm font-black text-slate-900">{item ? item.title : "新增手动动态"}</p>
+        <SummaryPills items={getTickerItemSummary(item)} className="mt-2" />
+      </div>
+      <AdminActionForm
+        action={upsertLatestTicker}
+        submitLabel={item ? "保存动态" : "新增动态"}
+        footerStart={
+          <div className="flex flex-wrap items-center gap-2">
+            {!item ? (
+              <button type="reset" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700">
+                取消
+              </button>
+            ) : (
+              <>
+                <button
+                  type="submit"
+                  name="intent"
+                  value="move_up"
+                  disabled={index === 0}
+                  className="inline-flex min-h-10 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <ArrowUp size={15} aria-hidden="true" />
+                  上移
+                </button>
+                <button
+                  type="submit"
+                  name="intent"
+                  value="move_down"
+                  disabled={index === total - 1}
+                  className="inline-flex min-h-10 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <ArrowDown size={15} aria-hidden="true" />
+                  下移
+                </button>
+                <button
+                  type="submit"
+                  name="intent"
+                  value={item?.is_enabled ? "disable" : "enable"}
+                  className="inline-flex min-h-10 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700"
+                >
+                  <Power size={15} aria-hidden="true" />
+                  {item?.is_enabled ? "停用" : "启用"}
+                </button>
+                <button
+                  type="submit"
+                  name="intent"
+                  value="delete"
+                  className="inline-flex min-h-10 items-center gap-1 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-black text-red-700"
+                >
+                  <Trash2 size={15} aria-hidden="true" />
+                  删除
+                </button>
+              </>
+            )}
+          </div>
+        }
+      >
         <input type="hidden" name="id" value={item?.id ?? ""} />
+        <input type="hidden" name="sort_order" value={item?.sort_order ?? ""} />
         <div className="grid gap-3 md:grid-cols-2">
-          <AdminSelect label="模块" name="module" defaultValue={item?.module ?? "news"} options={tickerModuleOptions} />
           <AdminTextInput label="标题" name="title" defaultValue={item?.title} required />
-          <AdminTextInput label="链接" name="href" defaultValue={item?.href} placeholder="/news" />
-          <AdminTextInput label="排序" name="sort_order" type="number" defaultValue={item?.sort_order ?? 0} />
+          <AdminTextInput label="链接" name="href" defaultValue={item?.href} placeholder="/news 或 https://openaa.com/news" required />
           <AdminTextInput label="开始时间" name="starts_at" type="datetime-local" defaultValue={toDateTimeLocal(item?.starts_at)} />
           <AdminTextInput label="结束时间" name="ends_at" type="datetime-local" defaultValue={toDateTimeLocal(item?.ends_at)} />
         </div>
-        <AdminCheckbox label="启用" name="is_enabled" defaultChecked={item?.is_enabled ?? true} />
+        <div className="flex flex-wrap items-center gap-4">
+          <AdminCheckbox label="启用" name="is_enabled" defaultChecked={item?.is_enabled ?? true} />
+          {isExisting ? <AdminCheckbox label="确认删除这条动态" name="confirm_delete" /> : null}
+        </div>
       </AdminActionForm>
-    </NestedConfigPanel>
+    </div>
   );
 }
 

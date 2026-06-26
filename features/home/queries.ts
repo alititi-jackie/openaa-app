@@ -138,9 +138,14 @@ export async function getLatestTickerItems(
   }
 
   if (supabase) {
-    const configuredItems = await getConfiguredTickerItems(supabase, city, settings);
-    if (configuredItems.length > 0) {
-      return configuredItems;
+    const configuredItems = await getConfiguredTickerItems(supabase, city);
+    const dynamicItems = latestPostGroups
+      ? mapLatestPostGroupsToTickerItems(latestPostGroups, settings)
+      : mapLatestPostGroupsToTickerItems(await getTickerPostGroups(fallbackLatestPostSections.filter((section) => section.isVisible), settings, undefined, supabase), settings);
+
+    const combinedItems = [...configuredItems, ...dynamicItems];
+    if (combinedItems.length > 0) {
+      return combinedItems;
     }
   }
 
@@ -159,7 +164,7 @@ export async function getLatestTickerItems(
   return [];
 }
 
-async function getConfiguredTickerItems(supabase: HomeSupabaseClient, city = fallbackHomeCity, settings = fallbackTickerSettings) {
+async function getConfiguredTickerItems(supabase: HomeSupabaseClient, city = fallbackHomeCity) {
   try {
     const now = new Date().toISOString();
     const { data, error } = await supabase
@@ -172,16 +177,13 @@ async function getConfiguredTickerItems(supabase: HomeSupabaseClient, city = fal
 
     if (error) {
       warnHomeConfig("latest_ticker", error.message);
-      return fallbackTickerItems;
+      return [];
     }
 
     const meaningfulRows = (data ?? []).filter((row) => !isPlaceholderTickerTitle(row.title));
-    const items = applyTickerSectionSettings(
-      meaningfulRows
+    const items = meaningfulRows
       .map((row) => mapTickerItem({ ...(row as Record<string, unknown>), city_id: city.slug }))
-      .filter((item): item is NonNullable<typeof item> => item !== null),
-      settings,
-    );
+      .filter((item): item is NonNullable<typeof item> => item !== null);
 
     return items;
   } catch (error) {
@@ -516,30 +518,6 @@ function getSection(sections: Record<string, HomeSectionRecord>, key: string) {
   return sections[key];
 }
 
-function applyTickerSectionSettings<T extends { module?: string | null }>(items: T[], settings = fallbackTickerSettings) {
-  const sections = settings.sections
-    .filter((section) => section.isEnabled)
-    .sort((a, b) => a.sortOrder - b.sortOrder);
-
-  if (sections.length === 0) {
-    return items;
-  }
-
-  const configuredKeys = new Set(sections.map((section) => section.sectionKey));
-  const result: T[] = [];
-
-  for (const section of sections) {
-    const sectionItems = items.filter((item) => normalizeTickerModule(item.module) === section.sectionKey);
-    result.push(...sectionItems.slice(0, section.displayCount));
-  }
-
-  result.push(...items.filter((item) => {
-    const sectionKey = normalizeTickerModule(item.module);
-    return sectionKey !== null && !configuredKeys.has(sectionKey);
-  }));
-  return result;
-}
-
 function normalizeTickerModule(module?: string | null) {
   return normalizeHomeTickerSectionKey(module);
 }
@@ -568,7 +546,7 @@ function normalizeTickerSectionRows(rows?: Array<{ section_key: unknown; section
     isEnabled: true,
     sortOrder: section.sortOrder,
     displayCount: section.displayCount,
-  });
+  }).sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
 function clampTickerNumber(value: unknown, min: number, max: number, fallback: number) {

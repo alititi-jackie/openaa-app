@@ -118,7 +118,7 @@ async function readTickerSectionSettings(supabase: SupabaseServerClient): Promis
     is_enabled: true,
     sort_order: section.sortOrder,
     display_count: section.displayCount,
-  });
+  }).sort((a, b) => a.sort_order - b.sort_order);
 }
 
 async function readHomeBanners(supabase: SupabaseServerClient, status?: string): Promise<AdminHomeBannerRow[]> {
