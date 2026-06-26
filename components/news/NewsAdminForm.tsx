@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Eye, Pencil, Pin, PinOff, Plus, Trash2 } from "lucide-react";
 import { AdminActionForm, AdminCheckbox, AdminTextInput } from "@/components/admin/AdminActionForm";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
@@ -47,6 +47,7 @@ type FormValues = {
 };
 
 type CoverSource = "storage" | "external" | null;
+type CoverInputMode = "external" | "upload";
 
 export function NewsAdminPermissions({ permissions }: { permissions: AdminNewsPermissions }) {
   return (
@@ -360,10 +361,23 @@ function NewsPostEditor({
   const [message, setMessage] = useState("");
   const [pending, startTransition] = useTransition();
   const [coverSource, setCoverSource] = useState<CoverSource>(() => post?.coverImageSource ?? (post?.coverImageUrl ? "external" : null));
-  const [selectedUpload, setSelectedUpload] = useState(false);
+  const [coverMode, setCoverMode] = useState<CoverInputMode>(() => (post?.coverImageSource === "storage" ? "upload" : "external"));
   const [removedCover, setRemovedCover] = useState(false);
+  const [filePreviewUrl, setFilePreviewUrl] = useState("");
+  const [coverMessage, setCoverMessage] = useState("");
   const [fileInputKey, setFileInputKey] = useState(0);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const coverPreviewUrl = filePreviewUrl || (!removedCover ? values.coverImageUrl : "");
+  const hasLockedCover = Boolean(coverSource || filePreviewUrl);
+  const currentCoverSourceLabel = coverSource === "storage" || coverMode === "upload" ? "直接上传" : "外部链接";
+
+  useEffect(() => {
+    return () => {
+      if (filePreviewUrl) {
+        URL.revokeObjectURL(filePreviewUrl);
+      }
+    };
+  }, [filePreviewUrl]);
 
   function setValue<K extends keyof FormValues>(key: K, value: FormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }));
@@ -375,6 +389,81 @@ function NewsPostEditor({
       title,
       slug: !post && !slugTouched ? slugFromTitle(title) : current.slug,
     }));
+  }
+
+  function selectCoverMode(mode: CoverInputMode) {
+    if (hasLockedCover) {
+      setCoverMessage("请先移除当前封面，再切换图片方式。");
+      return;
+    }
+
+    setCoverMode(mode);
+    setCoverMessage("");
+    if (mode === "external") {
+      if (filePreviewUrl) {
+        URL.revokeObjectURL(filePreviewUrl);
+      }
+      setFilePreviewUrl("");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+    setValue("coverImageUrl", "");
+  }
+
+  function clearCover() {
+    setCoverSource(null);
+    setCoverMode("external");
+    setRemovedCover(true);
+    setValue("coverImageUrl", "");
+    setCoverMessage("");
+    setFileInputKey((value) => value + 1);
+    if (filePreviewUrl) {
+      URL.revokeObjectURL(filePreviewUrl);
+    }
+    setFilePreviewUrl("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function handleCoverFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (coverMode !== "upload" || coverSource === "external") {
+      event.target.value = "";
+      setCoverMessage("请先移除外部图片链接，再上传封面。");
+      return;
+    }
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      event.target.value = "";
+      setCoverMessage("图片格式仅支持 JPG、PNG、WEBP。");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      event.target.value = "";
+      setCoverMessage("图片大小不能超过 5MB。");
+      return;
+    }
+
+    if (filePreviewUrl) {
+      URL.revokeObjectURL(filePreviewUrl);
+    }
+    setFilePreviewUrl(URL.createObjectURL(file));
+    setCoverSource("storage");
+    setRemovedCover(false);
+    setValue("coverImageUrl", "");
+    setCoverMessage("已选择上传封面。");
+  }
+
+  function handleCoverUrlBlur() {
+    const value = values.coverImageUrl.trim();
+    if (!value) {
+      if (coverSource === "external") setCoverSource(null);
+      setCoverMessage("");
+      return;
+    }
+    setCoverSource("external");
+    setRemovedCover(false);
+    setCoverMessage("");
   }
 
   function save(formData: FormData) {
@@ -441,72 +530,87 @@ function NewsPostEditor({
       <TextareaField label="SEO description" name="seo_description" rows={3} value={values.seoDescription} onChange={(value) => setValue("seoDescription", value)} />
       <TextareaField label="正文" name="body" rows={9} value={values.body} onChange={(value) => setValue("body", value)} required />
 
-      <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-        <p className="text-sm font-black text-slate-800">封面图</p>
-        <div className="mt-2 grid gap-3 md:grid-cols-2">
+      <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-black text-slate-900">封面图</p>
+            <p className="mt-1 text-xs font-semibold text-slate-500">封面可选；外部链接和直接上传只能二选一。</p>
+          </div>
+          {hasLockedCover ? (
+            <button type="button" onClick={clearCover} className="h-10 rounded-2xl border border-red-200 bg-white px-4 text-sm font-black text-red-600 transition hover:bg-red-50">
+              移除封面
+            </button>
+          ) : null}
+        </div>
+
+        {!hasLockedCover ? (
+          <div className="inline-flex w-full rounded-2xl border border-slate-200 bg-white p-1 sm:w-auto">
+            <button
+              type="button"
+              onClick={() => selectCoverMode("external")}
+              className={`h-10 flex-1 rounded-xl px-4 text-sm font-black transition sm:flex-none ${
+                coverMode === "external" ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              外部链接
+            </button>
+            <button
+              type="button"
+              onClick={() => selectCoverMode("upload")}
+              className={`h-10 flex-1 rounded-xl px-4 text-sm font-black transition sm:flex-none ${
+                coverMode === "upload" ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              直接上传
+            </button>
+          </div>
+        ) : (
+          <p className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-slate-600">当前封面来源：{currentCoverSourceLabel}</p>
+        )}
+
+        {!hasLockedCover && coverMode === "external" ? (
           <TextField
-            label="封面图片 URL"
+            label="外部图片链接"
             name="cover_image_url"
-            value={coverSource === "storage" ? "" : values.coverImageUrl}
+            value={values.coverImageUrl}
             onChange={(value) => {
               setValue("coverImageUrl", value);
-              if (!value.trim()) setCoverSource(null);
               setRemovedCover(false);
+              setCoverMessage("");
             }}
-            onBlur={() => {
-              if (values.coverImageUrl.trim()) setCoverSource("external");
-            }}
+            onBlur={handleCoverUrlBlur}
             placeholder="https://img.openaa.com/..."
-            disabled={coverSource === "storage"}
-            readOnly={coverSource === "external"}
           />
+        ) : null}
+
+        {!hasLockedCover && coverMode === "upload" ? (
           <label className="grid gap-1.5 text-sm font-bold text-slate-700">
-            <span>上传封面</span>
+            <span>直接上传</span>
             <input
               key={fileInputKey}
               ref={fileInputRef}
               name="cover_image_file"
               type="file"
               accept="image/jpeg,image/png,image/webp"
-              disabled={coverSource === "external" || (coverSource === "storage" && !selectedUpload)}
-              onChange={(event) => {
-                if (event.target.files?.[0]) {
-                  setCoverSource("storage");
-                  setSelectedUpload(true);
-                  setRemovedCover(false);
-                  setValue("coverImageUrl", "");
-                }
-              }}
-              className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 disabled:bg-slate-100 disabled:text-slate-400"
+              onChange={handleCoverFileChange}
+              className="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 file:mr-4 file:rounded-xl file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-black file:text-blue-700"
             />
           </label>
-        </div>
-        <p className="mt-2 text-xs font-semibold text-slate-500">
+        ) : null}
+
+        <p className="text-xs font-semibold text-slate-500">
           {coverSource === "storage"
             ? "当前使用上传图片。如需改用外部图片链接，请先移除封面。"
             : coverSource === "external"
               ? "当前使用外部图片链接。如需上传图片，请先移除封面。"
               : "上传文件支持 JPG、PNG、WebP，最大 5MB；也可以填写 https://img.openaa.com/ 图片地址。"}
         </p>
-        {coverSource ? (
-          <button
-            type="button"
-            onClick={() => {
-              setCoverSource(null);
-              setSelectedUpload(false);
-              setRemovedCover(true);
-              setValue("coverImageUrl", "");
-              setFileInputKey((value) => value + 1);
-              if (fileInputRef.current) fileInputRef.current.value = "";
-            }}
-            className="mt-3 inline-flex min-h-9 items-center justify-center rounded-xl border border-red-100 bg-white px-3 py-1.5 text-xs font-black text-red-600 hover:bg-red-50"
-          >
-            移除封面
-          </button>
-        ) : null}
-        {values.coverImageUrl && !removedCover ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={values.coverImageUrl} alt="封面预览" className="mt-3 h-28 w-full max-w-56 rounded-xl object-cover ring-1 ring-slate-100" />
+        {coverMessage ? <p className="text-sm font-black text-blue-700">{coverMessage}</p> : null}
+        {coverPreviewUrl ? (
+          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={coverPreviewUrl} alt="封面预览" className="h-40 w-full object-cover" />
+          </div>
         ) : null}
       </div>
 
