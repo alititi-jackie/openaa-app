@@ -162,6 +162,13 @@ export async function updateLatestPostsSection(_state: AdminHomeActionState, for
     });
   }
 
+  const intent = readText(formData, "intent");
+  if (intent.startsWith("move_up:") || intent.startsWith("move_down:")) {
+    const [directionIntent, sectionKey] = intent.split(":");
+    const moved = moveLatestPostSectionPayloads(sections, sectionKey, directionIntent === "move_up" ? "up" : "down");
+    if (!moved.ok) return fail(moved.message);
+  }
+
   const payload = {
     key: "latest_posts",
     title: sectionTitle,
@@ -176,9 +183,9 @@ export async function updateLatestPostsSection(_state: AdminHomeActionState, for
   const { error } = await context.supabase.from("home_sections").upsert(payload, { onConflict: "key" });
   if (error) return fail("最新发布模块保存失败，请检查字段后重试。");
 
-  if (!(await auditLog(context, "update_latest_posts_section", "home_sections", "latest_posts", payload))) return auditFailure();
+  if (!(await auditLog(context, intent.startsWith("move_") ? "move_latest_posts_section" : "update_latest_posts_section", "home_sections", "latest_posts", payload))) return auditFailure();
   revalidateAdminHome();
-  return ok("最新发布模块已保存。");
+  return ok(intent.startsWith("move_") ? "最新发布分区排序已保存。" : "最新发布模块已保存。");
 }
 
 export async function updateSeoContentSection(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
@@ -755,6 +762,33 @@ function moveTickerSectionPayloads<T extends { section_key: string; sort_order: 
 
   for (const moved of sorted) {
     const original = payloads.find((payload) => payload.section_key === moved.section_key);
+    if (original) original.sort_order = moved.sort_order;
+  }
+
+  return { ok: true };
+}
+
+function moveLatestPostSectionPayloads<T extends { key: string; sort_order: number }>(payloads: T[], sectionKey: string, direction: "up" | "down"): { ok: true } | { ok: false; message: string } {
+  const sorted = payloads
+    .map((payload, index) => ({ ...payload, sort_order: Number.isFinite(payload.sort_order) ? payload.sort_order : (index + 1) * 10 }))
+    .sort((a, b) => a.sort_order - b.sort_order);
+  const currentIndex = sorted.findIndex((payload) => payload.key === sectionKey);
+  if (currentIndex < 0) return { ok: false, message: "最新发布分区不存在。" };
+
+  const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+  if (targetIndex < 0 || targetIndex >= sorted.length) {
+    return { ok: false, message: direction === "up" ? "这个分区已经在最前面。" : "这个分区已经在最后面。" };
+  }
+
+  const currentOrder = sorted[currentIndex].sort_order;
+  sorted[currentIndex].sort_order = sorted[targetIndex].sort_order;
+  sorted[targetIndex].sort_order = currentOrder;
+  sorted.sort((a, b) => a.sort_order - b.sort_order).forEach((payload, index) => {
+    payload.sort_order = (index + 1) * 10;
+  });
+
+  for (const moved of sorted) {
+    const original = payloads.find((payload) => payload.key === moved.key);
     if (original) original.sort_order = moved.sort_order;
   }
 

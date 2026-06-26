@@ -265,7 +265,11 @@ function getTickerPanelSummary(globalSettings: AdminTickerGlobalSettingsRow, sec
 
 function LatestPostsSectionForm({ section }: { section: AdminHomeSectionRow }) {
   const currentSections = mapLatestPostSections(section);
-  const formSections = fallbackLatestPostSections.map((fallback) => currentSections.find((item) => item.key === fallback.key || item.postType === fallback.postType) ?? fallback);
+  const currentKeys = new Set(currentSections.map((item) => item.key));
+  const formSections = [
+    ...currentSections,
+    ...fallbackLatestPostSections.filter((fallback) => !currentKeys.has(fallback.key)),
+  ];
 
   return (
     <AdminActionForm action={updateLatestPostsSection} submitLabel="保存最新发布模块">
@@ -279,23 +283,40 @@ function LatestPostsSectionForm({ section }: { section: AdminHomeSectionRow }) {
       </div>
 
       <div className="grid gap-3">
-        {formSections.map((item) => (
-          <div key={item.key} className="rounded-xl border border-blue-100 bg-white p-3">
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-slate-950 px-2.5 py-1 text-xs font-black text-white">{item.key}</span>
-              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">{item.route}</span>
-              <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">显示 {item.limitCount} 条</span>
-            </div>
+        {formSections.map((item, index) => (
+          <TickerItemConfigPanel key={item.key} title={item.title} summary={getLatestPostSectionSummary(item)}>
+            <input type="hidden" name={`sort_order_${item.key}`} value={item.sortOrder} />
             <div className="grid gap-3 md:grid-cols-2">
               <AdminTextInput label="模块标题" name={`title_${item.key}`} defaultValue={item.title} required />
               <AdminTextInput label="顶部入口文字" name={`nav_label_${item.key}`} defaultValue={item.navLabel ?? item.title} required />
-              <AdminTextInput label="排序" name={`sort_order_${item.key}`} type="number" defaultValue={item.sortOrder} />
               <AdminTextInput label="显示数量" name={`limit_count_${item.key}`} type="number" defaultValue={item.limitCount} />
               <AdminTextInput label="说明" name={`description_${item.key}`} defaultValue={item.description} />
               <AdminTextInput label="无数据提示" name={`empty_message_${item.key}`} defaultValue={item.emptyMessage ?? "暂无最新信息"} />
             </div>
-            <AdminCheckbox label="显示这个最新发布分区" name={`is_visible_${item.key}`} defaultChecked={item.isVisible !== false} />
-          </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <AdminCheckbox label="显示这个最新发布分区" name={`is_visible_${item.key}`} defaultChecked={item.isVisible !== false} />
+              <button
+                type="submit"
+                name="intent"
+                value={`move_up:${item.key}`}
+                disabled={index === 0}
+                className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label={`${item.title}上移`}
+              >
+                <ArrowUp size={16} aria-hidden="true" />
+              </button>
+              <button
+                type="submit"
+                name="intent"
+                value={`move_down:${item.key}`}
+                disabled={index === formSections.length - 1}
+                className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label={`${item.title}下移`}
+              >
+                <ArrowDown size={16} aria-hidden="true" />
+              </button>
+            </div>
+          </TickerItemConfigPanel>
         ))}
       </div>
     </AdminActionForm>
@@ -444,7 +465,15 @@ function getAutomaticTickerSummary(sections: AdminTickerSectionSettingsRow[]) {
 }
 
 function getTickerItemSummary(item: AdminTickerRow) {
-  return [item.is_enabled ? "启用" : "停用", item.href || "无链接", `排序 ${item.sort_order}`];
+  return [item.is_enabled ? "启用" : "停用", item.href ? "有链接" : "无链接"];
+}
+
+function getLatestPostSectionSummary(item: ReturnType<typeof mapLatestPostSections>[number]) {
+  return [
+    item.isVisible !== false ? "显示" : "隐藏",
+    `显示 ${item.limitCount} 条`,
+    item.route,
+  ];
 }
 
 function TickerForm({ item, index, total }: { item: AdminTickerRow; index: number; total: number }) {
@@ -460,20 +489,20 @@ function TickerForm({ item, index, total }: { item: AdminTickerRow; index: numbe
               name="intent"
               value="move_up"
               disabled={index === 0}
-              className="inline-flex min-h-10 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label={`${item.title}上移`}
             >
               <ArrowUp size={15} aria-hidden="true" />
-              上移
             </button>
             <button
               type="submit"
               name="intent"
               value="move_down"
               disabled={index === total - 1}
-              className="inline-flex min-h-10 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label={`${item.title}下移`}
             >
               <ArrowDown size={15} aria-hidden="true" />
-              下移
             </button>
             <button
               type="submit"
