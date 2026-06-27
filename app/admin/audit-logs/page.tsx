@@ -76,20 +76,18 @@ export default function AdminAuditLogsPage({ searchParams }: AdminAuditLogsPageP
 
             <AdminAuditLogsStats totals={data.totals} />
 
-            <AdminCard title="筛选审计日志" description="按操作、实体类型、实体 ID 或管理员 ID 快速筛选。">
-              <AdminAuditLogsFilter
-                action={params?.action}
-                entityType={params?.entityType}
-                actorId={params?.actorId}
-                entityId={params?.entityId}
-                dateFrom={params?.dateFrom}
-                dateTo={params?.dateTo}
-                scope={params?.scope}
-                q={params?.q}
-                actionOptions={data.actionOptions}
-                entityTypeOptions={data.entityTypeOptions}
-              />
-            </AdminCard>
+            <AdminAuditLogsFilter
+              action={params?.action}
+              entityType={params?.entityType}
+              actorId={params?.actorId}
+              entityId={params?.entityId}
+              dateFrom={params?.dateFrom}
+              dateTo={params?.dateTo}
+              scope={params?.scope}
+              q={params?.q}
+              actionOptions={data.actionOptions}
+              entityTypeOptions={data.entityTypeOptions}
+            />
 
             <AdminCard title="日志列表" description="审计日志只读展示，不在本页提供删除或修改操作。">
               <div className="mb-4 flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">
