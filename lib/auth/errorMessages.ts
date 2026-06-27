@@ -9,6 +9,8 @@ const AUTH_ERROR_MESSAGES: Array<[string, string]> = [
   ["user already registered", "该邮箱已注册，请直接登录。"],
   ["auth session missing", "登录状态已失效，请重新登录。"],
   ["for security purposes, you can only request this after", "操作太频繁，请稍后再试。"],
+  ["email rate limit exceeded", "操作太频繁，请稍后再试。"],
+  ["over_email_send_rate_limit", "操作太频繁，请稍后再试。"],
   ["unable to validate email address", "邮箱格式不正确。"],
   ["signup requires a valid password", "请输入有效密码。"],
   ["new password should be different from the old password", "密码修改失败，请稍后重试。"],
@@ -21,7 +23,10 @@ function extractMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   if (error && typeof error === "object" && "message" in error) {
     const message = (error as { message?: unknown }).message;
-    if (typeof message === "string") return message;
+    const code = "code" in error ? (error as { code?: unknown }).code : undefined;
+    const errorCode = "error_code" in error ? (error as { error_code?: unknown }).error_code : undefined;
+    const parts = [message, code, errorCode].filter((part): part is string => typeof part === "string");
+    if (parts.length) return parts.join(" ");
   }
   return "";
 }
