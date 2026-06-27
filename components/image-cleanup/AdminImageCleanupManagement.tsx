@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { Image as ImageIcon, ShieldCheck, Trash2, UploadCloud } from "lucide-react";
 import { AdminActionForm, AdminCheckbox } from "@/components/admin/AdminActionForm";
+import { AdminCollapsibleCard } from "@/components/admin/AdminCollapsibleCard";
 import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
+import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { markImageAssetDeleted, purgeDeletedImageAsset } from "@/features/image-cleanup/adminActions";
 import type { AdminImageAssetItem, AdminImageCleanupData, ImageCleanupFilter, ImageSourceFilter } from "@/features/image-cleanup/adminQueries";
@@ -34,14 +36,14 @@ export function AdminImageCleanupPermissionBadges({ permissions }: { permissions
 
 export function AdminImageCleanupHealthSection({ totals, activeFilter }: { totals: AdminImageCleanupData["totals"]; activeFilter: ImageCleanupFilter }) {
   return (
-    <CollapsibleSection title="健康检查">
+    <AdminCollapsibleCard title="健康检查" className="p-4" titleClassName="text-lg" contentClassName="mt-4 border-t-0 p-0 pt-0">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard icon={<ImageIcon size={17} aria-hidden="true" />} label="图片资产" value={totals.total} href="/admin/image-cleanup?filter=all" active={activeFilter === "all"} />
         <StatCard icon={<Trash2 size={17} aria-hidden="true" />} label="可清理" value={totals.deletable} href="/admin/image-cleanup" active={activeFilter === "deletable"} />
         <StatCard icon={<ShieldCheck size={17} aria-hidden="true" />} label="使用中" value={totals.protected} href="/admin/image-cleanup?filter=protected" active={activeFilter === "protected"} />
         <StatCard icon={<UploadCloud size={17} aria-hidden="true" />} label="当前页" value={totals.currentPage} href={imageCleanupFilterHref(activeFilter)} active={false} />
       </div>
-    </CollapsibleSection>
+    </AdminCollapsibleCard>
   );
 }
 
@@ -166,41 +168,7 @@ export function AdminImageCleanupPagination({
   const previous = buildPageHref({ page: Math.max(1, page - 1), filter, source, q });
   const next = buildPageHref({ page: Math.min(pageCount, page + 1), filter, source, q });
 
-  return (
-    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-600">
-      <span>
-        共 {totalCount} 条 · 第 {page} / {pageCount} 页
-      </span>
-      <div className="flex flex-wrap gap-2">
-        {page > 1 ? (
-          <Link href={previous} className="rounded-full bg-white px-3 py-1.5 text-xs font-black text-blue-700">
-            上一页
-          </Link>
-        ) : null}
-        {page < pageCount ? (
-          <Link href={next} className="rounded-full bg-white px-3 py-1.5 text-xs font-black text-blue-700">
-            下一页
-          </Link>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function CollapsibleSection({ title, children }: { title: string; children: ReactNode }) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg font-black text-slate-950">{title}</h2>
-        <button type="button" onClick={() => setOpen((current) => !current)} className="text-sm font-black text-blue-700 hover:text-blue-800">
-          {open ? "收起 ▲" : "展开 ▼"}
-        </button>
-      </div>
-      {open ? <div className="mt-4">{children}</div> : null}
-    </section>
-  );
+  return <AdminPagination page={page} pageCount={pageCount} totalCount={totalCount} previousHref={previous} nextHref={next} ariaLabel="图片清理分页" />;
 }
 
 function StatCard({ icon, label, value, href, active }: { icon: ReactNode; label: string; value: number; href: string; active: boolean }) {

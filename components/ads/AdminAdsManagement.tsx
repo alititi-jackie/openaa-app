@@ -2,9 +2,11 @@
 
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 
+import { AdminCollapsibleCard } from "@/components/admin/AdminCollapsibleCard";
 import { AdminDateRangeFields, toAdminDateInputValue } from "@/components/admin/AdminDateRangeFields";
 import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { AdminHighlightCard } from "@/components/admin/AdminHighlightCard";
+import { AdminStatusTabs } from "@/components/admin/AdminStatusTabs";
 import { deleteAd, toggleAdActive, updateAdPlaceholderImage, upsertAd } from "@/features/ads/adminActions";
 import {
   adPositions,
@@ -547,54 +549,33 @@ function AdsFilter({
 }) {
   return (
     <div className="space-y-3 rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {adPositions.map((position) => (
-          <FilterLink
-            key={position.key}
-            href={`/admin/ads?position=${position.key}&status=${activeStatus}`}
-            active={position.key === activePosition}
-          >
-            {position.label.replace("广告", "")}
-            <CountBadge active={position.key === activePosition} count={positionCounts?.[position.key] ?? 0} />
-          </FilterLink>
-        ))}
-      </div>
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {adStatusFilters.map((filter) => (
-          <FilterLink
-            key={filter.key}
-            href={`/admin/ads?position=${activePosition}&status=${filter.key}`}
-            active={filter.key === activeStatus}
-          >
-            {filter.label}
-            <CountBadge active={filter.key === activeStatus} count={statusCounts?.[filter.key] ?? 0} />
-          </FilterLink>
-        ))}
-      </div>
+      <AdminStatusTabs
+        ariaLabel="广告位置筛选"
+        tabs={adPositions.map((position) => ({
+          value: position.key,
+          label: position.label.replace("广告", ""),
+          href: `/admin/ads?position=${position.key}&status=${activeStatus}`,
+          count: positionCounts?.[position.key] ?? 0,
+        }))}
+        activeValue={activePosition}
+        variant="solidBlue"
+        linkClassName="h-10 rounded-2xl px-4 py-0 text-sm"
+        renderCount={(count, active) => <CountBadge active={active} count={count} />}
+      />
+      <AdminStatusTabs
+        ariaLabel="广告状态筛选"
+        tabs={adStatusFilters.map((filter) => ({
+          value: filter.key,
+          label: filter.label,
+          href: `/admin/ads?position=${activePosition}&status=${filter.key}`,
+          count: statusCounts?.[filter.key] ?? 0,
+        }))}
+        activeValue={activeStatus}
+        variant="solidBlue"
+        linkClassName="h-10 rounded-2xl px-4 py-0 text-sm"
+        renderCount={(count, active) => <CountBadge active={active} count={count} />}
+      />
     </div>
-  );
-}
-
-function FilterLink({
-  href,
-  active,
-  children,
-}: {
-  href: string;
-  active: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <a
-      href={href}
-      className={`inline-flex h-10 shrink-0 items-center justify-center rounded-2xl border px-4 text-sm font-black transition ${
-        active
-          ? "border-blue-600 bg-blue-600 text-white"
-          : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50"
-      }`}
-    >
-      {children}
-    </a>
   );
 }
 
@@ -647,19 +628,14 @@ function AdPlaceholderSettings({ placeholder }: { placeholder: AdminAdPlaceholde
   }
 
   return (
-    <details className="group rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
-        <div className="min-w-0">
-          <h3 className="text-base font-black text-slate-950">默认广告占位图</h3>
-          <p className="mt-1 text-xs font-semibold text-slate-500">{placeholder.imageUrl ? "已设置" : "未设置"}</p>
-        </div>
-        <span className="inline-flex min-h-9 shrink-0 items-center rounded-xl bg-slate-950 px-3 py-1.5 text-xs font-black text-white">
-          <span className="group-open:hidden">展开</span>
-          <span className="hidden group-open:inline">收起</span>
-        </span>
-      </summary>
-
-      <form action={formAction} className="mt-4 space-y-4 border-t border-slate-100 pt-4">
+    <AdminCollapsibleCard
+      title="默认广告占位图"
+      description={placeholder.imageUrl ? "已设置" : "未设置"}
+      className="rounded-[28px] border-slate-200 p-4 sm:p-5"
+      titleClassName="text-base"
+      contentClassName="mt-4 space-y-4"
+    >
+      <form action={formAction} className="space-y-4">
         <p className="text-sm font-semibold text-slate-500">
           当广告图片为空、外链失效或加载失败时，全站广告位会优先显示这里上传的占位图；未上传时显示内置广告位占位。
         </p>
@@ -703,7 +679,7 @@ function AdPlaceholderSettings({ placeholder }: { placeholder: AdminAdPlaceholde
           )}
         </div>
       </form>
-    </details>
+    </AdminCollapsibleCard>
   );
 }
 

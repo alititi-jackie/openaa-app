@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { AdminCollapsibleCard } from "@/components/admin/AdminCollapsibleCard";
 import { AdminCountPillBar, type AdminCountPillItem } from "@/components/admin/AdminCountPillBar";
 import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
+import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { formatAuditActionLabel, formatAuditEntityTypeLabel, formatAuditOptionLabel } from "@/features/audit-logs/labels";
 import type { AdminAuditLogItem } from "@/features/audit-logs/adminQueries";
@@ -51,18 +53,8 @@ export function AdminAuditLogsFilter({
   const summary = auditFilterSummary({ action, entityType, actorId, entityId, dateFrom, dateTo, scope, q });
 
   return (
-    <details className="group rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
-        <div className="min-w-0">
-          <p className="text-sm font-black text-slate-950">筛选审计日志</p>
-          <p className="mt-1 truncate text-xs font-semibold text-slate-500">{summary}</p>
-        </div>
-        <span className="inline-flex min-h-9 shrink-0 items-center rounded-xl bg-slate-950 px-3 py-1.5 text-xs font-black text-white">
-          <span className="group-open:hidden">展开</span>
-          <span className="hidden group-open:inline">收起</span>
-        </span>
-      </summary>
-      <form action="/admin/audit-logs" className="mt-3 grid gap-3 border-t border-slate-100 pt-3 md:grid-cols-4">
+    <AdminCollapsibleCard title="筛选审计日志" description={summary} descriptionClassName="truncate">
+      <form action="/admin/audit-logs" className="grid gap-3 md:grid-cols-4">
         <div className="grid gap-2 rounded-xl bg-slate-50 p-3 md:col-span-4">
           <p className="text-xs font-black uppercase tracking-wide text-slate-400">快捷范围</p>
           <div className="flex flex-wrap gap-2">
@@ -113,7 +105,7 @@ export function AdminAuditLogsFilter({
           清空筛选
         </Link>
       </form>
-    </details>
+    </AdminCollapsibleCard>
   );
 }
 
@@ -191,25 +183,7 @@ export function AdminAuditLogsPagination({
   const previous = buildPageHref({ page: Math.max(1, page - 1), action, entityType, actorId, entityId, dateFrom, dateTo, scope, q });
   const next = buildPageHref({ page: Math.min(pageCount, page + 1), action, entityType, actorId, entityId, dateFrom, dateTo, scope, q });
 
-  return (
-    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-600">
-      <span>
-        共 {totalCount} 条 · 第 {page} / {pageCount} 页
-      </span>
-      <div className="flex flex-wrap gap-2">
-        {page > 1 ? (
-          <Link href={previous} className="rounded-full bg-white px-3 py-1.5 text-xs font-black text-blue-700">
-            上一页
-          </Link>
-        ) : null}
-        {page < pageCount ? (
-          <Link href={next} className="rounded-full bg-white px-3 py-1.5 text-xs font-black text-blue-700">
-            下一页
-          </Link>
-        ) : null}
-      </div>
-    </div>
-  );
+  return <AdminPagination page={page} pageCount={pageCount} totalCount={totalCount} previousHref={previous} nextHref={next} ariaLabel="审计日志分页" />;
 }
 
 function JsonBlock({ title, value }: { title: string; value: unknown }) {

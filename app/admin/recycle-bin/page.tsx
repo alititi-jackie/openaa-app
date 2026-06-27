@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminTopActions } from "@/components/admin/AdminTopActions";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
+import { AdminStatusTabs } from "@/components/admin/AdminStatusTabs";
 import { RecycleBinResourceNav } from "@/components/admin/RecycleBinResourceNav";
 import { AdminAdRecycleBinList } from "@/components/ads/AdminAdRecycleBin";
 import { MessageRecycleBinList } from "@/components/messages/AdminMessageRecycleBin";
@@ -117,26 +117,20 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
 
             {activeTab === "post" ? (
               <>
-                <nav aria-label="用户发布信息回收站筛选" className="max-w-full overflow-x-auto overflow-y-hidden whitespace-nowrap py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  <div className="inline-flex gap-2">
+                <AdminStatusTabs
+                  ariaLabel="用户发布信息回收站筛选"
+                  tabs={statusFilterTabs.map((tab) => ({ ...tab, href: postFilterHref(tab.value, postType) }))}
+                  activeValue={postData.filter}
+                  size="sm"
+                  listClassName="items-center"
+                  renderStart={
                     <PostRecycleBinTypeSelect
                       value={postType}
                       filter={postData.filter}
                       options={PUBLIC_POST_TYPES.map((type) => ({ value: type, label: POST_TYPE_LABELS[type] }))}
                     />
-                    {statusFilterTabs.map((tab) => (
-                      <Link
-                        key={tab.value}
-                        href={postFilterHref(tab.value, postType)}
-                        className={`inline-flex min-h-9 items-center justify-center rounded-xl px-3 py-2 text-xs font-black ring-1 ${
-                          postData.filter === tab.value ? "bg-blue-50 text-blue-800 ring-blue-200" : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50"
-                        }`}
-                      >
-                        {tab.label}
-                      </Link>
-                    ))}
-                  </div>
-                </nav>
+                  }
+                />
 
                 {postData.error ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">{postData.error}</div> : null}
 
@@ -152,22 +146,14 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
 
             {activeTab === "news" ? (
               <>
-                <nav aria-label="新闻回收站筛选" className="max-w-full overflow-x-auto overflow-y-hidden whitespace-nowrap py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  <div className="inline-flex gap-2">
-                    <NewsRecycleBinCategorySelect value={newsCategory} filter={newsData?.filter ?? "all"} categories={newsCategoriesResult?.data ?? []} />
-                    {newsFilterTabs.map((tab) => (
-                      <Link
-                        key={tab.value}
-                        href={newsFilterHref(tab.value, newsCategory)}
-                        className={`inline-flex min-h-9 items-center justify-center rounded-xl px-3 py-2 text-xs font-black ring-1 ${
-                          newsData?.filter === tab.value ? "bg-blue-50 text-blue-800 ring-blue-200" : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50"
-                        }`}
-                      >
-                        {tab.label}
-                      </Link>
-                    ))}
-                  </div>
-                </nav>
+                <AdminStatusTabs
+                  ariaLabel="新闻回收站筛选"
+                  tabs={newsFilterTabs.map((tab) => ({ ...tab, href: newsFilterHref(tab.value, newsCategory) }))}
+                  activeValue={newsData?.filter ?? "all"}
+                  size="sm"
+                  listClassName="items-center"
+                  renderStart={<NewsRecycleBinCategorySelect value={newsCategory} filter={newsData?.filter ?? "all"} categories={newsCategoriesResult?.data ?? []} />}
+                />
 
                 {newsData?.error ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">{newsData.error}</div> : null}
                 {newsData ? <RecycleBinNewsSettingsSection settings={newsData.retentionSettings} /> : null}

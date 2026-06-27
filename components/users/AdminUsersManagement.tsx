@@ -5,6 +5,7 @@ import type { FormEvent } from "react";
 import { useActionState, useState } from "react";
 import { ChevronDown, ChevronUp, Search, ShieldCheck, UserRound } from "lucide-react";
 import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
+import { AdminPagination } from "@/components/admin/AdminPagination";
 import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { setAdminUserStatus, updateAdminUserNote, type AdminUserActionState } from "@/features/users/adminActions";
 import type { AdminUserListItem, AdminUsersPermissions } from "@/features/users/adminQueries";
@@ -274,19 +275,18 @@ export function AdminUsersPagination({
   };
 
   return (
-    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
-      <p className="font-bold text-slate-500">
-        共 {totalCount} 位用户，第 {page} / {pageCount} 页
-      </p>
-      <div className="flex gap-2">
-        <Link className="rounded-full bg-slate-100 px-3 py-1.5 font-black text-slate-700 aria-disabled:pointer-events-none aria-disabled:opacity-40" href={hrefFor(Math.max(1, page - 1))} aria-disabled={page <= 1}>
-          上一页
-        </Link>
-        <Link className="rounded-full bg-slate-100 px-3 py-1.5 font-black text-slate-700 aria-disabled:pointer-events-none aria-disabled:opacity-40" href={hrefFor(Math.min(pageCount, page + 1))} aria-disabled={page >= pageCount}>
-          下一页
-        </Link>
-      </div>
-    </div>
+    <AdminPagination
+      page={page}
+      pageCount={pageCount}
+      totalCount={totalCount}
+      summary={<>共 {totalCount} 位用户，第 {page} / {pageCount} 页</>}
+      previousHref={hrefFor(Math.max(1, page - 1))}
+      nextHref={hrefFor(Math.min(pageCount, page + 1))}
+      showDisabled
+      className="rounded-none bg-transparent px-0 py-0 font-bold text-slate-500"
+      buttonClassName="bg-slate-100 text-sm text-slate-700"
+      ariaLabel="用户分页"
+    />
   );
 }
 

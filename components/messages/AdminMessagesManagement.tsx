@@ -1,7 +1,8 @@
-import Link from "next/link";
 import { AdminActionButton, adminActionButtonClassName } from "@/components/admin/AdminActionButton";
 import { AdminActionForm, AdminCheckbox, AdminSelect, AdminTextInput, AdminTextarea } from "@/components/admin/AdminActionForm";
+import { AdminCollapsibleCard } from "@/components/admin/AdminCollapsibleCard";
 import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
+import { AdminStatusTabs } from "@/components/admin/AdminStatusTabs";
 import { contactUserFromMessages, handleMessageReport, markFeedbackViewed, softDeleteFeedback, softDeleteMessageReport, updateReportLimitSettings } from "@/features/messages/adminActions";
 import type { AdminFeedbackItem, AdminMessageReport, AdminMessagesData, AdminUserSummary, FeedbackStatusTab, MessageTab, ReportStatusTab } from "@/features/messages/adminQueries";
 import { reportReasonOptions } from "@/features/reports/types";
@@ -30,24 +31,7 @@ export function AdminMessageTabs({ active, counts }: { active: MessageTab; count
     { value: "feedback", label: "线索与建议", href: "/admin/messages?tab=feedback", count: counts?.feedback ?? 0 },
     { value: "contact-users", label: "联系用户", href: "/admin/messages?tab=contact-users" },
   ];
-  return (
-    <nav className="max-w-full overflow-x-auto overflow-y-hidden whitespace-nowrap py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <div className="inline-flex gap-2">
-        {tabs.map((tab) => (
-          <Link
-            key={tab.value}
-            href={tab.href}
-            className={`inline-flex min-h-10 items-center justify-center rounded-xl px-4 py-2 text-sm font-black ring-1 ${
-              active === tab.value ? "bg-slate-950 text-white ring-slate-950" : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50"
-            }`}
-          >
-            <span>{tab.label}</span>
-            {typeof tab.count === "number" ? <PendingTabCount value={tab.count} activeTab={active === tab.value} /> : null}
-          </Link>
-        ))}
-      </div>
-    </nav>
-  );
+  return <AdminStatusTabs tabs={tabs} activeValue={active} ariaLabel="消息中心分类" variant="dark" renderCount={(value, activeTab) => <PendingTabCount value={value} activeTab={activeTab} />} />;
 }
 
 function PendingTabCount({ value, activeTab }: { value: number; activeTab: boolean }) {
@@ -84,9 +68,8 @@ export function ReportsPanel({ data }: { data: AdminMessagesData["reports"] }) {
 
 function ReportLimitSettingsPanel({ settings }: { settings: AdminMessagesData["reports"]["settings"] }) {
   return (
-    <details className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
-      <summary className="cursor-pointer text-sm font-black text-slate-900">举报限制设置</summary>
-      <AdminActionForm action={updateReportLimitSettings} submitLabel="保存举报限制" className="mt-3 space-y-3">
+    <AdminCollapsibleCard title="举报限制设置" className="bg-slate-50 shadow-none" contentClassName="mt-3 border-t-0 p-0 pt-0" toggleClassName="min-h-8">
+      <AdminActionForm action={updateReportLimitSettings} submitLabel="保存举报限制" className="space-y-3">
         <div className="grid gap-3 md:grid-cols-4">
           <AdminTextInput label="登录用户每天" name="report_daily_user_limit" type="number" defaultValue={settings.userDailyLimit} required />
           <AdminTextInput label="匿名访客每天" name="report_daily_visitor_limit" type="number" defaultValue={settings.visitorDailyLimit} required />
@@ -97,7 +80,7 @@ function ReportLimitSettingsPanel({ settings }: { settings: AdminMessagesData["r
           数量范围 1~1000。单个登录用户、匿名访客和 IP 的每日上限不能大于全站每日总量。
         </p>
       </AdminActionForm>
-    </details>
+    </AdminCollapsibleCard>
   );
 }
 
@@ -351,24 +334,12 @@ function StatusTabs<T extends string>({
   paramName: string;
 }) {
   return (
-    <nav className="max-w-full overflow-x-auto overflow-y-hidden whitespace-nowrap py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <div className="inline-flex gap-2">
-        {tabs.map((tab) => {
-          const href = `${baseHref}&${paramName}=${tab.value}`;
-          return (
-            <Link
-              key={tab.value}
-              href={href}
-              className={`inline-flex min-h-10 items-center justify-center rounded-xl px-4 py-2 text-sm font-black ring-1 ${
-                active === tab.value ? "bg-blue-50 text-blue-800 ring-blue-200" : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50"
-              }`}
-            >
-              {tab.label} <span className="ml-1 text-xs opacity-70">{tab.count}</span>
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
+    <AdminStatusTabs
+      tabs={tabs.map((tab) => ({ ...tab, href: `${baseHref}&${paramName}=${tab.value}` }))}
+      activeValue={active}
+      ariaLabel="消息状态筛选"
+      variant="blue"
+    />
   );
 }
 
