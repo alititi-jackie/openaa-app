@@ -10,7 +10,7 @@ import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { createDefaultNewsCategories, setNewsPostStatus, toggleNewsPin, upsertNewsCategory, upsertNewsPost, type NewsActionState } from "@/features/news/actions";
 import { formatNewsDate } from "@/features/news/mappers";
-import type { AdminNewsPermissions, AdminNewsPost, NewsCategory, NewsStatus } from "@/features/news/types";
+import type { AdminNewsCategoryCounts, AdminNewsPermissions, AdminNewsPost, NewsCategory, NewsStatus } from "@/features/news/types";
 
 const initialState: NewsActionState = { ok: true, message: "" };
 
@@ -65,10 +65,12 @@ export function NewsAdminPermissions({ permissions }: { permissions: AdminNewsPe
 export function NewsAdminManager({
   posts,
   categories,
+  categoryCounts,
   permissions,
 }: {
   posts: AdminNewsPost[];
   categories: NewsCategory[];
+  categoryCounts: AdminNewsCategoryCounts;
   permissions: AdminNewsPermissions;
 }) {
   const [localPosts, setLocalPosts] = useState<LocalPost[]>(posts);
@@ -127,6 +129,7 @@ export function NewsAdminManager({
       {canRead ? (
         <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
           <h2 className="text-lg font-black text-slate-950">筛选新闻</h2>
+          <NewsCategoryCountBar categories={categories} counts={categoryCounts} />
           <div className="mt-4 grid gap-3 md:grid-cols-3">
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索标题或 slug" className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-500" />
             <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as NewsStatus | "all")} className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-500">
@@ -184,6 +187,26 @@ export function NewsAdminManager({
           <NewsCategoryManager categories={categories} canManage={permissions.manageNewsCategories} />
         </div>
       </section>
+    </div>
+  );
+}
+
+function NewsCategoryCountBar({ categories, counts }: { categories: NewsCategory[]; counts: AdminNewsCategoryCounts }) {
+  return (
+    <div className="mt-3 -mx-1 overflow-x-auto px-1 pb-1">
+      <div className="flex min-w-max gap-2">
+        <span className="inline-flex min-h-9 items-center rounded-full bg-blue-600 px-3 text-xs font-black text-white">
+          全部 {counts.total}
+        </span>
+        {categories.map((category) => {
+          const count = category.id ? (counts.byCategoryId[category.id] ?? 0) : 0;
+          return (
+            <span key={category.slug} className="inline-flex min-h-9 items-center rounded-full border border-slate-200 bg-slate-50 px-3 text-xs font-black text-slate-700">
+              {category.name} {count}
+            </span>
+          );
+        })}
+      </div>
     </div>
   );
 }

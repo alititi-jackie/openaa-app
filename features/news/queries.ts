@@ -5,7 +5,7 @@ import { createSupabasePublicClient } from "@/lib/supabase/public";
 import { hasAdminPermission } from "@/lib/permissions/admin";
 import { ADMIN_NEWS_LIMIT, PUBLIC_NEWS_LIMIT } from "./constants";
 import { fallbackNewsCategories, mapNewsCategory, mapNewsPostToAdmin, mapNewsPostToCard, mapNewsPostToDetail, sortPinnedFirst } from "./mappers";
-import type { AdminNewsPermissions, AdminNewsPost, NewsCategory, NewsCategoryRecord, NewsDetailContext, NewsListParams, NewsPostCard, NewsPostDetail, NewsPostRecord, NewsQueryResult, NewsStatus } from "./types";
+import type { AdminNewsCategoryCounts, AdminNewsPermissions, AdminNewsPost, NewsCategory, NewsCategoryRecord, NewsDetailContext, NewsListParams, NewsPostCard, NewsPostDetail, NewsPostRecord, NewsQueryResult, NewsStatus } from "./types";
 
 type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
 type SupabasePublicClient = NonNullable<ReturnType<typeof createSupabasePublicClient>>;
@@ -253,24 +253,28 @@ export async function getAdminNewsData(params: { status?: NewsStatus | "all"; ca
   const supabase = await createSupabaseServerClient();
   const permissions = await getAdminNewsPermissions();
   const categoriesFallback = fallbackNewsCategories();
+  const emptyCounts: AdminNewsCategoryCounts = { total: 0, byCategoryId: {} };
 
   if (!supabase) {
-    return { state: "missing_config" as const, permissions, categories: categoriesFallback, posts: [] as AdminNewsPost[] };
+    return { state: "missing_config" as const, permissions, categories: categoriesFallback, posts: [] as AdminNewsPost[], categoryCounts: emptyCounts };
   }
 
   const canRead = permissions.viewNews || permissions.createNews || permissions.editNews || permissions.publishNews || permissions.deleteNews;
   if (!canRead) {
-    return { state: "ready" as const, permissions, categories: categoriesFallback, posts: [] as AdminNewsPost[] };
+    return { state: "ready" as const, permissions, categories: categoriesFallback, posts: [] as AdminNewsPost[], categoryCounts: emptyCounts };
   }
 
   const [categories, posts] = await Promise.all([readAdminCategories(supabase), readAdminPosts(supabase, params)]);
+  const categoryList = categories.data.length > 0 ? categories.data : categoriesFallback;
+  const categoryCounts = await readAdminCategoryCounts(supabase, categoryList);
 
   return {
-    state: categories.state === "error" || posts.state === "error" ? ("error" as const) : ("ready" as const),
+    state: categories.state === "error" || posts.state === "error" || categoryCounts.state === "error" ? ("error" as const) : ("ready" as const),
     permissions,
-    categories: categories.data.length > 0 ? categories.data : categoriesFallback,
+    categories: categoryList,
     posts: posts.data,
-    error: categories.error ?? posts.error,
+    categoryCounts: categoryCounts.data,
+    error: categories.error ?? posts.error ?? categoryCounts.error,
   };
 }
 
@@ -305,4 +309,39 @@ async function readAdminPosts(supabase: SupabaseServerClient, params: { status?:
   const { data, error } = await query;
   if (error) return errorResult([], error.message);
   return { state: "ready", data: ((data ?? []) as unknown as NewsPostRecord[]).map(mapNewsPostToAdmin) };
+}
+
+async function readAdminCategoryCounts(supabase: SupabaseServerClient, categories: NewsCategory[]): Promise<NewsQueryResult<AdminNewsCategoryCounts>> {
+  const totalQuery = supabase
+    .from("news_posts")
+    .select("id", { count: "exact", head: true })
+    .neq("status", "deleted");
+
+  const categoryQueries = categories.map(async (category) => {
+    if (!category.id) return [category.id, 0] as const;
+
+    const { count, error } = await supabase
+      .from("news_posts")
+      .select("id", { count: "exact", head: true })
+      .neq("status", "deleted")
+      .eq("category_id", category.id);
+
+    if (error) throw error;
+    return [category.id, count ?? 0] as const;
+  });
+
+  try {
+    const [{ count: totalCount, error: totalError }, categoryCounts] = await Promise.all([totalQuery, Promise.all(categoryQueries)]);
+    if (totalError) return errorResult({ total: 0, byCategoryId: {} }, totalError.message);
+
+    return {
+      state: "ready",
+      data: {
+        total: totalCount ?? 0,
+        byCategoryId: Object.fromEntries(categoryCounts.filter(([categoryId]) => Boolean(categoryId))) as Record<string, number>,
+      },
+    };
+  } catch (error) {
+    return errorResult({ total: 0, byCategoryId: {} }, error);
+  }
 }

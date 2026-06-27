@@ -61,7 +61,7 @@ export default function AdminNewsPage() {
 
             {data.state === "error" ? <AdminAlert>新闻后台读取暂时不可用：{data.error ?? "请稍后再试。"}</AdminAlert> : null}
 
-            <NewsAdminManager posts={data.posts} categories={data.categories} permissions={data.permissions} />
+            <NewsAdminManager posts={data.posts} categories={data.categories} categoryCounts={data.categoryCounts} permissions={data.permissions} />
           </div>
         );
       }}

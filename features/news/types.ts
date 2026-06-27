@@ -93,6 +93,11 @@ export type AdminNewsPost = NewsPostDetail & {
   createdAt: string;
 };
 
+export type AdminNewsCategoryCounts = {
+  total: number;
+  byCategoryId: Record<string, number>;
+};
+
 export type NewsQueryResult<T> = {
   state: "ready" | "missing_config" | "error";
   data: T;
