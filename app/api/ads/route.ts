@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+const primarySiteOrigin = "https://openaa.com";
+const legacyAppHostname = "app.openaa.com";
+
 type PublicAdRow = {
   id: string;
   placement: string;
@@ -51,21 +54,39 @@ export async function GET(request: Request) {
 
 function mapAd(row: PublicAdRow) {
   const imageAsset = Array.isArray(row.image_assets) ? row.image_assets[0] : row.image_assets;
+  const href = canonicalizeLegacyAppUrl(row.href);
+  const externalUrl = canonicalizeLegacyAppUrl(row.external_url);
+
   return {
     id: row.id,
     placement: row.placement,
     position: row.placement,
-    title: row.title,
-    href: row.href,
-    link_url: row.href,
+    title: canonicalizeLegacyAppUrl(row.title) ?? row.title,
+    href,
+    link_url: href,
     link_type: row.link_type,
-    external_url: row.external_url,
+    external_url: externalUrl,
     slug: row.slug,
     open_mode: row.open_mode,
     openMode: row.open_mode,
     image_url: imageAsset?.public_url || imageAsset?.external_url || null,
     imageUrl: imageAsset?.public_url || imageAsset?.external_url || null,
   };
+}
+
+function canonicalizeLegacyAppUrl(value: string | null) {
+  if (!value) return value;
+
+  const trimmed = value.trim();
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.hostname.toLowerCase() !== legacyAppHostname) return value;
+
+    const canonical = new URL(parsed.pathname + parsed.search + parsed.hash, primarySiteOrigin);
+    return canonical.toString();
+  } catch {
+    return value;
+  }
 }
 
 function normalizePlacement(value: string | null) {
