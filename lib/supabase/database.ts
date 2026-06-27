@@ -2038,6 +2038,9 @@ export type Database = {
           last_admin_action_reason: string | null
           last_admin_action_template_key: string | null
           metadata: Json
+          is_pinned: boolean
+          pinned_order: number
+          pinned_until: string | null
           post_type: Database["public"]["Enums"]["post_type"]
           price_amount: number | null
           published_at: string | null
@@ -2070,6 +2073,9 @@ export type Database = {
           last_admin_action_reason?: string | null
           last_admin_action_template_key?: string | null
           metadata?: Json
+          is_pinned?: boolean
+          pinned_order?: number
+          pinned_until?: string | null
           post_type: Database["public"]["Enums"]["post_type"]
           price_amount?: number | null
           published_at?: string | null
@@ -2102,6 +2108,9 @@ export type Database = {
           last_admin_action_reason?: string | null
           last_admin_action_template_key?: string | null
           metadata?: Json
+          is_pinned?: boolean
+          pinned_order?: number
+          pinned_until?: string | null
           post_type?: Database["public"]["Enums"]["post_type"]
           price_amount?: number | null
           published_at?: string | null

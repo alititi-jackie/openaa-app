@@ -9,7 +9,7 @@ import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { AdminPostManageDialog } from "@/components/posts/AdminPostManageDialog";
-import { type AdminPostActionState } from "@/features/posts/adminActions";
+import { type AdminPostActionState, updateAdminPostPinning } from "@/features/posts/adminActions";
 import type { AdminPostListItem, AdminPostNotificationTemplate, AdminPostsCounts, AdminPostsPermissions as AdminPostsPermissionSet } from "@/features/posts/adminQueries";
 import { POST_TYPE_LABELS, PUBLIC_POST_TYPES } from "@/features/posts/constants";
 import { postStatusTone } from "@/features/posts/display";
@@ -151,11 +151,14 @@ export function AdminPostsList({ posts, permissions, templates }: { posts: Admin
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-black text-blue-700">{post.typeLabel}</span>
                 <span className={`rounded-full px-2.5 py-1 text-xs font-black ${postStatusTone(post.status)}`}>{adminPostStatusLabel(post.status)}</span>
+                {post.effectivePinned ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-black text-amber-700">置顶 {post.pinnedOrder}</span> : null}
+                {post.isPinned && !post.effectivePinned ? <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-500">置顶已过期</span> : null}
               </div>
               <h3 className="mt-2 line-clamp-2 font-black text-slate-950">{post.title}</h3>
               <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate-500">
                 <span>发布时间：{formatDate(post.publishedAt ?? post.createdAt)}</span>
                 <span>更新时间：{formatDate(post.updatedAt)}</span>
+                {post.isPinned ? <span>置顶到期：{post.pinnedUntil ? formatDateTime(post.pinnedUntil) : "长期"}</span> : null}
               </div>
               {post.lastAdminAction ? <p className="mt-3 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-slate-600">管理员处理：{adminActionLabel(post.lastAdminAction, post.lastAdminActionTemplateKey, post.lastAdminActionReason)}</p> : null}
             </div>
@@ -173,6 +176,7 @@ function PostListActions({ post, permissions, templates }: { post: AdminPostList
       <div className="flex flex-wrap items-center gap-2 md:justify-end">
         <AdminActionButton href={frontPostHref(post)} variant="neutral">查看</AdminActionButton>
         <AdminActionButton href={`/admin/user-posts/${post.id}`} variant="info">详情</AdminActionButton>
+        {permissions.moderatePosts ? <AdminPostPinningDialog post={post} /> : null}
         {permissions.moderatePosts ? (
           <AdminPostManageDialog key={`${post.id}-${post.status}`} post={post} templates={templates} />
         ) : null}
@@ -202,6 +206,78 @@ export function AdminPostsPagination({
   const next = buildPageHref({ page: Math.min(pageCount, page + 1), type, status, q, author });
 
   return <AdminPagination page={page} pageCount={pageCount} totalCount={totalCount} previousHref={previous} nextHref={next} ariaLabel="用户发布信息分页" />;
+}
+
+function AdminPostPinningDialog({ post }: { post: AdminPostListItem }) {
+  const [open, setOpen] = useState(false);
+  const [pinnedUntilValue, setPinnedUntilValue] = useState(() => toDateTimeLocal(post.pinnedUntil));
+  const [state, formAction, pending] = useActionState(updateAdminPostPinning, initialActionState);
+  const pinnedUntilIso = useMemo(() => dateTimeLocalToIso(pinnedUntilValue), [pinnedUntilValue]);
+
+  return (
+    <>
+      <AdminActionButton onClick={() => setOpen(true)} variant={post.isPinned ? "warning" : "neutral"}>
+        {post.isPinned ? "置顶设置" : "置顶"}
+      </AdminActionButton>
+      {open ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 px-4">
+          <form action={formAction} className="w-full max-w-md rounded-2xl bg-white p-4 shadow-xl">
+            <input type="hidden" name="id" value={post.id} />
+            <input type="hidden" name="pinned_until_iso" value={pinnedUntilIso} />
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-black text-slate-950">置顶设置</h3>
+                <p className="mt-1 line-clamp-2 text-sm font-semibold text-slate-500">{post.title}</p>
+              </div>
+              <button type="button" onClick={() => setOpen(false)} className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-700">
+                取消
+              </button>
+            </div>
+
+            <label className="mt-4 flex items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 text-sm font-black text-amber-800">
+              <input type="checkbox" name="is_pinned" defaultChecked={post.isPinned} className="h-4 w-4 rounded border-amber-300" />
+              置顶这条发布信息
+            </label>
+
+            <label className="mt-3 grid gap-1.5 text-sm font-bold text-slate-700">
+              <span>置顶排序</span>
+              <input
+                name="pinned_order"
+                type="number"
+                min={0}
+                defaultValue={post.pinnedOrder}
+                className="min-h-10 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-500"
+              />
+              <span className="text-xs font-semibold text-slate-500">数字越小越靠前；相同排序按发布时间倒序。</span>
+            </label>
+
+            <label className="mt-3 grid gap-1.5 text-sm font-bold text-slate-700">
+              <span>置顶到期</span>
+              <input
+                name="pinned_until"
+                type="datetime-local"
+                value={pinnedUntilValue}
+                onChange={(event) => setPinnedUntilValue(event.target.value)}
+                className="min-h-10 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-500"
+              />
+              <span className="text-xs font-semibold text-slate-500">留空表示长期置顶；到期后前台自动回到普通排序。</span>
+            </label>
+
+            {state.message ? <p className={state.ok ? "mt-3 text-sm font-semibold text-emerald-700" : "mt-3 text-sm font-semibold text-red-600"}>{state.message}</p> : null}
+
+            <div className="mt-4 flex flex-wrap justify-end gap-2">
+              <button type="button" onClick={() => setOpen(false)} disabled={pending} className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 disabled:opacity-60">
+                取消
+              </button>
+              <button type="submit" disabled={pending} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-amber-600 px-4 py-2 text-sm font-black text-white disabled:opacity-60">
+                保存置顶设置
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+    </>
+  );
 }
 
 export function AdminPostNotifyAction({
@@ -376,4 +452,24 @@ function formatDate(value: string | null) {
   if (!value) return "未记录";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "未记录" : date.toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
+}
+
+function formatDateTime(value: string | null) {
+  if (!value) return "未记录";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "未记录" : date.toLocaleString("zh-CN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+function toDateTimeLocal(value: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const offset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+}
+
+function dateTimeLocalToIso(value: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString();
 }

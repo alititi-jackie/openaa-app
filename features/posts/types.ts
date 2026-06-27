@@ -94,6 +94,9 @@ export type PostRecord = {
   price_amount: number | string | null;
   currency: string | null;
   metadata: Record<string, unknown> | null;
+  is_pinned?: boolean | null;
+  pinned_order?: number | null;
+  pinned_until?: string | null;
   published_at: string | null;
   expires_at: string | null;
   created_at: string;
@@ -134,6 +137,9 @@ export type PostCardView = {
   meta: string;
   createdAt?: string;
   publishedAt?: string | null;
+  isPinned?: boolean;
+  pinnedOrder?: number;
+  pinnedUntil?: string | null;
   tag?: string;
   categoryValue?: string;
   location?: string;

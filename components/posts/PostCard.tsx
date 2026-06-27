@@ -9,6 +9,7 @@ import { PostDisplayBody } from "./PostDisplayBody";
 import { DetailMetaPills } from "./DetailMetaPills";
 import { HousingListBody } from "./HousingListBody";
 import { ListingGridCard } from "./ListingGridCard";
+import { PinnedBadge } from "./PinnedBadge";
 
 export type PostCardVariant = "default" | "detail-list" | "marketplace-grid" | "service-grid";
 
@@ -65,7 +66,10 @@ export function PostCard({ post, compact = false, variant = "default" }: { post:
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               {post.tag ? <p className="mb-1 text-xs font-bold text-blue-700">{post.tag}</p> : null}
-              <h3 className="line-clamp-2 font-black leading-snug text-slate-950">{post.title}</h3>
+              <h3 className="line-clamp-2 font-black leading-snug text-slate-950">
+                {post.isPinned ? <PinnedBadge className="mr-1 align-middle" /> : null}
+                {post.title}
+              </h3>
             </div>
             <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">{post.meta}</span>
           </div>
@@ -109,7 +113,10 @@ function DetailListPostCard({ post }: { post: PostCardData }) {
   return (
     <Link href={post.href} className="block rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
       <div className={["flex min-w-0 flex-col", isHousing ? "" : "min-h-[148px]"].filter(Boolean).join(" ")}>
-        <h3 className="line-clamp-1 font-black leading-snug text-slate-950">{post.title}</h3>
+        <h3 className="line-clamp-1 font-black leading-snug text-slate-950">
+          {post.isPinned ? <PinnedBadge className="mr-1 align-middle" /> : null}
+          {post.title}
+        </h3>
         {isHousing ? (
           <HousingListBody body={body} metaLine={pillItems.length ? housingMetaLine : undefined} />
         ) : (

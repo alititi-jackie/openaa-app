@@ -40,6 +40,9 @@ const postSelectFields = `
   price_amount,
   currency,
   metadata,
+  is_pinned,
+  pinned_order,
+  pinned_until,
   published_at,
   expires_at,
   created_at,
@@ -282,6 +285,29 @@ async function fetchAuthors(authorIds: Array<string | null | undefined>, client?
   );
 }
 
+function buildPublicPostQuery(
+  supabase: NonNullable<ReturnType<typeof createSupabasePublicClient>>,
+  type: PostType,
+  filters: PublicPostFilters,
+  now: string,
+  innerDetail: boolean,
+  options: { count?: "exact"; head?: boolean } = {},
+) {
+  const select = publicSelectForType(type, innerDetail);
+  let query = options.count
+    ? supabase.from("posts").select(select, { count: options.count, head: options.head })
+    : supabase.from("posts").select(select);
+
+  query = query
+    .eq("status", "published")
+    .eq("visibility", "public")
+    .eq("cities.slug", DEFAULT_CITY_SLUG)
+    .or(`expires_at.is.null,expires_at.gt.${now}`)
+    .eq("post_type", type);
+
+  return applyPublicPostQueryFilters(query, type, filters);
+}
+
 export async function getPublicPosts(params: PublicPostsParams): Promise<PostsQueryResult<PostCardView[]>> {
   const supabase = params.client ?? createSupabasePublicClient();
 
@@ -295,28 +321,58 @@ export async function getPublicPosts(params: PublicPostsParams): Promise<PostsQu
     : normalizedFilters;
   const now = new Date().toISOString();
   const innerDetail = needsInnerDetailFilter(params.type, filters);
-  let query = supabase
-    .from("posts")
-    .select(publicSelectForType(params.type, innerDetail), { count: "exact" })
-    .eq("status", "published")
-    .eq("visibility", "public")
-    .eq("cities.slug", DEFAULT_CITY_SLUG)
-    .or(`expires_at.is.null,expires_at.gt.${now}`)
-    .eq("post_type", params.type);
-
-  query = applyPublicPostQueryFilters(query, params.type, filters);
-  query = applyPublicPostQuerySort(query, params.type, filters.sort);
-
   const pageSize = params.limit ?? filters.pageSize;
   const page = params.limit ? 1 : filters.page;
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
-  const { data, error, count } = await query.range(from, to);
-  if (error) return queryError("get public posts failed", error, []);
 
-  const records = (data ?? []) as unknown as PostRecord[];
-  const total = count ?? records.length;
-  const pageCount = Math.max(1, Math.ceil(total / filters.pageSize));
+  const [pinnedCountResult, normalCountResult] = await Promise.all([
+    buildPublicPostQuery(supabase, params.type, filters, now, innerDetail, { count: "exact", head: true })
+      .eq("is_pinned", true)
+      .or(`pinned_until.is.null,pinned_until.gt.${now}`),
+    buildPublicPostQuery(supabase, params.type, filters, now, innerDetail, { count: "exact", head: true })
+      .or(`is_pinned.eq.false,pinned_until.lte.${now}`),
+  ]);
+
+  if (pinnedCountResult.error) return queryError("get public pinned post count failed", pinnedCountResult.error, []);
+  if (normalCountResult.error) return queryError("get public normal post count failed", normalCountResult.error, []);
+
+  const pinnedTotal = pinnedCountResult.count ?? 0;
+  const normalTotal = normalCountResult.count ?? 0;
+  const records: PostRecord[] = [];
+
+  if (from < pinnedTotal) {
+    const pinnedFrom = from;
+    const pinnedTo = Math.min(to, pinnedTotal - 1);
+    const { data, error } = await buildPublicPostQuery(supabase, params.type, filters, now, innerDetail)
+      .eq("is_pinned", true)
+      .or(`pinned_until.is.null,pinned_until.gt.${now}`)
+      .order("pinned_order", { ascending: true })
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false })
+      .range(pinnedFrom, pinnedTo);
+
+    if (error) return queryError("get public pinned posts failed", error, []);
+    records.push(...((data ?? []) as unknown as PostRecord[]));
+  }
+
+  const normalNeeded = pageSize - records.length;
+  if (normalNeeded > 0) {
+    const normalFrom = Math.max(0, from - pinnedTotal);
+    const normalTo = normalFrom + normalNeeded - 1;
+    const normalQuery = applyPublicPostQuerySort(
+      buildPublicPostQuery(supabase, params.type, filters, now, innerDetail).or(`is_pinned.eq.false,pinned_until.lte.${now}`),
+      params.type,
+      filters.sort,
+    );
+    const { data, error } = await normalQuery.range(normalFrom, normalTo);
+
+    if (error) return queryError("get public normal posts failed", error, []);
+    records.push(...((data ?? []) as unknown as PostRecord[]));
+  }
+
+  const total = pinnedTotal + normalTotal;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
   const authors = await fetchAuthors(records.map((post) => post.author_id), supabase);
 
   return {
@@ -324,7 +380,7 @@ export async function getPublicPosts(params: PublicPostsParams): Promise<PostsQu
     data: records.map((record) => mapPostRecordToCard(record, authors, { showImageIndicator: params.showImageIndicator })),
     pagination: {
       page,
-      pageSize: filters.pageSize,
+      pageSize,
       total,
       pageCount,
       hasPrevious: page > 1,

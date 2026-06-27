@@ -7,6 +7,7 @@ import { ChannelFallbackCover } from "@/components/common/ChannelFallbackCover";
 import { DetailMetaPills } from "./DetailMetaPills";
 import type { DetailMetaPill } from "./DetailMetaPills";
 import type { PostCardData } from "./PostCard";
+import { PinnedBadge } from "./PinnedBadge";
 
 type ListingGridKind = "marketplace" | "service";
 
@@ -74,6 +75,7 @@ function ListingImage({ post, kind }: { post: PostCardData; kind: ListingGridKin
 
   return (
     <div className={["relative overflow-hidden bg-slate-100", frameClass].join(" ")}>
+      {post.isPinned ? <PinnedBadge className="absolute left-2 top-2 z-10 bg-white/95 shadow-sm" /> : null}
       {post.imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img

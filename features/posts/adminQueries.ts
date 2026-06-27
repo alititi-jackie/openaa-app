@@ -4,6 +4,7 @@ import { hasAdminModule, hasAdminPermission, isSuperAdmin } from "@/lib/permissi
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getActiveNotificationTemplates } from "@/features/notifications/service";
+import { isPostEffectivelyPinned } from "./accessors";
 import { POST_TYPE_LABELS, POST_TYPE_TO_ROUTE, PUBLIC_POST_TYPES } from "./constants";
 import type { PostStatus, PostType, QueryState } from "./types";
 
@@ -28,6 +29,10 @@ export type AdminPostListItem = {
   summary: string;
   category: string | null;
   visibility: string;
+  isPinned: boolean;
+  pinnedOrder: number;
+  pinnedUntil: string | null;
+  effectivePinned: boolean;
   authorId: string | null;
   authorLabel: string;
   publishedAt: string | null;
@@ -118,6 +123,9 @@ type AdminPostRecord = {
   category: string | null;
   status: PostStatus;
   visibility: string;
+  is_pinned: boolean | null;
+  pinned_order: number | null;
+  pinned_until: string | null;
   cities?: { name: string | null; slug: string | null }[] | { name: string | null; slug: string | null } | null;
   published_at: string | null;
   created_at: string;
@@ -338,7 +346,9 @@ export async function getAdminPostsData(params: AdminPostsParams = {}): Promise<
 
   let query = supabase
     .from("posts")
-    .select("id,post_type,author_id,title,summary,body,category,status,visibility,published_at,created_at,updated_at,last_admin_action,last_admin_action_at,last_admin_action_by,last_admin_action_template_key,last_admin_action_reason,cities(name,slug),post_contacts(contact_name,phone,email,wechat),post_images(id),post_stats(view_count)", { count: "exact" })
+    .select("id,post_type,author_id,title,summary,body,category,status,visibility,is_pinned,pinned_order,pinned_until,published_at,created_at,updated_at,last_admin_action,last_admin_action_at,last_admin_action_by,last_admin_action_template_key,last_admin_action_reason,cities(name,slug),post_contacts(contact_name,phone,email,wechat),post_images(id),post_stats(view_count)", { count: "exact" })
+    .order("is_pinned", { ascending: false })
+    .order("pinned_order", { ascending: true })
     .order("updated_at", { ascending: false })
     .range(from, to);
 
@@ -467,6 +477,9 @@ export async function getAdminPostDetail(id: string): Promise<AdminPostDetailRes
         category,
         status,
         visibility,
+        is_pinned,
+        pinned_order,
+        pinned_until,
         published_at,
         created_at,
         updated_at,
@@ -817,6 +830,10 @@ function mapAdminPost(record: AdminPostRecord): AdminPostListItem {
     summary: record.summary || record.body || "暂无摘要。",
     category: record.category,
     visibility: record.visibility,
+    isPinned: Boolean(record.is_pinned),
+    pinnedOrder: record.pinned_order ?? 0,
+    pinnedUntil: record.pinned_until,
+    effectivePinned: isPostEffectivelyPinned(record),
     authorId: record.author_id,
     authorLabel: record.author_id ?? "未知作者",
     publishedAt: record.published_at,

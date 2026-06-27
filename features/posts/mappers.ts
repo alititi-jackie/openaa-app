@@ -12,6 +12,7 @@ import {
   getPostTag,
   getPostWorkType,
   getHousingAmountTimeDisplay,
+  isPostEffectivelyPinned,
   postStats,
 } from "./accessors";
 import { postChannelConfig } from "./channelConfig";
@@ -65,6 +66,7 @@ export function mapPostRecordToCard(record: PostRecord, authors: Record<string, 
   const area = getPostArea(record);
   const category = getPostCategory(record);
   const priceValue = getPostPriceValue(record);
+  const isPinned = isPostEffectivelyPinned(record);
   const baseCard = {
     type: record.post_type,
     mode: getPostMode(record),
@@ -90,6 +92,9 @@ export function mapPostRecordToCard(record: PostRecord, authors: Record<string, 
     meta: publishedMeta(record),
     createdAt: record.created_at,
     publishedAt: record.published_at,
+    isPinned,
+    pinnedOrder: record.pinned_order ?? 0,
+    pinnedUntil: record.pinned_until ?? null,
     authorName: formatPostAuthorName(author),
     imageUrl: cover,
     favoriteCount: stats.favorite_count ?? 0,

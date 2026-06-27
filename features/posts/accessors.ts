@@ -45,6 +45,13 @@ export function getPostCoverUrl(record: PostRecord) {
   return postImageUrl(getSortedPostImages(record)[0] ?? null);
 }
 
+export function isPostEffectivelyPinned(record: Pick<PostRecord, "is_pinned" | "pinned_until">, now = Date.now()) {
+  if (!record.is_pinned) return false;
+  if (!record.pinned_until) return true;
+  const pinnedUntil = new Date(record.pinned_until).getTime();
+  return Number.isFinite(pinnedUntil) && pinnedUntil > now;
+}
+
 export function getPostImageViews(record: PostRecord) {
   return getSortedPostImages(record).flatMap((image) => {
     const url = postImageUrl(image);

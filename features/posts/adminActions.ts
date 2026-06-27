@@ -85,12 +85,22 @@ async function getAdminActionContext(permissionKeys: string[]): Promise<AdminAct
 async function readPost(supabase: SupabasePostClient, id: string) {
   const { data, error } = await supabase
     .from("posts")
-    .select("id,post_type,status,title,author_id,published_at")
+    .select("id,post_type,status,title,author_id,published_at,is_pinned,pinned_order,pinned_until")
     .eq("id", id)
     .maybeSingle();
 
   if (error || !data) return null;
-  return data as { id: string; post_type: PostType; status: PostStatus; title: string; author_id: string | null; published_at: string | null };
+  return data as {
+    id: string;
+    post_type: PostType;
+    status: PostStatus;
+    title: string;
+    author_id: string | null;
+    published_at: string | null;
+    is_pinned: boolean | null;
+    pinned_order: number | null;
+    pinned_until: string | null;
+  };
 }
 
 async function writeAuditLog(
@@ -303,6 +313,81 @@ export async function handleAdminPostOperation(_state: AdminPostActionState, for
   if (!notificationResult.ok) return ok(`处理已完成，但通知发送失败：${notificationResult.message}`);
   if (!audited) return ok("处理已完成，但审计日志写入失败。");
   return ok(notifyUser ? "处理已完成，通知已发送。" : "处理已完成。");
+}
+
+export async function updateAdminPostPinning(_state: AdminPostActionState, formData: FormData): Promise<AdminPostActionState> {
+  const id = readText(formData, "id");
+  if (!id) return fail("操作参数无效。");
+
+  const pinnedOrder = readNonnegativeInteger(formData, "pinned_order");
+  if (!Number.isFinite(pinnedOrder)) return fail("置顶排序必须是 0 或更大的整数。");
+
+  const pinnedUntil = readOptionalDateTime(formData, "pinned_until", "pinned_until_iso");
+  if (!pinnedUntil.ok) return fail("置顶到期时间格式不正确。");
+
+  const context = await getAdminActionContext(["moderate_posts"]);
+  if (!context.ok) return fail(context.message);
+
+  const before = await readPost(context.supabase, id);
+  if (!before) return fail("用户发布信息不存在或无权读取。");
+  if (before.status === "deleted") return fail("回收站内容不能设置置顶。");
+
+  const isPinned = formData.get("is_pinned") === "on";
+  const now = new Date().toISOString();
+  const payload = {
+    is_pinned: isPinned,
+    pinned_order: isPinned ? pinnedOrder : 0,
+    pinned_until: isPinned ? pinnedUntil.value : null,
+    last_admin_action: isPinned ? "pin_post" : "unpin_post",
+    last_admin_action_at: now,
+    last_admin_action_by: context.userId,
+    last_admin_action_template_key: null,
+    last_admin_action_reason: isPinned ? "置顶发布信息" : "取消置顶发布信息",
+    updated_at: now,
+  };
+
+  const { error } = await context.supabase.from("posts").update(payload).eq("id", id);
+  if (error) {
+    console.error("[admin/user-posts] Failed to update post pinning", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      postId: id,
+    });
+    return fail("置顶设置保存失败，请稍后再试。");
+  }
+
+  const eventType = isPinned ? "pin_post" : "unpin_post";
+  await writeAuditLog(context, eventType, id, before, {
+    post_type: before.post_type,
+    title: before.title,
+    author_id: before.author_id,
+    ...payload,
+  });
+  await writePostAdminEvent(context.supabase, {
+    postId: id,
+    actorId: context.userId,
+    eventType,
+    statusBefore: before.status,
+    statusAfter: before.status,
+    title: payload.last_admin_action_reason,
+    metadata: {
+      before: {
+        is_pinned: before.is_pinned,
+        pinned_order: before.pinned_order,
+        pinned_until: before.pinned_until,
+      },
+      after: {
+        is_pinned: payload.is_pinned,
+        pinned_order: payload.pinned_order,
+        pinned_until: payload.pinned_until,
+      },
+    },
+  });
+
+  revalidatePost(before.post_type, id);
+  return ok(isPinned ? "置顶设置已保存。" : "已取消置顶。");
 }
 
 export async function setAdminPostStatus(_state: AdminPostActionState, formData: FormData): Promise<AdminPostActionState> {
@@ -895,6 +980,22 @@ function readPositiveInteger(formData: FormData, key: string) {
   const value = readText(formData, key);
   if (!/^\d+$/.test(value)) return Number.NaN;
   return Number(value);
+}
+
+function readNonnegativeInteger(formData: FormData, key: string) {
+  const value = readText(formData, key);
+  if (!value) return 0;
+  if (!/^\d+$/.test(value)) return Number.NaN;
+  return Number(value);
+}
+
+function readOptionalDateTime(formData: FormData, key: string, isoKey?: string): { ok: true; value: string | null } | { ok: false } {
+  const value = isoKey ? readText(formData, isoKey) || readText(formData, key) : readText(formData, key);
+  if (!value) return { ok: true, value: null };
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return { ok: false };
+  return { ok: true, value: date.toISOString() };
 }
 
 function isValidRetentionDays(value: number) {
