@@ -140,9 +140,10 @@ function OrderedHomeSectionCard({
 }) {
   if (!section) return <MissingSectionNotice title={title} />;
   const items = getOrderedHomeSectionItems(section, kind);
+  const visibilitySummary = getOrderedHomeSectionVisibilitySummary(items);
 
   return (
-    <HomeConfigPanel title={title} description={description} summary={[section.is_visible ? "显示中" : "已隐藏", `项目 ${items.length}`]}>
+    <HomeConfigPanel title={title} description={description} summary={[section.is_visible ? "显示中" : "已隐藏", ...visibilitySummary]}>
       <OrderedHomeSectionForm section={section} items={items} />
     </HomeConfigPanel>
   );
@@ -347,6 +348,11 @@ function getOrderedHomeSectionItems(section: AdminHomeSectionRow, kind: OrderedH
       };
     })
     .sort((a, b) => Number(a.raw.sort_order) - Number(b.raw.sort_order));
+}
+
+function getOrderedHomeSectionVisibilitySummary(items: Array<{ isVisible: boolean }>) {
+  const visibleCount = items.filter((item) => item.isVisible).length;
+  return [`项目 ${items.length}`, `显示 ${visibleCount}`, `隐藏 ${items.length - visibleCount}`];
 }
 
 function getHomeSectionSummary(section: AdminHomeSectionRow) {

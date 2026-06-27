@@ -116,6 +116,9 @@ export async function updateHomeSection(_state: AdminHomeActionState, formData: 
   if (key === HOME_SECTION_KEYS.quickGrid || key === HOME_SECTION_KEYS.utilityTools) {
     const normalized = normalizeOrderedHomeSectionItems(config.value, formData, intent);
     if (!normalized.ok) return fail(normalized.message);
+    if (isVisible && !hasVisibleOrderedHomeSectionItem(config.value)) {
+      return fail("请至少保留一个项目显示，或先隐藏整个模块。");
+    }
   }
 
   const payload = {
@@ -715,6 +718,16 @@ function normalizeOrderedHomeSectionItems(config: Record<string, unknown>, formD
   }));
 
   return { ok: true };
+}
+
+function hasVisibleOrderedHomeSectionItem(config: Record<string, unknown>) {
+  if (!Array.isArray(config.items)) return false;
+
+  return config.items.some((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return false;
+    const record = item as Record<string, unknown>;
+    return record.is_visible !== false && record.isVisible !== false;
+  });
 }
 
 function moveLatestPostSectionPayloads<T extends { key: string; sort_order: number }>(payloads: T[], sectionKey: string, direction: "up" | "down"): { ok: true } | { ok: false; message: string } {
