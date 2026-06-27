@@ -32,6 +32,7 @@ type WriteContext =
       supabase: SupabaseServerClient;
       user: { id: string };
       status: ProfileStatus;
+      emailVerified: boolean;
     };
 
 const allowedPostTypes = new Set<PostType>(["job", "housing", "marketplace", "service"]);
@@ -58,13 +59,19 @@ async function getWriteContext(): Promise<WriteContext> {
     return { ok: false, error: "请先登录后再发布。" };
   }
 
-  const { data: profile, error: profileError } = await supabase.from("profiles").select("id,status").eq("id", user.id).maybeSingle();
+  const { data: profile, error: profileError } = await supabase.from("profiles").select("id,status,email_verified").eq("id", user.id).maybeSingle();
 
   if (profileError) {
     return { ok: false, error: "无法读取账号状态，请稍后再试。" };
   }
 
-  return { ok: true, supabase, user, status: (profile?.status ?? "pending") as ProfileStatus };
+  return {
+    ok: true,
+    supabase,
+    user,
+    status: (profile?.status ?? "pending") as ProfileStatus,
+    emailVerified: Boolean(user.email_confirmed_at || profile?.email_verified),
+  };
 }
 
 async function getDefaultCityId(supabase: SupabaseServerClient) {
@@ -240,6 +247,7 @@ export async function createPost(values: PostFormValues): Promise<PostFormAction
   if (!context.ok) return { ok: false, message: context.error };
   if (context.status === "banned") return { ok: false, message: "你的账号当前禁止发布内容。" };
   if (context.status === "restricted") return { ok: false, message: "你的账号当前受限，暂时不能发布新内容。" };
+  if (!context.emailVerified) return { ok: false, message: "请先完成邮箱确认后再发布。请查看注册邮箱中的确认邮件，或在登录页重新发送确认邮件。" };
 
   const limitCheck = await assertDailyPostLimit(context.supabase, context.user.id);
   if (!limitCheck.ok) return { ok: false, message: limitCheck.message };
@@ -365,6 +373,10 @@ export async function manageOwnPostStatus(_previousState: ManagePostActionState,
   if (action === "publish") {
     if (context.status !== "active") {
       return { ok: false, message: "账号受限或禁用时不能重新发布。", postId, action };
+    }
+
+    if (!context.emailVerified) {
+      return { ok: false, message: "请先完成邮箱确认后再重新发布内容。", postId, action };
     }
 
     if (!["hidden", "draft", "expired"].includes(post.status)) {
