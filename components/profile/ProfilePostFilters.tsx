@@ -11,6 +11,8 @@ type ProfilePostFiltersProps = {
   selectedType: ProfilePostTypeFilterValue;
   selectedStatus: ProfilePostStatusFilterValue;
   path?: string;
+  typeParamName?: string;
+  preservedParams?: Record<string, string>;
   onTypeChange?: (value: ProfilePostTypeFilterValue) => void;
   onStatusChange?: (value: ProfilePostStatusFilterValue) => void;
 };
@@ -21,6 +23,8 @@ export function ProfilePostFilters({
   selectedType,
   selectedStatus,
   path,
+  typeParamName = "type",
+  preservedParams,
   onTypeChange,
   onStatusChange,
 }: ProfilePostFiltersProps) {
@@ -29,9 +33,11 @@ export function ProfilePostFilters({
   function updateUrl(nextType: ProfilePostTypeFilterValue, nextStatus: ProfilePostStatusFilterValue) {
     if (!path) return;
 
-    const params = new URLSearchParams();
-    if (nextType !== PROFILE_POST_ALL_TYPE) params.set("type", nextType);
+    const params = new URLSearchParams(preservedParams);
+    if (nextType !== PROFILE_POST_ALL_TYPE) params.set(typeParamName, nextType);
+    else params.delete(typeParamName);
     if (nextStatus !== PROFILE_POST_ALL_STATUS) params.set("status", nextStatus);
+    else params.delete("status");
 
     const query = params.toString();
     router.push(query ? `${path}?${query}` : path);

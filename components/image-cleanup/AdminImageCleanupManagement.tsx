@@ -38,9 +38,9 @@ export function AdminImageCleanupHealthSection({ totals, activeFilter }: { total
   return (
     <AdminCollapsibleCard title="健康检查" className="p-4" titleClassName="text-lg" contentClassName="mt-4 border-t-0 p-0 pt-0">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatCard icon={<ImageIcon size={17} aria-hidden="true" />} label="图片资产" value={totals.total} href="/admin/image-cleanup?filter=all" active={activeFilter === "all"} />
-        <StatCard icon={<Trash2 size={17} aria-hidden="true" />} label="可清理" value={totals.deletable} href="/admin/image-cleanup" active={activeFilter === "deletable"} />
-        <StatCard icon={<ShieldCheck size={17} aria-hidden="true" />} label="使用中" value={totals.protected} href="/admin/image-cleanup?filter=protected" active={activeFilter === "protected"} />
+        <StatCard icon={<ImageIcon size={17} aria-hidden="true" />} label="图片资产" value={totals.total} href={imageCleanupFilterHref("all")} active={activeFilter === "all"} />
+        <StatCard icon={<Trash2 size={17} aria-hidden="true" />} label="可清理" value={totals.deletable} href={imageCleanupFilterHref("deletable")} active={activeFilter === "deletable"} />
+        <StatCard icon={<ShieldCheck size={17} aria-hidden="true" />} label="使用中" value={totals.protected} href={imageCleanupFilterHref("protected")} active={activeFilter === "protected"} />
         <StatCard icon={<UploadCloud size={17} aria-hidden="true" />} label="当前页" value={totals.currentPage} href={imageCleanupFilterHref(activeFilter)} active={false} />
       </div>
     </AdminCollapsibleCard>
@@ -49,7 +49,8 @@ export function AdminImageCleanupHealthSection({ totals, activeFilter }: { total
 
 export function AdminImageCleanupFilter({ filter, source, q }: { filter?: string; source?: string; q?: string }) {
   return (
-    <form action="/admin/image-cleanup" className="grid gap-3 md:grid-cols-4">
+    <form action="/admin/recycle-bin" className="grid gap-3 md:grid-cols-4">
+      <input type="hidden" name="tab" value="image-cleanup" />
       <input
         name="q"
         defaultValue={q ?? ""}
@@ -189,7 +190,7 @@ function StatCard({ icon, label, value, href, active }: { icon: ReactNode; label
 }
 
 function imageCleanupFilterHref(filter: ImageCleanupFilter) {
-  return filter === "deletable" ? "/admin/image-cleanup" : `/admin/image-cleanup?filter=${filter}`;
+  return imageCleanupHref(filter === "deletable" ? {} : { filter });
 }
 
 function formatSize(value: number | null) {
@@ -223,11 +224,14 @@ function riskClassName(value: AdminImageAssetItem["cleanupRisk"]) {
 }
 
 function buildPageHref({ page, filter, source, q }: { page: number; filter?: string; source?: string; q?: string }) {
-  const params = new URLSearchParams();
+  return imageCleanupHref({ page, filter, source, q });
+}
+
+function imageCleanupHref({ page, filter, source, q }: { page?: number; filter?: string; source?: string; q?: string }) {
+  const params = new URLSearchParams({ tab: "image-cleanup" });
   if (filter && filter !== "deletable") params.set("filter", filter);
   if (source && source !== "all") params.set("source", source);
   if (q) params.set("q", q);
-  if (page > 1) params.set("page", String(page));
-  const query = params.toString();
-  return query ? `/admin/image-cleanup?${query}` : "/admin/image-cleanup";
+  if (typeof page === "number" && page > 1) params.set("page", String(page));
+  return `/admin/recycle-bin?${params.toString()}`;
 }

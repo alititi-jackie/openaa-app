@@ -58,7 +58,7 @@ export async function markImageAssetDeleted(_state: AdminHomeActionState, formDa
   const audited = await writeAuditLog(context, "mark_image_asset_deleted", id, before, payload);
   if (!audited) return fail("图片已标记删除，但审计日志写入失败，请联系管理员检查 admin_audit_logs。");
 
-  revalidatePath("/admin/image-cleanup");
+  revalidatePath("/admin/recycle-bin");
   return ok("图片资产已标记为已删除。");
 }
 
@@ -111,7 +111,6 @@ export async function purgeDeletedImageAsset(_state: AdminHomeActionState, formD
   });
   if (!audited) return fail("图片已彻底清理，但审计日志写入失败。");
 
-  revalidatePath("/admin/image-cleanup");
   revalidatePath("/admin/recycle-bin");
   return ok("图片 Storage 文件和资产记录已彻底清理。");
 }

@@ -11,6 +11,18 @@ import { MessageRecycleBinList } from "@/components/messages/AdminMessageRecycle
 import { AdminNotificationRecycleBin } from "@/components/notifications/AdminNotificationRecycleBin";
 import { NavigationRecycleBinList } from "@/components/navigation/NavigationRecycleBinManagement";
 import {
+  AdminImageAssetsList,
+  AdminImageCleanupFilter,
+  AdminImageCleanupHealthSection,
+  AdminImageCleanupPagination,
+  AdminImageCleanupPermissionBadges,
+} from "@/components/image-cleanup/AdminImageCleanupManagement";
+import {
+  getAdminImageCleanupData,
+  normalizeImageCleanupFilter,
+  normalizeImageSourceFilter,
+} from "@/features/image-cleanup/adminQueries";
+import {
   OrphanFavoritesNotice,
   RecycleBinHealthSection,
   RecycleBinList,
@@ -33,6 +45,7 @@ import { getAdminAdRecycleBinData } from "@/features/ads/adminQueries";
 import { getDeletedNotificationsRecycleData } from "@/features/notifications/adminRecycleQueries";
 import type { PostType } from "@/features/posts/types";
 import { hasAdminModule } from "@/lib/permissions/admin";
+import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
@@ -44,7 +57,7 @@ export const metadata = buildPageMetadata({
   noIndex: true,
 });
 
-type RecycleBinResourceType = "post" | "news" | "navigation" | "ads" | "reports" | "feedback" | "notifications";
+type RecycleBinResourceType = "post" | "news" | "navigation" | "ads" | "reports" | "feedback" | "notifications" | "image-cleanup";
 
 const statusFilterTabs: Array<{ value: RecycleBinFilter; label: string }> = [
   { value: "all", label: "全部" },
@@ -61,7 +74,7 @@ const newsFilterTabs: Array<{ value: RecycleBinNewsFilter; label: string }> = [
 ];
 
 type RecycleBinPageProps = {
-  searchParams?: Promise<{ tab?: string; filter?: string; type?: string; category?: string }>;
+  searchParams?: Promise<{ tab?: string; filter?: string; type?: string; category?: string; source?: string; q?: string; page?: string }>;
 };
 
 export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProps) {
@@ -82,11 +95,20 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
         const postFilter = activeTab === "post" ? normalizePostFilter(params?.filter) : "all";
         const newsCategory = activeTab === "news" ? normalizeNewsCategory(params?.category) : "all";
         const newsFilter = activeTab === "news" ? normalizeNewsFilter(params?.filter) : "all";
+        const imageFilter = activeTab === "image-cleanup" ? normalizeImageCleanupFilter(params?.filter) : "deletable";
 
         const canReadRecycleBin = await hasAdminModule("recycle-bin");
         const postData = await getRecycleBinData(postFilter, postType);
         const newsCategoriesResult = activeTab === "news" ? await getNewsCategories() : null;
         const newsData = activeTab === "news" ? await getRecycleBinNewsData(newsFilter, newsCategory) : null;
+        const imageCleanupData = activeTab === "image-cleanup"
+          ? await getAdminImageCleanupData({
+              filter: imageFilter,
+              source: normalizeImageSourceFilter(params?.source),
+              q: params?.q,
+              page: normalizePage(params?.page),
+            })
+          : null;
 
         if (!canReadRecycleBin) {
           return (
@@ -103,6 +125,8 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
         const adRecycleData = activeTab === "ads" ? await getAdminAdRecycleBinData() : null;
         const messageRecycleData = activeTab === "reports" || activeTab === "feedback" ? await getMessageRecycleData(activeTab) : null;
         const notificationRecycleData = activeTab === "notifications" ? await getDeletedNotificationsRecycleData() : null;
+        const canViewImages = Boolean(imageCleanupData && (imageCleanupData.permissions.viewImages || imageCleanupData.permissions.manageImageAssets));
+        const canDeleteImages = Boolean(imageCleanupData?.permissions.manageImageAssets);
 
         return (
           <div className="space-y-4">
@@ -202,6 +226,45 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
                 </AdminCard>
               </>
             ) : null}
+            {activeTab === "image-cleanup" && imageCleanupData ? (
+              <>
+                {canViewImages ? <AdminImageCleanupPermissionBadges permissions={imageCleanupData.permissions} /> : null}
+                {!canViewImages ? (
+                  <AdminPageHeader title="图片清理工具" description={`当前管理员没有 ${getAdminPermissionLabel("view_images")} 或 ${getAdminPermissionLabel("manage_image_assets")} 权限。`}>
+                    <AdminImageCleanupPermissionBadges permissions={imageCleanupData.permissions} />
+                  </AdminPageHeader>
+                ) : (
+                  <>
+                    {imageCleanupData.state === "error" || imageCleanupData.state === "missing_config" ? (
+                      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
+                        图片清理工具暂时不可用：{imageCleanupData.error ?? "请稍后再试。"}
+                      </div>
+                    ) : null}
+
+                    <AdminImageCleanupHealthSection totals={imageCleanupData.totals} activeFilter={imageFilter} />
+
+                    <AdminCard title="扫描图片资产" description="默认显示未绑定业务内容、也未被帖子图片引用的疑似未使用图片；使用中的图片只读展示。">
+                      <AdminImageCleanupFilter filter={params?.filter} source={params?.source} q={params?.q} />
+                    </AdminCard>
+
+                    <AdminCard title="图片资产列表" description="使用中的图片不会出现删除按钮。外部图片只标记资产记录，不删除远端原图。">
+                      <div className="mb-4 flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">
+                        默认按最近创建排序，每页显示 {imageCleanupData.pageSize} 条。
+                      </div>
+                      <AdminImageAssetsList assets={imageCleanupData.assets} canDelete={canDeleteImages} />
+                      <AdminImageCleanupPagination
+                        page={imageCleanupData.page}
+                        pageCount={imageCleanupData.pageCount}
+                        totalCount={imageCleanupData.totalCount}
+                        filter={params?.filter}
+                        source={params?.source}
+                        q={params?.q}
+                      />
+                    </AdminCard>
+                  </>
+                )}
+              </>
+            ) : null}
             {activeTab === "notifications" ? (
               <AdminCard title="已删除通知" description="只清理用户已经删除的通知，不影响仍在用户消息中心显示的通知。">
                 <AdminNotificationRecycleBin data={notificationRecycleData ?? { state: "ready", superAdmin: false, deletedCount: 0, olderThan30Count: 0, olderThan90Count: 0, recentItems: [] }} />
@@ -215,7 +278,7 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
 }
 
 function normalizeResourceTab(value?: string): RecycleBinResourceType {
-  if (value === "news" || value === "navigation" || value === "ads" || value === "reports" || value === "feedback" || value === "notifications") return value;
+  if (value === "news" || value === "navigation" || value === "ads" || value === "reports" || value === "feedback" || value === "notifications" || value === "image-cleanup") return value;
   return "post";
 }
 
@@ -233,6 +296,12 @@ function normalizeNewsFilter(value?: string): RecycleBinNewsFilter {
 
 function normalizeNewsCategory(value?: string) {
   return value?.trim() || "all";
+}
+
+function normalizePage(value?: string) {
+  if (!value) return 1;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.max(1, Math.floor(parsed)) : 1;
 }
 
 function postFilterHref(filter: RecycleBinFilter, postType: PostType | "all") {

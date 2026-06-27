@@ -12,7 +12,7 @@ const tabs = [
   { value: "reports", label: "举报", href: "/admin/recycle-bin?tab=reports" },
   { value: "feedback", label: "线索与建议", href: "/admin/recycle-bin?tab=feedback" },
   { value: "notifications", label: "通知", href: "/admin/recycle-bin?tab=notifications" },
-  { value: "image-cleanup", label: "图片清理工具", href: "/admin/image-cleanup" },
+  { value: "image-cleanup", label: "图片清理工具", href: "/admin/recycle-bin?tab=image-cleanup" },
 ] as const;
 
 export function RecycleBinResourceNav({ active }: RecycleBinResourceNavProps) {

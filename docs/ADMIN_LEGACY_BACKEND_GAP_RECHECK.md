@@ -57,7 +57,7 @@ Old `openaa-ny` admin pages found:
 - `/admin/feedback`
 - `/admin/notifications`
 - `/admin/settings`
-- `/admin/image-cleanup`
+- `/admin/recycle-bin?tab=image-cleanup`
 
 Old admin API groups found:
 
@@ -72,7 +72,7 @@ Old admin API groups found:
 - `/api/admin/feedback`
 - `/api/admin/notifications`
 - `/api/admin/settings`
-- `/api/admin/image-cleanup`
+- historical image cleanup admin API group
 
 Old auth pattern:
 
@@ -106,7 +106,7 @@ New auth pattern:
 | reports management | New app enhancement | Current new-site route is `/admin/messages?tab=reports`; old standalone `/admin/reports` references are historical only. |
 | notifications management | Complete | Current new-site route is `/admin/messages?tab=notifications`; old standalone `/admin/notifications` references are historical only. |
 | settings | Complete | New `/admin/settings` covers site settings such as daily post limit. |
-| image cleanup | Complete with safer behavior | New `/admin/image-cleanup` soft-marks records instead of physical deletion. |
+| image cleanup | Complete with safer behavior | New `/admin/recycle-bin?tab=image-cleanup` soft-marks records instead of physical deletion. |
 | audit logs | New app enhancement | New `/admin/audit-logs` covers backend traceability. |
 | DMV admin | Deferred | No current PR. Wait until full site is complete and DMV admin scope is confirmed. |
 

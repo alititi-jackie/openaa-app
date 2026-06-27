@@ -87,7 +87,7 @@ export const ADMIN_MODULES: AdminModule[] = [
       { key: "navigation", title: "公共导航", href: "/admin/recycle-bin?tab=navigation" },
       { key: "reports", title: "举报", href: "/admin/recycle-bin?tab=reports" },
       { key: "feedback", title: "线索与建议", href: "/admin/recycle-bin?tab=feedback" },
-      { key: "image-cleanup", title: "图片清理工具", href: "/admin/image-cleanup" },
+      { key: "image-cleanup", title: "图片清理工具", href: "/admin/recycle-bin?tab=image-cleanup" },
     ],
   },
   {

@@ -115,10 +115,10 @@ export default async function ProfilePage() {
           </details>
 
           <div className="grid grid-cols-2 border-b border-zinc-100">
-            <MenuTile href="/profile/jobs" label="💼 我的招聘" className="border-r border-zinc-100" />
-            <MenuTile href="/profile/housing" label="🏠 我的房屋" />
-            <MenuTile href="/profile/marketplace" label="🛍️ 我的二手" className="border-r border-t border-zinc-100" />
-            <MenuTile href="/profile/services" label="🛠️ 我的服务" className="border-t border-zinc-100" />
+            <MenuTile href="/profile/posts?type=jobs" label="💼 我的招聘" className="border-r border-zinc-100" />
+            <MenuTile href="/profile/posts?type=housing" label="🏠 我的房屋" />
+            <MenuTile href="/profile/posts?type=marketplace" label="🛍️ 我的二手" className="border-r border-t border-zinc-100" />
+            <MenuTile href="/profile/posts?type=services" label="🛠️ 我的服务" className="border-t border-zinc-100" />
           </div>
 
           <MenuRow href="/feedback" title="📝 线索与建议" description="提交新闻线索、广告合作咨询、功能建议或回复管理员" />

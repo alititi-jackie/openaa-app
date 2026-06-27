@@ -199,7 +199,7 @@ export async function permanentlyDeleteAd(_state: AdminHomeActionState, formData
 
   revalidateAds();
   revalidatePath("/admin/recycle-bin");
-  revalidatePath("/admin/image-cleanup");
+  revalidatePath("/admin/recycle-bin");
   return ok("广告已永久删除。");
 }
 

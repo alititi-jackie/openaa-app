@@ -42,7 +42,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
       { value: "jobs", label: "招聘信息", href: "/jobs" },
       { value: "jobs-publish", label: "发布招聘", href: "/jobs/publish" },
       { value: "job-seeking", label: "求职信息", href: "/jobs?mode=seeking" },
-      { value: "my-jobs", label: "我的招聘", href: "/profile/jobs" },
+      { value: "my-jobs", label: "我的招聘", href: "/profile/posts?type=jobs" },
     ],
   },
   {
@@ -51,7 +51,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
       { value: "housing", label: "房屋信息", href: "/housing" },
       { value: "housing-publish", label: "发布房屋", href: "/housing/publish" },
       { value: "housing-seeking", label: "求租求购", href: "/housing?mode=seeking" },
-      { value: "my-housing", label: "我的房屋", href: "/profile/housing" },
+      { value: "my-housing", label: "我的房屋", href: "/profile/posts?type=housing" },
     ],
   },
   {
@@ -60,7 +60,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
       { value: "marketplace", label: "二手交易", href: "/marketplace" },
       { value: "marketplace-publish", label: "发布二手", href: "/marketplace/publish" },
       { value: "marketplace-buying", label: "求购信息", href: "/marketplace?mode=buying" },
-      { value: "my-marketplace", label: "我的二手", href: "/profile/marketplace" },
+      { value: "my-marketplace", label: "我的二手", href: "/profile/posts?type=marketplace" },
     ],
   },
   {
@@ -68,7 +68,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
     entries: [
       { value: "services", label: "本地服务", href: "/services" },
       { value: "services-publish", label: "发布服务", href: "/services/publish" },
-      { value: "my-services", label: "我的服务", href: "/profile/services" },
+      { value: "my-services", label: "我的服务", href: "/profile/posts?type=services" },
     ],
   },
   {
