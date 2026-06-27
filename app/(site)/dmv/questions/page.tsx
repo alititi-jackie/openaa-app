@@ -7,6 +7,7 @@ import { DmvQuestionsBrowser } from "@/components/dmv/DmvQuestionsBrowser";
 import { dmvSeoContent } from "@/components/dmv/dmvSeoContent";
 import { ChannelHero } from "@/components/posts/ChannelHero";
 import { getDmvQuestionBank } from "@/features/dmv/questions";
+import { DmvStructuredData } from "@/features/dmv/structuredData";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
@@ -15,14 +16,15 @@ export const metadata = buildPageMetadata({
   title: "纽约 DMV 中文题库与答案解析",
   description: "NY DMV Permit 全量中文题库，覆盖交通标志、道路规则和常见易错点。",
   path: "/dmv/questions",
-  noIndex: true,
 });
 
 export default async function DmvQuestionsPage() {
   const bank = await getDmvQuestionBank();
 
   return (
-    <div className="space-y-4">
+    <>
+      <DmvStructuredData page="questions" />
+      <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <DetailBackButton fallbackHref="/dmv" />
         <div className="flex items-center gap-2">
@@ -47,6 +49,7 @@ export default async function DmvQuestionsPage() {
       <DmvQuestionsBrowser questions={bank.questions} />
       <DmvLearningDisclaimerCard />
       <DmvSeoContentSection {...dmvSeoContent.questions} />
-    </div>
+      </div>
+    </>
   );
 }

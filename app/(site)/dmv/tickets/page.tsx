@@ -1,4 +1,5 @@
 import TicketsClient from "@/components/dmv/tickets/TicketsClient";
+import { DmvStructuredData } from "@/features/dmv/structuredData";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const metadata = buildPageMetadata({
@@ -9,5 +10,10 @@ export const metadata = buildPageMetadata({
 });
 
 export default function DmvTicketsPage() {
-  return <TicketsClient />;
+  return (
+    <>
+      <DmvStructuredData page="tickets" />
+      <TicketsClient />
+    </>
+  );
 }

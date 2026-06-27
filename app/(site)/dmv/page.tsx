@@ -2,6 +2,7 @@ import { ChannelPageChrome } from "@/components/channels/ChannelPageChrome";
 import { detailActionButtonClass } from "@/components/common/detailActionStyles";
 import { DmvHomeClient } from "@/components/dmv/DmvHomeClient";
 import { getDmvQuestionBank } from "@/features/dmv/questions";
+import { DmvStructuredData } from "@/features/dmv/structuredData";
 import { getPublishedNewsList } from "@/features/news/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -18,7 +19,9 @@ export default async function DmvPage() {
   ]);
 
   return (
-    <ChannelPageChrome
+    <>
+      <DmvStructuredData page="home" />
+      <ChannelPageChrome
       channelKey="dmv"
       path="/dmv"
       title="2026纽约 DMV 中文驾照指南 | Permit笔试模拟・罚单查询・驾照流程 - OpenAA"
@@ -29,6 +32,7 @@ export default async function DmvPage() {
         questionCount={questionBank.questions.length}
         guides={dmvGuides.data.map((post) => ({ id: post.id, title: post.title, href: post.href }))}
       />
-    </ChannelPageChrome>
+      </ChannelPageChrome>
+    </>
   );
 }
