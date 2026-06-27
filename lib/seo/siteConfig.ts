@@ -3,7 +3,6 @@ const fallbackPrimarySeoUrl = fallbackSiteUrl;
 const primarySiteHostname = "openaa.com";
 const alternateMainSiteHostnames = new Set([
   "www.openaa.com",
-  "app.openaa.com",
   "ny.openaa.com",
   "openaa.app",
   "www.openaa.app",

@@ -1,24 +1,12 @@
 import { NextResponse } from "next/server";
+import { safeReturnTo } from "@/lib/auth/redirects";
 import { ensureProfileForUser } from "@/lib/supabase/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-const fallbackReturnTo = "/profile";
-const allowedReturnToPrefixes = [
-  "/profile",
-  "/reset-password",
-  "/jobs",
-  "/housing",
-  "/marketplace",
-  "/services",
-  "/navigation/my",
-  "/dmv",
-  "/admin",
-];
-const recoveryErrorMessage = "重置链接已失效，请重新发送重置邮件。";
 const loginErrorMessage = "登录失败，请重新尝试。";
-const loginSuccessMessage = "登录成功";
+const recoveryReturnTo = "/reset-password";
 
 function redirectUrl(requestUrl: URL, path: string, params?: Record<string, string>) {
   const url = new URL(path, requestUrl.origin);
@@ -30,28 +18,6 @@ function redirectUrl(requestUrl: URL, path: string, params?: Record<string, stri
   return NextResponse.redirect(url);
 }
 
-function safeReturnTo(value: string | null, requestOrigin: string) {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) {
-    return fallbackReturnTo;
-  }
-
-  try {
-    const parsed = new URL(value, requestOrigin);
-
-    if (parsed.origin !== requestOrigin) {
-      return fallbackReturnTo;
-    }
-
-    const pathname = parsed.pathname;
-    const pathWithSearch = `${pathname}${parsed.search}${parsed.hash}`;
-    const isAllowed = allowedReturnToPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
-
-    return isAllowed ? pathWithSearch : fallbackReturnTo;
-  } catch {
-    return fallbackReturnTo;
-  }
-}
-
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
@@ -59,9 +25,10 @@ export async function GET(request: Request) {
   const callbackError = requestUrl.searchParams.get("error");
   const callbackErrorCode = requestUrl.searchParams.get("error_code");
   const errorDescription = requestUrl.searchParams.get("error_description");
-  const returnTo = safeReturnTo(requestUrl.searchParams.get("returnTo"), requestUrl.origin);
-  const isRecoveryCallback = callbackType === "recovery" || returnTo.startsWith("/reset-password");
-  const recoveryErrorParams = { error: recoveryErrorMessage, source: "recovery", type: "recovery" };
+  const requestedReturnTo = requestUrl.searchParams.get("returnTo");
+  const isRecoveryCallback = callbackType === "recovery" || requestedReturnTo?.startsWith(recoveryReturnTo) === true;
+  const returnTo = safeReturnTo(requestedReturnTo, { allowResetPassword: isRecoveryCallback });
+  const recoveryRedirectTo = returnTo.startsWith(recoveryReturnTo) ? returnTo : recoveryReturnTo;
   const loginErrorParams = { error: loginErrorMessage, source: "oauth" };
 
   if (errorDescription) {
@@ -72,7 +39,7 @@ export async function GET(request: Request) {
       callbackType,
       returnTo,
     });
-    return redirectUrl(requestUrl, "/login", isRecoveryCallback ? recoveryErrorParams : loginErrorParams);
+    return redirectUrl(requestUrl, isRecoveryCallback ? recoveryRedirectTo : "/login", isRecoveryCallback ? undefined : loginErrorParams);
   }
 
   if (!code) {
@@ -82,7 +49,7 @@ export async function GET(request: Request) {
       callbackType,
       returnTo,
     });
-    return redirectUrl(requestUrl, "/login", isRecoveryCallback ? recoveryErrorParams : loginErrorParams);
+    return redirectUrl(requestUrl, isRecoveryCallback ? recoveryRedirectTo : "/login", isRecoveryCallback ? undefined : loginErrorParams);
   }
 
   const supabase = await createSupabaseServerClient();
@@ -95,11 +62,11 @@ export async function GET(request: Request) {
 
   if (exchangeError) {
     console.error("[auth/callback] exchangeCodeForSession failed", exchangeError);
-    return redirectUrl(requestUrl, "/login", isRecoveryCallback ? recoveryErrorParams : loginErrorParams);
+    return redirectUrl(requestUrl, isRecoveryCallback ? recoveryRedirectTo : "/login", isRecoveryCallback ? undefined : loginErrorParams);
   }
 
   if (isRecoveryCallback) {
-    return redirectUrl(requestUrl, returnTo);
+    return redirectUrl(requestUrl, recoveryRedirectTo);
   }
 
   const {
@@ -118,10 +85,5 @@ export async function GET(request: Request) {
     console.error("[auth/callback] ensureProfileForUser failed", profileError);
   }
 
-  return redirectUrl(requestUrl, "/login", {
-    source: "login",
-    message: loginSuccessMessage,
-    autoRedirect: "1",
-    returnTo,
-  });
+  return redirectUrl(requestUrl, returnTo);
 }

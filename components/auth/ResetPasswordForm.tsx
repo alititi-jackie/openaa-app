@@ -5,7 +5,7 @@ import type { Session } from "@supabase/supabase-js";
 import { KeyRound } from "lucide-react";
 import { AuthCard, AuthLink } from "@/components/auth/AuthCard";
 import { authErrorMessage } from "@/lib/auth/errorMessages";
-import { isPasswordLongEnough, passwordLengthMessage } from "@/lib/auth/passwordPolicy";
+import { isPasswordLongEnough, MIN_PASSWORD_LENGTH, passwordLengthMessage } from "@/lib/auth/passwordPolicy";
 import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
 
 const resetExpiredMessage = "重置链接已失效，请重新发送重置邮件。";
@@ -135,12 +135,13 @@ export function ResetPasswordForm() {
             <span className="text-sm font-bold text-slate-800">新密码</span>
             <input
               type="password"
+              minLength={MIN_PASSWORD_LENGTH}
               value={newPassword}
               onChange={(event) => {
                 setNewPassword(event.target.value);
                 if (newPasswordError) setNewPasswordError("");
               }}
-              placeholder="至少 6 位"
+              placeholder={`至少 ${MIN_PASSWORD_LENGTH} 位`}
               disabled={isSuccess}
               className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-zinc-50"
             />
@@ -150,6 +151,7 @@ export function ResetPasswordForm() {
             <span className="text-sm font-bold text-slate-800">确认新密码</span>
             <input
               type="password"
+              minLength={MIN_PASSWORD_LENGTH}
               value={confirmPassword}
               onChange={(event) => {
                 setConfirmPassword(event.target.value);

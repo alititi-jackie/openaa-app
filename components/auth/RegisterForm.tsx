@@ -6,10 +6,15 @@ import { UserPlus } from "lucide-react";
 import { AuthCard, AuthLink } from "@/components/auth/AuthCard";
 import { validateNicknameForSave } from "@/features/auth/actions";
 import { unavailableNicknameMessage, validateNickname } from "@/features/auth/nicknameValidation";
+import {
+  accountCreatedConfirmationMessage,
+  confirmationEmailRedirectTo,
+  confirmationEmailSentMessage,
+  resendSignupConfirmationEmail,
+} from "@/lib/auth/confirmationEmail";
 import { authErrorMessage } from "@/lib/auth/errorMessages";
-import { isPasswordLongEnough, passwordLengthMessage } from "@/lib/auth/passwordPolicy";
+import { isPasswordLongEnough, MIN_PASSWORD_LENGTH, passwordLengthMessage } from "@/lib/auth/passwordPolicy";
 import { featureFlags } from "@/lib/config/featureFlags";
-import { appUrl } from "@/lib/seo/siteConfig";
 import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
 
 const consentVersion = "2026-05-31";
@@ -30,8 +35,10 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
   const [nickname, setNickname] = useState("");
   const [accepted, setAccepted] = useState(initialAccepted);
   const [message, setMessage] = useState("");
+  const [resendNotice, setResendNotice] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResendingConfirmation, setIsResendingConfirmation] = useState(false);
   const isConfigured = isSupabaseBrowserConfigured();
   const consentHref = `/legal/consent?returnTo=/register&agreed=${accepted ? "1" : "0"}&next=${encodeURIComponent(authReturnTo)}`;
   const loginHref = `/login?returnTo=${encodeURIComponent(authReturnTo)}`;
@@ -40,6 +47,7 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
   async function handleRegister(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+    setResendNotice(null);
     setIsSuccess(false);
 
     const nicknameResult = validateNickname(nickname);
@@ -75,11 +83,11 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
       }
 
       const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
-          emailRedirectTo: appUrl(`/auth/callback?returnTo=${encodeURIComponent(authReturnTo)}`),
+          emailRedirectTo: confirmationEmailRedirectTo(authReturnTo),
           data: {
             nickname: serverNicknameResult.nickname,
             consent_version: consentVersion,
@@ -94,15 +102,47 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
         return;
       }
 
+      if (data.session) {
+        await supabase.auth.signOut();
+      }
+
       setPassword("");
       setConfirmPassword("");
       setAccepted(false);
-      setMessage("注册成功！请打开您的邮箱完成确认。");
+      setMessage(accountCreatedConfirmationMessage);
       setIsSuccess(true);
     } catch {
       setMessage(registerFallbackMessage(isConfigured));
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleResendConfirmation() {
+    const normalizedEmail = email.trim();
+    setResendNotice(null);
+
+    if (!normalizedEmail) {
+      setResendNotice({ type: "error", message: "请输入邮箱" });
+      return;
+    }
+
+    setIsResendingConfirmation(true);
+
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await resendSignupConfirmationEmail(supabase, normalizedEmail, authReturnTo);
+
+      if (error) {
+        setResendNotice({ type: "error", message: authErrorMessage(error, "确认邮件发送失败，请稍后重试。") });
+        return;
+      }
+
+      setResendNotice({ type: "success", message: confirmationEmailSentMessage });
+    } catch {
+      setResendNotice({ type: "error", message: isConfigured ? "确认邮件发送失败，请稍后重试。" : registerFallbackMessage(false) });
+    } finally {
+      setIsResendingConfirmation(false);
     }
   }
 
@@ -157,9 +197,9 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
           <input
             type="password"
             required
-            minLength={6}
+            minLength={MIN_PASSWORD_LENGTH}
             autoComplete="new-password"
-            placeholder="至少6个字符"
+            placeholder={`至少 ${MIN_PASSWORD_LENGTH} 位`}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             disabled={isSuccess}
@@ -171,7 +211,7 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
           <input
             type="password"
             required
-            minLength={6}
+            minLength={MIN_PASSWORD_LENGTH}
             autoComplete="new-password"
             placeholder="再次输入密码"
             value={confirmPassword}
@@ -194,18 +234,41 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
           </span>
         </label>
         {message ? <div className={`rounded-lg p-3 text-sm ${isSuccess ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>{message}</div> : null}
-        <button
-          type="submit"
-          disabled={!featureFlags.auth_email || !isConfigured || isSubmitting || isSuccess}
-          className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#1976d2] px-4 py-3 text-sm font-black text-white hover:bg-[#1565c0] disabled:cursor-not-allowed disabled:bg-slate-300"
-        >
-          <UserPlus size={18} aria-hidden="true" />
-          {isSubmitting ? "注册中..." : "创建账号"}
-        </button>
+        {!isSuccess ? (
+          <button
+            type="submit"
+            disabled={!featureFlags.auth_email || !isConfigured || isSubmitting}
+            className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#1976d2] px-4 py-3 text-sm font-black text-white hover:bg-[#1565c0] disabled:cursor-not-allowed disabled:bg-slate-300"
+          >
+            <UserPlus size={18} aria-hidden="true" />
+            {isSubmitting ? "注册中..." : "创建账号"}
+          </button>
+        ) : null}
         {isSuccess ? (
-          <div className="space-y-2 text-sm leading-6 text-slate-600">
+          <div className="space-y-3 text-sm leading-6 text-slate-600">
             <p>请查收确认邮件，并点击邮件中的确认邮箱链接。</p>
-            <p className="text-slate-500">如果没有收到确认邮件，请检查垃圾邮件箱，或稍后重新注册/重试。</p>
+            <p className="text-slate-500">如果没有收到确认邮件，请检查垃圾邮件箱，或重新发送确认邮件。</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Link
+                href={loginHref}
+                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50"
+              >
+                返回登录
+              </Link>
+              <button
+                type="button"
+                onClick={handleResendConfirmation}
+                disabled={!isConfigured || isResendingConfirmation}
+                className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#1976d2] px-4 py-2 text-sm font-black text-white hover:bg-[#1565c0] disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                {isResendingConfirmation ? "发送中..." : "重新发送确认邮件"}
+              </button>
+            </div>
+            {resendNotice ? (
+              <div className={`rounded-lg p-3 text-sm ${resendNotice.type === "success" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
+                {resendNotice.message}
+              </div>
+            ) : null}
           </div>
         ) : null}
       </form>

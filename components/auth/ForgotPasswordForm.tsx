@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { KeyRound } from "lucide-react";
 import { AuthCard, AuthLink } from "@/components/auth/AuthCard";
+import { passwordRecoveryRedirectTo } from "@/lib/auth/confirmationEmail";
 import { authErrorMessage } from "@/lib/auth/errorMessages";
-import { appUrl } from "@/lib/seo/siteConfig";
 import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -39,7 +39,7 @@ export function ForgotPasswordForm() {
     try {
       const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
-        redirectTo: appUrl("/auth/callback?returnTo=/reset-password"),
+        redirectTo: passwordRecoveryRedirectTo(),
       });
 
       if (error) {
