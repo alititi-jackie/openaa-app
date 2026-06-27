@@ -109,6 +109,7 @@ function isAllowedServiceRoleFile(file: string) {
     "features/messages/recycleActions.ts",
     "features/messages/recycleQueries.ts",
     "features/ads/adminActions.ts",
+    "features/ads/adminQueries.ts",
     "features/image-cleanup/adminActions.ts",
     "features/navigation/queries.ts",
     "features/notifications/adminRecycleActions.ts",

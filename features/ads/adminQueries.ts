@@ -1,6 +1,7 @@
 import "server-only";
 
-import { hasAdminPermission } from "@/lib/permissions/admin";
+import { hasAdminModule, hasAdminPermission } from "@/lib/permissions/admin";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { QueryState } from "@/features/posts/types";
 import { getAdPlaceholderSetting } from "./placeholders";
@@ -112,15 +113,17 @@ export async function getAdminAdsData(position?: string, status?: string): Promi
 }
 
 export async function getAdminAdRecycleBinData(): Promise<AdminAdRecycleBinResult> {
-  const supabase = await createSupabaseServerClient();
-  const canManageAds = await hasAdminPermission("manage_ads");
+  const canReadRecycleBin = await hasAdminModule("recycle-bin");
 
-  if (!supabase) {
-    return { state: "missing_config", canManageAds, items: [] };
+  if (!canReadRecycleBin) {
+    return { state: "ready", canManageAds: false, items: [] };
   }
 
-  if (!canManageAds) {
-    return { state: "ready", canManageAds, items: [] };
+  let supabase: ReturnType<typeof createSupabaseAdminClient>;
+  try {
+    supabase = createSupabaseAdminClient();
+  } catch {
+    return { state: "missing_config", canManageAds: canReadRecycleBin, items: [] };
   }
 
   const { data, error } = await supabase
@@ -131,12 +134,12 @@ export async function getAdminAdRecycleBinData(): Promise<AdminAdRecycleBinResul
     .limit(200);
 
   if (error) {
-    return { state: "error", canManageAds, items: [], error: "已删除广告读取失败，请稍后再试。" };
+    return { state: "error", canManageAds: canReadRecycleBin, items: [], error: "已删除广告读取失败，请稍后再试。" };
   }
 
   return {
     state: "ready",
-    canManageAds,
+    canManageAds: canReadRecycleBin,
     items: ((data ?? []) as Array<RawAdRow & { deleted_at: string | null; deleted_by: string | null }>).map(mapDeletedAd),
   };
 }

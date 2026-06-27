@@ -37,6 +37,8 @@ export async function markImageAssetDeleted(_state: AdminHomeActionState, formDa
 
   const payload = {
     status: "deleted",
+    is_deleted: true,
+    entity_id: null,
     deleted_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     metadata: {
@@ -79,7 +81,25 @@ export async function purgeDeletedImageAsset(_state: AdminHomeActionState, formD
   if (storageError) return fail(`Storage 文件删除失败：${storageError.message}`);
 
   const { error } = await context.supabase.from("image_assets").delete().eq("id", id).eq("status", "deleted");
-  if (error) return fail("Storage 文件已删除，但图片资产记录删除失败，请联系管理员检查。");
+  if (error) {
+    await context.supabase
+      .from("image_assets")
+      .update({
+        updated_at: new Date().toISOString(),
+        metadata: {
+          ...(isRecord(before.metadata) ? before.metadata : {}),
+          cleanup: {
+            failed_at: new Date().toISOString(),
+            failed_by: context.userId,
+            mode: "admin_image_purge",
+            storage_file_deleted: true,
+            error: error.message,
+          },
+        },
+      })
+      .eq("id", id);
+    return fail("Storage 文件已删除，但图片资产记录删除失败，已记录异常供管理员检查。");
+  }
 
   const audited = await writeAdminAuditLog({
     actorId: context.userId,
@@ -135,7 +155,7 @@ async function getImagePurgeActionContext(): Promise<ImagePurgeActionContext> {
 async function readImageAsset(supabase: SupabaseServerClient | ReturnType<typeof createSupabaseAdminClient>, id: string) {
   const { data, error } = await supabase
     .from("image_assets")
-    .select("id,source_type,bucket,path,public_url,external_url,external_host,owner_id,entity_type,entity_id,status,is_public,metadata,created_at,updated_at,deleted_at")
+    .select("id,source_type,bucket,path,public_url,external_url,external_host,owner_id,entity_type,entity_id,status,is_deleted,is_public,metadata,created_at,updated_at,deleted_at")
     .eq("id", id)
     .maybeSingle();
   if (error || !data) return null;
@@ -151,6 +171,7 @@ async function readImageAsset(supabase: SupabaseServerClient | ReturnType<typeof
     entity_type: string | null;
     entity_id: string | null;
     status: string;
+    is_deleted: boolean;
     is_public: boolean;
     metadata: unknown;
     created_at: string;

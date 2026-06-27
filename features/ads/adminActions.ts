@@ -186,12 +186,13 @@ export async function permanentlyDeleteAd(_state: AdminHomeActionState, formData
   const before = await readDeletedAd(context.supabase, id);
   if (!before) return fail("只有已删除广告可以永久删除。");
 
+  if (before.image_asset_id) {
+    const imageMarked = await markImageAssetDeleted(context.supabase, before.image_asset_id);
+    if (!imageMarked) return fail("广告图片资产标记删除失败，广告未永久删除。");
+  }
+
   const { error } = await context.supabase.from("ads").delete().eq("id", id).not("deleted_at", "is", null);
   if (error) return fail("广告永久删除失败，请稍后再试。");
-
-  if (before.image_asset_id) {
-    await markImageAssetDeleted(context.supabase, before.image_asset_id);
-  }
 
   const audited = await auditLog(context, "permanently_delete_ad", id, before, { deleted_ad_id: id, image_asset_id: before.image_asset_id });
   if (!audited) return fail("广告已永久删除，但审计日志写入失败。");
@@ -507,10 +508,12 @@ async function hasInternalSlugConflict(supabase: SupabaseWriteClient, slug: stri
 }
 
 async function markImageAssetDeleted(supabase: SupabaseWriteClient, imageAssetId: string) {
-  await supabase
+  const now = new Date().toISOString();
+  const { error } = await supabase
     .from("image_assets")
-    .update({ status: "deleted", deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .update({ status: "deleted", is_deleted: true, entity_id: null, deleted_at: now, updated_at: now })
     .eq("id", imageAssetId);
+  return !error;
 }
 
 async function auditLog(context: Extract<AdminActionContext, { ok: true }>, action: string, entityId: string, beforeData?: unknown, afterData?: unknown) {
