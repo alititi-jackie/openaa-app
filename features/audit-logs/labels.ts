@@ -90,6 +90,11 @@ const actionLabels: Record<string, string> = {
   wrong_category: "分类错误提醒",
 };
 
+actionLabels.permanently_delete_ad = "永久删除广告";
+actionLabels.purge_deleted_notifications = "清理已删除通知";
+actionLabels.purge_image_asset = "彻底清理图片";
+actionLabels.restore_ad_from_recycle_bin = "从回收站恢复广告";
+
 const entityTypeLabels: Record<string, string> = {
   ad: "广告图片",
   ads: "广告",

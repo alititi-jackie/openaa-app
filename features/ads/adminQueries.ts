@@ -29,6 +29,28 @@ export type AdminAdsResult = {
   error?: string;
 };
 
+export type AdminAdRecycleBinItem = {
+  id: string;
+  title: string;
+  position: AdPosition;
+  positionLabel: string;
+  linkType: AdLinkType;
+  href: string | null;
+  imageAssetId: string | null;
+  imageUrl: string | null;
+  deletedAt: string | null;
+  deletedBy: string | null;
+  isActive: boolean;
+  createdAt: string;
+};
+
+export type AdminAdRecycleBinResult = {
+  state: QueryState;
+  canManageAds: boolean;
+  items: AdminAdRecycleBinItem[];
+  error?: string;
+};
+
 type RawAdRow = Omit<AdminAdRow, "image_url" | "image_source_type" | "position" | "start_date" | "end_date"> & {
   placement: string;
   href: string | null;
@@ -86,6 +108,36 @@ export async function getAdminAdsData(position?: string, status?: string): Promi
     positionCounts: counts.positionCounts,
     statusCounts: counts.statusCounts,
     ads: ((data ?? []) as RawAdRow[]).map(mapAd),
+  };
+}
+
+export async function getAdminAdRecycleBinData(): Promise<AdminAdRecycleBinResult> {
+  const supabase = await createSupabaseServerClient();
+  const canManageAds = await hasAdminPermission("manage_ads");
+
+  if (!supabase) {
+    return { state: "missing_config", canManageAds, items: [] };
+  }
+
+  if (!canManageAds) {
+    return { state: "ready", canManageAds, items: [] };
+  }
+
+  const { data, error } = await supabase
+    .from("ads")
+    .select("id,title,placement,href,image_asset_id,is_active,created_at,deleted_at,deleted_by,link_type,image_assets(source_type,public_url,external_url)")
+    .not("deleted_at", "is", null)
+    .order("deleted_at", { ascending: false, nullsFirst: false })
+    .limit(200);
+
+  if (error) {
+    return { state: "error", canManageAds, items: [], error: "已删除广告读取失败，请稍后再试。" };
+  }
+
+  return {
+    state: "ready",
+    canManageAds,
+    items: ((data ?? []) as Array<RawAdRow & { deleted_at: string | null; deleted_by: string | null }>).map(mapDeletedAd),
   };
 }
 
@@ -149,5 +201,26 @@ function mapAd(row: RawAdRow): AdminAdRow {
     end_date: row.ends_at,
     sort_order: row.sort_order,
     created_at: row.created_at,
+  };
+}
+
+function mapDeletedAd(row: RawAdRow & { deleted_at: string | null; deleted_by: string | null }): AdminAdRecycleBinItem {
+  const imageAsset = Array.isArray(row.image_assets) ? row.image_assets[0] : row.image_assets;
+  const position = normalizeAdPosition(row.placement) ?? "home";
+  const positionLabel = adPositions.find((item) => item.key === position)?.label ?? position;
+
+  return {
+    id: row.id,
+    title: row.title,
+    position,
+    positionLabel,
+    linkType: row.link_type === "internal" ? "internal" : "external",
+    href: row.href,
+    imageAssetId: row.image_asset_id,
+    imageUrl: imageAsset?.public_url || imageAsset?.external_url || null,
+    deletedAt: row.deleted_at,
+    deletedBy: row.deleted_by,
+    isActive: row.is_active,
+    createdAt: row.created_at,
   };
 }

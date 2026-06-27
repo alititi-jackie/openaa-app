@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { hasAdminModulePermission } from "@/lib/permissions/admin";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { hasAdminModule, hasAdminModulePermission, isSuperAdmin } from "@/lib/permissions/admin";
 import { writeAdminAuditLog } from "@/lib/permissions/adminAuditLog";
 import { normalizeWebsiteUrl } from "@/lib/validation/url";
 import type { AdminHomeActionState } from "@/features/admin-home/types";
@@ -10,11 +11,12 @@ import { AD_PLACEHOLDER_SETTING_KEY, normalizeAdPlaceholderSetting } from "./pla
 import { adPositions, normalizeAdPosition, type AdOpenMode } from "./types";
 
 type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
+type SupabaseWriteClient = SupabaseServerClient | ReturnType<typeof createSupabaseAdminClient>;
 type AdminActionContext =
   | { ok: false; message: string }
   | {
       ok: true;
-      supabase: SupabaseServerClient;
+      supabase: SupabaseWriteClient;
       userId: string;
     };
 
@@ -145,6 +147,61 @@ export async function deleteAd(_state: AdminHomeActionState, formData: FormData)
   return ok("广告已删除。");
 }
 
+export async function restoreDeletedAd(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
+  const context = await getAdRecycleBinActionContext();
+  if (!context.ok) return fail(context.message);
+
+  const id = readText(formData, "id");
+  if (!id) return fail("广告参数无效。");
+
+  const before = await readDeletedAd(context.supabase, id);
+  if (!before) return fail("只有已删除广告可以恢复。");
+
+  const payload = {
+    deleted_at: null,
+    deleted_by: null,
+    is_active: false,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error } = await context.supabase.from("ads").update(payload).eq("id", id).not("deleted_at", "is", null);
+  if (error) return fail("广告恢复失败，请稍后再试。");
+
+  const audited = await auditLog(context, "restore_ad_from_recycle_bin", id, before, payload);
+  if (!audited) return fail("广告已恢复，但审计日志写入失败。");
+
+  revalidateAds();
+  revalidatePath("/admin/recycle-bin");
+  return ok("广告已恢复为停用状态。");
+}
+
+export async function permanentlyDeleteAd(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
+  const context = await getAdPermanentDeleteActionContext();
+  if (!context.ok) return fail(context.message);
+
+  const id = readText(formData, "id");
+  if (!id) return fail("广告参数无效。");
+  if (formData.get("confirm_permanent_delete") !== "on") return fail("请先确认永久删除。");
+
+  const before = await readDeletedAd(context.supabase, id);
+  if (!before) return fail("只有已删除广告可以永久删除。");
+
+  const { error } = await context.supabase.from("ads").delete().eq("id", id).not("deleted_at", "is", null);
+  if (error) return fail("广告永久删除失败，请稍后再试。");
+
+  if (before.image_asset_id) {
+    await markImageAssetDeleted(context.supabase, before.image_asset_id);
+  }
+
+  const audited = await auditLog(context, "permanently_delete_ad", id, before, { deleted_ad_id: id, image_asset_id: before.image_asset_id });
+  if (!audited) return fail("广告已永久删除，但审计日志写入失败。");
+
+  revalidateAds();
+  revalidatePath("/admin/recycle-bin");
+  revalidatePath("/admin/image-cleanup");
+  return ok("广告已永久删除。");
+}
+
 export async function removeAdImage(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
   const context = await getAdminActionContext();
   if (!context.ok) return fail(context.message);
@@ -227,6 +284,35 @@ async function getAdminActionContext(): Promise<AdminActionContext> {
   }
 
   return { ok: true, supabase, userId: user.id };
+}
+
+async function getAdRecycleBinActionContext(): Promise<AdminActionContext> {
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) return { ok: false, message: "Supabase 环境变量未配置，暂时无法处理广告回收站。" };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, message: "请先登录管理员账号。" };
+
+  if (!(await hasAdminModule("recycle-bin"))) {
+    return { ok: false, message: "当前账号没有回收站模块权限。" };
+  }
+
+  try {
+    return { ok: true, supabase: createSupabaseAdminClient(), userId: user.id };
+  } catch {
+    return { ok: false, message: "Supabase service role 环境变量未配置。" };
+  }
+}
+
+async function getAdPermanentDeleteActionContext(): Promise<AdminActionContext> {
+  const context = await getAdRecycleBinActionContext();
+  if (!context.ok) return context;
+  if (!(await isSuperAdmin())) {
+    return { ok: false, message: "只有超级管理员可以永久删除广告。" };
+  }
+  return context;
 }
 
 function normalizeAdPayload(formData: FormData, openMode: AdOpenMode, position: NonNullable<ReturnType<typeof normalizeAdPosition>>, imageAssetId: string | null, isActive: boolean, startsAt: string | null, endsAt: string | null) {
@@ -376,7 +462,7 @@ async function upsertExternalImageAsset(context: Extract<AdminActionContext, { o
   }
 }
 
-async function readAd(supabase: SupabaseServerClient, id: string): Promise<ExistingAd | null> {
+async function readAd(supabase: SupabaseWriteClient, id: string): Promise<ExistingAd | null> {
   if (!id) return null;
   const { data } = await supabase
     .from("ads")
@@ -387,7 +473,18 @@ async function readAd(supabase: SupabaseServerClient, id: string): Promise<Exist
   return (data as ExistingAd | null) ?? null;
 }
 
-async function readAdPlaceholderSetting(supabase: SupabaseServerClient) {
+async function readDeletedAd(supabase: SupabaseWriteClient, id: string): Promise<(ExistingAd & { deleted_at: string | null; deleted_by: string | null }) | null> {
+  if (!id) return null;
+  const { data } = await supabase
+    .from("ads")
+    .select("id,placement,href,image_asset_id,link_type,external_url,slug,content,contact_name,phone,wechat,address,open_mode,is_active,starts_at,ends_at,sort_order,deleted_at,deleted_by")
+    .eq("id", id)
+    .not("deleted_at", "is", null)
+    .maybeSingle();
+  return (data as (ExistingAd & { deleted_at: string | null; deleted_by: string | null }) | null) ?? null;
+}
+
+async function readAdPlaceholderSetting(supabase: SupabaseWriteClient) {
   const { data } = await supabase
     .from("site_settings")
     .select("value,updated_at")
@@ -396,12 +493,12 @@ async function readAdPlaceholderSetting(supabase: SupabaseServerClient) {
   return normalizeAdPlaceholderSetting(data);
 }
 
-async function readImageAsset(supabase: SupabaseServerClient, id: string) {
+async function readImageAsset(supabase: SupabaseWriteClient, id: string) {
   const { data } = await supabase.from("image_assets").select("id,public_url").eq("id", id).maybeSingle();
   return (data as ImageAssetRow | null) ?? null;
 }
 
-async function hasInternalSlugConflict(supabase: SupabaseServerClient, slug: string, currentId: string | null) {
+async function hasInternalSlugConflict(supabase: SupabaseWriteClient, slug: string, currentId: string | null) {
   let query = supabase.from("ads").select("id").eq("link_type", "internal").eq("slug", slug).is("deleted_at", null).limit(1);
   if (currentId) query = query.neq("id", currentId);
   const { data, error } = await query;
@@ -409,7 +506,7 @@ async function hasInternalSlugConflict(supabase: SupabaseServerClient, slug: str
   return Boolean(data?.length);
 }
 
-async function markImageAssetDeleted(supabase: SupabaseServerClient, imageAssetId: string) {
+async function markImageAssetDeleted(supabase: SupabaseWriteClient, imageAssetId: string) {
   await supabase
     .from("image_assets")
     .update({ status: "deleted", deleted_at: new Date().toISOString(), updated_at: new Date().toISOString() })

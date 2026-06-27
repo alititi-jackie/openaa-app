@@ -5,7 +5,7 @@ import { useState, type ReactNode } from "react";
 import { Image as ImageIcon, ShieldCheck, Trash2, UploadCloud } from "lucide-react";
 import { AdminActionForm, AdminCheckbox } from "@/components/admin/AdminActionForm";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
-import { markImageAssetDeleted } from "@/features/image-cleanup/adminActions";
+import { markImageAssetDeleted, purgeDeletedImageAsset } from "@/features/image-cleanup/adminActions";
 import type { AdminImageAssetItem, AdminImageCleanupData, ImageCleanupFilter, ImageSourceFilter } from "@/features/image-cleanup/adminQueries";
 
 const filterOptions: Array<{ value: ImageCleanupFilter; label: string }> = [
@@ -129,6 +129,17 @@ export function AdminImageAssetsList({ assets, canDelete }: { assets: AdminImage
                 <AdminCheckbox label="我确认这张图片未被业务使用，只标记记录为 deleted" name="confirm_cleanup" />
               </AdminActionForm>
             ) : null}
+            {asset.status === "deleted" && asset.sourceType === "storage" && asset.bucket && asset.path && canDelete ? (
+              <AdminActionForm
+                action={purgeDeletedImageAsset}
+                submitLabel="彻底清理 Storage"
+                className="grid gap-2 rounded-xl bg-white p-2 ring-1 ring-red-100"
+                submitClassName="inline-flex min-h-9 items-center justify-center rounded-xl bg-red-600 px-3 py-1.5 text-xs font-black text-white"
+              >
+                <input type="hidden" name="id" value={asset.id} />
+                <AdminCheckbox label="确认删除 Storage 文件和图片资产记录" name="confirm_purge_image" />
+              </AdminActionForm>
+            ) : null}
           </div>
         </article>
       ))}
@@ -183,7 +194,7 @@ function CollapsibleSection({ title, children }: { title: string; children: Reac
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-black text-slate-950">{title}</h2>
         <button type="button" onClick={() => setOpen((current) => !current)} className="text-sm font-black text-blue-700 hover:text-blue-800">
-          {open ? "收起 ▴" : "展开 ▾"}
+          {open ? "收起 ▲" : "展开 ▼"}
         </button>
       </div>
       {open ? <div className="mt-4">{children}</div> : null}

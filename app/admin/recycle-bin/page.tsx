@@ -6,7 +6,9 @@ import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { RecycleBinResourceNav } from "@/components/admin/RecycleBinResourceNav";
+import { AdminAdRecycleBinList } from "@/components/ads/AdminAdRecycleBin";
 import { MessageRecycleBinList } from "@/components/messages/AdminMessageRecycleBin";
+import { AdminNotificationRecycleBin } from "@/components/notifications/AdminNotificationRecycleBin";
 import { NavigationRecycleBinList } from "@/components/navigation/NavigationRecycleBinManagement";
 import {
   OrphanFavoritesNotice,
@@ -27,6 +29,8 @@ import {
   type RecycleBinNewsFilter,
 } from "@/features/posts/adminQueries";
 import { getMessageRecycleData } from "@/features/messages/recycleQueries";
+import { getAdminAdRecycleBinData } from "@/features/ads/adminQueries";
+import { getDeletedNotificationsRecycleData } from "@/features/notifications/adminRecycleQueries";
 import type { PostType } from "@/features/posts/types";
 import { hasAdminModule } from "@/lib/permissions/admin";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -40,7 +44,7 @@ export const metadata = buildPageMetadata({
   noIndex: true,
 });
 
-type RecycleBinResourceType = "post" | "news" | "navigation" | "reports" | "feedback";
+type RecycleBinResourceType = "post" | "news" | "navigation" | "ads" | "reports" | "feedback" | "notifications";
 
 const statusFilterTabs: Array<{ value: RecycleBinFilter; label: string }> = [
   { value: "all", label: "全部" },
@@ -96,7 +100,9 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
         }
 
         const navigationData = activeTab === "navigation" ? await getAdminNavigationRecycleBinData("links") : null;
+        const adRecycleData = activeTab === "ads" ? await getAdminAdRecycleBinData() : null;
         const messageRecycleData = activeTab === "reports" || activeTab === "feedback" ? await getMessageRecycleData(activeTab) : null;
+        const notificationRecycleData = activeTab === "notifications" ? await getDeletedNotificationsRecycleData() : null;
 
         return (
           <div className="space-y-4">
@@ -182,6 +188,19 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
               </>
             ) : null}
 
+            {activeTab === "ads" ? (
+              <>
+                {adRecycleData?.state === "error" || adRecycleData?.state === "missing_config" ? (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">
+                    {adRecycleData.error ?? "已删除广告读取失败，请稍后再试。"}
+                  </div>
+                ) : null}
+                <AdminCard title="已删除广告" description="恢复后广告会保持停用状态；永久删除后，广告图片会进入图片清理工具继续处理。">
+                  <AdminAdRecycleBinList items={adRecycleData?.items ?? []} />
+                </AdminCard>
+              </>
+            ) : null}
+
             {activeTab === "reports" || activeTab === "feedback" ? (
               <>
                 {messageRecycleData?.state === "error" || messageRecycleData?.state === "missing_config" ? (
@@ -197,6 +216,11 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
                 </AdminCard>
               </>
             ) : null}
+            {activeTab === "notifications" ? (
+              <AdminCard title="已删除通知" description="只清理用户已经删除的通知，不影响仍在用户消息中心显示的通知。">
+                <AdminNotificationRecycleBin data={notificationRecycleData ?? { state: "ready", superAdmin: false, deletedCount: 0, olderThan30Count: 0, olderThan90Count: 0, recentItems: [] }} />
+              </AdminCard>
+            ) : null}
           </div>
         );
       }}
@@ -205,7 +229,7 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
 }
 
 function normalizeResourceTab(value?: string): RecycleBinResourceType {
-  if (value === "news" || value === "navigation" || value === "reports" || value === "feedback") return value;
+  if (value === "news" || value === "navigation" || value === "ads" || value === "reports" || value === "feedback" || value === "notifications") return value;
   return "post";
 }
 
