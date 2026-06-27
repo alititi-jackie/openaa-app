@@ -2,7 +2,7 @@ import "server-only";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabasePublicClient } from "@/lib/supabase/public";
-import { DEFAULT_CITY_SLUG, DEFAULT_POST_LIMIT, PUBLIC_POST_TYPES } from "./constants";
+import { DEFAULT_CITY_SLUG, DEFAULT_POST_LIMIT, POST_TYPE_TO_ROUTE, PUBLIC_POST_TYPES } from "./constants";
 import { applyPublicPostFilters, normalizePublicPostFilters } from "./filters";
 import { housingTypeFromValue } from "./options";
 import { mapPostRecordToCard, mapPostRecordToDetail } from "./mappers";
@@ -25,6 +25,22 @@ const MAX_PUBLIC_FILTER_ROWS = 1000;
 const MAX_PUBLIC_SEARCH_CANDIDATE_ROWS = 200;
 const DETAIL_CONTEXT_CANDIDATE_LIMIT = 80;
 const RELATED_DETAIL_POST_LIMIT = 3;
+const publicPostTypeSet = new Set<PostType>(PUBLIC_POST_TYPES);
+
+export type PublicPostSitemapEntry = {
+  href: string;
+  type: PostType;
+  updatedAt: string;
+  publishedAt: string | null;
+};
+
+type PublicPostSitemapRow = {
+  id: string | null;
+  post_type: string | null;
+  updated_at: string | null;
+  published_at: string | null;
+  created_at: string | null;
+};
 
 const postSelectFields = `
   id,
@@ -501,6 +517,45 @@ export async function getPublicPostDetailContext(id: string, type: PostType): Pr
   };
 }
 
+export async function getPublicPostSitemapEntries(limit = 500): Promise<PostsQueryResult<PublicPostSitemapEntry[]>> {
+  const supabase = createSupabasePublicClient();
+
+  if (!supabase) {
+    return emptyResult([]);
+  }
+
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("posts")
+    .select("id,post_type,updated_at,published_at,created_at,cities!inner(slug)")
+    .eq("status", "published")
+    .eq("visibility", "public")
+    .eq("cities.slug", DEFAULT_CITY_SLUG)
+    .or(`expires_at.is.null,expires_at.gt.${now}`)
+    .in("post_type", PUBLIC_POST_TYPES)
+    .order("updated_at", { ascending: false, nullsFirst: false })
+    .limit(normalizeSitemapLimit(limit));
+
+  if (error) return queryError("get public post sitemap entries failed", error, []);
+
+  const rows = (data ?? []) as unknown as PublicPostSitemapRow[];
+
+  return {
+    state: "ready",
+    data: rows.flatMap((row) => {
+      if (!row.id || !isPublicPostType(row.post_type)) return [];
+      return [
+        {
+          href: `${POST_TYPE_TO_ROUTE[row.post_type]}/${row.id}`,
+          type: row.post_type,
+          updatedAt: row.updated_at ?? row.published_at ?? row.created_at ?? now,
+          publishedAt: row.published_at,
+        },
+      ];
+    }),
+  };
+}
+
 export async function getLatestPosts(limitPerType = 3): Promise<PostsQueryResult<Record<PostType, PostCardView[]>>> {
   const empty: Record<PostType, PostCardView[]> = {
     job: [],
@@ -593,6 +648,14 @@ function sanitizeSearchTerm(value: string) {
 function normalizeSearchLimit(value?: number) {
   if (!value || !Number.isFinite(value)) return DEFAULT_POST_LIMIT;
   return Math.min(50, Math.max(1, Math.floor(value)));
+}
+
+function normalizeSitemapLimit(value: number) {
+  return Math.min(2000, Math.max(1, Math.floor(value)));
+}
+
+function isPublicPostType(value: string | null): value is PostType {
+  return Boolean(value && publicPostTypeSet.has(value as PostType));
 }
 
 async function getPublicCardsByOrderedIds(ids: string[]): Promise<PostsQueryResult<PostCardView[]>> {

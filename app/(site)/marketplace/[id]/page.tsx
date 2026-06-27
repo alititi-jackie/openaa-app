@@ -1,15 +1,15 @@
+import type { Metadata } from "next";
 import { PostDetailView } from "@/components/posts/PostDetailView";
 import { getAdminPostReturnHref } from "@/features/posts/adminReturn";
 import { getPublicPostDetailContext } from "@/features/posts/queries";
-import { buildPageMetadata } from "@/lib/seo/metadata";
-
-export const metadata = buildPageMetadata({
-  title: "二手市场详情",
-  description: "OpenAA 纽约二手市场详情。",
-  path: "/marketplace",
-});
+import { generatePostDetailMetadata } from "@/features/posts/seo";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  return generatePostDetailMetadata(id, "marketplace");
+}
 
 export default async function MarketplaceDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams?: Promise<Record<string, string | string[] | undefined>> }) {
   const { id } = await params;

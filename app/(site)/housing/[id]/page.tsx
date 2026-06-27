@@ -1,15 +1,15 @@
+import type { Metadata } from "next";
 import { PostDetailView } from "@/components/posts/PostDetailView";
 import { getAdminPostReturnHref } from "@/features/posts/adminReturn";
 import { getPublicPostDetailContext } from "@/features/posts/queries";
-import { buildPageMetadata } from "@/lib/seo/metadata";
-
-export const metadata = buildPageMetadata({
-  title: "房屋详情",
-  description: "OpenAA 纽约房屋信息详情。",
-  path: "/housing",
-});
+import { generatePostDetailMetadata } from "@/features/posts/seo";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  return generatePostDetailMetadata(id, "housing");
+}
 
 export default async function HousingDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams?: Promise<Record<string, string | string[] | undefined>> }) {
   const { id } = await params;

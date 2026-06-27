@@ -1,10 +1,16 @@
 import type { MetadataRoute } from "next";
 import { getLatestNews } from "@/features/news/queries";
+import { getPublicPostSitemapEntries } from "@/features/posts/queries";
 import { canonicalUrl, staticSitemapRoutes } from "@/lib/seo/siteConfig";
+
+export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
-  const news = await getLatestNews(100).catch(() => ({ state: "error" as const, data: [] }));
+  const [news, posts] = await Promise.all([
+    getLatestNews(100).catch(() => ({ state: "error" as const, data: [] })),
+    getPublicPostSitemapEntries(500).catch(() => ({ state: "error" as const, data: [] })),
+  ]);
 
   const staticRoutes: MetadataRoute.Sitemap = staticSitemapRoutes.map((route) => ({
     url: canonicalUrl(route),
@@ -20,6 +26,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(post.updatedAt),
       changeFrequency: "weekly" as const,
       priority: 0.6,
+    })),
+    ...(posts.state === "ready" ? posts.data : []).map((post) => ({
+      url: canonicalUrl(post.href),
+      lastModified: new Date(post.updatedAt),
+      changeFrequency: "weekly" as const,
+      priority: 0.55,
     })),
   ];
 }
