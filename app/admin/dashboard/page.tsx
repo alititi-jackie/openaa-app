@@ -6,6 +6,7 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { ADMIN_MODULES, type AdminModule } from "@/features/admin/adminModules";
 import { getAdminPermissionLabel, getAdminRoleLabel } from "@/features/admins/adminRoleConfig";
+import { getSiteAnalyticsSummary, type SiteAnalyticsSummary } from "@/features/analytics/adminQueries";
 import { getMessageCenterPendingCounts, type MessageCenterPendingCounts } from "@/features/messages/pendingCounts";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { hasAdminModule, isSuperAdmin } from "@/lib/permissions/admin";
@@ -32,9 +33,10 @@ export default function AdminDashboardPage() {
     <AdminAuthGate>
       {async ({ user, adminRole }) => {
         const superAdmin = await isSuperAdmin();
-        const [moduleAccess, messageCounts] = await Promise.all([
+        const [moduleAccess, messageCounts, analyticsSummary] = await Promise.all([
           getDashboardModuleAccess(),
           getMessageCenterPendingCounts(),
+          getSiteAnalyticsSummary(),
         ]);
         const visibleModules = ADMIN_MODULES.filter((module) => moduleAccess.get(module.key));
         const adminEntryGroups = groupVisibleModules(visibleModules);
@@ -50,6 +52,8 @@ export default function AdminDashboardPage() {
               <AdminPermissionBadge allowed={visibleModules.length > 0} label={`可进入 ${visibleModules.length}/${ADMIN_MODULES.length}`} />
               <AdminPermissionBadge allowed={adminRole.is_active} label={getAdminRoleLabel(adminRole.role)} />
             </AdminPageHeader>
+
+            <SiteAnalyticsCard summary={analyticsSummary} />
 
             {adminEntryGroups.length > 0 ? (
               <div className="space-y-5">
@@ -98,6 +102,71 @@ function groupVisibleModules(modules: AdminModule[]): AdminEntryGroup[] {
         : null;
     })
     .filter((group): group is AdminEntryGroup => Boolean(group));
+}
+
+function SiteAnalyticsCard({ summary }: { summary: SiteAnalyticsSummary }) {
+  const stats = [
+    { label: "今日访问人数", value: summary.todayVisitors },
+    { label: "今日浏览量", value: summary.todayViews },
+    { label: "今日登录用户", value: summary.todayLogins },
+    { label: "当前在线", value: summary.activeVisitors },
+    { label: "今日新增用户", value: summary.todayNewUsers },
+    { label: "总用户数", value: summary.totalUsers },
+  ];
+
+  return (
+    <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-black text-slate-950">访问概览</h2>
+          <p className="mt-1 text-sm leading-6 text-slate-600">统计前台页面访问，不包含后台、API 和系统静态资源。</p>
+        </div>
+        <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">最近 7 天访客 {summary.sevenDayVisitors}</span>
+      </div>
+
+      {summary.state === "error" || summary.state === "missing_config" ? (
+        <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm font-bold leading-6 text-amber-800">
+          {summary.error ?? "访问统计暂时不可用。"}
+        </p>
+      ) : null}
+
+      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+        {stats.map((item) => (
+          <div key={item.label} className="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100">
+            <p className="text-xs font-bold text-slate-500">{item.label}</p>
+            <p className="mt-1 text-xl font-black text-slate-950">{item.value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50 p-3">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-sm font-black text-slate-950">热门页面 Top 10</h3>
+          <span className="text-xs font-bold text-slate-500">最近 7 天</span>
+        </div>
+        {summary.popularPages.length > 0 ? (
+          <ol className="mt-3 grid gap-2">
+            {summary.popularPages.map((page, index) => (
+              <li key={page.path} className="grid gap-2 rounded-xl bg-white px-3 py-2 text-sm ring-1 ring-slate-100 sm:grid-cols-[1fr_auto] sm:items-center">
+                <div className="min-w-0">
+                  <p className="truncate font-black text-slate-900">
+                    {index + 1}. {page.title ?? page.path}
+                  </p>
+                  <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">{page.path}</p>
+                </div>
+                <div className="flex flex-wrap gap-2 text-xs font-black text-slate-600">
+                  <span className="rounded-full bg-blue-50 px-2 py-1 text-blue-700">PV {page.views}</span>
+                  <span className="rounded-full bg-emerald-50 px-2 py-1 text-emerald-700">UV {page.visitors}</span>
+                </div>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p className="mt-3 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-500">暂无前台访问记录。</p>
+        )}
+      </div>
+    </section>
+  );
 }
 
 function AdminEntryCard({ entry, messageCounts }: { entry: AdminModule; messageCounts?: MessageCenterPendingCounts | null }) {

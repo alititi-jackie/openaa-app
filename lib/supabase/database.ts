@@ -2295,6 +2295,53 @@ export type Database = {
         }
         Relationships: []
       }
+      site_page_views: {
+        Row: {
+          created_at: string
+          device_type: string | null
+          id: string
+          metadata: Json
+          path: string
+          referrer: string | null
+          title: string | null
+          user_agent: string | null
+          user_id: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          metadata?: Json
+          path: string
+          referrer?: string | null
+          title?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          metadata?: Json
+          path?: string
+          referrer?: string | null
+          title?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          visitor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_page_views_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_settings: {
         Row: {
           created_at: string
