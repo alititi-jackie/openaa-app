@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Eye, Pencil, Pin, PinOff, Plus, Trash2 } from "lucide-react";
 import { AdminActionForm, AdminCheckbox, AdminTextInput } from "@/components/admin/AdminActionForm";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
+import { AdminCountPillBar, type AdminCountPillItem } from "@/components/admin/AdminCountPillBar";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { createDefaultNewsCategories, setNewsPostStatus, toggleNewsPin, upsertNewsCategory, upsertNewsPost, type NewsActionState } from "@/features/news/actions";
@@ -192,23 +193,16 @@ export function NewsAdminManager({
 }
 
 function NewsCategoryCountBar({ categories, counts }: { categories: NewsCategory[]; counts: AdminNewsCategoryCounts }) {
-  return (
-    <div className="mt-3 -mx-1 overflow-x-auto px-1 pb-1">
-      <div className="flex min-w-max gap-2">
-        <span className="inline-flex min-h-9 items-center rounded-full bg-blue-600 px-3 text-xs font-black text-white">
-          全部 {counts.total}
-        </span>
-        {categories.map((category) => {
-          const count = category.id ? (counts.byCategoryId[category.id] ?? 0) : 0;
-          return (
-            <span key={category.slug} className="inline-flex min-h-9 items-center rounded-full border border-slate-200 bg-slate-50 px-3 text-xs font-black text-slate-700">
-              {category.name} {count}
-            </span>
-          );
-        })}
-      </div>
-    </div>
-  );
+  const items: AdminCountPillItem[] = [
+    { key: "all", label: "全部", count: counts.total, tone: "primary" },
+    ...categories.map((category) => ({
+      key: category.slug,
+      label: category.name,
+      count: category.id ? (counts.byCategoryId[category.id] ?? 0) : 0,
+    })),
+  ];
+
+  return <AdminCountPillBar items={items} className="mt-3" />;
 }
 
 function NewsPostCard({

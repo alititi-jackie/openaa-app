@@ -7,6 +7,8 @@ import { getActiveNotificationTemplates } from "@/features/notifications/service
 import { POST_TYPE_LABELS, POST_TYPE_TO_ROUTE, PUBLIC_POST_TYPES } from "./constants";
 import type { PostStatus, PostType, QueryState } from "./types";
 
+type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
+
 export type AdminPostsPermissions = {
   viewPosts: boolean;
   moderatePosts: boolean;
@@ -87,7 +89,14 @@ type AdminPostsResult = {
   pageSize: number;
   totalCount: number;
   pageCount: number;
+  counts: AdminPostsCounts;
   error?: string;
+};
+
+export type AdminPostsCounts = {
+  total: number;
+  byType: Record<PostType, number>;
+  byStatus: Partial<Record<PostStatus, number>>;
 };
 
 type AdminPostDetailResult = {
@@ -165,6 +174,17 @@ export type AdminPostsParams = {
 const ADMIN_POSTS_PAGE_SIZE = 20;
 const RECYCLE_BIN_LIMIT = 200;
 const MANAGED_POST_TYPES: PostType[] = PUBLIC_POST_TYPES;
+const ADMIN_POST_COUNT_STATUSES: PostStatus[] = ["pending_review", "published", "hidden", "rejected"];
+const EMPTY_ADMIN_POST_COUNTS: AdminPostsCounts = {
+  total: 0,
+  byType: {
+    job: 0,
+    housing: 0,
+    marketplace: 0,
+    service: 0,
+  },
+  byStatus: {},
+};
 
 export type RecycleBinFilter = "all" | "job" | "housing" | "marketplace" | "service" | "news" | "expired" | "with_images" | "image_error" | "orphan_favorites";
 export type RecycleBinNewsFilter = "all" | "expired" | "with_images" | "image_error";
@@ -358,6 +378,7 @@ export async function getAdminPostsData(params: AdminPostsParams = {}): Promise<
 
   const totalCount = count ?? 0;
   const pageCount = Math.max(1, Math.ceil(totalCount / ADMIN_POSTS_PAGE_SIZE));
+  const counts = await readAdminPostsCounts(supabase);
 
   return {
     state: "ready",
@@ -366,8 +387,47 @@ export async function getAdminPostsData(params: AdminPostsParams = {}): Promise<
     pageSize: ADMIN_POSTS_PAGE_SIZE,
     totalCount,
     pageCount,
+    counts,
     posts: ((data ?? []) as AdminPostRecord[]).map(mapAdminPost),
   };
+}
+
+async function readAdminPostsCounts(supabase: SupabaseServerClient): Promise<AdminPostsCounts> {
+  const baseCount = () => supabase.from("posts").select("id", { count: "exact", head: true }).neq("status", "deleted");
+
+  try {
+    const [totalResult, typeResults, statusResults] = await Promise.all([
+      baseCount(),
+      Promise.all(
+        PUBLIC_POST_TYPES.map(async (type) => {
+          const { count, error } = await baseCount().eq("post_type", type);
+          if (error) throw error;
+          return [type, count ?? 0] as const;
+        }),
+      ),
+      Promise.all(
+        ADMIN_POST_COUNT_STATUSES.map(async (status) => {
+          const { count, error } = await baseCount().eq("status", status);
+          if (error) throw error;
+          return [status, count ?? 0] as const;
+        }),
+      ),
+    ]);
+
+    if (totalResult.error) throw totalResult.error;
+
+    return {
+      total: totalResult.count ?? 0,
+      byType: {
+        ...EMPTY_ADMIN_POST_COUNTS.byType,
+        ...(Object.fromEntries(typeResults) as Record<PostType, number>),
+      },
+      byStatus: Object.fromEntries(statusResults) as Partial<Record<PostStatus, number>>,
+    };
+  } catch (error) {
+    console.error("[admin/user-posts] Failed to read post counts", error);
+    return EMPTY_ADMIN_POST_COUNTS;
+  }
 }
 
 export async function getAdminPostDetail(id: string): Promise<AdminPostDetailResult> {
@@ -725,7 +785,7 @@ async function getRecycleBinNewsDetail(adminSupabase: ReturnType<typeof createSu
 }
 
 function emptyResult(state: QueryState, permissions: AdminPostsPermissions, page: number): AdminPostsResult {
-  return { state, permissions, posts: [], page, pageSize: ADMIN_POSTS_PAGE_SIZE, totalCount: 0, pageCount: 1 };
+  return { state, permissions, posts: [], page, pageSize: ADMIN_POSTS_PAGE_SIZE, totalCount: 0, pageCount: 1, counts: EMPTY_ADMIN_POST_COUNTS };
 }
 
 function normalizePage(value?: number) {

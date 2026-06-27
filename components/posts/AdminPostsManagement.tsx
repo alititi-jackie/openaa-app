@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useActionState, useMemo, useState } from "react";
 import { AdminActionButton } from "@/components/admin/AdminActionButton";
 import { AdminActionForm, AdminTextInput } from "@/components/admin/AdminActionForm";
+import { AdminCountPillBar, type AdminCountPillItem } from "@/components/admin/AdminCountPillBar";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { AdminPostManageDialog } from "@/components/posts/AdminPostManageDialog";
 import { type AdminPostActionState } from "@/features/posts/adminActions";
-import type { AdminPostListItem, AdminPostNotificationTemplate, AdminPostsPermissions as AdminPostsPermissionSet } from "@/features/posts/adminQueries";
+import type { AdminPostListItem, AdminPostNotificationTemplate, AdminPostsCounts, AdminPostsPermissions as AdminPostsPermissionSet } from "@/features/posts/adminQueries";
 import { POST_TYPE_LABELS, PUBLIC_POST_TYPES } from "@/features/posts/constants";
 import { postStatusTone } from "@/features/posts/display";
 import { updateDailyPostLimit } from "@/features/settings/adminActions";
@@ -84,6 +85,36 @@ export function AdminPostsFilter({ type, status, q, author }: { type?: string; s
         筛选
       </button>
     </form>
+  );
+}
+
+export function AdminPostsCountBars({ counts, activeType, activeStatus }: { counts: AdminPostsCounts; activeType?: PostType | "all"; activeStatus?: PostStatus | "all" }) {
+  const typeItems: AdminCountPillItem[] = [
+    { key: "all", label: "全部", count: counts.total, href: "/admin/user-posts", active: !activeType || activeType === "all", tone: "primary" },
+    ...PUBLIC_POST_TYPES.map((type) => ({
+      key: type,
+      label: POST_TYPE_LABELS[type],
+      count: counts.byType[type] ?? 0,
+      href: `/admin/user-posts?type=${type}`,
+      active: activeType === type,
+    })),
+  ];
+  const statusItems: AdminCountPillItem[] = postStatusOptions
+    .filter((option): option is { value: PostStatus; label: string } => option.value !== "all")
+    .map((option) => ({
+      key: option.value,
+      label: option.label,
+      count: counts.byStatus[option.value] ?? 0,
+      href: `/admin/user-posts?status=${option.value}`,
+      active: activeStatus === option.value,
+      tone: postStatusCountTone(option.value),
+    }));
+
+  return (
+    <div className="mb-4 space-y-2">
+      <AdminCountPillBar items={typeItems} />
+      <AdminCountPillBar items={statusItems} />
+    </div>
   );
 }
 
@@ -320,6 +351,13 @@ function adminPostStatusLabel(status: PostStatus) {
   if (status === "draft") return "未公开显示";
   if (status === "expired") return "已过期";
   return "已删除";
+}
+
+function postStatusCountTone(status: PostStatus): AdminCountPillItem["tone"] {
+  if (status === "published") return "success";
+  if (status === "pending_review") return "warning";
+  if (status === "rejected") return "danger";
+  return "default";
 }
 
 function adminActionLabel(action: string, templateKey?: string | null, reason?: string | null) {

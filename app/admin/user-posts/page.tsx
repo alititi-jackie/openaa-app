@@ -6,7 +6,7 @@ import { AdminFilterBar } from "@/components/admin/AdminFilterBar";
 import { AdminListCard } from "@/components/admin/AdminListCard";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminTopActions } from "@/components/admin/AdminTopActions";
-import { AdminPostsFilter, AdminPostsList, AdminPostsPagination, AdminPostsPermissionBadges, DailyPostLimitPanel } from "@/components/posts/AdminPostsManagement";
+import { AdminPostsCountBars, AdminPostsFilter, AdminPostsList, AdminPostsPagination, AdminPostsPermissionBadges, DailyPostLimitPanel } from "@/components/posts/AdminPostsManagement";
 import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { getAdminPostNotificationTemplates, getAdminPostsData } from "@/features/posts/adminQueries";
 import { getDailyPostLimitData } from "@/features/settings/adminQueries";
@@ -43,9 +43,11 @@ export default function AdminUserPostsPage({ searchParams }: AdminUserPostsPageP
           );
         }
 
+        const activeType = normalizeType(params?.type) ?? "all";
+        const activeStatus = normalizeStatus(params?.status) ?? "all";
         const data = await getAdminPostsData({
-          type: normalizeType(params?.type),
-          status: normalizeStatus(params?.status),
+          type: activeType,
+          status: activeStatus,
           q: params?.q,
           authorId: params?.author,
           page: normalizePage(params?.page),
@@ -80,6 +82,7 @@ export default function AdminUserPostsPage({ searchParams }: AdminUserPostsPageP
 
             <AdminFilterBar title="筛选用户发布信息" description="按类型、状态、标题、内容或作者快速筛选。">
               {params?.author ? <p className="mb-3 rounded-xl bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700">正在按作者筛选：{params.author}</p> : null}
+              <AdminPostsCountBars counts={data.counts} activeType={activeType} activeStatus={activeStatus} />
               <AdminPostsFilter type={params?.type} status={params?.status} q={params?.q} author={params?.author} />
             </AdminFilterBar>
 
