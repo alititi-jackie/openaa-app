@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ChannelPageChrome } from "@/components/channels/ChannelPageChrome";
+import { PublicStatusNotice } from "@/components/common/PublicStatusNotice";
 import type { ChannelKey } from "@/features/channels/types";
 import { DEFAULT_PAGE_SIZE } from "@/features/posts/filters";
 import type { PostOption } from "@/features/posts/options";
@@ -71,13 +72,13 @@ export function ChannelPageShell({ config }: { config: ChannelPageConfig }) {
         areaPlaceholder={config.areaPlaceholder}
       />
       {config.queryState === "error" ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
+        <PublicStatusNotice tone="warning">
           内容读取暂时不可用：{config.errorMessage ?? "请稍后再试。"}
-        </div>
+        </PublicStatusNotice>
       ) : config.queryState === "missing_config" ? (
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+        <PublicStatusNotice>
           Supabase 环境变量尚未配置，当前显示空列表；配置新 Supabase 后会读取公开发布内容。
-        </div>
+        </PublicStatusNotice>
       ) : null}
       <PostList posts={config.posts} cardVariant={cardVariantForChannel(config.channelKey)} />
       {config.pagination ? <ChannelPagination filters={filters} pagination={config.pagination} path={config.path} /> : null}

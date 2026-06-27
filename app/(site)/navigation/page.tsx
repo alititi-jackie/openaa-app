@@ -1,4 +1,5 @@
 import { ChannelPageChrome } from "@/components/channels/ChannelPageChrome";
+import { PublicStatusNotice } from "@/components/common/PublicStatusNotice";
 import { NavigationMyCard } from "@/components/navigation/NavigationMyCard";
 import { NavigationPublicSections } from "@/components/navigation/NavigationPublicSections";
 import { ChannelSeoCard } from "@/components/posts/ChannelSeoCard";
@@ -33,9 +34,9 @@ export default async function NavigationPage({ searchParams }: NavigationPagePro
       <NavigationMyCard />
 
       {data.state !== "ready" ? (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
+        <PublicStatusNotice tone="warning" className="rounded-2xl">
           {data.state === "missing_config" ? "Supabase 环境变量未配置，当前仅显示默认分类和空状态。" : `导航读取暂时不可用：${data.error ?? "请稍后再试。"}`}
-        </div>
+        </PublicStatusNotice>
       ) : null}
 
       <NavigationPublicSections categories={data.categories} links={data.links} />

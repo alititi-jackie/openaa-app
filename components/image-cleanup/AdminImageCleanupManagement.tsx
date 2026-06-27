@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { Image as ImageIcon, ShieldCheck, Trash2, UploadCloud } from "lucide-react";
 import { AdminActionForm, AdminCheckbox } from "@/components/admin/AdminActionForm";
+import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { markImageAssetDeleted, purgeDeletedImageAsset } from "@/features/image-cleanup/adminActions";
 import type { AdminImageAssetItem, AdminImageCleanupData, ImageCleanupFilter, ImageSourceFilter } from "@/features/image-cleanup/adminQueries";
@@ -76,7 +77,7 @@ export function AdminImageCleanupFilter({ filter, source, q }: { filter?: string
 
 export function AdminImageAssetsList({ assets, canDelete }: { assets: AdminImageAssetItem[]; canDelete: boolean }) {
   if (assets.length === 0) {
-    return <p className="rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-500">暂无符合条件的图片资产。</p>;
+    return <AdminEmptyState title="暂无符合条件的图片资产。" compact align="left" />;
   }
 
   return (

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChannelPageChrome } from "@/components/channels/ChannelPageChrome";
+import { PublicStatusNotice } from "@/components/common/PublicStatusNotice";
 import { NavigationModeSwitch } from "@/components/navigation/NavigationModeSwitch";
 import { MyNavigationList } from "@/components/navigation/MyNavigationList";
 import { getCurrentUserNavigationLinks } from "@/features/navigation/queries";
@@ -27,9 +28,9 @@ export default async function MyNavigationPage() {
       {data.userId ? <NavigationModeSwitch /> : null}
 
       {data.state === "missing_config" ? (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
+        <PublicStatusNotice tone="warning" className="rounded-2xl">
           Supabase 环境变量未配置，暂时无法管理我的导航。
-        </div>
+        </PublicStatusNotice>
       ) : null}
 
       {!data.userId && data.state !== "missing_config" ? <NavigationLoginPrompt /> : null}

@@ -2,7 +2,9 @@
 
 import { type Dispatch, type SetStateAction, useMemo, useState, useTransition } from "react";
 import { ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from "lucide-react";
+import { AdminActionButton } from "@/components/admin/AdminActionButton";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
+import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import {
   deleteNavigationLink,
@@ -22,10 +24,9 @@ const openModeOptions: Array<{ value: NavigationOpenMode; label: string }> = [
   { value: "new", label: "新窗口" },
 ];
 
-const buttonBase = "inline-flex min-h-9 items-center justify-center rounded-xl border px-3 py-1.5 text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-50";
-const neutralButtonClass = `${buttonBase} border-slate-200 bg-white text-slate-700 hover:bg-slate-50`;
-const primaryButtonClass = `${buttonBase} border-blue-100 bg-blue-50 text-blue-700 hover:bg-blue-100`;
-const dangerButtonClass = `${buttonBase} border-red-100 bg-red-50 text-red-600 hover:bg-red-100`;
+const compactActionButtonClassName = "rounded-xl text-xs font-black disabled:opacity-50";
+const iconActionButtonClassName = "gap-1.5 rounded-xl text-xs font-black disabled:opacity-50";
+const createActionButtonClassName = "min-h-10 gap-2 rounded-xl px-4 py-2 text-sm font-black";
 
 type LocalLink = NavigationLink & {
   transientMessage?: string;
@@ -151,12 +152,12 @@ function NavigationCategoryCard({
                 autoFocus
                 className="h-9 w-16 rounded-full border border-blue-200 bg-white px-2 text-center text-sm font-black text-slate-950 outline-none focus:border-blue-500"
               />
-              <button type="submit" disabled={pendingDisplayLimit} className={primaryButtonClass}>
+              <AdminActionButton type="submit" disabled={pendingDisplayLimit} variant="primarySoft" className={compactActionButtonClassName}>
                 保存
-              </button>
-              <button type="button" disabled={pendingDisplayLimit} onClick={() => setEditingDisplayLimit(false)} className={neutralButtonClass}>
+              </AdminActionButton>
+              <AdminActionButton type="button" disabled={pendingDisplayLimit} onClick={() => setEditingDisplayLimit(false)} className={compactActionButtonClassName}>
                 取消
-              </button>
+              </AdminActionButton>
             </form>
           ) : (
             <button
@@ -203,15 +204,15 @@ function NavigationCategoryCard({
                 />
               </div>
             ) : (
-              <button type="button" onClick={() => setCreating(true)} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-black text-blue-700 hover:bg-blue-100">
+              <AdminActionButton type="button" onClick={() => setCreating(true)} variant="primarySoft" className={createActionButtonClassName}>
                 <Plus size={16} aria-hidden="true" />
                 新增网站
-              </button>
+              </AdminActionButton>
             )}
           </div>
 
           {links.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-500">暂无网站。</p>
+            <AdminEmptyState title="暂无网站。" compact align="left" />
           ) : (
             <div className="space-y-2">
               {links.map((link) => (
@@ -301,17 +302,17 @@ function NavigationLinkAdminCard({
         {link.transientMessage ? <p className="mt-3 text-sm font-semibold leading-6 text-emerald-700">{link.transientMessage}</p> : null}
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <button type="button" onClick={() => setEditing((value) => !value)} className={neutralButtonClass}>
+          <AdminActionButton type="button" onClick={() => setEditing((value) => !value)} className={iconActionButtonClassName}>
             <Pencil size={14} aria-hidden="true" />
             编辑
-          </button>
-          <button type="button" onClick={toggleVisible} disabled={pendingToggle} className={neutralButtonClass}>
+          </AdminActionButton>
+          <AdminActionButton type="button" onClick={toggleVisible} disabled={pendingToggle} className={compactActionButtonClassName}>
             {link.isActive ? "隐藏" : "显示"}
-          </button>
-          <button type="button" onClick={() => setDeleteOpen(true)} disabled={pendingDelete} className={dangerButtonClass}>
+          </AdminActionButton>
+          <AdminActionButton type="button" onClick={() => setDeleteOpen(true)} disabled={pendingDelete} variant="dangerSoft" className={iconActionButtonClassName}>
             <Trash2 size={14} aria-hidden="true" />
             删除
-          </button>
+          </AdminActionButton>
         </div>
       </div>
 
@@ -467,12 +468,12 @@ function NavigationLinkEditor({
       {message ? <p className="mt-3 text-sm font-semibold text-red-600">{message}</p> : null}
 
       <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
-        <button type="button" onClick={onCancel} disabled={pending} className={neutralButtonClass}>
+        <AdminActionButton type="button" onClick={onCancel} disabled={pending} className={compactActionButtonClassName}>
           取消
-        </button>
-        <button type="button" onClick={submit} disabled={pending} className={primaryButtonClass}>
+        </AdminActionButton>
+        <AdminActionButton type="button" onClick={submit} disabled={pending} variant="primarySoft" className={compactActionButtonClassName}>
           {pending ? "保存中..." : "保存"}
-        </button>
+        </AdminActionButton>
       </div>
     </div>
   );

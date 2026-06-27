@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Clock, FileText, Search, UserRound } from "lucide-react";
 import { EmptyState } from "@/components/common/EmptyState";
+import { PublicStatusNotice } from "@/components/common/PublicStatusNotice";
 import { PageShell } from "@/components/layout/PageShell";
 import { PostCard } from "@/components/posts/PostCard";
 import { getMyRecentPosts } from "@/features/posts/queries";
@@ -28,8 +29,8 @@ export default async function ProfileRecentPage() {
 
   return (
     <PageShell title="最近浏览" description="查看当前账号最近浏览过的公开信息。">
-      {posts.state === "error" ? <p className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">最近浏览读取失败，请稍后再试。</p> : null}
-      {posts.state === "missing_config" ? <p className="rounded-xl bg-slate-50 p-3 text-sm leading-6 text-slate-600">Supabase 环境变量尚未配置，当前显示空列表。</p> : null}
+      {posts.state === "error" ? <PublicStatusNotice tone="error" className="p-3 font-bold">最近浏览读取失败，请稍后再试。</PublicStatusNotice> : null}
+      {posts.state === "missing_config" ? <PublicStatusNotice className="p-3">Supabase 环境变量尚未配置，当前显示空列表。</PublicStatusNotice> : null}
       {posts.data.length > 0 ? (
         <section className="space-y-3">
           {posts.data.map((post) => (

@@ -3,7 +3,9 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from "lucide-react";
+import { AdminActionButton } from "@/components/admin/AdminActionButton";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
+import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { deleteTopQuickLink, moveTopQuickLink, setTopQuickLinkVisibility, upsertTopQuickLink } from "@/features/admin-home/actions";
 import type { AdminHomeActionState, AdminTopQuickLinkRow } from "@/features/admin-home/types";
 
@@ -15,10 +17,7 @@ type TopLinkFormValues = {
 
 const initialState: AdminHomeActionState = { ok: true, message: "" };
 
-const buttonBase = "inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-50";
-const neutralButtonClass = `${buttonBase} border-slate-200 bg-white text-slate-700 hover:bg-slate-50`;
-const primaryButtonClass = `${buttonBase} border-blue-100 bg-blue-50 text-blue-700 hover:bg-blue-100`;
-const dangerButtonClass = `${buttonBase} border-red-100 bg-red-50 text-red-600 hover:bg-red-100`;
+const compactActionButtonClassName = "gap-1.5 rounded-xl text-xs font-black disabled:opacity-50";
 
 const inputClass = "min-h-10 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-500";
 
@@ -39,10 +38,10 @@ export function TopQuickLinksManagement({ topLinks }: { topLinks: AdminTopQuickL
       </div>
 
       <div className="mt-4">
-        <button type="button" onClick={() => setCreating((value) => !value)} className={primaryButtonClass}>
+        <AdminActionButton type="button" onClick={() => setCreating((value) => !value)} variant="primarySoft" className={compactActionButtonClassName}>
           <Plus size={14} aria-hidden="true" />
           新增网站
-        </button>
+        </AdminActionButton>
       </div>
 
       {creating ? (
@@ -70,7 +69,7 @@ export function TopQuickLinksManagement({ topLinks }: { topLinks: AdminTopQuickL
             />
           ))
         ) : (
-          <p className="rounded-xl border border-dashed border-slate-200 p-4 text-sm text-slate-500">暂无顶部快捷导航。</p>
+          <AdminEmptyState title="暂无顶部快捷导航。" align="left" className="bg-white" />
         )}
       </div>
     </section>
@@ -137,23 +136,23 @@ function TopQuickLinkCard({ link, index, total, onLinkChange }: { link: AdminTop
       {message?.message ? <p className={message.ok ? "mt-3 text-sm font-semibold leading-6 text-emerald-700" : "mt-3 text-sm font-semibold leading-6 text-red-600"}>{message.message}</p> : null}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <button type="button" onClick={() => move("up")} disabled={pendingMove || index === 0} className={neutralButtonClass} aria-label="上移">
+        <AdminActionButton type="button" onClick={() => move("up")} disabled={pendingMove || index === 0} className={compactActionButtonClassName} aria-label="上移">
           <ArrowUp size={14} aria-hidden="true" />
-        </button>
-        <button type="button" onClick={() => move("down")} disabled={pendingMove || index === total - 1} className={neutralButtonClass} aria-label="下移">
+        </AdminActionButton>
+        <AdminActionButton type="button" onClick={() => move("down")} disabled={pendingMove || index === total - 1} className={compactActionButtonClassName} aria-label="下移">
           <ArrowDown size={14} aria-hidden="true" />
-        </button>
-        <button type="button" onClick={() => setEditing((value) => !value)} className={neutralButtonClass}>
+        </AdminActionButton>
+        <AdminActionButton type="button" onClick={() => setEditing((value) => !value)} className={compactActionButtonClassName}>
           <Pencil size={14} aria-hidden="true" />
           修改
-        </button>
-        <button type="button" onClick={toggleVisible} disabled={pendingVisibility} className={neutralButtonClass}>
+        </AdminActionButton>
+        <AdminActionButton type="button" onClick={toggleVisible} disabled={pendingVisibility} className={compactActionButtonClassName}>
           {link.is_active ? "隐藏" : "显示"}
-        </button>
-        <button type="button" onClick={() => setDeleteOpen(true)} disabled={pendingDelete} className={dangerButtonClass}>
+        </AdminActionButton>
+        <AdminActionButton type="button" onClick={() => setDeleteOpen(true)} disabled={pendingDelete} variant="dangerSoft" className={compactActionButtonClassName}>
           <Trash2 size={14} aria-hidden="true" />
           删除
-        </button>
+        </AdminActionButton>
       </div>
 
       {editing ? (
@@ -279,12 +278,12 @@ function TopQuickLinkEditor({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" onClick={save} disabled={pending} className={primaryButtonClass}>
+        <AdminActionButton type="button" onClick={save} disabled={pending} variant="primarySoft" className={compactActionButtonClassName}>
           {pending ? "保存中..." : mode === "create" ? "保存网站" : "保存修改"}
-        </button>
-        <button type="button" onClick={onCancel} disabled={pending} className={neutralButtonClass}>
+        </AdminActionButton>
+        <AdminActionButton type="button" onClick={onCancel} disabled={pending} className={compactActionButtonClassName}>
           取消
-        </button>
+        </AdminActionButton>
         {message?.message ? <p className={message.ok ? "text-sm font-semibold text-emerald-700" : "text-sm font-semibold text-red-600"}>{message.message}</p> : null}
       </div>
     </div>

@@ -1,12 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Eye, Pencil, Pin, PinOff, Plus, Trash2 } from "lucide-react";
+import { AdminActionButton } from "@/components/admin/AdminActionButton";
 import { AdminActionForm, AdminCheckbox, AdminTextInput } from "@/components/admin/AdminActionForm";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
 import { AdminCountPillBar, type AdminCountPillItem } from "@/components/admin/AdminCountPillBar";
+import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { createDefaultNewsCategories, setNewsPostStatus, toggleNewsPin, upsertNewsCategory, upsertNewsPost, type NewsActionState } from "@/features/news/actions";
@@ -21,10 +22,8 @@ const statusOptions: Array<{ value: NewsStatus; label: string }> = [
   { value: "hidden", label: "已下架" },
 ];
 
-const buttonBase = "inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-50";
-const neutralButtonClass = `${buttonBase} border-slate-200 bg-white text-slate-700 hover:bg-slate-50`;
-const primaryButtonClass = `${buttonBase} border-blue-100 bg-blue-50 text-blue-700 hover:bg-blue-100`;
-const dangerButtonClass = `${buttonBase} border-red-100 bg-red-50 text-red-600 hover:bg-red-100`;
+const compactActionButtonClassName = "gap-1.5 rounded-xl text-xs font-black disabled:opacity-50";
+const createActionButtonClassName = "min-h-10 gap-2 rounded-xl px-4 py-2 text-sm font-black";
 
 type LocalPost = AdminNewsPost & {
   transientMessage?: string;
@@ -119,10 +118,10 @@ export function NewsAdminManager({
               />
             </div>
           ) : (
-            <button type="button" onClick={() => setCreating(true)} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-black text-blue-700 hover:bg-blue-100">
+            <AdminActionButton type="button" onClick={() => setCreating(true)} variant="primarySoft" className={createActionButtonClassName}>
               <Plus size={16} aria-hidden="true" />
               新增新闻
-            </button>
+            </AdminActionButton>
           )}
         </section>
       ) : null}
@@ -159,7 +158,7 @@ export function NewsAdminManager({
       {canRead ? (
         <div className="space-y-3">
           {visiblePosts.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-500">暂无符合条件的新闻。</p>
+            <AdminEmptyState title="暂无符合条件的新闻。" compact align="left" className="bg-white" />
           ) : (
             visiblePosts.map((post) => (
               <NewsPostCard
@@ -304,38 +303,38 @@ function NewsPostCard({
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {permissions.editNews ? (
-          <button type="button" onClick={onEdit} className={neutralButtonClass}>
+          <AdminActionButton type="button" onClick={onEdit} className={compactActionButtonClassName}>
             <Pencil size={14} aria-hidden="true" />
             编辑
-          </button>
+          </AdminActionButton>
         ) : null}
         {permissions.publishNews && post.status !== "published" ? (
-          <button type="button" onClick={() => updateStatus("published")} disabled={pending} className={primaryButtonClass}>
+          <AdminActionButton type="button" onClick={() => updateStatus("published")} disabled={pending} variant="primarySoft" className={compactActionButtonClassName}>
             发布
-          </button>
+          </AdminActionButton>
         ) : null}
         {permissions.editNews && post.status === "published" ? (
-          <button type="button" onClick={() => updateStatus("hidden")} disabled={pending} className={neutralButtonClass}>
+          <AdminActionButton type="button" onClick={() => updateStatus("hidden")} disabled={pending} className={compactActionButtonClassName}>
             下架
-          </button>
+          </AdminActionButton>
         ) : null}
         {permissions.editNews ? (
-          <button type="button" onClick={updatePin} disabled={pending} className={neutralButtonClass}>
+          <AdminActionButton type="button" onClick={updatePin} disabled={pending} className={compactActionButtonClassName}>
             {post.isPinned ? <PinOff size={14} aria-hidden="true" /> : <Pin size={14} aria-hidden="true" />}
             {post.isPinned ? "取消置顶" : "置顶"}
-          </button>
+          </AdminActionButton>
         ) : null}
         {post.status === "published" ? (
-          <Link href={`/news/${post.slug}`} target="_blank" className={neutralButtonClass}>
+          <AdminActionButton href={`/news/${post.slug}`} target="_blank" className={compactActionButtonClassName}>
             <Eye size={14} aria-hidden="true" />
             查看
-          </Link>
+          </AdminActionButton>
         ) : null}
         {permissions.deleteNews ? (
-          <button type="button" onClick={() => setDeleteOpen(true)} disabled={pending} className={dangerButtonClass}>
+          <AdminActionButton type="button" onClick={() => setDeleteOpen(true)} disabled={pending} variant="dangerSoft" className={compactActionButtonClassName}>
             <Trash2 size={14} aria-hidden="true" />
             删除
-          </button>
+          </AdminActionButton>
         ) : null}
       </div>
 
@@ -649,12 +648,12 @@ function NewsPostEditor({
       {message ? <p className="text-sm font-semibold text-red-600">{message}</p> : null}
 
       <div className="flex flex-wrap justify-end gap-2">
-        <button type="button" onClick={onCancel} disabled={pending} className={neutralButtonClass}>
+        <AdminActionButton type="button" onClick={onCancel} disabled={pending} className={compactActionButtonClassName}>
           取消
-        </button>
-        <button type="submit" disabled={pending} className={primaryButtonClass}>
+        </AdminActionButton>
+        <AdminActionButton type="submit" disabled={pending} variant="primarySoft" className={compactActionButtonClassName}>
           {pending ? "保存中..." : "保存"}
-        </button>
+        </AdminActionButton>
       </div>
     </form>
   );

@@ -5,6 +5,7 @@ import { useActionState, useMemo, useState } from "react";
 import { AdminActionButton } from "@/components/admin/AdminActionButton";
 import { AdminActionForm, AdminTextInput } from "@/components/admin/AdminActionForm";
 import { AdminCountPillBar, type AdminCountPillItem } from "@/components/admin/AdminCountPillBar";
+import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { AdminPostManageDialog } from "@/components/posts/AdminPostManageDialog";
 import { type AdminPostActionState } from "@/features/posts/adminActions";
@@ -149,7 +150,7 @@ export function DailyPostLimitPanel({ dailyPostLimit, canManage }: { dailyPostLi
 
 export function AdminPostsList({ posts, permissions, templates }: { posts: AdminPostListItem[]; permissions: AdminPostsPermissionSet; templates: AdminPostNotificationTemplate[] }) {
   if (posts.length === 0) {
-    return <p className="rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-500">暂无用户发布信息。</p>;
+    return <AdminEmptyState title="暂无用户发布信息。" compact align="left" />;
   }
 
   return (

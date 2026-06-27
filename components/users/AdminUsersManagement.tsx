@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { FormEvent } from "react";
 import { useActionState, useState } from "react";
 import { ChevronDown, ChevronUp, Search, ShieldCheck, UserRound } from "lucide-react";
+import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { setAdminUserStatus, updateAdminUserNote, type AdminUserActionState } from "@/features/users/adminActions";
 import type { AdminUserListItem, AdminUsersPermissions } from "@/features/users/adminQueries";
@@ -121,7 +122,7 @@ export function AdminUsersList({
   currentAdminId: string | null;
 }) {
   if (users.length === 0) {
-    return <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-center text-sm font-bold text-slate-500">暂无用户。</div>;
+    return <AdminEmptyState title="暂无用户。" />;
   }
 
   return (

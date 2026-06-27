@@ -1,5 +1,6 @@
 import { Newspaper } from "lucide-react";
 import { ChannelPageChrome } from "@/components/channels/ChannelPageChrome";
+import { PublicStatusNotice } from "@/components/common/PublicStatusNotice";
 import { ChannelHero } from "@/components/posts/ChannelHero";
 import { ChannelSeoCard } from "@/components/posts/ChannelSeoCard";
 import { NewsCategoryTabs } from "@/components/news/NewsCategoryTabs";
@@ -43,13 +44,13 @@ export default async function NewsPage({
       />
       <NewsCategoryTabs categories={categoriesResult.data} activeSlug={activeCategory} />
       {postsResult.state === "error" ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
+        <PublicStatusNotice tone="warning">
           新闻读取暂时不可用：{postsResult.error ?? "请稍后再试。"}
-        </div>
+        </PublicStatusNotice>
       ) : postsResult.state === "missing_config" ? (
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+        <PublicStatusNotice>
           Supabase 环境变量尚未配置，当前显示空列表；配置新 Supabase 后会读取公开新闻。
-        </div>
+        </PublicStatusNotice>
       ) : null}
       <NewsList posts={postsResult.data} />
       <ChannelSeoCard title="纽约华人新闻资讯与新手生活指南">

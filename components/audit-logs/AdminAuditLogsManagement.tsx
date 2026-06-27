@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AdminCountPillBar, type AdminCountPillItem } from "@/components/admin/AdminCountPillBar";
+import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
 import { formatAuditActionLabel, formatAuditEntityTypeLabel, formatAuditOptionLabel } from "@/features/audit-logs/labels";
 import type { AdminAuditLogItem } from "@/features/audit-logs/adminQueries";
@@ -118,7 +119,7 @@ export function AdminAuditLogsFilter({
 
 export function AdminAuditLogsList({ logs }: { logs: AdminAuditLogItem[] }) {
   if (logs.length === 0) {
-    return <p className="rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-500">暂无审计日志记录。</p>;
+    return <AdminEmptyState title="暂无审计日志记录。" compact align="left" />;
   }
 
   return (

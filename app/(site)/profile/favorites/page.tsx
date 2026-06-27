@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, Bookmark } from "lucide-react";
 import { EmptyState } from "@/components/common/EmptyState";
 import { HorizontalPillTabs } from "@/components/common/HorizontalPillTabs";
+import { PublicStatusNotice } from "@/components/common/PublicStatusNotice";
 import { FavoriteRemoveButton } from "@/components/profile/FavoriteRemoveButton";
 import { FAVORITE_CENTER_TABS } from "@/features/favorites/helpers";
 import { getMyFavorites } from "@/features/favorites/queries";
@@ -45,8 +46,8 @@ export default async function ProfileFavoritesPage({ searchParams }: ProfileFavo
 
       <HorizontalPillTabs tabs={tabs} activeValue={activeType} ariaLabel="收藏分类" />
 
-      {result.state === "error" ? <p className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">收藏读取失败，请稍后再试。</p> : null}
-      {result.state === "missing_config" ? <p className="rounded-xl bg-slate-50 p-3 text-sm leading-6 text-slate-600">Supabase 环境变量尚未配置，当前显示空列表。</p> : null}
+      {result.state === "error" ? <PublicStatusNotice tone="error" className="p-3 font-bold">收藏读取失败，请稍后再试。</PublicStatusNotice> : null}
+      {result.state === "missing_config" ? <PublicStatusNotice className="p-3">Supabase 环境变量尚未配置，当前显示空列表。</PublicStatusNotice> : null}
 
       {result.data.length > 0 ? (
         <section className="space-y-3">

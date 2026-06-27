@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 
 import { AdminDateRangeFields, toAdminDateInputValue } from "@/components/admin/AdminDateRangeFields";
+import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { AdminHighlightCard } from "@/components/admin/AdminHighlightCard";
 import { deleteAd, toggleAdActive, updateAdPlaceholderImage, upsertAd } from "@/features/ads/adminActions";
 import {
@@ -428,9 +429,7 @@ export function AdminAdsManagement({
           <span className="text-sm font-black text-slate-500">{filteredAds.length} 条</span>
         </div>
         {filteredAds.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm font-black text-slate-500">
-            暂无符合条件的广告
-          </div>
+          <AdminEmptyState title="暂无符合条件的广告" className="rounded-3xl px-4 py-10 font-black" />
         ) : (
           <div className="space-y-3">
             {filteredAds.map((ad) => (

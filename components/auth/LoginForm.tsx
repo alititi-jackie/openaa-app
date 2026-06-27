@@ -8,6 +8,7 @@ import { authErrorMessage } from "@/lib/auth/errorMessages";
 import { safeReturnTo } from "@/lib/auth/redirects";
 import { appUrl } from "@/lib/seo/siteConfig";
 import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
+import { AuthCard } from "./AuthCard";
 
 function loginFallbackMessage(isConfigured: boolean) {
   return isConfigured ? "邮箱或密码不正确。" : "Supabase 环境变量尚未配置，暂时无法登录。";
@@ -185,13 +186,15 @@ export function LoginForm() {
   }
 
   return (
-    <section className="mx-auto w-full max-w-md rounded-2xl bg-white p-6 shadow-sm">
-      <h1 className="text-center text-2xl font-bold text-gray-900">登录 OpenAA</h1>
-
-      <div className="mb-6 mt-3 text-center">
-        <p className="text-[13.5px] leading-relaxed text-zinc-500">登录后即可免费发布二手商品、招聘信息，管理您的内容并享受更多OpenAA服务。</p>
-      </div>
-
+    <AuthCard
+      title="登录 OpenAA"
+      description="登录后即可免费发布二手商品、招聘信息，管理您的内容并享受更多OpenAA服务。"
+      className="mx-auto w-full max-w-md border-0 p-6"
+      headerClassName="text-center"
+      titleClassName="text-center text-2xl font-bold text-gray-900"
+      descriptionClassName="!mt-3 text-[13.5px] leading-relaxed text-zinc-500"
+      contentClassName="!mt-6"
+    >
       {!isConfigured ? (
         <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-800">
           Supabase 环境变量尚未配置。页面可以构建和预览，真实登录会在配置新 Supabase 后启用。
@@ -269,7 +272,7 @@ export function LoginForm() {
           立即注册
         </Link>
       </p>
-    </section>
+    </AuthCard>
   );
 }
 

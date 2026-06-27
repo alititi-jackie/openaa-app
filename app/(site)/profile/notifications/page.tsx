@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MessageCircle, UserRound } from "lucide-react";
+import { PublicStatusNotice } from "@/components/common/PublicStatusNotice";
 import { PageShell } from "@/components/layout/PageShell";
 import { ProfileNotificationsList } from "@/components/profile/ProfileNotificationsList";
 import { getMyNotifications } from "@/features/notifications/queries";
@@ -27,8 +28,8 @@ export default async function ProfileNotificationsPage() {
 
   return (
     <PageShell title="我的通知" description="查看审核、举报处理和平台提醒等站内通知。">
-      {notifications.state === "error" ? <p className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">通知读取失败，请稍后再试。</p> : null}
-      {notifications.state === "missing_config" ? <p className="rounded-xl bg-slate-50 p-3 text-sm leading-6 text-slate-600">Supabase 环境变量尚未配置，当前显示空列表。</p> : null}
+      {notifications.state === "error" ? <PublicStatusNotice tone="error" className="p-3 font-bold">通知读取失败，请稍后再试。</PublicStatusNotice> : null}
+      {notifications.state === "missing_config" ? <PublicStatusNotice className="p-3">Supabase 环境变量尚未配置，当前显示空列表。</PublicStatusNotice> : null}
       <ProfileNotificationsList notifications={notifications.data} />
       <div className="grid gap-3 sm:grid-cols-2">
         <ProfileLink href="/feedback" label="线索与建议" icon={<MessageCircle size={18} aria-hidden="true" />} />

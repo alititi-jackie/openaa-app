@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { AdminActionButton, adminActionButtonClassName } from "@/components/admin/AdminActionButton";
 import { AdminActionForm, AdminCheckbox, AdminSelect, AdminTextInput, AdminTextarea } from "@/components/admin/AdminActionForm";
+import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { contactUserFromMessages, handleMessageReport, markFeedbackViewed, softDeleteFeedback, softDeleteMessageReport, updateReportLimitSettings } from "@/features/messages/adminActions";
 import type { AdminFeedbackItem, AdminMessageReport, AdminMessagesData, AdminUserSummary, FeedbackStatusTab, MessageTab, ReportStatusTab } from "@/features/messages/adminQueries";
 import { reportReasonOptions } from "@/features/reports/types";
@@ -17,9 +19,10 @@ const feedbackTabs: Array<{ value: FeedbackStatusTab; label: string }> = [
   { value: "deleted", label: "已删除" },
 ];
 
-const secondaryActionClassName = "inline-flex min-h-9 items-center justify-center rounded-xl bg-white px-3 py-1.5 text-xs font-black text-blue-700 ring-1 ring-slate-200";
-const dangerActionClassName = "inline-flex min-h-9 items-center justify-center rounded-xl bg-red-600 px-3 py-1.5 text-xs font-black text-white";
-const contactCardActionClassName = "inline-flex min-h-10 w-full items-center justify-center rounded-xl px-3 py-2 text-xs font-black";
+const dangerActionClassName = adminActionButtonClassName({ variant: "solidDanger", className: "min-h-9 rounded-xl px-3 py-1.5 text-xs font-black" });
+const contactCardActionClassName = adminActionButtonClassName({ variant: "neutral", className: "min-h-10 w-full rounded-xl border-transparent px-3 py-2 text-xs font-black" });
+const secondaryActionButtonClassName = "min-h-9 rounded-xl border-slate-200 px-3 py-1.5 text-xs font-black ring-1 ring-slate-200";
+const filterSubmitButtonClassName = "min-h-11 rounded-xl px-4 py-2 text-sm font-black";
 
 export function AdminMessageTabs({ active, counts }: { active: MessageTab; counts?: { reports: number; feedback: number } }) {
   const tabs: Array<{ value: MessageTab; label: string; href: string; count?: number }> = [
@@ -110,7 +113,7 @@ export function FeedbackPanel({ data }: { data: AdminMessagesData["feedback"] })
             <option key={option.value} value={option.value}>{option.label}</option>
           ))}
         </select>
-        <button type="submit" className="min-h-11 rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white">筛选</button>
+        <AdminActionButton type="submit" variant="dark" className={filterSubmitButtonClassName}>筛选</AdminActionButton>
       </form>
       <StatusTabs
         baseHref={`/admin/messages?tab=feedback${data.activeType !== "all" ? `&feedbackType=${data.activeType}` : ""}`}
@@ -137,7 +140,7 @@ export function ContactUsersPanel({ data }: { data: AdminMessagesData["contactUs
       <form action="/admin/messages" className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
         <input type="hidden" name="tab" value="contact-users" />
         <input name="q" defaultValue={data.q} placeholder="搜索用户名、登录邮箱或本站 ID" className="min-h-11 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-900 outline-none focus:border-blue-500" />
-        <button type="submit" className="min-h-11 rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white">搜索</button>
+        <AdminActionButton type="submit" variant="dark" className={filterSubmitButtonClassName}>搜索</AdminActionButton>
       </form>
       {data.q.trim().length > 0 && data.q.trim().length < 2 ? <EmptyLine text="请输入至少 2 个字符。" /> : null}
       {data.users.length === 0 && data.q.trim().length >= 2 ? <EmptyLine text="没有找到匹配用户。" /> : null}
@@ -176,7 +179,7 @@ function ReportCard({ report }: { report: AdminMessageReport }) {
             {report.reporter ? <UserDetails user={report.reporter} /> : null}
           </div>
         </details>
-        <Link href={report.postHref} className={secondaryActionClassName}>查看信息</Link>
+        <AdminActionButton href={report.postHref} variant="primary" className={secondaryActionButtonClassName}>查看信息</AdminActionButton>
         {isOpen ? (
           <details className="rounded-xl bg-white p-3 ring-1 ring-slate-100">
             <summary className="cursor-pointer text-sm font-black text-slate-900">处理</summary>
@@ -184,7 +187,7 @@ function ReportCard({ report }: { report: AdminMessageReport }) {
             action={handleMessageReport}
             submitLabel="确定处理"
             className="mt-3 space-y-3"
-            footerStart={<Link href="/admin/messages?tab=reports&reportStatus=open" className={secondaryActionClassName}>取消</Link>}
+            footerStart={<AdminActionButton href="/admin/messages?tab=reports&reportStatus=open" variant="primary" className={secondaryActionButtonClassName}>取消</AdminActionButton>}
           >
             <input type="hidden" name="id" value={report.id} />
             <AdminSelect
@@ -370,7 +373,7 @@ function StatusTabs<T extends string>({
 }
 
 function EmptyLine({ text }: { text: string }) {
-  return <p className="rounded-xl bg-slate-50 px-3 py-3 text-sm font-bold text-slate-500">{text}</p>;
+  return <AdminEmptyState title={text} compact align="left" />;
 }
 
 function formatDateTime(value: string) {
