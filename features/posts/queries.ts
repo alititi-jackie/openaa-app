@@ -274,6 +274,49 @@ function relatedDetailPosts(current: PostDetailView, candidates: PostCardView[],
     .slice(0, RELATED_DETAIL_POST_LIMIT);
 }
 
+async function mapSinglePostRecordToCard(record: PostRecord | null | undefined, client: SupabasePublicClient) {
+  if (!record) return null;
+
+  const authors = await fetchAuthors([record.author_id], client);
+  return mapPostRecordToCard(record, authors);
+}
+
+async function getAdjacentPublicPost(
+  post: PostDetailView,
+  type: PostType,
+  client: SupabasePublicClient,
+  direction: "previous" | "next",
+): Promise<PostCardView | null> {
+  const boundaryColumn = post.publishedAt ? "published_at" : "created_at";
+  const boundary = post.publishedAt ?? post.createdAt;
+
+  if (!boundary) return null;
+
+  const now = new Date().toISOString();
+  let query = buildPublicPostQuery(client, type, normalizePublicPostFilters(), now, false).neq("id", post.id);
+
+  if (direction === "previous") {
+    query = query
+      .gt(boundaryColumn, boundary)
+      .order(boundaryColumn, { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: true });
+  } else {
+    query = query
+      .lt(boundaryColumn, boundary)
+      .order(boundaryColumn, { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false });
+  }
+
+  const { data, error } = await query.limit(1).maybeSingle();
+
+  if (error) {
+    console.error(`[posts] get ${direction} public post failed`, error);
+    return null;
+  }
+
+  return mapSinglePostRecordToCard(data as unknown as PostRecord | null, client);
+}
+
 async function fetchAuthors(authorIds: Array<string | null | undefined>, client?: NonNullable<ReturnType<typeof createSupabasePublicClient>>): Promise<Record<string, AuthorSummary>> {
   const ids = [...new Set(authorIds.filter((id): id is string => Boolean(id)))];
 
@@ -498,8 +541,19 @@ export async function getPublicPostDetailContext(id: string, type: PostType): Pr
   });
   const orderedPosts = orderedResult.data;
   const currentIndex = orderedPosts.findIndex((item) => item.id === id);
-  const previousPost = currentIndex > 0 ? orderedPosts[currentIndex - 1] ?? null : null;
-  const nextPost = currentIndex >= 0 ? orderedPosts[currentIndex + 1] ?? null : null;
+  let previousPost = currentIndex > 0 ? orderedPosts[currentIndex - 1] ?? null : null;
+  let nextPost = currentIndex >= 0 ? orderedPosts[currentIndex + 1] ?? null : null;
+
+  if (currentIndex < 0 || (!nextPost && orderedPosts.length >= DETAIL_CONTEXT_CANDIDATE_LIMIT)) {
+    const [fallbackPreviousPost, fallbackNextPost] = await Promise.all([
+      previousPost ? Promise.resolve(previousPost) : getAdjacentPublicPost(post, type, supabase, "previous"),
+      nextPost ? Promise.resolve(nextPost) : getAdjacentPublicPost(post, type, supabase, "next"),
+    ]);
+
+    previousPost = previousPost ?? fallbackPreviousPost;
+    nextPost = nextPost ?? fallbackNextPost;
+  }
+
   const excludedIds = new Set([post.id, previousPost?.id, nextPost?.id].filter((value): value is string => Boolean(value)));
   const relatedPosts = relatedDetailPosts(post, orderedPosts, excludedIds);
   const state = postResult.state === "error" || orderedResult.state === "error" ? "error" : postResult.state;

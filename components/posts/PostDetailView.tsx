@@ -55,10 +55,10 @@ function ContinueViewing({ previousPost, nextPost }: { previousPost?: PostCardVi
 
   return (
     <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-      <h2 className="text-base font-black text-slate-950">继续查看</h2>
+      <h2 className="text-base font-black text-slate-950">继续阅读</h2>
       <div className="mt-3 space-y-2">
-        {previousPost ? <DetailRecommendationCard post={previousPost} prefix="上一条" /> : null}
-        {nextPost ? <DetailRecommendationCard post={nextPost} prefix="下一条" /> : null}
+        {previousPost ? <DetailRecommendationCard post={previousPost} prefix="上一篇" /> : null}
+        {nextPost ? <DetailRecommendationCard post={nextPost} prefix="下一篇" /> : null}
       </div>
     </section>
   );
@@ -69,7 +69,7 @@ function RelatedPosts({ posts }: { posts?: PostCardViewData[] }) {
 
   return (
     <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-      <h2 className="text-base font-black text-slate-950">相关信息</h2>
+      <h2 className="text-base font-black text-slate-950">相关阅读</h2>
       <div className="mt-3 space-y-2">
         {posts.map((related) => (
           <DetailRecommendationCard key={related.id} post={related} />
