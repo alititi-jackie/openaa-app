@@ -50,7 +50,6 @@ function shouldSkipPath(pathname: string) {
   return (
     pathname.startsWith("/admin") ||
     pathname.startsWith("/api") ||
-    pathname.startsWith("/_next") ||
-    pathname === "/offline"
+    pathname.startsWith("/_next")
   );
 }

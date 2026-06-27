@@ -829,7 +829,5 @@ function titleFromUrl(value: string) {
 function revalidateAdminHome() {
   revalidatePath("/");
   revalidatePath("/admin/home");
-  revalidatePath("/admin/home-config");
   revalidatePath("/admin/navigation");
-  revalidatePath("/admin/top-links");
 }

@@ -39,7 +39,7 @@ Single-user permission overrides live in `admin_user_permissions`. `deny` wins o
 Phase 10 adds the first home-configuration admin UI:
 
 - `/admin/home`
-- `/admin/top-links`
+- `/admin/navigation?tab=top-links`
 
 Permission points:
 

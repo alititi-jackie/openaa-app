@@ -51,7 +51,7 @@ Old `openaa-ny` admin pages found:
 - `/admin/services`
 - `/admin/news`
 - `/admin/navigation`
-- `/admin/top-links`
+- legacy top links page
 - `/admin/home-sections`
 - `/admin/ads`
 - `/admin/feedback`
@@ -66,7 +66,7 @@ Old admin API groups found:
 - `/api/admin/services`
 - `/api/admin/news`
 - `/api/admin/navigation`
-- `/api/admin/top-links`
+- legacy top links admin API group
 - `/api/admin/home-sections`
 - `/api/admin/ads`
 - `/api/admin/feedback`
@@ -99,7 +99,7 @@ New auth pattern:
 | services admin page | Covered by user-posts | Old `/admin/services` is represented by `/admin/user-posts?type=service` in the new architecture. |
 | news management | Complete | New `/admin/news` supports news/category operations with permission checks and audit logs. |
 | navigation management | Complete | New `/admin/navigation` covers categories, links, featured state, sorting, and active state. |
-| top links management | Complete | New `/admin/top-links` covers header quick links. |
+| top links management | Complete | New `/admin/navigation?tab=top-links` covers header quick links. |
 | home sections | Complete | New `/admin/home` covers home sections, banners, ticker, and home operations. |
 | ads management | Complete with new model | New `/admin/ads` manages placements and external image assets. Old upload/delete image behavior is intentionally not copied one-to-one. |
 | feedback management | Complete | Current new-site route is `/admin/support`; old standalone `/admin/feedback` and old `/admin/messages?tab=feedback` references are historical only. |

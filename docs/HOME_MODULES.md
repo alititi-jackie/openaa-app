@@ -118,7 +118,7 @@ If no readable config exists, the fallback SEO copy is used. If the module is di
 Phase 10 adds:
 
 - `/admin/home`: manages `home_sections` and `latest_ticker`; it shows a note that the home top ad placement is configured in ad management.
-- `/admin/top-links`: manages `top_quick_links`.
+- `/admin/navigation?tab=top-links`: manages `top_quick_links`.
 
 Permissions:
 

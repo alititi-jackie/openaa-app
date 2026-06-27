@@ -40,7 +40,7 @@ function auditAdminPages() {
 function auditDashboardCoverage() {
   const dashboard = read("app/admin/dashboard/page.tsx");
   const adminModules = read("features/admin/adminModules.ts");
-  const ignoredRoutes = new Set(["/admin/[...notFound]", "/admin/top-links", "/admin/home-config"]);
+  const ignoredRoutes = new Set<string>();
   const adminDirs = readdirSync(join(root, "app/admin"), { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => `/admin/${entry.name}`)
