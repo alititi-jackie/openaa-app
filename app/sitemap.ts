@@ -3,7 +3,7 @@ import { getLatestNews } from "@/features/news/queries";
 import { getPublicPostSitemapEntries } from "@/features/posts/queries";
 import { canonicalUrl, staticSitemapRoutes } from "@/lib/seo/siteConfig";
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
