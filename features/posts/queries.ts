@@ -10,6 +10,7 @@ import type {
   AuthorSummary,
   ContactReveal,
   PostCardView,
+  PostDetailContext,
   PostDetailView,
   PublicPostFilters,
   PostRecord,
@@ -18,8 +19,12 @@ import type {
   PublicPostsParams,
 } from "./types";
 
+type SupabasePublicClient = NonNullable<ReturnType<typeof createSupabasePublicClient>>;
+
 const MAX_PUBLIC_FILTER_ROWS = 1000;
 const MAX_PUBLIC_SEARCH_CANDIDATE_ROWS = 200;
+const DETAIL_CONTEXT_CANDIDATE_LIMIT = 80;
+const RELATED_DETAIL_POST_LIMIT = 3;
 
 const postSelectFields = `
   id,
@@ -220,6 +225,36 @@ function applyPublicPostQuerySort<T>(query: T, type: PostType, sort: PublicPostF
   return next.order("published_at", { ascending: false, nullsFirst: false }).order("created_at", { ascending: false }) as T;
 }
 
+function comparablePostValue(value?: string | null) {
+  return value?.trim().toLowerCase() ?? "";
+}
+
+function samePostValue(left?: string | null, right?: string | null) {
+  const normalizedLeft = comparablePostValue(left);
+  return Boolean(normalizedLeft && normalizedLeft === comparablePostValue(right));
+}
+
+function relatedPostScore(current: PostDetailView, candidate: PostCardView) {
+  let score = 0;
+
+  if (samePostValue(current.categoryValue, candidate.categoryValue)) score += 4;
+  if (samePostValue(current.area, candidate.area)) score += 3;
+  if (samePostValue(current.mode, candidate.mode)) score += 3;
+  if (samePostValue(current.secondaryTag, candidate.secondaryTag)) score += 2;
+  if (samePostValue(current.tag, candidate.tag)) score += 1;
+
+  return score;
+}
+
+function relatedDetailPosts(current: PostDetailView, candidates: PostCardView[], excludedIds: Set<string>) {
+  return candidates
+    .filter((candidate) => !excludedIds.has(candidate.id))
+    .map((candidate, index) => ({ candidate, index, score: relatedPostScore(current, candidate) }))
+    .sort((left, right) => right.score - left.score || left.index - right.index)
+    .map(({ candidate }) => candidate)
+    .slice(0, RELATED_DETAIL_POST_LIMIT);
+}
+
 async function fetchAuthors(authorIds: Array<string | null | undefined>, client?: NonNullable<ReturnType<typeof createSupabasePublicClient>>): Promise<Record<string, AuthorSummary>> {
   const ids = [...new Set(authorIds.filter((id): id is string => Boolean(id)))];
 
@@ -339,8 +374,8 @@ export async function searchPublicPosts(params: { q?: string; type?: PostType; l
   return { state: "ready", data: filteredRecords.map((record) => mapPostRecordToCard(record, authors)) };
 }
 
-export async function getPublicPostById(id: string, type: PostType): Promise<PostsQueryResult<PostDetailView | null>> {
-  const supabase = createSupabasePublicClient();
+export async function getPublicPostById(id: string, type: PostType, client?: SupabasePublicClient): Promise<PostsQueryResult<PostDetailView | null>> {
+  const supabase = client ?? createSupabasePublicClient();
 
   if (!supabase) {
     return emptyResult(null);
@@ -368,6 +403,46 @@ export async function getPublicPostById(id: string, type: PostType): Promise<Pos
   const authors = await fetchAuthors([record.author_id], supabase);
 
   return { state: "ready", data: mapPostRecordToDetail(record, authors) };
+}
+
+export async function getPublicPostDetailContext(id: string, type: PostType): Promise<PostsQueryResult<PostDetailContext | null>> {
+  const supabase = createSupabasePublicClient();
+
+  if (!supabase) {
+    return emptyResult(null);
+  }
+
+  const postResult = await getPublicPostById(id, type, supabase);
+  const post = postResult.data;
+
+  if (!post) {
+    return { state: postResult.state, data: null, error: postResult.error };
+  }
+
+  const orderedResult = await getPublicPosts({
+    type,
+    limit: DETAIL_CONTEXT_CANDIDATE_LIMIT,
+    client: supabase,
+  });
+  const orderedPosts = orderedResult.data;
+  const currentIndex = orderedPosts.findIndex((item) => item.id === id);
+  const previousPost = currentIndex > 0 ? orderedPosts[currentIndex - 1] ?? null : null;
+  const nextPost = currentIndex >= 0 ? orderedPosts[currentIndex + 1] ?? null : null;
+  const excludedIds = new Set([post.id, previousPost?.id, nextPost?.id].filter((value): value is string => Boolean(value)));
+  const relatedPosts = relatedDetailPosts(post, orderedPosts, excludedIds);
+  const state = postResult.state === "error" || orderedResult.state === "error" ? "error" : postResult.state;
+  const error = postResult.error ?? orderedResult.error;
+
+  return {
+    state,
+    data: {
+      post,
+      previousPost,
+      nextPost,
+      relatedPosts,
+    },
+    error,
+  };
 }
 
 export async function getLatestPosts(limitPerType = 3): Promise<PostsQueryResult<Record<PostType, PostCardView[]>>> {

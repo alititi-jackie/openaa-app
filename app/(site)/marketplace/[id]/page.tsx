@@ -1,6 +1,6 @@
 import { PostDetailView } from "@/components/posts/PostDetailView";
 import { getAdminPostReturnHref } from "@/features/posts/adminReturn";
-import { getPublicPostById } from "@/features/posts/queries";
+import { getPublicPostDetailContext } from "@/features/posts/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const metadata = buildPageMetadata({
@@ -13,10 +13,11 @@ export const dynamic = "force-dynamic";
 
 export default async function MarketplaceDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams?: Promise<Record<string, string | string[] | undefined>> }) {
   const { id } = await params;
-  const [post, adminReturnHref] = await Promise.all([
-    getPublicPostById(id, "marketplace"),
+  const [context, adminReturnHref] = await Promise.all([
+    getPublicPostDetailContext(id, "marketplace"),
     getAdminPostReturnHref(await searchParams),
   ]);
+  const detail = context.data;
 
-  return <PostDetailView post={post.data} adminReturnHref={adminReturnHref} />;
+  return <PostDetailView post={detail?.post ?? null} adminReturnHref={adminReturnHref} previousPost={detail?.previousPost} nextPost={detail?.nextPost} relatedPosts={detail?.relatedPosts} />;
 }

@@ -162,6 +162,13 @@ export type PostDetailView = PostCardView & {
   sourceRecord?: PostRecord;
 };
 
+export type PostDetailContext = {
+  post: PostDetailView;
+  previousPost: PostCardView | null;
+  nextPost: PostCardView | null;
+  relatedPosts: PostCardView[];
+};
+
 export type PostsQueryResult<T> = {
   state: QueryState;
   data: T;

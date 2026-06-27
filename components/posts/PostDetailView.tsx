@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { EmptyState } from "@/components/common/EmptyState";
 import { getPostEngagementState } from "@/features/posts/engagementQueries";
-import type { PostDetailView as PostDetailViewData } from "@/features/posts/types";
+import type { PostCardView as PostCardViewData, PostDetailView as PostDetailViewData } from "@/features/posts/types";
 import { DetailImageCarousel } from "./DetailImageCarousel";
 import { DetailMetaPills } from "./DetailMetaPills";
 import { PostDisplayBody } from "./PostDisplayBody";
@@ -19,7 +19,79 @@ function shareText(post: PostDetailViewData) {
   return [post.tag, post.location, post.description].filter(Boolean).join(" · ");
 }
 
-export async function PostDetailView({ post, adminReturnHref }: { post: PostDetailViewData | null; adminReturnHref?: string | null }) {
+function recommendationMeta(post: PostCardViewData) {
+  return [post.tag, post.categoryValue, post.area || post.location, post.priceDisplay].filter(Boolean).slice(0, 4);
+}
+
+function DetailRecommendationCard({ post, prefix }: { post: PostCardViewData; prefix?: string }) {
+  const meta = recommendationMeta(post);
+
+  return (
+    <Link href={post.href} className="block rounded-xl border border-slate-100 bg-slate-50 px-3 py-3 transition hover:bg-slate-100">
+      <div className="flex min-w-0 gap-3">
+        {post.imageUrl ? (
+          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+            <Image src={post.imageUrl} alt={post.title} fill sizes="64px" className="object-cover" />
+          </div>
+        ) : null}
+        <div className="min-w-0 flex-1">
+          {prefix ? <p className="text-xs font-semibold text-slate-500">{prefix}</p> : null}
+          <h3 className="mt-0.5 line-clamp-2 text-sm font-black leading-5 text-slate-950">{post.title}</h3>
+          {post.description ? <p className="mt-1 line-clamp-2 break-words text-xs leading-5 text-slate-600 [overflow-wrap:anywhere]">{post.description}</p> : null}
+          <div className="mt-2 flex flex-wrap gap-x-2 gap-y-1 text-xs font-semibold text-slate-400">
+            {meta.map((item) => (
+              <span key={item}>{item}</span>
+            ))}
+            <span>{post.meta}</span>
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function ContinueViewing({ previousPost, nextPost }: { previousPost?: PostCardViewData | null; nextPost?: PostCardViewData | null }) {
+  if (!previousPost && !nextPost) return null;
+
+  return (
+    <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+      <h2 className="text-base font-black text-slate-950">继续查看</h2>
+      <div className="mt-3 space-y-2">
+        {previousPost ? <DetailRecommendationCard post={previousPost} prefix="上一条" /> : null}
+        {nextPost ? <DetailRecommendationCard post={nextPost} prefix="下一条" /> : null}
+      </div>
+    </section>
+  );
+}
+
+function RelatedPosts({ posts }: { posts?: PostCardViewData[] }) {
+  if (!posts?.length) return null;
+
+  return (
+    <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+      <h2 className="text-base font-black text-slate-950">相关信息</h2>
+      <div className="mt-3 space-y-2">
+        {posts.map((related) => (
+          <DetailRecommendationCard key={related.id} post={related} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export async function PostDetailView({
+  post,
+  adminReturnHref,
+  previousPost,
+  nextPost,
+  relatedPosts,
+}: {
+  post: PostDetailViewData | null;
+  adminReturnHref?: string | null;
+  previousPost?: PostCardViewData | null;
+  nextPost?: PostCardViewData | null;
+  relatedPosts?: PostCardViewData[];
+}) {
   if (!post) {
     return (
       <div className="space-y-3">
@@ -83,6 +155,10 @@ export async function PostDetailView({ post, adminReturnHref }: { post: PostDeta
       <DetailShareCard path={post.href} title={post.title} text={text} />
 
       <DetailSafetyNotice postId={post.id} returnTo={post.href} initialHasReported={engagement.hasReported} />
+
+      <ContinueViewing previousPost={previousPost} nextPost={nextPost} />
+
+      <RelatedPosts posts={relatedPosts} />
 
       <Link href={backHref} className="block rounded-xl bg-slate-100 px-4 py-3 text-center text-sm font-black text-slate-700">
         返回列表
