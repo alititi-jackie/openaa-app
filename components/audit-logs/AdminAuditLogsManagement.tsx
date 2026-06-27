@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AdminCountPillBar, type AdminCountPillItem } from "@/components/admin/AdminCountPillBar";
 import { AdminPermissionBadge } from "@/components/admin/AdminPermissionBadge";
+import { formatAuditActionLabel, formatAuditEntityTypeLabel, formatAuditOptionLabel } from "@/features/audit-logs/labels";
 import type { AdminAuditLogItem } from "@/features/audit-logs/adminQueries";
 
 export function AdminAuditLogsPermissionBadges({ canViewAuditLogs }: { canViewAuditLogs: boolean }) {
@@ -75,14 +76,14 @@ export function AdminAuditLogsFilter({
         <input
           name="q"
           defaultValue={q ?? ""}
-          placeholder="搜索 action、entity_type、entity_id、actor UUID"
+          placeholder="搜索操作、对象类型、对象 ID、管理员 UUID"
           className="min-h-10 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-500 md:col-span-4"
         />
         <select name="action" defaultValue={action ?? "all"} className="min-h-10 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-900 outline-none focus:border-blue-500">
           <option value="all">全部操作</option>
           {actionOptions.map((option) => (
             <option key={option} value={option}>
-              {option}
+              {formatAuditOptionLabel(option, formatAuditActionLabel)}
             </option>
           ))}
         </select>
@@ -90,7 +91,7 @@ export function AdminAuditLogsFilter({
           <option value="all">全部实体</option>
           {entityTypeOptions.map((option) => (
             <option key={option} value={option}>
-              {option}
+              {formatAuditOptionLabel(option, formatAuditEntityTypeLabel)}
             </option>
           ))}
         </select>
@@ -126,11 +127,12 @@ export function AdminAuditLogsList({ logs }: { logs: AdminAuditLogItem[] }) {
         <article key={log.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-black text-blue-700">{log.action}</span>
-              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-700">{log.entityType}</span>
+              <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-black text-blue-700">{formatAuditActionLabel(log.action)}</span>
+              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-700">{formatAuditEntityTypeLabel(log.entityType)}</span>
               <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-500">{formatDateTime(log.createdAt)}</span>
             </div>
             <div className="mt-2 grid gap-1 text-xs font-semibold text-slate-500">
+              <span className="truncate">原始操作：{log.action}</span>
               <span className="truncate">管理员：{shortId(log.actorId)}</span>
               <span className="truncate">对象：{shortId(log.entityId)}</span>
             </div>
@@ -148,8 +150,8 @@ export function AdminAuditLogsList({ logs }: { logs: AdminAuditLogItem[] }) {
                   <span>user_agent：{log.hasUserAgent ? "已记录" : "未记录"}</span>
                 </div>
                 <div className="grid gap-3 lg:grid-cols-2">
-                  <JsonBlock title="Before" value={log.beforeData} />
-                  <JsonBlock title="After" value={log.afterData} />
+                  <JsonBlock title="修改前" value={log.beforeData} />
+                  <JsonBlock title="修改后" value={log.afterData} />
                 </div>
               </div>
             </details>
@@ -241,8 +243,8 @@ function auditFilterSummary({
 }) {
   const parts = [
     auditScopeOptions.find((option) => option.value === (scope ?? "all"))?.label ?? "全部",
-    action && action !== "all" ? action : "",
-    entityType && entityType !== "all" ? entityType : "",
+    action && action !== "all" ? formatAuditActionLabel(action) : "",
+    entityType && entityType !== "all" ? formatAuditEntityTypeLabel(entityType) : "",
     q ? `搜索：${q}` : "",
     actorId ? `管理员：${shortId(actorId)}` : "",
     entityId ? `对象：${shortId(entityId)}` : "",
@@ -274,7 +276,7 @@ function formatDateTime(value: string) {
 
 const auditScopeOptions = [
   { value: "all", label: "全部" },
-  { value: "home_ops", label: "首页 / Banner / Ticker" },
+  { value: "home_ops", label: "首页配置" },
   { value: "ads_ops", label: "广告" },
   { value: "content_ops", label: "内容管理" },
 ];
