@@ -6,6 +6,7 @@ const allowedOrigins = new Set([
   "https://tools.openaa.com",
   "https://jozl.com",
   "https://www.jozl.com",
+  "https://numbermobi.com",
 ]);
 
 export const revalidate = 300;
