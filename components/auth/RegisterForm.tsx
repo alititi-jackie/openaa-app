@@ -233,7 +233,7 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
             <Link className="font-bold text-blue-700" href={consentHref}>隐私政策</Link>。
           </span>
         </label>
-        {message ? <div className={`rounded-lg p-3 text-sm ${isSuccess ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>{message}</div> : null}
+        {message ? <div className={`whitespace-pre-line rounded-lg p-3 text-sm leading-relaxed ${isSuccess ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>{message}</div> : null}
         {!isSuccess ? (
           <button
             type="submit"
@@ -246,8 +246,6 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
         ) : null}
         {isSuccess ? (
           <div className="space-y-3 text-sm leading-6 text-slate-600">
-            <p>请查收确认邮件，并点击邮件中的确认邮箱链接。</p>
-            <p className="text-slate-500">如果没有收到确认邮件，请检查垃圾邮件箱，或重新发送确认邮件。</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <Link
                 href={loginHref}
@@ -265,7 +263,7 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
               </button>
             </div>
             {resendNotice ? (
-              <div className={`rounded-lg p-3 text-sm ${resendNotice.type === "success" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
+              <div className={`whitespace-pre-line rounded-lg p-3 text-sm leading-relaxed ${resendNotice.type === "success" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
                 {resendNotice.message}
               </div>
             ) : null}

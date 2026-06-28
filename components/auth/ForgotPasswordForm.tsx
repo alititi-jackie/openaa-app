@@ -8,7 +8,8 @@ import { authErrorMessage } from "@/lib/auth/errorMessages";
 import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const resetEmailSentMessage = "如果该邮箱已注册，重置密码邮件将发送到该邮箱。";
+const resetEmailSentMessage =
+  "如果该邮箱已注册，我们已发送密码重置邮件。\n请打开邮箱查看来自 Supabase Auth（noreply@mail.app.supabase.io）的邮件，并按邮件提示重置密码。\n如果没有看到邮件，请检查垃圾邮件、广告邮件或稍后再试。";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -79,7 +80,7 @@ export function ForgotPasswordForm() {
             className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-zinc-50"
           />
         </label>
-        {isSuccess ? <div className="rounded-lg bg-green-50 p-3 text-sm leading-relaxed text-green-700">{resetEmailSentMessage}</div> : null}
+        {isSuccess ? <div className="whitespace-pre-line rounded-lg bg-green-50 p-3 text-sm leading-relaxed text-green-700">{resetEmailSentMessage}</div> : null}
         {message ? <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{message}</div> : null}
         <button
           type="submit"
@@ -89,7 +90,6 @@ export function ForgotPasswordForm() {
           <KeyRound size={18} aria-hidden="true" />
           {isSubmitting ? "发送中..." : "发送重置邮件"}
         </button>
-        {isSuccess ? <p className="text-center text-xs text-zinc-400">如果没有收到邮件，请检查垃圾邮件箱，或稍后重试。</p> : null}
       </form>
     </AuthCard>
   );
