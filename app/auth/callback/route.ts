@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 const loginErrorMessage = "登录失败，请重新尝试。";
+const recoveryErrorMessage = "重置链接已失效，请重新发送重置邮件。";
 const recoveryReturnTo = "/reset-password";
 
 function redirectUrl(requestUrl: URL, path: string, params?: Record<string, string>) {
@@ -16,6 +17,42 @@ function redirectUrl(requestUrl: URL, path: string, params?: Record<string, stri
   }
 
   return NextResponse.redirect(url);
+}
+
+function recoveryHashBridgeResponse(requestUrl: URL, path: string) {
+  const targetUrl = new URL(path, requestUrl.origin);
+  const fallbackUrl = new URL(path, requestUrl.origin);
+  fallbackUrl.searchParams.set("error", recoveryErrorMessage);
+  fallbackUrl.searchParams.set("source", "recovery");
+  fallbackUrl.searchParams.set("type", "recovery");
+
+  const html = `<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex" />
+    <title>OpenAA</title>
+  </head>
+  <body>
+    <script>
+      const target = new URL(${JSON.stringify(targetUrl.toString())});
+      const fallback = ${JSON.stringify(fallbackUrl.toString())};
+      if (window.location.hash) {
+        target.hash = window.location.hash;
+        window.location.replace(target.toString());
+      } else {
+        window.location.replace(fallback);
+      }
+    </script>
+  </body>
+</html>`;
+
+  return new NextResponse(html, {
+    headers: {
+      "Cache-Control": "no-store",
+      "Content-Type": "text/html; charset=utf-8",
+    },
+  });
 }
 
 export async function GET(request: Request) {
@@ -39,17 +76,40 @@ export async function GET(request: Request) {
       callbackType,
       returnTo,
     });
-    return redirectUrl(requestUrl, isRecoveryCallback ? recoveryRedirectTo : "/login", isRecoveryCallback ? undefined : loginErrorParams);
+    return redirectUrl(
+      requestUrl,
+      isRecoveryCallback ? recoveryRedirectTo : "/login",
+      isRecoveryCallback
+        ? {
+            error: errorDescription,
+            ...(callbackErrorCode ? { error_code: callbackErrorCode } : {}),
+            source: "recovery",
+            type: "recovery",
+          }
+        : loginErrorParams,
+    );
   }
 
   if (!code) {
+    if (isRecoveryCallback) {
+      return recoveryHashBridgeResponse(requestUrl, recoveryRedirectTo);
+    }
+
     console.error("[auth/callback] missing code", {
       error: callbackError,
       errorCode: callbackErrorCode,
       callbackType,
       returnTo,
     });
-    return redirectUrl(requestUrl, isRecoveryCallback ? recoveryRedirectTo : "/login", isRecoveryCallback ? undefined : loginErrorParams);
+    return redirectUrl(
+      requestUrl,
+      "/login",
+      loginErrorParams,
+    );
+  }
+
+  if (isRecoveryCallback) {
+    return redirectUrl(requestUrl, recoveryRedirectTo, { code, source: "recovery", type: "recovery" });
   }
 
   const supabase = await createSupabaseServerClient();
@@ -62,11 +122,7 @@ export async function GET(request: Request) {
 
   if (exchangeError) {
     console.error("[auth/callback] exchangeCodeForSession failed", exchangeError);
-    return redirectUrl(requestUrl, isRecoveryCallback ? recoveryRedirectTo : "/login", isRecoveryCallback ? undefined : loginErrorParams);
-  }
-
-  if (isRecoveryCallback) {
-    return redirectUrl(requestUrl, recoveryRedirectTo);
+    return redirectUrl(requestUrl, "/login", loginErrorParams);
   }
 
   const {
