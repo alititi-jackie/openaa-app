@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { featureFlags } from "@/lib/config/featureFlags";
-import { confirmationEmailSentMessage, resendSignupConfirmationEmail } from "@/lib/auth/confirmationEmail";
 import { authErrorMessage, isEmailNotConfirmedError } from "@/lib/auth/errorMessages";
 import { safeReturnTo } from "@/lib/auth/redirects";
 import { appUrl } from "@/lib/seo/siteConfig";
@@ -18,6 +17,8 @@ function loginFallbackMessage(isConfigured: boolean) {
 const recoveryErrorMessage = "重置链接已失效，请重新发送重置邮件。";
 const authParamNames = ["error", "error_code", "error_description", "message", "type", "source", "autoRedirect"];
 const loginSuccessMessage = "登录成功";
+const emailNotConfirmedMessage =
+  "该邮箱尚未完成确认，请先打开邮箱，点击确认邮件中的链接完成注册。\n\n如果没有看到确认邮件，请检查垃圾邮件、广告邮件或促销邮件文件夹。确认邮件可能需要几分钟送达。若 1 小时后仍未收到确认邮件，请再尝试重新注册或联系网站管理员处理。";
 
 type AuthParams = Pick<URLSearchParams, "get" | "has">;
 
@@ -93,13 +94,12 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState(() => getInitialLoginMessage(searchParams));
   const [needsEmailConfirmation, setNeedsEmailConfirmation] = useState(false);
-  const [resendNotice, setResendNotice] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [isLoginSuccess, setIsLoginSuccess] = useState(() => message === loginSuccessMessage);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
-  const [isResendingConfirmation, setIsResendingConfirmation] = useState(false);
   const isConfigured = isSupabaseBrowserConfigured();
   const registerHref = `/register?returnTo=${encodeURIComponent(returnTo)}`;
+  const loginHref = `/login?returnTo=${encodeURIComponent(returnTo)}`;
 
   useEffect(() => {
     const hashMessage = readHashLoginMessage();
@@ -126,7 +126,6 @@ export function LoginForm() {
   async function handleEmailLogin(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
-    setResendNotice(null);
     setNeedsEmailConfirmation(false);
     setIsLoginSuccess(false);
     setIsSubmitting(true);
@@ -145,7 +144,7 @@ export function LoginForm() {
         });
         const isEmailNotConfirmed = isEmailNotConfirmedError(error);
         setNeedsEmailConfirmation(isEmailNotConfirmed);
-        setMessage(isEmailNotConfirmed ? "请先验证邮箱后再登录。" : authErrorMessage(error, "邮箱或密码不正确。"));
+        setMessage(isEmailNotConfirmed ? emailNotConfirmedMessage : authErrorMessage(error, "邮箱或密码不正确。"));
         return;
       }
 
@@ -172,7 +171,6 @@ export function LoginForm() {
 
   async function handleGoogleLogin() {
     setMessage("");
-    setResendNotice(null);
     setNeedsEmailConfirmation(false);
     setIsLoginSuccess(false);
     clearAuthParamsFromUrl();
@@ -194,34 +192,6 @@ export function LoginForm() {
     } catch {
       setMessage(isConfigured ? "Google 登录失败，请重试" : "Supabase 环境变量尚未配置，暂时无法启动 Google 登录。");
       setIsGoogleSubmitting(false);
-    }
-  }
-
-  async function handleResendConfirmation() {
-    const normalizedEmail = email.trim();
-    setResendNotice(null);
-
-    if (!normalizedEmail) {
-      setResendNotice({ type: "error", message: "请输入邮箱" });
-      return;
-    }
-
-    setIsResendingConfirmation(true);
-
-    try {
-      const supabase = createSupabaseBrowserClient();
-      const { error } = await resendSignupConfirmationEmail(supabase, normalizedEmail, returnTo);
-
-      if (error) {
-        setResendNotice({ type: "error", message: authErrorMessage(error, "确认邮件发送失败，请稍后重试。") });
-        return;
-      }
-
-      setResendNotice({ type: "success", message: confirmationEmailSentMessage });
-    } catch {
-      setResendNotice({ type: "error", message: isConfigured ? "确认邮件发送失败，请稍后重试。" : "Supabase 环境变量尚未配置，暂时无法发送确认邮件。" });
-    } finally {
-      setIsResendingConfirmation(false);
     }
   }
 
@@ -287,26 +257,24 @@ export function LoginForm() {
           />
         </label>
         {message ? (
-          <div className={`rounded-lg p-3 text-sm ${isLoginSuccess ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
+          <div className={`whitespace-pre-line rounded-lg p-3 text-sm leading-relaxed ${isLoginSuccess ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
             {message}
           </div>
         ) : null}
         {needsEmailConfirmation ? (
-          <div className="space-y-2 rounded-lg border border-blue-100 bg-blue-50 p-3 text-sm leading-6 text-blue-800">
-            <p>没有收到确认邮件？</p>
-            <button
-              type="button"
-              onClick={handleResendConfirmation}
-              disabled={!isConfigured || isSubmitting || isGoogleSubmitting || isResendingConfirmation}
-              className="inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-[#1976d2] px-4 py-2 text-sm font-bold text-white hover:bg-[#1565c0] disabled:cursor-not-allowed disabled:bg-slate-300"
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Link
+              href={loginHref}
+              className="inline-flex min-h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
             >
-              {isResendingConfirmation ? "发送中..." : "重新发送确认邮件"}
-            </button>
-            {resendNotice ? (
-              <div className={`rounded-lg p-3 text-sm ${resendNotice.type === "success" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
-                {resendNotice.message}
-              </div>
-            ) : null}
+              返回登录
+            </Link>
+            <Link
+              href="/forgot-password"
+              className="inline-flex min-h-10 items-center justify-center rounded-lg bg-[#1976d2] px-4 py-2 text-sm font-bold text-white hover:bg-[#1565c0]"
+            >
+              忘记密码
+            </Link>
           </div>
         ) : null}
         <button

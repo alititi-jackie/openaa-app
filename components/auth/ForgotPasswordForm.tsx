@@ -4,12 +4,11 @@ import { useState } from "react";
 import { KeyRound } from "lucide-react";
 import { AuthCard, AuthLink } from "@/components/auth/AuthCard";
 import { passwordRecoveryRedirectTo } from "@/lib/auth/confirmationEmail";
-import { authErrorMessage } from "@/lib/auth/errorMessages";
 import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const resetEmailSentMessage =
-  "如果该邮箱已注册，我们已发送密码重置邮件。\n请打开邮箱查看来自 Supabase Auth（noreply@mail.app.supabase.io）的邮件，并按邮件提示重置密码。\n如果没有看到邮件，请检查垃圾邮件、广告邮件或稍后再试。";
+  "重置密码邮件已发送。\n\n如果该邮箱已注册 OpenAA 账号，请查看来自 Supabase Auth（noreply@mail.app.supabase.io）的重置密码邮件，并点击邮件中的链接重新设置密码。\n\n如果没有看到邮件，请检查垃圾邮件、广告邮件或促销邮件文件夹。邮件可能需要几分钟送达，请不要短时间内重复提交，以免触发邮件发送限制。\n\n如果 1 小时后仍未收到邮件，请再尝试重新提交或联系网站管理员处理。给您带来的不便，我们深表歉意。";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -44,7 +43,11 @@ export function ForgotPasswordForm() {
       });
 
       if (error) {
-        setMessage(authErrorMessage(error, "发送失败，请稍后重试"));
+        console.warn("[auth/forgot-password] reset email request did not complete", {
+          message: error.message,
+          status: error.status,
+        });
+        setIsSuccess(true);
         return;
       }
 

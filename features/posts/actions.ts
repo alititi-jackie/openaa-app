@@ -247,7 +247,7 @@ export async function createPost(values: PostFormValues): Promise<PostFormAction
   if (!context.ok) return { ok: false, message: context.error };
   if (context.status === "banned") return { ok: false, message: "你的账号当前禁止发布内容。" };
   if (context.status === "restricted") return { ok: false, message: "你的账号当前受限，暂时不能发布新内容。" };
-  if (!context.emailVerified) return { ok: false, message: "请先完成邮箱确认后再发布。请查看注册邮箱中的确认邮件，或在登录页重新发送确认邮件。" };
+  if (!context.emailVerified) return { ok: false, message: "请先完成邮箱确认后再发布。请查看注册邮箱中的确认邮件，并点击确认链接完成注册。" };
 
   const limitCheck = await assertDailyPostLimit(context.supabase, context.user.id);
   if (!limitCheck.ok) return { ok: false, message: limitCheck.message };
