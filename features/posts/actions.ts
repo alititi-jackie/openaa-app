@@ -38,6 +38,7 @@ type WriteContext =
 const allowedPostTypes = new Set<PostType>(["job", "housing", "marketplace", "service"]);
 const manageablePostStatuses = new Set<PostStatus>(["draft", "pending_review", "published", "hidden", "expired", "deleted"]);
 const DEFAULT_DAILY_POST_LIMIT = 10;
+const POST_SUMMARY_MAX_LENGTH = 240;
 const allowedContactMethods = new Set(["phone", "wechat", "email"]);
 
 function logPostActionError(scope: string, error: unknown, context?: Record<string, unknown>) {
@@ -167,6 +168,14 @@ function revalidatePostSurfaces(type: PostType, postId: string, options: { inclu
   }
 }
 
+function postSummaryForForm(values: PostFormValues) {
+  const source = values.body.trim() || values.summary.trim();
+  if (!source) return null;
+  const summary = source.replace(/\s+/g, " ");
+  if (summary.length <= POST_SUMMARY_MAX_LENGTH) return summary;
+  return `${summary.slice(0, POST_SUMMARY_MAX_LENGTH).trimEnd()}...`;
+}
+
 function mainPostPayload(values: PostFormValues, userId: string, cityId: string | null) {
   const status = shouldReviewPost(values) ? "pending_review" : "published";
   const publishedAt = status === "published" ? new Date().toISOString() : null;
@@ -176,7 +185,7 @@ function mainPostPayload(values: PostFormValues, userId: string, cityId: string 
     city_id: cityId,
     author_id: userId,
     title: postTitleForForm(values),
-    summary: values.summary.trim() || null,
+    summary: postSummaryForForm(values),
     body: values.body.trim(),
     category: postCategoryForForm(values),
     subcategory: postModeForForm(values),
