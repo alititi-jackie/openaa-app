@@ -77,8 +77,7 @@ export function UserPostManagementActions({
         setDeleteOpen(false);
         onDeleted?.();
       }
-    } catch (error) {
-      console.error("[posts] delete own post failed", { postId, error });
+    } catch {
       onMessage({ ok: false, message: "删除失败，请稍后再试。" });
     } finally {
       setDeletePending(false);

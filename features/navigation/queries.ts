@@ -189,18 +189,18 @@ export async function getAdminNavigationRecycleBinData(kind: NavigationRecycleBi
   const categoriesFallback = fallbackNavigationCategories();
 
   if (!canReadRecycleBin) {
-    return { state: "ready" as const, permissions, kind, categories: categoriesFallback, links: [] as NavigationLink[] };
+    return { state: "ready" as const, permissions, superAdmin, kind, categories: categoriesFallback, links: [] as NavigationLink[] };
   }
 
   let supabase: ReturnType<typeof createSupabaseAdminClient>;
   try {
     supabase = createSupabaseAdminClient();
   } catch {
-    return { state: "missing_config" as const, permissions, kind, categories: categoriesFallback, links: [] as NavigationLink[] };
+    return { state: "missing_config" as const, permissions, superAdmin, kind, categories: categoriesFallback, links: [] as NavigationLink[] };
   }
 
   if (!supabase) {
-    return { state: "missing_config" as const, permissions, kind, categories: categoriesFallback, links: [] as NavigationLink[] };
+    return { state: "missing_config" as const, permissions, superAdmin, kind, categories: categoriesFallback, links: [] as NavigationLink[] };
   }
 
   const emptyLinks: NavigationQueryResult<NavigationLink[]> = { state: "ready", data: [] };
@@ -209,6 +209,7 @@ export async function getAdminNavigationRecycleBinData(kind: NavigationRecycleBi
   return {
     state: categories.state === "error" || links.state === "error" ? ("error" as const) : ("ready" as const),
     permissions,
+    superAdmin,
     kind,
     categories: categories.data.length > 0 ? categories.data : categoriesFallback,
     links: links.data,

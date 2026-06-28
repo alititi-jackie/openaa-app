@@ -143,7 +143,6 @@ export function ResetPasswordForm() {
           const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
           if (exchangeError) {
-            console.error("[auth/reset-password] exchangeCodeForSession failed", exchangeError);
             markInvalid(resetLinkErrorMessage(exchangeError));
             return;
           }
@@ -171,7 +170,6 @@ export function ResetPasswordForm() {
           });
 
           if (sessionError) {
-            console.error("[auth/reset-password] setSession failed", sessionError);
             markInvalid(resetLinkErrorMessage(sessionError));
             return;
           }
@@ -196,7 +194,6 @@ export function ResetPasswordForm() {
 
         markInvalid();
       } catch (sessionError) {
-        console.error("[auth/reset-password] recovery session setup failed", sessionError);
         markInvalid(resetLinkErrorMessage(sessionError));
       }
     }

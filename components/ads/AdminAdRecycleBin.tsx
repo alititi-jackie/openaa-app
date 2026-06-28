@@ -4,7 +4,7 @@ import { AdminActionForm, AdminCheckbox } from "@/components/admin/AdminActionFo
 import { permanentlyDeleteAd, restoreDeletedAd } from "@/features/ads/adminActions";
 import type { AdminAdRecycleBinItem } from "@/features/ads/adminQueries";
 
-export function AdminAdRecycleBinList({ items }: { items: AdminAdRecycleBinItem[] }) {
+export function AdminAdRecycleBinList({ items, canPermanentDelete = false }: { items: AdminAdRecycleBinItem[]; canPermanentDelete?: boolean }) {
   if (items.length === 0) {
     return <p className="rounded-xl bg-slate-50 px-3 py-3 text-sm font-bold text-slate-500">当前没有已删除广告。</p>;
   }
@@ -38,10 +38,16 @@ export function AdminAdRecycleBinList({ items }: { items: AdminAdRecycleBinItem[
               <AdminActionForm action={restoreDeletedAd} submitLabel="恢复为停用" className="contents" submitClassName="inline-flex min-h-9 items-center rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-black text-white">
                 <input type="hidden" name="id" value={item.id} />
               </AdminActionForm>
-              <AdminActionForm action={permanentlyDeleteAd} submitLabel="永久删除" className="grid gap-2 rounded-xl bg-white p-2 ring-1 ring-red-100" submitClassName="inline-flex min-h-9 items-center justify-center rounded-xl bg-red-600 px-3 py-1.5 text-xs font-black text-white">
-                <input type="hidden" name="id" value={item.id} />
-                <AdminCheckbox name="confirm_permanent_delete" label="确认永久删除" />
-              </AdminActionForm>
+              {canPermanentDelete ? (
+                <AdminActionForm action={permanentlyDeleteAd} submitLabel="永久删除" className="grid gap-2 rounded-xl bg-white p-2 ring-1 ring-red-100" submitClassName="inline-flex min-h-9 items-center justify-center rounded-xl bg-red-600 px-3 py-1.5 text-xs font-black text-white">
+                  <input type="hidden" name="id" value={item.id} />
+                  <AdminCheckbox name="confirm_permanent_delete" label="确认永久删除" />
+                </AdminActionForm>
+              ) : (
+                <p className="rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-500 ring-1 ring-slate-100">
+                  永久删除仅限超级管理员。
+                </p>
+              )}
             </div>
           </div>
         </article>

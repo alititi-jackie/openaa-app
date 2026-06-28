@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import type { AdminHomeActionState } from "@/features/admin-home/types";
 import { writeAdminAuditLog } from "@/lib/permissions/adminAuditLog";
-import { hasAdminModule } from "@/lib/permissions/admin";
+import { hasAdminModule, isSuperAdmin } from "@/lib/permissions/admin";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -44,6 +44,7 @@ export async function restoreMessageRecycleItem(_state: AdminHomeActionState, fo
 export async function permanentlyDeleteMessageRecycleItem(_state: AdminHomeActionState, formData: FormData): Promise<AdminHomeActionState> {
   const context = await getRecycleContext();
   if (!context.ok) return fail(context.message);
+  if (!(await isSuperAdmin())) return fail("只有超级管理员可以永久删除回收站内容。");
   const id = readText(formData, "id");
   const type = readText(formData, "type");
   const confirmed = formData.get("confirm_permanent_delete") === "on";

@@ -88,13 +88,15 @@ function fallbackTickerLabelForRoute(href: string) {
 
 export function mapBanner(row: Record<string, unknown>): HomeBannerItem | null {
   const rawTitle = asString(row.title);
+  const rawHref = asString(row.href);
+  const rawExternalUrl = asString(row.external_url);
   const imageAsset = firstRecord(row.image_assets);
   const metadata = asRecord(row.metadata);
   const imageUrl = asString(imageAsset.public_url, asString(imageAsset.external_url, asString(metadata.image_url)));
   const openMode = asString(row.open_mode) || null;
   const slug = asString(row.slug) || null;
-  const href = openMode === "internal" && slug ? `/ads/${slug}` : normalizeRoute(asString(row.external_url, asString(row.href, "/")));
-  const title = rawTitle === asString(row.href) || rawTitle === asString(row.external_url) ? href : normalizeRoute(rawTitle);
+  const href = openMode === "internal" && slug ? `/ads/${slug}` : normalizeRoute(asString(rawExternalUrl, asString(rawHref, "/")));
+  const title = mapBannerTitle(rawTitle, rawHref, rawExternalUrl, href);
 
   if (!title) {
     return null;
@@ -108,6 +110,35 @@ export function mapBanner(row: Record<string, unknown>): HomeBannerItem | null {
     openMode,
     slug,
   };
+}
+
+function mapBannerTitle(rawTitle: string, rawHref: string, rawExternalUrl: string, href: string) {
+  if (!rawTitle || rawTitle === rawHref || rawTitle === rawExternalUrl || isUrlLike(rawTitle)) {
+    return bannerTitleFromHref(href);
+  }
+
+  return normalizeRoute(rawTitle);
+}
+
+function isUrlLike(value: string) {
+  try {
+    new URL(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function bannerTitleFromHref(href: string) {
+  if (href.startsWith("/jobs")) return "招聘信息";
+  if (href.startsWith("/housing")) return "房屋信息";
+  if (href.startsWith("/marketplace")) return "二手信息";
+  if (href.startsWith("/services")) return "本地服务";
+  if (href.startsWith("/news")) return "新闻资讯";
+  if (href.startsWith("/navigation")) return "常用导航";
+  if (href.startsWith("/dmv")) return "DMV 工具";
+  if (href === "/" || href.startsWith("/?") || href.startsWith("/#")) return "OpenAA";
+  return "OpenAA 广告";
 }
 
 export function mapHomeSections(rows: Array<Record<string, unknown>>): Record<string, HomeSectionRecord> {

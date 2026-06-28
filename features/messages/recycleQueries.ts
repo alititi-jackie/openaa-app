@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { hasAdminModule } from "@/lib/permissions/admin";
+import { hasAdminModule, isSuperAdmin } from "@/lib/permissions/admin";
 import { SUPPORT_TICKET_TYPE_LABELS, type SupportTicketType } from "@/features/support/types";
 import { REPORT_REASON_LABELS, type ReportReason } from "@/features/reports/types";
 
@@ -20,6 +20,7 @@ export type MessageRecycleData = {
   state: "ready" | "missing_config" | "forbidden" | "error";
   error?: string;
   type: MessageRecycleType;
+  superAdmin: boolean;
   items: MessageRecycleItem[];
 };
 
@@ -42,20 +43,21 @@ type DeletedFeedbackRow = {
 };
 
 export async function getMessageRecycleData(type: MessageRecycleType): Promise<MessageRecycleData> {
-  if (!(await hasAdminModule("recycle-bin"))) return { state: "forbidden", type, items: [] };
+  const superAdmin = await isSuperAdmin();
+  if (!superAdmin && !(await hasAdminModule("recycle-bin"))) return { state: "forbidden", type, superAdmin, items: [] };
 
   let supabase: ReturnType<typeof createSupabaseAdminClient>;
   try {
     supabase = createSupabaseAdminClient();
   } catch {
-    return { state: "missing_config", type, items: [], error: "Supabase service role 环境变量未配置。" };
+    return { state: "missing_config", type, superAdmin, items: [], error: "Supabase service role 环境变量未配置。" };
   }
 
-  if (type === "feedback") return readDeletedFeedback(supabase);
-  return readDeletedReports(supabase);
+  if (type === "feedback") return readDeletedFeedback(supabase, superAdmin);
+  return readDeletedReports(supabase, superAdmin);
 }
 
-async function readDeletedReports(supabase: ReturnType<typeof createSupabaseAdminClient>): Promise<MessageRecycleData> {
+async function readDeletedReports(supabase: ReturnType<typeof createSupabaseAdminClient>, superAdmin: boolean): Promise<MessageRecycleData> {
   const { data, error } = await supabase
     .from("post_reports")
     .select("id,reason,detail,created_at,deleted_at,posts(title,post_type)")
@@ -63,11 +65,12 @@ async function readDeletedReports(supabase: ReturnType<typeof createSupabaseAdmi
     .order("deleted_at", { ascending: false })
     .limit(100);
 
-  if (error) return { state: "error", type: "reports", items: [], error: "已删除举报读取失败。" };
+  if (error) return { state: "error", type: "reports", superAdmin, items: [], error: "已删除举报读取失败。" };
 
   return {
     state: "ready",
     type: "reports",
+    superAdmin,
     items: ((data ?? []) as DeletedReportRow[]).map((row) => {
       const post = Array.isArray(row.posts) ? row.posts[0] : row.posts;
       const reason = normalizeReportReason(String(row.reason ?? ""));
@@ -83,7 +86,7 @@ async function readDeletedReports(supabase: ReturnType<typeof createSupabaseAdmi
   };
 }
 
-async function readDeletedFeedback(supabase: ReturnType<typeof createSupabaseAdminClient>): Promise<MessageRecycleData> {
+async function readDeletedFeedback(supabase: ReturnType<typeof createSupabaseAdminClient>, superAdmin: boolean): Promise<MessageRecycleData> {
   const { data, error } = await supabase
     .from("support_tickets")
     .select("id,ticket_no,type,content,created_at,deleted_at")
@@ -91,11 +94,12 @@ async function readDeletedFeedback(supabase: ReturnType<typeof createSupabaseAdm
     .order("deleted_at", { ascending: false })
     .limit(100);
 
-  if (error) return { state: "error", type: "feedback", items: [], error: "已删除线索与建议读取失败。" };
+  if (error) return { state: "error", type: "feedback", superAdmin, items: [], error: "已删除线索与建议读取失败。" };
 
   return {
     state: "ready",
     type: "feedback",
+    superAdmin,
     items: ((data ?? []) as DeletedFeedbackRow[]).map((row) => {
       const type = normalizeFeedbackType(String(row.type ?? ""));
       return {

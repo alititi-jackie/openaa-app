@@ -1,6 +1,6 @@
 import "server-only";
 
-import { hasAdminModule, hasAdminPermission } from "@/lib/permissions/admin";
+import { hasAdminModule, hasAdminPermission, isSuperAdmin } from "@/lib/permissions/admin";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { QueryState } from "@/features/posts/types";
@@ -48,6 +48,7 @@ export type AdminAdRecycleBinItem = {
 export type AdminAdRecycleBinResult = {
   state: QueryState;
   canManageAds: boolean;
+  superAdmin: boolean;
   items: AdminAdRecycleBinItem[];
   error?: string;
 };
@@ -113,17 +114,18 @@ export async function getAdminAdsData(position?: string, status?: string): Promi
 }
 
 export async function getAdminAdRecycleBinData(): Promise<AdminAdRecycleBinResult> {
-  const canReadRecycleBin = await hasAdminModule("recycle-bin");
+  const superAdmin = await isSuperAdmin();
+  const canReadRecycleBin = superAdmin || await hasAdminModule("recycle-bin");
 
   if (!canReadRecycleBin) {
-    return { state: "ready", canManageAds: false, items: [] };
+    return { state: "ready", canManageAds: false, superAdmin, items: [] };
   }
 
   let supabase: ReturnType<typeof createSupabaseAdminClient>;
   try {
     supabase = createSupabaseAdminClient();
   } catch {
-    return { state: "missing_config", canManageAds: canReadRecycleBin, items: [] };
+    return { state: "missing_config", canManageAds: canReadRecycleBin, superAdmin, items: [] };
   }
 
   const { data, error } = await supabase
@@ -134,12 +136,13 @@ export async function getAdminAdRecycleBinData(): Promise<AdminAdRecycleBinResul
     .limit(200);
 
   if (error) {
-    return { state: "error", canManageAds: canReadRecycleBin, items: [], error: "已删除广告读取失败，请稍后再试。" };
+    return { state: "error", canManageAds: canReadRecycleBin, superAdmin, items: [], error: "已删除广告读取失败，请稍后再试。" };
   }
 
   return {
     state: "ready",
     canManageAds: canReadRecycleBin,
+    superAdmin,
     items: ((data ?? []) as Array<RawAdRow & { deleted_at: string | null; deleted_by: string | null }>).map(mapDeletedAd),
   };
 }

@@ -163,7 +163,7 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
                 <OrphanFavoritesNotice visible={postData.filter === "orphan_favorites"} count={postData.health.orphanFavoriteCount} />
 
                 <AdminCard title="用户发布信息" description="恢复会先变为隐藏状态；永久删除后不可恢复。">
-                  <RecycleBinList items={postData.items} />
+                  <RecycleBinList items={postData.items} canPermanentDelete={postData.superAdmin} />
                 </AdminCard>
               </>
             ) : null}
@@ -184,7 +184,7 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
                 {newsData ? <RecycleBinNewsHealthSection health={newsData.health} activeFilter={newsData.filter} category={newsCategory} /> : null}
 
                 <AdminCard title="新闻" description="新闻恢复后进入 hidden 状态，不会直接发布。">
-                  <RecycleBinList items={newsData?.items ?? []} />
+                  <RecycleBinList items={newsData?.items ?? []} canPermanentDelete={newsData?.superAdmin ?? false} />
                 </AdminCard>
               </>
             ) : null}
@@ -193,7 +193,7 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
               <>
                 {navigationData?.state === "error" ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">{navigationData.error ?? "公共导航内容读取失败，请稍后再试。"}</div> : null}
                 <AdminCard title="公共导航" description="只管理已删除的网站；不做健康检查、图片管理或自动清理。">
-                  <NavigationRecycleBinList links={navigationData?.links ?? []} kind="links" />
+                  <NavigationRecycleBinList links={navigationData?.links ?? []} kind="links" canPermanentDelete={navigationData?.superAdmin ?? false} />
                 </AdminCard>
               </>
             ) : null}
@@ -206,7 +206,7 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
                   </div>
                 ) : null}
                 <AdminCard title="已删除广告" description="恢复后广告会保持停用状态；永久删除后，广告图片会进入图片清理工具继续处理。">
-                  <AdminAdRecycleBinList items={adRecycleData?.items ?? []} />
+                  <AdminAdRecycleBinList items={adRecycleData?.items ?? []} canPermanentDelete={adRecycleData?.superAdmin ?? false} />
                 </AdminCard>
               </>
             ) : null}
@@ -222,7 +222,7 @@ export default function AdminRecycleBinPage({ searchParams }: RecycleBinPageProp
                   title={activeTab === "reports" ? "已删除举报" : "已删除线索与建议"}
                   description="所有永久删除都只能在回收站执行；恢复后会回到已处理/已查看状态。"
                 >
-                  <MessageRecycleBinList data={messageRecycleData ?? { state: "ready", type: activeTab, items: [] }} />
+                  <MessageRecycleBinList data={messageRecycleData ?? { state: "ready", type: activeTab, superAdmin: false, items: [] }} />
                 </AdminCard>
               </>
             ) : null}

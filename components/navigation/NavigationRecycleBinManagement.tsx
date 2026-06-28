@@ -8,7 +8,7 @@ import type { NavigationLink } from "@/features/navigation/types";
 
 const initialState: NavigationActionState = { ok: true, message: "" };
 
-export function NavigationRecycleBinList({ links, kind }: { links: NavigationLink[]; kind: "links" | "categories" }) {
+export function NavigationRecycleBinList({ links, kind, canPermanentDelete = false }: { links: NavigationLink[]; kind: "links" | "categories"; canPermanentDelete?: boolean }) {
   if (kind === "categories") {
     return <AdminEmptyState title="分类回收站入口已预留；当前版本公共导航分类尚未接入删除后保留记录的流程。" align="left" />;
   }
@@ -20,13 +20,13 @@ export function NavigationRecycleBinList({ links, kind }: { links: NavigationLin
   return (
     <div className="space-y-3">
       {links.map((link) => (
-        <NavigationRecycleBinRow key={link.id} link={link} />
+        <NavigationRecycleBinRow key={link.id} link={link} canPermanentDelete={canPermanentDelete} />
       ))}
     </div>
   );
 }
 
-function NavigationRecycleBinRow({ link }: { link: NavigationLink }) {
+function NavigationRecycleBinRow({ link, canPermanentDelete }: { link: NavigationLink; canPermanentDelete: boolean }) {
   const [restoreState, restoreAction, restorePending] = useActionState(restoreNavigationLink, initialState);
   const [deleteState, deleteAction, deletePending] = useActionState(permanentlyDeleteNavigationLink, initialState);
   const restored = restoreState.ok && restoreState.message === "导航链接已恢复。";
@@ -61,12 +61,18 @@ function NavigationRecycleBinRow({ link }: { link: NavigationLink }) {
                   {restorePending ? "恢复中..." : "恢复"}
                 </button>
               </form>
-              <form action={deleteAction}>
-                <input type="hidden" name="id" value={link.id} />
-                <button type="submit" disabled={deletePending} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-red-600 px-3 py-2 text-sm font-black text-white disabled:opacity-60">
-                  {deletePending ? "删除中..." : "永久删除"}
-                </button>
-              </form>
+              {canPermanentDelete ? (
+                <form action={deleteAction}>
+                  <input type="hidden" name="id" value={link.id} />
+                  <button type="submit" disabled={deletePending} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-red-600 px-3 py-2 text-sm font-black text-white disabled:opacity-60">
+                    {deletePending ? "删除中..." : "永久删除"}
+                  </button>
+                </form>
+              ) : (
+                <p className="rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500 ring-1 ring-slate-100">
+                  永久删除仅限超级管理员。
+                </p>
+              )}
             </>
           )}
         </div>

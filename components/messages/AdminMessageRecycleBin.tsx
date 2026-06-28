@@ -29,11 +29,17 @@ export function MessageRecycleBinList({ data }: { data: MessageRecycleData }) {
                 <input type="hidden" name="id" value={item.id} />
                 <input type="hidden" name="type" value={data.type} />
               </AdminActionForm>
-              <AdminActionForm action={permanentlyDeleteMessageRecycleItem} submitLabel="永久删除" className="grid gap-2 rounded-xl bg-white p-2 ring-1 ring-red-100" submitClassName="inline-flex min-h-9 items-center justify-center rounded-xl bg-red-600 px-3 py-1.5 text-xs font-black text-white">
-                <input type="hidden" name="id" value={item.id} />
-                <input type="hidden" name="type" value={data.type} />
-                <AdminCheckbox name="confirm_permanent_delete" label="确认永久删除" />
-              </AdminActionForm>
+              {data.superAdmin ? (
+                <AdminActionForm action={permanentlyDeleteMessageRecycleItem} submitLabel="永久删除" className="grid gap-2 rounded-xl bg-white p-2 ring-1 ring-red-100" submitClassName="inline-flex min-h-9 items-center justify-center rounded-xl bg-red-600 px-3 py-1.5 text-xs font-black text-white">
+                  <input type="hidden" name="id" value={item.id} />
+                  <input type="hidden" name="type" value={data.type} />
+                  <AdminCheckbox name="confirm_permanent_delete" label="确认永久删除" />
+                </AdminActionForm>
+              ) : (
+                <p className="max-w-[220px] rounded-xl bg-white px-3 py-2 text-xs font-bold leading-5 text-slate-500 ring-1 ring-slate-200">
+                  永久删除仅限超级管理员。
+                </p>
+              )}
             </div>
           </div>
         </article>

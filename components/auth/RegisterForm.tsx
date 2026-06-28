@@ -108,6 +108,12 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
         return;
       }
 
+      if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        setMessage(accountAlreadyRegisteredMessage);
+        setIsAlreadyRegistered(true);
+        return;
+      }
+
       if (data.session) {
         await supabase.auth.signOut();
       }
@@ -117,8 +123,8 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
       setAccepted(false);
       setMessage(accountCreatedConfirmationMessage);
       setIsSuccess(true);
-    } catch {
-      setMessage(registerFallbackMessage(isConfigured));
+    } catch (error) {
+      setMessage(authErrorMessage(error, registerFallbackMessage(isConfigured)));
     } finally {
       setIsSubmitting(false);
     }

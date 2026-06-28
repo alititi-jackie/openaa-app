@@ -206,7 +206,7 @@ function applyPublicPostQueryFilters<T>(query: T, type: PostType, filters: Publi
     next = next.eq("post_details_jobs.employment_type", filters.workType);
   }
 
-  if (filters.category && filters.category !== "鍏ㄩ儴") {
+  if (filters.category && filters.category !== "全部") {
     next = next.eq(detailFilterColumn(type, "category"), filters.category);
   }
 

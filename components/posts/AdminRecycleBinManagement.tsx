@@ -118,7 +118,7 @@ export function OrphanFavoritesNotice({ visible, count }: { visible: boolean; co
   );
 }
 
-export function RecycleBinList({ items }: { items: RecycleBinItem[] }) {
+export function RecycleBinList({ items, canPermanentDelete = false }: { items: RecycleBinItem[]; canPermanentDelete?: boolean }) {
   if (items.length === 0) {
     return <div className="rounded-xl bg-slate-50 p-4 text-sm font-bold text-slate-500">当前分类没有回收站内容。</div>;
   }
@@ -126,7 +126,7 @@ export function RecycleBinList({ items }: { items: RecycleBinItem[] }) {
   return (
     <div className="space-y-3">
       {items.map((item) => (
-        <RecycleBinRow key={item.id} item={item} />
+        <RecycleBinRow key={item.id} item={item} canPermanentDelete={canPermanentDelete} />
       ))}
     </div>
   );
@@ -183,7 +183,7 @@ function newsRecycleBinHref(filter: RecycleBinNewsFilter, category: string) {
   return `/admin/recycle-bin?${params.toString()}`;
 }
 
-function RecycleBinRow({ item }: { item: RecycleBinItem }) {
+function RecycleBinRow({ item, canPermanentDelete }: { item: RecycleBinItem; canPermanentDelete: boolean }) {
   const [restoreState, restoreAction, restorePending] = useActionState(restoreDeletedPost, initialActionState);
   const [deleteState, deleteAction, deletePending] = useActionState(permanentlyDeletePost, initialActionState);
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
@@ -279,18 +279,24 @@ function RecycleBinRow({ item }: { item: RecycleBinItem }) {
                   </form>
                 </div>
               ) : null}
-              <form action={deleteAction} className="grid gap-2 rounded-xl bg-white p-2 ring-1 ring-red-100">
-                <input type="hidden" name="id" value={item.id} />
-                <input type="hidden" name="resource_type" value={item.contentType} />
-                <input type="hidden" name="content_type" value={item.contentType} />
-                <label className="inline-flex items-center gap-2 text-sm font-bold text-slate-700">
-                  <input name="confirm_permanent_delete" type="checkbox" className="h-4 w-4 rounded border-slate-300" />
-                  <span>永久删除后不可恢复。</span>
-                </label>
-                <button type="submit" disabled={deletePending} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-red-600 px-3 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60">
-                  {deletePending ? "删除中..." : "永久删除"}
-                </button>
-              </form>
+              {canPermanentDelete ? (
+                <form action={deleteAction} className="grid gap-2 rounded-xl bg-white p-2 ring-1 ring-red-100">
+                  <input type="hidden" name="id" value={item.id} />
+                  <input type="hidden" name="resource_type" value={item.contentType} />
+                  <input type="hidden" name="content_type" value={item.contentType} />
+                  <label className="inline-flex items-center gap-2 text-sm font-bold text-slate-700">
+                    <input name="confirm_permanent_delete" type="checkbox" className="h-4 w-4 rounded border-slate-300" />
+                    <span>永久删除后不可恢复。</span>
+                  </label>
+                  <button type="submit" disabled={deletePending} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-red-600 px-3 py-2 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60">
+                    {deletePending ? "删除中..." : "永久删除"}
+                  </button>
+                </form>
+              ) : (
+                <p className="max-w-[220px] rounded-xl bg-white px-3 py-2 text-xs font-bold leading-5 text-slate-500 ring-1 ring-slate-200">
+                  永久删除仅限超级管理员。
+                </p>
+              )}
             </>
           )}
         </div>

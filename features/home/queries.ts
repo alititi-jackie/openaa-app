@@ -30,7 +30,7 @@ type HomeSupabaseClient = SupabaseClient;
 const HOME_PUBLIC_FETCH_TIMEOUT_MS = 8000;
 
 export async function getHomeConfig(): Promise<HomeConfig> {
-  const supabase = createSupabasePublicClient({ cache: "no-store", timeoutMs: HOME_PUBLIC_FETCH_TIMEOUT_MS });
+  const supabase = createSupabasePublicClient({ revalidate: 300, timeoutMs: HOME_PUBLIC_FETCH_TIMEOUT_MS });
 
   if (!supabase) {
     return fallbackHomeConfig();

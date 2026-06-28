@@ -138,10 +138,6 @@ export function LoginForm() {
       });
 
       if (error) {
-        console.error("[auth/login] password login failed", {
-          message: error.message,
-          status: error.status,
-        });
         const isEmailNotConfirmed = isEmailNotConfirmedError(error);
         setNeedsEmailConfirmation(isEmailNotConfirmed);
         setMessage(isEmailNotConfirmed ? emailNotConfirmedMessage : authErrorMessage(error, "邮箱或密码不正确。"));
@@ -161,8 +157,7 @@ export function LoginForm() {
       setMessage(loginSuccessMessage);
       setNeedsEmailConfirmation(false);
       setIsLoginSuccess(true);
-    } catch (error) {
-      console.error("[auth/login] password login unexpected error", error);
+    } catch {
       setMessage(loginFallbackMessage(isConfigured));
     } finally {
       setIsSubmitting(false);

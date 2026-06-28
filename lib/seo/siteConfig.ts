@@ -7,6 +7,7 @@ const alternateMainSiteHostnames = new Set([
   "openaa.app",
   "www.openaa.app",
 ]);
+const legacyMainSiteHostnames = new Set(["app.openaa.com"]);
 
 function normalizeBaseUrl(value: string | undefined, fallback: string) {
   const raw = value?.trim() || fallback;
@@ -81,7 +82,7 @@ export function canonicalizeMainSiteHref(value: string) {
     const url = new URL(raw);
     const hostname = url.hostname.toLowerCase();
 
-    if (hostname === primarySiteHostname || alternateMainSiteHostnames.has(hostname)) {
+    if (hostname === primarySiteHostname || alternateMainSiteHostnames.has(hostname) || legacyMainSiteHostnames.has(hostname)) {
       return `${url.pathname}${url.search}${url.hash}` || "/";
     }
   } catch {
