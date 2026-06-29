@@ -10,13 +10,13 @@ import { DirectoryForm } from "./DirectoryForm";
 
 const initialState: DirectoryActionState = { ok: true, message: "" };
 type AddressCopyStatus = "idle" | "copied" | "failed";
-const directoryDisclaimerText = "电话地址本是 OpenAA 提供的个人便捷记录工具。OpenAA 会尽量保护你的数据安全，但不保证数据一定不会泄漏、丢失、损坏，或因账号、设备、网络、数据库、系统故障等原因无法找回。";
+const directoryDisclaimerText = "地址电话本是 OpenAA 提供的个人便捷记录工具。OpenAA 会尽量保护你的数据安全，但不保证数据一定不会泄漏、丢失、损坏，或因账号、设备、网络、数据库、系统故障等原因无法找回。";
 const sensitiveDataWarning = "请不要在这里保存密码、银行卡、证件号码、重要隐私资料，或任何无法承担丢失风险的重要信息。";
 const backupWarning = "建议你定期使用“导出”功能保存备份。继续使用即表示你已知晓以上风险。";
-const footerDisclaimerText = "电话地址本只是个人便捷记录工具。OpenAA 不保证数据一定不会泄漏、丢失或损坏。请不要保存密码、证件、银行卡等重要隐私资料，并定期使用导出功能备份。";
+const footerDisclaimerText = "地址电话本只是个人便捷记录工具。OpenAA 不保证数据一定不会泄漏、丢失或损坏。请不要保存密码、证件、银行卡等重要隐私资料，并定期使用导出功能备份。";
 
 export function DirectoryManager({ phoneItems, addressItems }: { phoneItems: DirectoryItem[]; addressItems: DirectoryItem[] }) {
-  const [activeType, setActiveType] = useState<DirectoryItemType>("phone");
+  const [activeType, setActiveType] = useState<DirectoryItemType>("address");
   const [adding, setAdding] = useState(false);
   const [managing, setManaging] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -55,12 +55,12 @@ export function DirectoryManager({ phoneItems, addressItems }: { phoneItems: Dir
     <div className="space-y-3">
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex rounded-2xl border border-slate-200 bg-white p-1 shadow-sm" aria-label="电话地址本分类">
-            <TabButton active={activeType === "phone"} onClick={() => switchType("phone")}>
-              电话本
-            </TabButton>
+          <div className="inline-flex rounded-2xl border border-slate-200 bg-white p-1 shadow-sm" aria-label="地址电话本分类">
             <TabButton active={activeType === "address"} onClick={() => switchType("address")}>
               地址
+            </TabButton>
+            <TabButton active={activeType === "phone"} onClick={() => switchType("phone")}>
+              电话本
             </TabButton>
           </div>
           <div className="flex shrink-0 items-center gap-2">

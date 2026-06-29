@@ -94,7 +94,7 @@ export default async function ProfilePage() {
         </section>
 
         <section className="overflow-hidden rounded-2xl bg-white shadow-[0_2px_14px_rgba(0,0,0,0.06)] ring-1 ring-black/5">
-          <MenuRow href="/profile/directory" title="📒 电话地址本" description="保存常用电话和美国地址" />
+          <MenuRow href="/profile/directory" title="📍 地址电话本" description="保存常用地址，点击打开地图" />
           <MenuRow href="/navigation/my" title="🧭 管理我的导航" description="添加和整理自己的常用网站" />
 
           <details className="group border-b border-zinc-100 open:m-2 open:overflow-hidden open:rounded-2xl open:border open:border-[#1976d2] open:bg-white">

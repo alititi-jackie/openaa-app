@@ -35,7 +35,7 @@ export function validateDirectoryItemForm(formData: FormData): ValidationResult<
 }> {
   try {
     const itemType = parseDirectoryItemType(readText(formData, "item_type"));
-    if (!itemType) return { ok: false, message: "请选择电话本或地址。" };
+    if (!itemType) return { ok: false, message: "请选择地址或电话本。" };
 
     const labels = labelFor(itemType);
     const name = readText(formData, "name");
@@ -57,6 +57,6 @@ export function validateDirectoryItemForm(formData: FormData): ValidationResult<
       },
     };
   } catch (error) {
-    return { ok: false, message: error instanceof Error ? error.message : "电话地址本表单格式不正确。" };
+    return { ok: false, message: error instanceof Error ? error.message : "地址电话本表单格式不正确。" };
   }
 }

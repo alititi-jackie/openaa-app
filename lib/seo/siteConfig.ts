@@ -134,6 +134,7 @@ export const staticSitemapRoutes = [
   "/dmv/sign-test",
   "/dmv/tickets",
   "/navigation",
+  "/directory",
   "/about",
   "/privacy",
   "/terms",

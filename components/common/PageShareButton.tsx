@@ -10,13 +10,14 @@ type PageShareButtonProps = {
   text: string;
   className?: string;
   label?: ReactNode;
+  ariaLabel?: string;
 };
 
 function buildUrl(path: string) {
   return canonicalUrl(path);
 }
 
-export function PageShareButton({ path, title, text, className, label = "分享" }: PageShareButtonProps) {
+export function PageShareButton({ path, title, text, className, label = "分享", ariaLabel = "分享当前页面" }: PageShareButtonProps) {
   const [toast, setToast] = useState("");
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -49,7 +50,7 @@ export function PageShareButton({ path, title, text, className, label = "分享"
 
   return (
     <>
-      <button type="button" onClick={handleShare} aria-label="分享当前页面" className={className ?? detailActionButtonClass}>
+      <button type="button" onClick={handleShare} aria-label={ariaLabel} className={className ?? detailActionButtonClass}>
         {label}
       </button>
       {toast ? (

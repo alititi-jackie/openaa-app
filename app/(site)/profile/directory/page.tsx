@@ -10,8 +10,8 @@ import { buildPageMetadata } from "@/lib/seo/metadata";
 export const dynamic = "force-dynamic";
 
 export const metadata = buildPageMetadata({
-  title: "电话地址本",
-  description: "保存常用电话和美国地址。",
+  title: "地址电话本",
+  description: "保存常用英文地址，登录后点击即可打开地图导航。",
   path: "/profile/directory",
   noIndex: true,
 });
@@ -26,17 +26,22 @@ export default async function ProfileDirectoryPage() {
   return (
     <div className="-mx-4 -mt-4 min-h-[calc(100dvh-8rem)] bg-zinc-100 px-4 pb-24 pt-5">
       <div className="mx-auto w-full max-w-[860px] space-y-3">
-        <h1 className="sr-only">电话地址本</h1>
+        <h1 className="sr-only">地址电话本</h1>
         <div className="flex items-center justify-between">
           <BackButton href="/profile" label="返回" className={detailActionButtonClass} />
-          <PageShareButton path="/profile/directory" title="OpenAA 电话地址本" text="保存常用电话和地址，登录后使用。" />
+          <PageShareButton
+            path="/directory"
+            title="OpenAA 地址电话本"
+            text="保存常用英文地址，登录后点击即可打开地图导航。"
+            ariaLabel="分享 OpenAA 地址电话本"
+          />
         </div>
 
         {result.state === "missing_config" ? (
           <PublicStatusNotice className="rounded-2xl p-3">Supabase 环境变量尚未配置，当前显示空列表。</PublicStatusNotice>
         ) : null}
         {result.state === "error" ? (
-          <PublicStatusNotice tone="error" className="rounded-2xl p-3 font-bold">电话地址本读取失败，请稍后再试。</PublicStatusNotice>
+          <PublicStatusNotice tone="error" className="rounded-2xl p-3 font-bold">地址电话本读取失败，请稍后再试。</PublicStatusNotice>
         ) : null}
 
         {result.userId ? <DirectoryManager phoneItems={result.data.phone} addressItems={result.data.address} /> : null}
