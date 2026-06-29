@@ -12,7 +12,7 @@ const initialState: DirectoryActionState = { ok: true, message: "" };
 const directoryDisclaimerText = "电话地址本是 OpenAA 提供的个人便捷记录工具。OpenAA 会尽量保护你的数据安全，但不保证数据一定不会泄漏、丢失、损坏，或因账号、设备、网络、数据库、系统故障等原因无法找回。";
 const sensitiveDataWarning = "请不要在这里保存密码、银行卡、证件号码、重要隐私资料，或任何无法承担丢失风险的重要信息。";
 const backupWarning = "建议你定期使用“导出”功能保存备份。继续使用即表示你已知晓以上风险。";
-const footerDisclaimerText = "使用提醒：电话地址本只是个人便捷记录工具。OpenAA 不保证数据一定不会泄漏、丢失或损坏。请不要保存密码、证件、银行卡等重要隐私资料，并定期使用导出功能备份。";
+const footerDisclaimerText = "电话地址本只是个人便捷记录工具。OpenAA 不保证数据一定不会泄漏、丢失或损坏。请不要保存密码、证件、银行卡等重要隐私资料，并定期使用导出功能备份。";
 
 export function DirectoryManager({ phoneItems, addressItems }: { phoneItems: DirectoryItem[]; addressItems: DirectoryItem[] }) {
   const [activeType, setActiveType] = useState<DirectoryItemType>("phone");
@@ -194,9 +194,10 @@ function DirectoryDisclaimerGate({ onContinue }: { onContinue: () => void }) {
 
 function DirectoryFooterDisclaimer() {
   return (
-    <p className="rounded-2xl border border-slate-100 bg-white/80 px-3 py-2 text-[11px] font-semibold leading-5 text-slate-400 shadow-sm">
-      {footerDisclaimerText}
-    </p>
+    <section className="rounded-2xl border border-amber-100 bg-amber-50/40 p-4">
+      <h2 className="text-base font-bold text-amber-900">使用提醒</h2>
+      <p className="mt-1 text-[15px] leading-relaxed text-amber-900/80">{footerDisclaimerText}</p>
+    </section>
   );
 }
 

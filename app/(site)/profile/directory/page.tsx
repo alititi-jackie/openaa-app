@@ -1,4 +1,7 @@
 import { redirect } from "next/navigation";
+import { BackButton } from "@/components/common/BackButton";
+import { detailActionButtonClass } from "@/components/common/detailActionStyles";
+import { PageShareButton } from "@/components/common/PageShareButton";
 import { PublicStatusNotice } from "@/components/common/PublicStatusNotice";
 import { DirectoryManager } from "@/components/directory/DirectoryManager";
 import { getCurrentUserDirectoryItems } from "@/features/directory/queries";
@@ -24,6 +27,10 @@ export default async function ProfileDirectoryPage() {
     <div className="-mx-4 -mt-4 min-h-[calc(100dvh-8rem)] bg-zinc-100 px-4 pb-24 pt-5">
       <div className="mx-auto w-full max-w-[860px] space-y-3">
         <h1 className="sr-only">电话地址本</h1>
+        <div className="flex items-center justify-between">
+          <BackButton href="/profile" label="返回" className={detailActionButtonClass} />
+          <PageShareButton path="/profile/directory" title="OpenAA 电话地址本" text="保存常用电话和地址，登录后使用。" />
+        </div>
 
         {result.state === "missing_config" ? (
           <PublicStatusNotice className="rounded-2xl p-3">Supabase 环境变量尚未配置，当前显示空列表。</PublicStatusNotice>
