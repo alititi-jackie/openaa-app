@@ -3,8 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { KeyRound } from "lucide-react";
-import { authErrorMessage } from "@/lib/auth/errorMessages";
-import { isPasswordLongEnough, MIN_PASSWORD_LENGTH, passwordLengthMessage } from "@/lib/auth/passwordPolicy";
+import { changeCurrentPassword } from "@/features/auth/actions";
+import { MIN_PASSWORD_LENGTH, validatePasswordPolicy } from "@/lib/auth/password-policy";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type NoticeState = {
@@ -47,8 +47,10 @@ export function ProfileSecurityForm({ email, hasPasswordLogin }: ProfileSecurity
       return;
     }
 
-    if (!isPasswordLongEnough(newPassword)) {
-      setNotice({ type: "error", message: passwordLengthMessage("新密码") });
+    const passwordResult = validatePasswordPolicy(newPassword, { email });
+
+    if (!passwordResult.ok) {
+      setNotice({ type: "error", message: passwordResult.message });
       return;
     }
 
@@ -65,24 +67,18 @@ export function ProfileSecurityForm({ email, hasPasswordLogin }: ProfileSecurity
     setIsSubmitting(true);
 
     try {
+      const result = await changeCurrentPassword(currentPassword, newPassword);
+
+      if (!result.ok) {
+        if (result.message === "当前密码错误，请重新输入") {
+          setCurrentPassword("");
+        }
+
+        setNotice({ type: "error", message: result.message ?? "修改密码失败，请稍后重试" });
+        return;
+      }
+
       const supabase = createSupabaseBrowserClient();
-      const { error: verifyError } = await supabase.auth.signInWithPassword({
-        email,
-        password: currentPassword,
-      });
-
-      if (verifyError) {
-        setCurrentPassword("");
-        setNotice({ type: "error", message: "当前密码错误，请重新输入" });
-        return;
-      }
-
-      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
-
-      if (updateError) {
-        setNotice({ type: "error", message: authErrorMessage(updateError, "修改密码失败，请稍后重试") });
-        return;
-      }
 
       setIsSuccess(true);
       setNotice({ type: "success", message: passwordChangedMessage });

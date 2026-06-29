@@ -4,18 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { UserPlus } from "lucide-react";
 import { AuthCard, AuthLink } from "@/components/auth/AuthCard";
-import { validateNicknameForSave } from "@/features/auth/actions";
+import { registerWithPassword } from "@/features/auth/actions";
 import { unavailableNicknameMessage, validateNickname } from "@/features/auth/nicknameValidation";
-import {
-  accountCreatedConfirmationMessage,
-  confirmationEmailRedirectTo,
-} from "@/lib/auth/confirmationEmail";
-import { authErrorMessage, isAlreadyRegisteredError } from "@/lib/auth/errorMessages";
-import { isPasswordLongEnough, MIN_PASSWORD_LENGTH, passwordLengthMessage } from "@/lib/auth/passwordPolicy";
+import { accountCreatedConfirmationMessage } from "@/lib/auth/confirmationEmail";
+import { MIN_PASSWORD_LENGTH, validatePasswordPolicy } from "@/lib/auth/password-policy";
 import { featureFlags } from "@/lib/config/featureFlags";
-import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
+import { isSupabaseBrowserConfigured } from "@/lib/supabase/client";
 
-const consentVersion = "2026-05-31";
 const accountAlreadyRegisteredMessage =
   "该邮箱可能已经注册过 OpenAA 账号。\n\n如果这是您的邮箱，请直接前往登录页面登录；如果忘记密码，可以使用“忘记密码”重新设置密码。\n\n如果您之前注册后还没有完成邮箱确认，请先检查邮箱中的确认邮件，并点击确认链接完成注册。";
 
@@ -62,8 +57,10 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
       return;
     }
 
-    if (!isPasswordLongEnough(password)) {
-      setMessage(passwordLengthMessage());
+    const passwordResult = validatePasswordPolicy(password, { email });
+
+    if (!passwordResult.ok) {
+      setMessage(passwordResult.message);
       return;
     }
 
@@ -75,47 +72,23 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
     setIsSubmitting(true);
 
     try {
-      const serverNicknameResult = await validateNicknameForSave(nickname);
-
-      if (!serverNicknameResult.ok) {
-        setMessage(serverNicknameResult.message);
-        return;
-      }
-
-      const supabase = createSupabaseBrowserClient();
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
+      const result = await registerWithPassword({
+        email,
         password,
-        options: {
-          emailRedirectTo: confirmationEmailRedirectTo(authReturnTo),
-          data: {
-            nickname: serverNicknameResult.nickname,
-            consent_version: consentVersion,
-            accepted_terms: true,
-            accepted_privacy: true,
-          },
-        },
+        nickname,
+        accepted,
+        authReturnTo,
       });
 
-      if (error) {
-        if (isAlreadyRegisteredError(error)) {
+      if (!result.ok) {
+        if (result.isAlreadyRegistered) {
           setMessage(accountAlreadyRegisteredMessage);
           setIsAlreadyRegistered(true);
           return;
         }
 
-        setMessage(authErrorMessage(error, "注册失败，请重试"));
+        setMessage(result.message ?? registerFallbackMessage(isConfigured));
         return;
-      }
-
-      if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-        setMessage(accountAlreadyRegisteredMessage);
-        setIsAlreadyRegistered(true);
-        return;
-      }
-
-      if (data.session) {
-        await supabase.auth.signOut();
       }
 
       setPassword("");
@@ -123,8 +96,8 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
       setAccepted(false);
       setMessage(accountCreatedConfirmationMessage);
       setIsSuccess(true);
-    } catch (error) {
-      setMessage(authErrorMessage(error, registerFallbackMessage(isConfigured)));
+    } catch {
+      setMessage(registerFallbackMessage(isConfigured));
     } finally {
       setIsSubmitting(false);
     }

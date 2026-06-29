@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import { KeyRound } from "lucide-react";
 import { AuthCard, AuthLink } from "@/components/auth/AuthCard";
+import { updateRecoveredPassword } from "@/features/auth/actions";
 import { authErrorMessage } from "@/lib/auth/errorMessages";
-import { isPasswordLongEnough, MIN_PASSWORD_LENGTH, passwordLengthMessage } from "@/lib/auth/passwordPolicy";
+import { MIN_PASSWORD_LENGTH, validatePasswordPolicy } from "@/lib/auth/password-policy";
 import { createSupabaseBrowserClient, isSupabaseBrowserConfigured } from "@/lib/supabase/client";
 
 const resetExpiredMessage = "重置链接已失效，请重新发送重置邮件。";
@@ -212,11 +213,15 @@ export function ResetPasswordForm() {
     if (!newPassword) {
       setNewPasswordError("请输入新密码");
       valid = false;
-    } else if (!isPasswordLongEnough(newPassword)) {
-      setNewPasswordError(passwordLengthMessage());
-      valid = false;
     } else {
-      setNewPasswordError("");
+      const passwordResult = validatePasswordPolicy(newPassword, { email: session?.user.email ?? null });
+
+      if (!passwordResult.ok) {
+        setNewPasswordError(passwordResult.message);
+        valid = false;
+      } else {
+        setNewPasswordError("");
+      }
     }
 
     if (!confirmPassword) {
@@ -241,14 +246,14 @@ export function ResetPasswordForm() {
     setIsSubmitting(true);
 
     try {
-      const supabase = createSupabaseBrowserClient();
-      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+      const result = await updateRecoveredPassword(newPassword);
 
-      if (updateError) {
-        setError(resetLinkErrorMessage(updateError));
+      if (!result.ok) {
+        setError(result.message ?? resetExpiredMessage);
         return;
       }
 
+      const supabase = createSupabaseBrowserClient();
       setIsSuccess(true);
       window.setTimeout(async () => {
         await supabase.auth.signOut();
