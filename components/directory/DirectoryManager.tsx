@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { deleteDirectoryItem, moveDirectoryItem, type DirectoryActionState } from "@/features/directory/actions";
 import type { DirectoryItem, DirectoryItemType } from "@/features/directory/types";
 import { cn } from "@/lib/utils/cn";
 import { DirectoryForm } from "./DirectoryForm";
 
 const initialState: DirectoryActionState = { ok: true, message: "" };
+type AddressCopyStatus = "idle" | "copied" | "failed";
 const directoryDisclaimerText = "电话地址本是 OpenAA 提供的个人便捷记录工具。OpenAA 会尽量保护你的数据安全，但不保证数据一定不会泄漏、丢失、损坏，或因账号、设备、网络、数据库、系统故障等原因无法找回。";
 const sensitiveDataWarning = "请不要在这里保存密码、银行卡、证件号码、重要隐私资料，或任何无法承担丢失风险的重要信息。";
 const backupWarning = "建议你定期使用“导出”功能保存备份。继续使用即表示你已知晓以上风险。";
@@ -229,7 +230,37 @@ function DirectoryCard({
   isLast: boolean;
   onEdit: () => void;
 }) {
-  const content = <DirectoryCardContent item={item} />;
+  const [copyStatus, setCopyStatus] = useState<AddressCopyStatus>("idle");
+  const copyResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isAddress = item.itemType === "address";
+
+  useEffect(() => {
+    return () => {
+      if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
+    };
+  }, []);
+
+  function showCopyStatus(status: AddressCopyStatus) {
+    setCopyStatus(status);
+    if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
+    copyResetTimerRef.current = setTimeout(() => setCopyStatus("idle"), 1500);
+  }
+
+  async function handleCopyAddress(event: React.MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    const copied = await copyTextToClipboard(item.value);
+    showCopyStatus(copied ? "copied" : "failed");
+  }
+
+  function handleAddressKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (event.target !== event.currentTarget) return;
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    navigateToAddress(item.value);
+  }
+
+  const content = <DirectoryCardContent item={item} copyStatus={copyStatus} onCopyAddress={isAddress ? handleCopyAddress : undefined} />;
 
   if (!managing) {
     if (item.itemType === "phone") {
@@ -246,15 +277,15 @@ function DirectoryCard({
     }
 
     return (
-      <a
-        href={googleMapsHref(item.value)}
-        target="_blank"
-        rel="noopener noreferrer"
+      <div
+        role="link"
+        tabIndex={0}
         onClick={(event) => openAddress(event, item.value)}
-        className="group block rounded-2xl border border-slate-100 bg-white p-2 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
+        onKeyDown={handleAddressKeyDown}
+        className="group block cursor-pointer rounded-2xl border border-slate-100 bg-white p-2 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-100"
       >
         {content}
-      </a>
+      </div>
     );
   }
 
@@ -279,16 +310,52 @@ function DirectoryCard({
   );
 }
 
-function DirectoryCardContent({ item }: { item: DirectoryItem }) {
+function DirectoryCardContent({
+  item,
+  copyStatus = "idle",
+  onCopyAddress,
+}: {
+  item: DirectoryItem;
+  copyStatus?: AddressCopyStatus;
+  onCopyAddress?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+}) {
+  if (item.itemType === "address") {
+    return (
+      <div className="min-h-[82px] rounded-xl bg-slate-50/70 p-3">
+        <div className="flex items-center gap-2">
+          <span className="block min-w-0 flex-1 truncate text-base font-black leading-tight text-slate-950">{item.name}</span>
+          {onCopyAddress ? (
+            <button
+              type="button"
+              onClick={onCopyAddress}
+              className="inline-flex min-h-8 shrink-0 items-center justify-center whitespace-nowrap rounded-lg border border-blue-100 bg-blue-50 px-3 text-xs font-black text-blue-700 transition hover:border-blue-200 hover:bg-blue-100"
+            >
+              {addressCopyLabel(copyStatus)}
+            </button>
+          ) : null}
+        </div>
+        <span className="mt-3 block break-words text-xs font-semibold leading-5 text-slate-500">
+          {item.value}
+        </span>
+        <span className="mt-2 block text-[11px] font-bold text-blue-600">打开导航</span>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-[82px] rounded-xl bg-slate-50/70 p-3">
       <span className="block break-words text-base font-black leading-tight text-slate-950">{item.name}</span>
-      <span className={cn("mt-3 block text-xs font-semibold leading-5 text-slate-500", item.itemType === "phone" ? "break-all" : "break-words")}>
+      <span className="mt-3 block break-all text-xs font-semibold leading-5 text-slate-500">
         {item.value}
       </span>
-      {item.itemType === "address" ? <span className="mt-2 block text-[11px] font-bold text-blue-600">打开导航</span> : null}
     </div>
   );
+}
+
+function addressCopyLabel(status: AddressCopyStatus) {
+  if (status === "copied") return "已复制";
+  if (status === "failed") return "复制失败";
+  return "复制";
 }
 
 function MoveForm({ id, itemType, direction, disabled }: { id: string; itemType: DirectoryItemType; direction: "up" | "down"; disabled: boolean }) {
@@ -372,11 +439,15 @@ function isMobileUserAgent() {
   return /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
 }
 
-function openAddress(event: React.MouseEvent<HTMLAnchorElement>, value: string) {
+function openAddress(event: React.MouseEvent<HTMLElement>, value: string) {
+  event.preventDefault();
+  navigateToAddress(value);
+}
+
+function navigateToAddress(value: string) {
   const address = value.trim();
   if (!address) return;
 
-  event.preventDefault();
   const href = preferredMapHref(address);
 
   if (href.startsWith("geo:") || isMobileUserAgent()) {
@@ -385,6 +456,40 @@ function openAddress(event: React.MouseEvent<HTMLAnchorElement>, value: string) 
   }
 
   window.open(href, "_blank", "noopener,noreferrer");
+}
+
+async function copyTextToClipboard(text: string) {
+  const value = text.trim();
+  if (!value) return false;
+
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(value);
+      return true;
+    } catch {
+      // Fall through to the textarea fallback below.
+    }
+  }
+
+  if (typeof document === "undefined") return false;
+
+  const textarea = document.createElement("textarea");
+  textarea.value = value;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  textarea.style.top = "0";
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+
+  try {
+    return document.execCommand("copy");
+  } catch {
+    return false;
+  } finally {
+    document.body.removeChild(textarea);
+  }
 }
 
 async function handleExport(
