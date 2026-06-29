@@ -1,0 +1,39 @@
+import { redirect } from "next/navigation";
+import { PublicStatusNotice } from "@/components/common/PublicStatusNotice";
+import { DirectoryManager } from "@/components/directory/DirectoryManager";
+import { getCurrentUserDirectoryItems } from "@/features/directory/queries";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+
+export const dynamic = "force-dynamic";
+
+export const metadata = buildPageMetadata({
+  title: "电话地址本",
+  description: "保存常用电话和美国地址。",
+  path: "/profile/directory",
+  noIndex: true,
+});
+
+export default async function ProfileDirectoryPage() {
+  const result = await getCurrentUserDirectoryItems();
+
+  if (result.state !== "missing_config" && !result.userId) {
+    redirect("/login?returnTo=%2Fprofile%2Fdirectory");
+  }
+
+  return (
+    <div className="-mx-4 -mt-4 min-h-[calc(100dvh-8rem)] bg-zinc-100 px-4 pb-24 pt-5">
+      <div className="mx-auto w-full max-w-[860px] space-y-3">
+        <h1 className="sr-only">电话地址本</h1>
+
+        {result.state === "missing_config" ? (
+          <PublicStatusNotice className="rounded-2xl p-3">Supabase 环境变量尚未配置，当前显示空列表。</PublicStatusNotice>
+        ) : null}
+        {result.state === "error" ? (
+          <PublicStatusNotice tone="error" className="rounded-2xl p-3 font-bold">电话地址本读取失败，请稍后再试。</PublicStatusNotice>
+        ) : null}
+
+        {result.userId ? <DirectoryManager phoneItems={result.data.phone} addressItems={result.data.address} /> : null}
+      </div>
+    </div>
+  );
+}

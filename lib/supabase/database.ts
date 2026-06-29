@@ -2152,6 +2152,50 @@ export type Database = {
           },
         ]
       }
+      personal_directory_items: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          item_type: string
+          name: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          item_type: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          item_type?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personal_directory_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           account_type: Database["public"]["Enums"]["account_type"]
