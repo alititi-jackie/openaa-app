@@ -6,7 +6,7 @@ import { SeoContentCard } from "@/components/home/SeoContentCard";
 import { UtilityCards } from "@/components/home/UtilityCards";
 import { getHomeConfig } from "@/features/home/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
-import { connection } from "next/server";
+import { isSupabaseServerConfigured } from "@/lib/supabase/server";
 
 export const metadata = buildPageMetadata({
   title: "OpenAA 纽约华人生活入口",
@@ -17,8 +17,10 @@ export const metadata = buildPageMetadata({
 export const revalidate = 300;
 
 export default async function HomePage() {
-  // Avoid caching the build-time fallback snapshot when Supabase reads are disabled during production builds.
-  await connection();
+  if (process.env.NEXT_PHASE === "phase-production-build" && !isSupabaseServerConfigured()) {
+    throw new Error("Supabase public environment variables are required to prerender the home page.");
+  }
+
   const homeConfig = await getHomeConfig();
 
   return (

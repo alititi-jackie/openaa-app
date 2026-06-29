@@ -7,11 +7,12 @@ import { getAdPlaceholderSetting } from "@/features/ads/placeholders";
 import { fallbackLatestNewsCategories, fallbackLatestPostSections, fallbackHomeBanners, fallbackHomeCity, fallbackQuickGridItems, fallbackSeoContent, fallbackTickerItems, fallbackTickerSettings, fallbackTopQuickLinks, fallbackUtilityTools } from "./fallbacks";
 import { getHomeTickerSectionDefaults, homeTickerSections, normalizeHomeTickerSectionKey } from "./tickerSections";
 import type { PostListItem } from "@/components/posts/PostList";
-import { getPublicPosts } from "@/features/posts/queries";
-import type { PostType } from "@/features/posts/types";
-import { getPublishedNewsList } from "@/features/news/queries";
-import type { NewsPostCard } from "@/features/news/types";
+import { DEFAULT_CITY_SLUG } from "@/features/posts/constants";
+import { mapPostRecordToCard } from "@/features/posts/mappers";
+import type { PostRecord, PostType } from "@/features/posts/types";
+import { NEWS_DEFAULT_DESCRIPTION } from "@/features/news/constants";
 import { formatNewsDate } from "@/features/news/mappers";
+import type { NewsCategoryRecord, NewsImageAsset } from "@/features/news/types";
 import { HOME_AD_PLACEMENT, HOME_SECTION_KEYS } from "./constants";
 import {
   mapBanner,
@@ -28,6 +29,87 @@ import type { HomeCity, HomeConfig, HomeLatestPostSectionConfig, HomeSectionReco
 type HomeSupabaseClient = SupabaseClient;
 
 const HOME_PUBLIC_FETCH_TIMEOUT_MS = 8000;
+const HOME_CACHE_BUCKET_MS = 5 * 60 * 1000;
+const HOME_CARD_DESCRIPTION_MAX_LENGTH = 120;
+
+const homePostSelect = `
+  id,
+  post_type,
+  author_id,
+  title,
+  summary,
+  category,
+  subcategory,
+  status,
+  visibility,
+  price_amount,
+  currency,
+  metadata,
+  is_pinned,
+  pinned_order,
+  pinned_until,
+  published_at,
+  expires_at,
+  created_at,
+  updated_at,
+  post_stats(view_count, favorite_count),
+  post_images(
+    id,
+    image_asset_id,
+    sort_order,
+    is_cover,
+    caption,
+    image_assets(public_url, external_url)
+  ),
+  post_details_jobs(employment_type, wage_min, wage_max, wage_unit, job_category, work_area),
+  post_details_housing(listing_type, housing_type, rent_amount, available_date, lease_term, address_area),
+  post_details_marketplace(listing_type, item_category, price_amount, trade_area, sold_at),
+  post_details_services(service_category, service_area, price_range, service_status),
+  cities!inner(name, slug)
+`;
+
+const homeNewsPostSelect = `
+  id,
+  category_id,
+  title,
+  slug,
+  excerpt,
+  status,
+  is_pinned,
+  pinned_order,
+  pinned_until,
+  published_at,
+  created_at,
+  updated_at,
+  news_categories(id,slug,name,description,sort_order,is_active),
+  image_assets(source_type,bucket,path,storage_path,public_url,external_url,status,is_deleted)
+`;
+
+const homeNewsPostCategoryInnerSelect = homeNewsPostSelect.replace(
+  "news_categories(id,slug,name,description,sort_order,is_active)",
+  "news_categories!inner(id,slug,name,description,sort_order,is_active)",
+);
+
+type HomeNewsPostRecord = {
+  id: string;
+  category_id: string | null;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  status: string;
+  is_pinned: boolean | null;
+  pinned_order: number | null;
+  pinned_until?: string | null;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+  news_categories?: NewsCategoryRecord | NewsCategoryRecord[] | null;
+  image_assets?: NewsImageAsset | NewsImageAsset[] | null;
+};
+
+function homeCacheNowIso() {
+  return new Date(Math.floor(Date.now() / HOME_CACHE_BUCKET_MS) * HOME_CACHE_BUCKET_MS).toISOString();
+}
 
 export async function getHomeConfig(): Promise<HomeConfig> {
   const supabase = createSupabasePublicClient({ revalidate: 300, timeoutMs: HOME_PUBLIC_FETCH_TIMEOUT_MS });
@@ -36,6 +118,7 @@ export async function getHomeConfig(): Promise<HomeConfig> {
     return fallbackHomeConfig();
   }
 
+  const now = homeCacheNowIso();
   const city = await getDefaultCity(supabase);
   const sections = await getHomeSections(supabase);
   const hasConfiguredHomeSections = Object.keys(sections).length > 0;
@@ -52,12 +135,12 @@ export async function getHomeConfig(): Promise<HomeConfig> {
   const tickerSettings = await getLatestTickerSettings(supabase);
   const [topQuickLinks, banners, adPlaceholder, latestPostGroups] = await Promise.all([
     getTopQuickLinks(supabase, city),
-    getHomeBanners(supabase),
+    getHomeBanners(supabase, now),
     getAdPlaceholderSetting(supabase),
-    getLatestPostGroups(latestPostSections, supabase),
+    getLatestPostGroups(latestPostSections, supabase, now),
   ]);
-  const tickerPostGroups = await getTickerPostGroups(latestPostSections, tickerSettings, latestPostGroups, supabase);
-  const tickerItems = await getLatestTickerItems(supabase, city, tickerSettings, tickerPostGroups);
+  const tickerPostGroups = await getTickerPostGroups(latestPostSections, tickerSettings, latestPostGroups, supabase, now);
+  const tickerItems = await getLatestTickerItems(supabase, city, tickerSettings, tickerPostGroups, now);
 
   return {
     city,
@@ -113,14 +196,14 @@ export async function getTopQuickLinks(client?: HomeSupabaseClient | null, city 
   }
 }
 
-export async function getHomeBanners(client?: HomeSupabaseClient | null) {
+export async function getHomeBanners(client?: HomeSupabaseClient | null, now = homeCacheNowIso()) {
   const supabase = client ?? createSupabasePublicClient();
 
   if (!supabase) {
     return fallbackHomeBanners;
   }
 
-  const ads = await readHomeAds(supabase);
+  const ads = await readHomeAds(supabase, now);
   if (ads.length > 0) return ads;
   return fallbackHomeBanners;
 }
@@ -130,6 +213,7 @@ export async function getLatestTickerItems(
   city = fallbackHomeCity,
   settings = fallbackTickerSettings,
   latestPostGroups?: LatestPostGroup[],
+  now = homeCacheNowIso(),
 ) {
   const supabase = client ?? createSupabasePublicClient();
 
@@ -138,10 +222,10 @@ export async function getLatestTickerItems(
   }
 
   if (supabase) {
-    const configuredItems = await getConfiguredTickerItems(supabase, city);
+    const configuredItems = await getConfiguredTickerItems(supabase, city, now);
     const dynamicItems = latestPostGroups
       ? mapLatestPostGroupsToTickerItems(latestPostGroups, settings)
-      : mapLatestPostGroupsToTickerItems(await getTickerPostGroups(fallbackLatestPostSections.filter((section) => section.isVisible), settings, undefined, supabase), settings);
+      : mapLatestPostGroupsToTickerItems(await getTickerPostGroups(fallbackLatestPostSections.filter((section) => section.isVisible), settings, undefined, supabase, now), settings);
 
     const combinedItems = [...configuredItems, ...dynamicItems];
     if (combinedItems.length > 0) {
@@ -151,7 +235,7 @@ export async function getLatestTickerItems(
 
   const dynamicItems = latestPostGroups
     ? mapLatestPostGroupsToTickerItems(latestPostGroups, settings)
-    : mapLatestPostGroupsToTickerItems(await getTickerPostGroups(fallbackLatestPostSections.filter((section) => section.isVisible), settings, undefined, supabase), settings);
+    : mapLatestPostGroupsToTickerItems(await getTickerPostGroups(fallbackLatestPostSections.filter((section) => section.isVisible), settings, undefined, supabase, now), settings);
 
   if (dynamicItems.length > 0) {
     return dynamicItems;
@@ -164,9 +248,8 @@ export async function getLatestTickerItems(
   return [];
 }
 
-async function getConfiguredTickerItems(supabase: HomeSupabaseClient, city = fallbackHomeCity) {
+async function getConfiguredTickerItems(supabase: HomeSupabaseClient, city = fallbackHomeCity, now = homeCacheNowIso()) {
   try {
-    const now = new Date().toISOString();
     const { data, error } = await supabase
       .from("latest_ticker")
       .select("id,title,href,module,is_enabled,sort_order,starts_at,ends_at")
@@ -290,9 +373,8 @@ async function getDefaultCity(supabase: HomeSupabaseClient): Promise<HomeCity> {
   }
 }
 
-async function readHomeAds(supabase: HomeSupabaseClient) {
+async function readHomeAds(supabase: HomeSupabaseClient, now = homeCacheNowIso()) {
   try {
-    const now = new Date().toISOString();
     const { data, error } = await supabase
       .from("ads")
       .select("id,title,href,open_mode,placement,metadata,is_active,sort_order,starts_at,ends_at,link_type,external_url,slug,image_assets(public_url,external_url)")
@@ -317,26 +399,69 @@ async function readHomeAds(supabase: HomeSupabaseClient) {
   }
 }
 
-async function getLatestPostGroups(sections: HomeLatestPostSectionConfig[], client?: HomeSupabaseClient | null) {
-  return Promise.all(sections.map((section) => getLatestPostGroup(section, client)));
+async function getLatestPostGroups(sections: HomeLatestPostSectionConfig[], client?: HomeSupabaseClient | null, now = homeCacheNowIso()) {
+  return Promise.all(sections.map((section) => getLatestPostGroup(section, client, now)));
 }
 
-async function getLatestPostGroup(section: HomeLatestPostSectionConfig, client?: HomeSupabaseClient | null): Promise<LatestPostGroup> {
+async function getLatestPostGroup(section: HomeLatestPostSectionConfig, client?: HomeSupabaseClient | null, now = homeCacheNowIso()): Promise<LatestPostGroup> {
   try {
     if (section.postType === "news") {
-      const posts = await getLatestNewsForHomeSection(section, client);
+      const posts = await getLatestNewsForHomeSection(section, client, now);
       return { ...section, posts };
     }
 
-    const result = await getPublicPosts({ type: section.postType as PostType, limit: section.limitCount, client: client ?? undefined });
-    return { ...section, posts: result.data };
+    const supabase = client ?? createSupabasePublicClient();
+    if (!supabase) return { ...section, posts: [] };
+
+    const posts = await getLatestHomePosts(supabase, section.postType as PostType, section.limitCount, now);
+    return { ...section, posts };
   } catch (error) {
     warnHomeConfig(`latest_posts.${section.key}`, error);
     return { ...section, posts: [] };
   }
 }
 
-async function getLatestNewsForHomeSection(section: HomeLatestPostSectionConfig, client?: HomeSupabaseClient | null): Promise<PostListItem[]> {
+async function getLatestHomePosts(supabase: HomeSupabaseClient, type: PostType, limit: number, now = homeCacheNowIso()): Promise<PostListItem[]> {
+  const safeLimit = normalizeHomeLimit(limit);
+  const [pinnedResult, normalResult] = await Promise.all([
+    buildHomePostQuery(supabase, type, now)
+      .eq("is_pinned", true)
+      .or(`pinned_until.is.null,pinned_until.gt.${now}`)
+      .order("pinned_order", { ascending: true })
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false })
+      .limit(safeLimit),
+    buildHomePostQuery(supabase, type, now)
+      .or(`is_pinned.eq.false,pinned_until.lte.${now}`)
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false })
+      .limit(safeLimit),
+  ]);
+
+  if (pinnedResult.error) {
+    throw new Error(`get home pinned posts failed: ${pinnedResult.error.message}`);
+  }
+
+  if (normalResult.error) {
+    throw new Error(`get home normal posts failed: ${normalResult.error.message}`);
+  }
+
+  const records = [...((pinnedResult.data ?? []) as unknown as PostRecord[]), ...((normalResult.data ?? []) as unknown as PostRecord[])];
+  return records.sort(compareHomePostRecords).slice(0, safeLimit).map(mapHomePostRecordToCard);
+}
+
+function buildHomePostQuery(supabase: HomeSupabaseClient, type: PostType, now = homeCacheNowIso()) {
+  return supabase
+    .from("posts")
+    .select(homePostSelect)
+    .eq("post_type", type)
+    .eq("status", "published")
+    .eq("visibility", "public")
+    .eq("cities.slug", DEFAULT_CITY_SLUG)
+    .or(`expires_at.is.null,expires_at.gt.${now}`);
+}
+
+async function getLatestNewsForHomeSection(section: HomeLatestPostSectionConfig, client?: HomeSupabaseClient | null, now = homeCacheNowIso()): Promise<PostListItem[]> {
   const categories = (section.newsCategories ?? fallbackLatestNewsCategories)
     .filter((category) => category.isVisible !== false)
     .sort((a, b) => a.sortOrder - b.sortOrder);
@@ -345,21 +470,46 @@ async function getLatestNewsForHomeSection(section: HomeLatestPostSectionConfig,
     return [];
   }
 
+  const supabase = client ?? createSupabasePublicClient();
+  if (!supabase) return [];
+
   const lists = await Promise.all(
-    categories.map((category) => getPublishedNewsList({ categorySlug: category.categorySlug, limit: category.limitCount }, client ?? undefined)),
+    categories.map((category) => getLatestHomeNewsByCategory(supabase, category.categorySlug, category.limitCount, now)),
   );
   const seen = new Set<string>();
   const posts: PostListItem[] = [];
 
-  for (const result of lists) {
-    for (const post of result.data) {
-      if (seen.has(post.id)) continue;
-      seen.add(post.id);
-      posts.push(mapNewsToHomePost(post));
+  for (const list of lists) {
+    for (const post of list) {
+      const id = post.id ?? post.href;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      posts.push(post);
     }
   }
 
   return posts;
+}
+
+async function getLatestHomeNewsByCategory(supabase: HomeSupabaseClient, categorySlug: string, limit: number, now = homeCacheNowIso()): Promise<PostListItem[]> {
+  const safeLimit = normalizeHomeLimit(limit);
+  const { data, error } = await supabase
+    .from("news_posts")
+    .select(homeNewsPostCategoryInnerSelect)
+    .eq("status", "published")
+    .eq("news_categories.slug", categorySlug)
+    .or(`published_at.is.null,published_at.lte.${now}`)
+    .order("is_pinned", { ascending: false })
+    .order("pinned_order", { ascending: true })
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false })
+    .limit(safeLimit);
+
+  if (error) {
+    throw new Error(`get home news failed: ${error.message}`);
+  }
+
+  return ((data ?? []) as unknown as HomeNewsPostRecord[]).sort(compareHomeNewsRecords).slice(0, safeLimit).map(mapHomeNewsRecordToPost);
 }
 
 async function getTickerPostGroups(
@@ -367,6 +517,7 @@ async function getTickerPostGroups(
   settings = fallbackTickerSettings,
   existingGroups?: LatestPostGroup[],
   client?: HomeSupabaseClient | null,
+  now = homeCacheNowIso(),
 ) {
   const tickerSections = expandTickerPostSectionLimits(sections, settings);
   if (tickerSections.length === 0) return [];
@@ -375,7 +526,7 @@ async function getTickerPostGroups(
     return existingGroups;
   }
 
-  return getLatestPostGroups(tickerSections, client);
+  return getLatestPostGroups(tickerSections, client, now);
 }
 
 function expandTickerPostSectionLimits(sections: HomeLatestPostSectionConfig[], settings = fallbackTickerSettings) {
@@ -407,7 +558,20 @@ function canReuseLatestPostGroupsForTicker(sections: HomeLatestPostSectionConfig
   });
 }
 
-function mapNewsToHomePost(post: NewsPostCard): PostListItem {
+function mapHomeNewsRecordToPost(record: HomeNewsPostRecord): PostListItem {
+  const post = {
+    id: record.id,
+    title: record.title,
+    excerpt: truncateHomeDescription(record.excerpt || NEWS_DEFAULT_DESCRIPTION),
+    href: `/news/${record.slug}`,
+    publishedAt: record.published_at,
+    updatedAt: record.updated_at,
+    isPinned: isHomeNewsPinned(record),
+    pinnedOrder: record.pinned_order ?? 0,
+    categoryName: homeNewsCategoryName(record),
+    coverImageUrl: homeNewsImageUrl(record),
+  };
+
   return {
     id: post.id,
     title: post.title,
@@ -424,6 +588,91 @@ function mapNewsToHomePost(post: NewsPostCard): PostListItem {
     imageUrl: post.coverImageUrl ?? undefined,
     fields: post.isPinned ? [{ label: "pinned", value: "置顶" }] : undefined,
   };
+}
+
+function mapHomePostRecordToCard(record: PostRecord): PostListItem {
+  const card = mapPostRecordToCard({ ...record, body: null }, {});
+  const homeCard: PostListItem = { ...card };
+  delete homeCard.displayBody;
+
+  return {
+    ...homeCard,
+    description: truncateHomeDescription(card.description),
+    tickerSortAt: card.publishedAt || card.createdAt,
+  };
+}
+
+function compareHomePostRecords(a: PostRecord, b: PostRecord) {
+  const aPinned = isHomePostPinned(a);
+  const bPinned = isHomePostPinned(b);
+  if (aPinned !== bPinned) return aPinned ? -1 : 1;
+  if (aPinned && bPinned && (a.pinned_order ?? 0) !== (b.pinned_order ?? 0)) {
+    return (a.pinned_order ?? 0) - (b.pinned_order ?? 0);
+  }
+  return dateValue(b.published_at || b.created_at) - dateValue(a.published_at || a.created_at);
+}
+
+function compareHomeNewsRecords(a: HomeNewsPostRecord, b: HomeNewsPostRecord) {
+  const aPinned = isHomeNewsPinned(a);
+  const bPinned = isHomeNewsPinned(b);
+  if (aPinned !== bPinned) return aPinned ? -1 : 1;
+  if (aPinned && bPinned && (a.pinned_order ?? 0) !== (b.pinned_order ?? 0)) {
+    return (a.pinned_order ?? 0) - (b.pinned_order ?? 0);
+  }
+  return dateValue(b.published_at || b.created_at) - dateValue(a.published_at || a.created_at);
+}
+
+function isHomePostPinned(record: PostRecord) {
+  if (!record.is_pinned) return false;
+  if (!record.pinned_until) return true;
+  return dateValue(record.pinned_until) > Date.now();
+}
+
+function isHomeNewsPinned(record: HomeNewsPostRecord) {
+  if (!record.is_pinned) return false;
+  if (!record.pinned_until) return true;
+  return dateValue(record.pinned_until) > Date.now();
+}
+
+function normalizeHomeLimit(value: number) {
+  if (!Number.isFinite(value)) return 1;
+  return Math.min(20, Math.max(1, Math.trunc(value)));
+}
+
+function truncateHomeDescription(value?: string | null) {
+  const text = typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "";
+  if (!text) return "";
+  if (text.length <= HOME_CARD_DESCRIPTION_MAX_LENGTH) return text;
+  return `${text.slice(0, HOME_CARD_DESCRIPTION_MAX_LENGTH).trimEnd()}...`;
+}
+
+function firstOrNull<T>(value: T[] | T | null | undefined): T | null {
+  if (!value) return null;
+  return Array.isArray(value) ? (value[0] ?? null) : value;
+}
+
+function homeNewsCategoryName(record: HomeNewsPostRecord) {
+  return firstOrNull(record.news_categories)?.name ?? "News";
+}
+
+function cleanHomeUrl(value: string | null | undefined) {
+  const url = typeof value === "string" ? value.trim() : "";
+  return url.length > 0 ? url : null;
+}
+
+function homeNewsStorageUrl(asset: NewsImageAsset) {
+  const baseUrl = cleanHomeUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
+  const bucket = cleanHomeUrl(asset.bucket);
+  const path = cleanHomeUrl(asset.path) ?? cleanHomeUrl(asset.storage_path);
+
+  if (!baseUrl || !bucket || !path) return null;
+  return `${baseUrl.replace(/\/+$/, "")}/storage/v1/object/public/${bucket}/${path.replace(/^\/+/, "")}`;
+}
+
+function homeNewsImageUrl(record: HomeNewsPostRecord) {
+  const asset = firstOrNull(record.image_assets);
+  if (!asset || asset.is_deleted || (asset.status && asset.status !== "active")) return null;
+  return cleanHomeUrl(asset.public_url) ?? cleanHomeUrl(asset.external_url) ?? homeNewsStorageUrl(asset);
 }
 
 function mapLatestPostGroupsToTickerItems(groups: LatestPostGroup[], settings = fallbackTickerSettings) {

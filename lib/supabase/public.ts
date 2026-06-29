@@ -13,10 +13,6 @@ type SupabasePublicClientOptions = {
 };
 
 export function createSupabasePublicClient(options: SupabasePublicClientOptions = {}) {
-  if (process.env.NEXT_PHASE === "phase-production-build") {
-    return null;
-  }
-
   if (!isSupabaseServerConfigured()) {
     return null;
   }
