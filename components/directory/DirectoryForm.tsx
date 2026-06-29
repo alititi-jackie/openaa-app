@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { upsertDirectoryItem, type DirectoryActionState } from "@/features/directory/actions";
 import type { DirectoryItem, DirectoryItemType } from "@/features/directory/types";
@@ -21,6 +22,7 @@ export function DirectoryForm({
   const [value, setValue] = useState(item?.value ?? "");
   const formRef = useRef<HTMLFormElement | null>(null);
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const router = useRouter();
   const isEdit = Boolean(item);
   const labels = itemType === "phone"
     ? { name: "姓名", value: "电话号码", namePlaceholder: "例如：张三", valuePlaceholder: "例如：212-555-1234", save: "保存电话" }
@@ -29,6 +31,7 @@ export function DirectoryForm({
   async function saveDirectoryItem(state: DirectoryActionState, formData: FormData) {
     const result = await upsertDirectoryItem(state, formData);
     if (result.ok && result.message) {
+      router.refresh();
       if (!isEdit) {
         formRef.current?.reset();
         setName("");
