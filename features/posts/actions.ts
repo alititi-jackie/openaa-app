@@ -160,6 +160,7 @@ async function getOwnPostForManagement(supabase: SupabaseServerClient, userId: s
 function revalidatePostSurfaces(type: PostType, postId: string, options: { includeProfile?: boolean } = {}) {
   const includeProfile = options.includeProfile ?? true;
   const route = POST_TYPE_TO_ROUTE[type];
+  revalidatePath("/");
   revalidatePath(route);
   revalidatePath(postHref(type, postId));
   if (includeProfile) {
@@ -284,7 +285,7 @@ export async function createPost(values: PostFormValues): Promise<PostFormAction
   }
 
   await syncPostImages(context.supabase, context.user.id, values.postType, post.id, values.images);
-  revalidatePath(POST_TYPE_TO_ROUTE[values.postType]);
+  revalidatePostSurfaces(values.postType, post.id);
   return { ok: true, postId: post.id, href: `${postHref(values.postType, post.id)}?created=1` };
 }
 
@@ -336,7 +337,7 @@ export async function updatePost(postId: string, values: PostFormValues): Promis
   }
 
   await syncPostImages(context.supabase, context.user.id, values.postType, postId, values.images);
-  revalidatePath(postHref(values.postType, postId));
+  revalidatePostSurfaces(values.postType, postId);
   return { ok: true, postId, href: `${postHref(values.postType, postId)}?updated=1` };
 }
 
@@ -531,6 +532,7 @@ export async function removePostImage(postId: string, imageAssetId: string): Pro
     .eq("id", imageAssetId)
     .eq("owner_id", context.user.id);
 
+  revalidatePostSurfaces(editCheck.post.post_type, postId);
   return { ok: true, postId, href: postHref(editCheck.post.post_type, postId) };
 }
 
@@ -595,5 +597,6 @@ export async function uploadPostImage(postId: string, postType: PostType, file: 
     is_cover: sortOrder === 0,
   });
 
+  revalidatePostSurfaces(postType, postId);
   return { ok: true, postId, href: postHref(postType, postId) };
 }
