@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { emailConfirmationSuccessMessage } from "@/lib/auth/confirmationEmail";
 import { safeReturnTo } from "@/lib/auth/redirects";
 import { ensureProfileForUser } from "@/lib/supabase/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -8,6 +9,11 @@ export const dynamic = "force-dynamic";
 const loginErrorMessage = "登录失败，请重新尝试。";
 const recoveryErrorMessage = "重置链接已失效，请重新发送重置邮件。";
 const recoveryReturnTo = "/reset-password";
+const signupConfirmationSuccessParams = {
+  message: emailConfirmationSuccessMessage,
+  source: "signup",
+  type: "signup",
+};
 
 function redirectUrl(requestUrl: URL, path: string, params?: Record<string, string>) {
   const url = new URL(path, requestUrl.origin);
@@ -55,6 +61,14 @@ function recoveryHashBridgeResponse(requestUrl: URL, path: string) {
   });
 }
 
+function isConsumedSignupConfirmationError(errorCode: string | null, errorDescription: string | null, isRecoveryCallback: boolean) {
+  if (isRecoveryCallback) return false;
+
+  const normalized = `${errorCode ?? ""} ${errorDescription ?? ""}`.toLowerCase();
+
+  return normalized.includes("otp_expired") || normalized.includes("email link is invalid or has expired");
+}
+
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
@@ -69,6 +83,15 @@ export async function GET(request: Request) {
   const loginErrorParams = { error: loginErrorMessage, source: "oauth" };
 
   if (errorDescription) {
+    if (isConsumedSignupConfirmationError(callbackErrorCode, errorDescription, isRecoveryCallback)) {
+      console.info("[auth/callback] signup confirmation link already consumed or expired", {
+        error: callbackError,
+        errorCode: callbackErrorCode,
+        returnTo,
+      });
+      return redirectUrl(requestUrl, "/login", signupConfirmationSuccessParams);
+    }
+
     console.error("[auth/callback] provider returned error", {
       error: callbackError,
       errorCode: callbackErrorCode,

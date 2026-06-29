@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { featureFlags } from "@/lib/config/featureFlags";
+import { emailConfirmationSuccessMessage } from "@/lib/auth/confirmationEmail";
 import { authErrorMessage, isEmailNotConfirmedError } from "@/lib/auth/errorMessages";
 import { safeReturnTo } from "@/lib/auth/redirects";
 import { appUrl } from "@/lib/seo/siteConfig";
@@ -17,6 +18,7 @@ function loginFallbackMessage(isConfigured: boolean) {
 const recoveryErrorMessage = "重置链接已失效，请重新发送重置邮件。";
 const authParamNames = ["error", "error_code", "error_description", "message", "type", "source", "autoRedirect"];
 const loginSuccessMessage = "登录成功";
+const positiveAuthMessages = new Set([loginSuccessMessage, emailConfirmationSuccessMessage]);
 const emailNotConfirmedMessage =
   "该邮箱尚未完成确认，请先打开邮箱，点击确认邮件中的链接完成注册。\n\n如果没有看到确认邮件，请检查垃圾邮件、广告邮件或促销邮件文件夹。确认邮件可能需要几分钟送达。若 1 小时后仍未收到确认邮件，请再尝试重新注册或联系网站管理员处理。";
 
@@ -30,6 +32,14 @@ function isLoginParams(params: AuthParams) {
   return params.get("source") === "login" || params.get("source") === "oauth";
 }
 
+function isSignupParams(params: AuthParams) {
+  return params.get("source") === "signup" || params.get("type") === "signup";
+}
+
+function isPositiveAuthMessage(message: string) {
+  return positiveAuthMessages.has(message);
+}
+
 function getInitialLoginMessage(searchParams: AuthParams) {
   const hasMessage = searchParams.has("error") || searchParams.has("message") || searchParams.has("error_description");
 
@@ -41,9 +51,14 @@ function getInitialLoginMessage(searchParams: AuthParams) {
     return recoveryErrorMessage;
   }
 
+  if (isSignupParams(searchParams)) {
+    const rawMessage = searchParams.get("message") || "";
+    return rawMessage === emailConfirmationSuccessMessage ? rawMessage : "";
+  }
+
   if (isLoginParams(searchParams)) {
     const rawMessage = searchParams.get("message") || searchParams.get("error_description") || searchParams.get("error") || "";
-    return rawMessage === loginSuccessMessage ? rawMessage : authErrorMessage(rawMessage);
+    return isPositiveAuthMessage(rawMessage) ? rawMessage : authErrorMessage(rawMessage);
   }
 
   return "";
@@ -90,9 +105,11 @@ function authCallbackUrl(returnTo: string) {
 export function LoginForm() {
   const searchParams = useSearchParams();
   const returnTo = safeReturnTo(searchParams.get("returnTo"));
+  const initialMessage = getInitialLoginMessage(searchParams);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState(() => getInitialLoginMessage(searchParams));
+  const [message, setMessage] = useState(initialMessage);
+  const [isPositiveMessage, setIsPositiveMessage] = useState(() => isPositiveAuthMessage(initialMessage));
   const [needsEmailConfirmation, setNeedsEmailConfirmation] = useState(false);
   const [isLoginSuccess, setIsLoginSuccess] = useState(() => message === loginSuccessMessage);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -105,7 +122,10 @@ export function LoginForm() {
     const hashMessage = readHashLoginMessage();
 
     if (hashMessage) {
-      queueMicrotask(() => setMessage(hashMessage));
+      queueMicrotask(() => {
+        setMessage(hashMessage);
+        setIsPositiveMessage(isPositiveAuthMessage(hashMessage));
+      });
     }
 
     if (hashMessage || searchParams.has("error") || searchParams.has("message") || searchParams.has("type")) {
@@ -126,6 +146,7 @@ export function LoginForm() {
   async function handleEmailLogin(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+    setIsPositiveMessage(false);
     setNeedsEmailConfirmation(false);
     setIsLoginSuccess(false);
     setIsSubmitting(true);
@@ -140,6 +161,7 @@ export function LoginForm() {
       if (error) {
         const isEmailNotConfirmed = isEmailNotConfirmedError(error);
         setNeedsEmailConfirmation(isEmailNotConfirmed);
+        setIsPositiveMessage(false);
         setMessage(isEmailNotConfirmed ? emailNotConfirmedMessage : authErrorMessage(error, "邮箱或密码不正确。"));
         return;
       }
@@ -150,14 +172,17 @@ export function LoginForm() {
       } = await supabase.auth.getSession();
 
       if (sessionError || !session) {
+        setIsPositiveMessage(false);
         setMessage(loginFallbackMessage(isConfigured));
         return;
       }
 
       setMessage(loginSuccessMessage);
+      setIsPositiveMessage(true);
       setNeedsEmailConfirmation(false);
       setIsLoginSuccess(true);
     } catch {
+      setIsPositiveMessage(false);
       setMessage(loginFallbackMessage(isConfigured));
     } finally {
       setIsSubmitting(false);
@@ -166,6 +191,7 @@ export function LoginForm() {
 
   async function handleGoogleLogin() {
     setMessage("");
+    setIsPositiveMessage(false);
     setNeedsEmailConfirmation(false);
     setIsLoginSuccess(false);
     clearAuthParamsFromUrl();
@@ -181,10 +207,12 @@ export function LoginForm() {
       });
 
       if (error) {
+        setIsPositiveMessage(false);
         setMessage(authErrorMessage(error, "Google 登录失败，请重试"));
         setIsGoogleSubmitting(false);
       }
     } catch {
+      setIsPositiveMessage(false);
       setMessage(isConfigured ? "Google 登录失败，请重试" : "Supabase 环境变量尚未配置，暂时无法启动 Google 登录。");
       setIsGoogleSubmitting(false);
     }
@@ -252,7 +280,7 @@ export function LoginForm() {
           />
         </label>
         {message ? (
-          <div className={`whitespace-pre-line rounded-lg p-3 text-sm leading-relaxed ${isLoginSuccess ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
+          <div className={`whitespace-pre-line rounded-lg p-3 text-sm leading-relaxed ${isPositiveMessage ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
             {message}
           </div>
         ) : null}
