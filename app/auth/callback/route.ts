@@ -69,9 +69,18 @@ function isConsumedSignupConfirmationError(errorCode: string | null, errorDescri
   return normalized.includes("otp_expired") || normalized.includes("email link is invalid or has expired");
 }
 
+function recoveryErrorParams(error = recoveryErrorMessage) {
+  return {
+    error,
+    source: "recovery",
+    type: "recovery",
+  };
+}
+
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
+  const tokenHash = requestUrl.searchParams.get("token_hash");
   const callbackType = requestUrl.searchParams.get("type");
   const callbackError = requestUrl.searchParams.get("error");
   const callbackErrorCode = requestUrl.searchParams.get("error_code");
@@ -103,14 +112,29 @@ export async function GET(request: Request) {
       requestUrl,
       isRecoveryCallback ? recoveryRedirectTo : "/login",
       isRecoveryCallback
-        ? {
-            error: errorDescription,
-            ...(callbackErrorCode ? { error_code: callbackErrorCode } : {}),
-            source: "recovery",
-            type: "recovery",
-          }
+        ? { ...recoveryErrorParams(errorDescription), ...(callbackErrorCode ? { error_code: callbackErrorCode } : {}) }
         : loginErrorParams,
     );
+  }
+
+  if (tokenHash && isRecoveryCallback) {
+    const supabase = await createSupabaseServerClient();
+
+    if (!supabase) {
+      return redirectUrl(requestUrl, recoveryRedirectTo, recoveryErrorParams());
+    }
+
+    const { data, error: verifyError } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: "recovery",
+    });
+
+    if (verifyError || !data.session) {
+      console.error("[auth/callback] recovery token_hash verification failed", verifyError);
+      return redirectUrl(requestUrl, recoveryRedirectTo, recoveryErrorParams());
+    }
+
+    return redirectUrl(requestUrl, recoveryRedirectTo, { source: "recovery", type: "recovery" });
   }
 
   if (!code) {
