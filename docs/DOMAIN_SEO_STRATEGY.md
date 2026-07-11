@@ -5,7 +5,7 @@ Canonical, sitemap, OpenGraph, JSON-LD, share links, and Auth redirect URLs shou
 ## Domains
 
 - Primary domain: `openaa.com`
-- Legacy/backup redirect domains are handled outside the app in Vercel Project Domains or DNS/provider rules: `www.openaa.com`, `app.openaa.com`, `openaa.cn`, `www.openaa.cn`, `openaa.app`, `www.openaa.app`
+- Additional redirect domains are handled outside the app in Vercel Project Domains or DNS/provider rules: `www.openaa.com`, `app.openaa.com`, `openaa.cn`, `www.openaa.cn`, `openaa.app`, `www.openaa.app`
 - Independent subdomains: `tools.openaa.com`, `img.openaa.com`, `go.openaa.com`
 
 ## Config

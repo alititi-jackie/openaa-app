@@ -21,7 +21,7 @@ import {
 import type { AdminRoleListItem, AdminsPermissions } from "@/features/admins/adminQueries";
 import type { AdminRoleName } from "@/lib/supabase/types";
 
-export function LegacyAdminAdminManageDialog({ admin, permissions }: { admin: AdminRoleListItem; permissions: AdminsPermissions }) {
+export function StandaloneAdminAdminManageDialog({ admin, permissions }: { admin: AdminRoleListItem; permissions: AdminsPermissions }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<AdminRoleName>(admin.role);

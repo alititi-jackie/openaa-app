@@ -1,6 +1,6 @@
 # Legacy Content Import
 
-Seed-A provides a safe skeleton for importing reviewed `openaa-ny` operating content into `openaa-app`. It does not import data, connect to the old Supabase project, add migrations, or change UI.
+Seed-A provides a safe skeleton for importing reviewed archived operating content into `openaa-app`. It does not import data, connect to any source Supabase project, add migrations, or change UI.
 
 ## Content Types
 
@@ -26,9 +26,9 @@ User-post demo content is only for local or staging visual testing. It must be t
 
 ## Source Rules
 
-- Do not connect to the old Supabase project.
-- Do not use old Supabase connection strings.
-- Do not read the old database directly.
+- Do not connect to source Supabase projects.
+- Do not use source project connection strings.
+- Do not read source databases directly.
 - Do not download or re-upload `img.openaa.com` images.
 - Use reviewed JSON files in `tools/archive/legacy/`.
 - Keep images as external URLs.
@@ -42,6 +42,8 @@ Operating content metadata:
   "approved_for": "initial_production_content"
 }
 ```
+
+`origin: "openaa-ny"` is retained only as a historical provenance string for reviewed archive files. It must not be interpreted as an active or retired OpenAA repository.
 
 Future demo post metadata:
 
@@ -75,12 +77,12 @@ Seed-B1 adds the first reviewed `legacy_official_import` JSON files:
 - `tools/archive/legacy/top-links.json`
 - `tools/archive/legacy/ticker.json`
 
-These files are official operating-content candidates for initial production content. They do not import anything by themselves, do not connect to the old Supabase project, do not add migrations, and do not change UI.
+These files are official operating-content candidates for initial production content. They do not import anything by themselves, do not connect to source Supabase projects, do not add migrations, and do not change UI.
 
 Seed-B1 source rules:
 
-- Navigation and top links are prepared from old-site public API output and read-only review.
-- Marketplace routes use `/marketplace` as the canonical new-site path. No legacy route compatibility is kept in the app.
+- Navigation and top links are prepared from archived public API output and read-only review.
+- Marketplace routes use `/marketplace` as the canonical OpenAA path. No alternate archive-route compatibility is kept in the app.
 - Ticker JSON stores the configuration layer only. It does not seed user-post aggregation results from the old ticker API.
 - Images remain external references. Do not download or re-upload `img.openaa.com` assets.
 - News, ads, and home sections are intentionally left for Seed-B2.
@@ -95,13 +97,13 @@ Seed-B2 adds the second reviewed `legacy_official_import` JSON batch:
 - `tools/archive/legacy/ads.json`
 - `tools/archive/legacy/home-sections.json`
 
-These files are JSON-only operating-content candidates. They do not import a database, connect to old Supabase, add migrations, or change UI.
+These files are JSON-only operating-content candidates. They do not import a database, connect to source Supabase projects, add migrations, or change UI.
 
 Seed-B2 source rules:
 
-- News categories and posts come from old-site public sitemap and public news pages.
+- News categories and posts come from archived public sitemap and public news pages.
 - Only published public news is included; draft, hidden, and deleted news are excluded.
-- Old Supabase Storage images are not used as official images. News covers with old Storage URLs use `cover_image_url: null` and `metadata.notes: ["cover_needs_replacement"]`; ads with old Storage images are skipped.
+- Source Supabase Storage images are not used as official images. News covers with source Storage URLs use `cover_image_url: null` and `metadata.notes: ["cover_needs_replacement"]`; ads with source Storage images are skipped.
 - Marketplace references use `/marketplace` and the `marketplace` placement/module names directly.
 - Ads are imported only from active public API output. Legacy `external_same` / `external_new` modes are mapped to `same` / `new` while keeping `metadata.legacy_open_mode`.
 - Policy, fee, DMV, and time-sensitive news uses `metadata.notes: ["needs_freshness_review"]`.
@@ -186,7 +188,7 @@ LEGACY_IMPORT_SUPABASE_SERVICE_ROLE_KEY=...
 npm run import:legacy -- --module=all --env=staging --apply
 ```
 
-Production apply is intentionally disabled in Seed-B3. Do not use `.env.production`, cloud project URLs, or old Supabase credentials for this script.
+Production apply is intentionally disabled in Seed-B3. Do not use `.env.production`, cloud project URLs, or source Supabase credentials for this script.
 
 Apply writes only official operating content:
 
@@ -207,7 +209,7 @@ Image handling:
 - `external_host = img.openaa.com`.
 - `is_public = true`.
 - Images are not downloaded or uploaded.
-- Old Supabase Storage URLs are skipped or kept only as review notes in JSON.
+- Source Supabase Storage URLs are skipped or kept only as review notes in JSON.
 
 Idempotency strategy:
 

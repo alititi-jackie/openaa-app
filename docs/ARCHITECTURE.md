@@ -1,6 +1,6 @@
 ﻿# OpenAA Architecture
 
-`openaa-app` is the new OpenAA platform core for `openaa.com`. It is separate from `openaa-ny` and will use a new GitHub repository, new Supabase project, new database schema, new Auth, new Storage, new API, and new admin system.
+`openaa-app` is the canonical OpenAA platform core for `openaa.com`. It owns the OpenAA repository, Supabase schema, Auth, Storage, API, and admin system.
 
 ## Phase 1 Scope
 
@@ -21,8 +21,8 @@ The global header includes a New York city entry and an expandable horizontal qu
 
 Future admin configuration should use the `top_quick_links` table shape: `id`, `title`, `url`, `open_mode`, `sort_order`, `is_active`, `city_id`, and optional `icon`. Runtime reads should filter `is_active = true`, scope to the default New York city, sort by `sort_order`, and support `open_mode` values of `same` and `new`.
 
-Do not import old `openaa-ny` data. The old project is only a visual and product reference.
+Do not import external repository data into OpenAA unless it has a reviewed import plan, explicit provenance, and owner approval.
 
 ## Out of Phase 1
 
-Payments, chats, orders, points, memberships, native app packaging, old Supabase reuse, old user migration, and service role exposure are not allowed.
+Payments, chats, orders, points, memberships, native app packaging, unrelated Supabase reuse, user migration from external projects, and service role exposure are not allowed.

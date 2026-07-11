@@ -1,10 +1,10 @@
 # Home Modules
 
-This document records the home-page module structure after the visual-parity pass with ny.openaa.com, the Phase 9 configuration read layer, and the Phase 10 admin management foundation.
+This document records the home-page module structure after the visual parity pass, the Phase 9 configuration read layer, and the Phase 10 admin management foundation.
 
 ## Current PR Scope
 
-Phase 10 adds the first admin management screens for the home configuration layer. It does not import old data, connect to the old Supabase project, add unrelated admin CRUD, or change the confirmed app-shell responsive width.
+Phase 10 adds the first admin management screens for the home configuration layer. It does not import archived data, connect to source Supabase projects, add unrelated admin CRUD, or change the confirmed app-shell responsive width.
 
 ## Read Strategy
 
@@ -14,7 +14,7 @@ Supported sources:
 
 - `top_quick_links`: city quick links in the Header dropdown.
 - `ads`: primary home banner/ad data for the `home` placement.
-- `home_banners`: legacy home banner table retained for compatibility and image-reference protection.
+- `home_banners`: compatibility home banner table retained for image-reference protection.
 - `latest_ticker`: one-line latest-dynamics ticker.
 - `home_sections`: module visibility, ordering, and module-specific config.
 - `posts`: latest public posts for the home aggregation module.
@@ -91,11 +91,11 @@ The current implementation maps configured entries to the existing icon set by r
 
 The admin home page no longer edits home banners directly. Home top ad placement should be configured in `/admin/ads`.
 
-The public read layer still understands legacy `home_banners` rows for compatibility, but new home-top advertising should use active `ads` rows whose placement is `home`.
+The public read layer still understands `home_banners` rows for compatibility, but home-top advertising should use active `ads` rows whose placement is `home`.
 
 Images are mapped from `image_assets.public_url` or `image_assets.external_url`. External images should use the approved external image host such as `img.openaa.com`; the home page does not upload or import images in this phase.
 
-If no configured home ad or compatible legacy banner is readable, the existing fallback banner is used.
+If no configured home ad or compatible banner row is readable, the existing fallback banner is used.
 
 ## Latest Ticker
 
@@ -138,7 +138,7 @@ Default configuration:
 Banner image policy:
 
 - Home top ad images are managed through the ad management flow and ad image fallback rules.
-- The legacy `home_banners` table is not edited from `/admin/home`.
+- The compatibility `home_banners` table is not edited from `/admin/home`.
 
 Schema patch:
 
@@ -150,5 +150,5 @@ Schema patch:
 Recommended follow-up order:
 
 1. Broader ad management, if needed, using `manage_ads`.
-2. Carefully scoped seed/import work for old display configuration, without copying old application code or connecting the app runtime to the old Supabase project.
+2. Carefully scoped seed/import work for archived display configuration, without copying external application code or connecting the app runtime to source Supabase projects.
 3. Optional dynamic sitemap enhancements for configured public content once real data exists.

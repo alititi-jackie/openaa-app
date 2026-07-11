@@ -12,7 +12,7 @@ OpenAA APP core for `openaa.com`: a mobile-first Web/PWA platform that will late
 
 ## Guardrails
 
-- Do not modify `openaa-ny`.
-- Do not connect to or reuse the old Supabase project.
+- `openaa-app` is the canonical OpenAA repository.
+- Do not connect to or reuse unrelated or retired Supabase projects.
 - Do not expose service role keys to the frontend.
 - Payment, chat, orders, points, memberships, and native app packaging are outside the launch baseline.

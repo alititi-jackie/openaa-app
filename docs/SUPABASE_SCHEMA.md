@@ -1,6 +1,6 @@
 # Supabase Schema
 
-This document describes the clean production baseline for the new `openaa-app` Supabase project. The old test-period migration chain was collapsed because current data is disposable and no legacy links or rows need compatibility.
+This document describes the clean production baseline for the OpenAA Supabase project in `openaa-app`. The obsolete test-period migration chain was collapsed because current data is disposable and no archive links or rows need compatibility.
 
 ## Migration Order
 

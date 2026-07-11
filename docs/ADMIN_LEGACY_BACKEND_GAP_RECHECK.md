@@ -1,16 +1,16 @@
 # Admin Backend Gap Recheck
 
-This is a read-only recheck of the old `openaa-ny` backend against the new `openaa-app` backend.
+This is a read-only historical backend comparison between an external reference implementation (`openaa-ny` at the time of review) and the current OpenAA backend in `openaa-app`.
 
-Historical note: this document started as an old-backend gap check. Since then, the new admin surface has consolidated several routes:
+Historical note: this document started as a backend gap check against that external reference implementation. Since then, the current admin surface has consolidated several routes:
 
 - Feedback and report support tickets now use `/admin/support`.
-- Old standalone reports and notifications admin pages are now under `/admin/messages`:
+- Standalone reports and notifications admin pages are now under `/admin/messages`:
   - `/admin/messages?tab=reports`
   - `/admin/messages?tab=notifications`
 - User-published content is now managed through `/admin/user-posts`.
 
-Do not use the old standalone new-site paths `/admin/feedback`, `/admin/reports`, `/admin/notifications`, or `/admin/posts`; they are historical references only.
+Do not use the unused standalone paths `/admin/feedback`, `/admin/reports`, `/admin/notifications`, or `/admin/posts`; they are historical references only.
 
 Inputs checked:
 
@@ -23,11 +23,13 @@ Inputs checked:
 - `D:\GitHub\openaa-app\features`
 - `D:\GitHub\openaa-app\supabase\migrations`
 
-No old Supabase connection was used. No old data was imported. `openaa-ny` was not modified.
+The `openaa-ny` paths above are provenance paths from the historical comparison only. They must not be interpreted as a current or retired OpenAA repository.
+
+No source Supabase connection was used. No source data was imported. `openaa-ny` was not modified.
 
 ## Summary
 
-The old backend uses `ADMIN_TOKEN` plus service-role API routes. The new backend replaces this with:
+The reference backend used `ADMIN_TOKEN` plus service-role API routes. The current OpenAA backend replaces this with:
 
 - Supabase Auth login
 - `admin_roles`
@@ -37,13 +39,13 @@ The old backend uses `ADMIN_TOKEN` plus service-role API routes. The new backend
 - `admin_audit_logs`
 - `/admin/admins`
 
-The new backend now covers the old backend's core operational modules. Some old capabilities are intentionally represented differently in the new architecture.
+The current OpenAA backend now covers the checked core operational modules. Some reference capabilities are intentionally represented differently in the current architecture.
 
 `/admin/dmv` is not implemented now and should remain deferred until the full site is complete and DMV admin requirements are confirmed.
 
-## Old Backend Routes
+## Reference Backend Routes
 
-Old `openaa-ny` admin pages found:
+Reference admin pages found:
 
 - `/admin`
 - `/admin/users`
@@ -51,7 +53,7 @@ Old `openaa-ny` admin pages found:
 - `/admin/services`
 - `/admin/news`
 - `/admin/navigation`
-- legacy top links page
+- top links page
 - `/admin/home-sections`
 - `/admin/ads`
 - `/admin/feedback`
@@ -59,27 +61,27 @@ Old `openaa-ny` admin pages found:
 - `/admin/settings`
 - `/admin/recycle-bin?tab=image-cleanup`
 
-Old admin API groups found:
+Reference admin API groups found:
 
 - `/api/admin/users`
 - `/api/admin/posts`
 - `/api/admin/services`
 - `/api/admin/news`
 - `/api/admin/navigation`
-- legacy top links admin API group
+- top links admin API group
 - `/api/admin/home-sections`
 - `/api/admin/ads`
 - `/api/admin/feedback`
 - `/api/admin/notifications`
 - `/api/admin/settings`
-- historical image cleanup admin API group
+- image cleanup admin API group
 
-Old auth pattern:
+Reference auth pattern:
 
 - `/api/admin/*` required `x-admin-token: <ADMIN_TOKEN>`
 - server used `SUPABASE_SERVICE_ROLE_KEY`
 
-New auth pattern:
+Current OpenAA auth pattern:
 
 - `/admin/*` requires logged-in Supabase Auth user
 - active `admin_roles` is required
@@ -89,32 +91,32 @@ New auth pattern:
 
 ## Module Comparison
 
-| Old backend capability | New backend status | Notes |
+| Reference backend capability | Current OpenAA backend status | Notes |
 | --- | --- | --- |
-| `/admin` token login | Replaced | New `/admin` uses Supabase Auth + `admin_roles`; no `ADMIN_TOKEN`. |
-| dashboard/module entry | Complete | New `/admin/dashboard` lists all backend modules and permission gates. |
-| users management | Complete | New `/admin/users` supports user status, internal notes, post counts, and permissions. |
-| admin authorization | New app enhancement | Old site did not have role-based admin grant UI; new `/admin/admins` handles this. |
-| posts management | Complete | New `/admin/user-posts` handles jobs/housing/marketplace/services in one unified table. Marketplace uses `marketplace` as its canonical module and route name. |
-| services admin page | Covered by user-posts | Old `/admin/services` is represented by `/admin/user-posts?type=service` in the new architecture. |
-| news management | Complete | New `/admin/news` supports news/category operations with permission checks and audit logs. |
-| navigation management | Complete | New `/admin/navigation` covers categories, links, featured state, sorting, and active state. |
-| top links management | Complete | New `/admin/navigation?tab=top-links` covers header quick links. |
-| home sections | Complete | New `/admin/home` covers home sections, banners, ticker, and home operations. |
-| ads management | Complete with new model | New `/admin/ads` manages placements and external image assets. Old upload/delete image behavior is intentionally not copied one-to-one. |
-| feedback management | Complete | Current new-site route is `/admin/support`; old standalone `/admin/feedback` and old `/admin/messages?tab=feedback` references are historical only. |
-| reports management | New app enhancement | Current new-site route is `/admin/messages?tab=reports`; old standalone `/admin/reports` references are historical only. |
-| notifications management | Complete | Current new-site route is `/admin/messages?tab=notifications`; old standalone `/admin/notifications` references are historical only. |
-| settings | Complete | New `/admin/settings` covers site settings such as daily post limit. |
-| image cleanup | Complete with safer behavior | New `/admin/recycle-bin?tab=image-cleanup` soft-marks records instead of physical deletion. |
-| audit logs | New app enhancement | New `/admin/audit-logs` covers backend traceability. |
+| `/admin` token login | Replaced | Current `/admin` uses Supabase Auth + `admin_roles`; no `ADMIN_TOKEN`. |
+| dashboard/module entry | Complete | Current `/admin/dashboard` lists all backend modules and permission gates. |
+| users management | Complete | Current `/admin/users` supports user status, internal notes, post counts, and permissions. |
+| admin authorization | Current OpenAA enhancement | The reference implementation did not have role-based admin grant UI; current `/admin/admins` handles this. |
+| posts management | Complete | Current `/admin/user-posts` handles jobs/housing/marketplace/services in one unified table. Marketplace uses `marketplace` as its canonical module and route name. |
+| services admin page | Covered by user-posts | Reference `/admin/services` is represented by `/admin/user-posts?type=service` in the current architecture. |
+| news management | Complete | Current `/admin/news` supports news/category operations with permission checks and audit logs. |
+| navigation management | Complete | Current `/admin/navigation` covers categories, links, featured state, sorting, and active state. |
+| top links management | Complete | Current `/admin/navigation?tab=top-links` covers header quick links. |
+| home sections | Complete | Current `/admin/home` covers home sections, banners, ticker, and home operations. |
+| ads management | Complete with current model | Current `/admin/ads` manages placements and external image assets. Reference upload/delete image behavior is intentionally not copied one-to-one. |
+| feedback management | Complete | Current route is `/admin/support`; standalone `/admin/feedback` and `/admin/messages?tab=feedback` references are historical only. |
+| reports management | Current OpenAA enhancement | Current route is `/admin/messages?tab=reports`; standalone `/admin/reports` references are historical only. |
+| notifications management | Complete | Current route is `/admin/messages?tab=notifications`; standalone `/admin/notifications` references are historical only. |
+| settings | Complete | Current `/admin/settings` covers site settings such as daily post limit. |
+| image cleanup | Complete with safer behavior | Current `/admin/recycle-bin?tab=image-cleanup` soft-marks records instead of physical deletion. |
+| audit logs | Current OpenAA enhancement | Current `/admin/audit-logs` covers backend traceability. |
 | DMV admin | Deferred | No current PR. Wait until full site is complete and DMV admin scope is confirmed. |
 
 ## Remaining Gaps Or Intentional Differences
 
 ### P0
 
-No P0 old-backend gaps remain in the checked admin surface.
+No P0 reference-backend gaps remain in the checked admin surface.
 
 ### P1
 
@@ -122,7 +124,7 @@ No immediate P1 backend page is required before continuing, assuming `/admin/dmv
 
 ### P2
 
-- Richer ads media management could be revisited later if product wants upload/delete parity with the old backend.
+- Richer ads media management could be revisited later if product wants upload/delete parity with the reference backend.
 - News cover upload can be revisited later if product wants direct upload parity rather than current image asset/external URL handling.
 - More granular admin permission override UI could be added later. Current `/admin/admins` manages roles and active state, while role permission tables remain seeded by migration.
 
@@ -135,10 +137,10 @@ No immediate P1 backend page is required before continuing, assuming `/admin/dmv
 
 ## Safety Findings
 
-- New backend no longer uses old `ADMIN_TOKEN`.
-- New backend checks admin permissions server-side.
-- New backend pages are `noindex`.
-- New backend dashboard covers all existing `/admin/*` route directories.
+- Current OpenAA backend no longer uses `ADMIN_TOKEN`.
+- Current OpenAA backend checks admin permissions server-side.
+- Current OpenAA backend pages are `noindex`.
+- Current OpenAA backend dashboard covers all existing `/admin/*` route directories.
 - `npm run audit:admin` can repeat these checks.
 - Service role usage is limited to approved server-side admin report files and `lib/supabase/admin.ts`.
 
@@ -160,4 +162,4 @@ npm run typecheck
 npm run build
 ```
 
-After that, backend can be considered stable enough to pause while the remaining front-site work continues.
+After that, backend can be considered stable enough to pause while the remaining public-site work continues.

@@ -1,6 +1,6 @@
 # Migrations
 
-This directory is a production baseline for the new `openaa-app` Supabase project.
+This directory is the production baseline for the OpenAA Supabase project.
 
 Current order:
 
@@ -10,4 +10,4 @@ Current order:
 
 The previous test-phase migrations were intentionally removed. Because current
 data is disposable, reset the target Supabase database before applying this
-baseline. Do not run these files against the old `openaa-ny` project.
+baseline. Do not run these files against unrelated or retired Supabase projects.
