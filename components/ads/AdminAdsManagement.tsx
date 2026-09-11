@@ -55,8 +55,11 @@ export function AdminAdsManagement({
 
   const trimmedImageUrl = imageUrl.trim();
   const hasImage = Boolean(filePreviewUrl || trimmedImageUrl || currentImageAssetId);
-  const hasLockedImage = Boolean(filePreviewUrl || currentImageAssetId);
+  const hasPersistedImage = Boolean(!filePreviewUrl && currentImageAssetId && editingAd?.image_url && trimmedImageUrl === editingAd.image_url);
   const previewUrl = filePreviewUrl || trimmedImageUrl;
+  const showExternalInput = !hasPersistedImage && imageMode === "external";
+  const showUploadInput = !hasPersistedImage && imageMode === "upload";
+  const currentImageSourceLabel = imageSourceLock === "uploaded" || imageMode === "upload" ? "直接上传" : "外部链接";
 
   useEffect(() => {
     if (state.ok && state.message) {
@@ -172,7 +175,7 @@ export function AdminAdsManagement({
   }
 
   function selectImageMode(mode: ImageInputMode) {
-    if (hasLockedImage) {
+    if (hasPersistedImage) {
       setUploadMessage("请先删除当前图片，再切换图片方式");
       return;
     }
@@ -296,7 +299,7 @@ export function AdminAdsManagement({
               ) : null}
             </div>
 
-            {!hasLockedImage ? (
+            {!hasPersistedImage ? (
               <div className="inline-flex w-full rounded-2xl border border-slate-200 bg-white p-1 sm:w-auto">
                 <button
                   type="button"
@@ -319,11 +322,11 @@ export function AdminAdsManagement({
               </div>
             ) : (
               <p className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-slate-600">
-                当前图片来源：{imageSourceLock === "uploaded" || imageMode === "upload" ? "直接上传" : "外部链接"}
+                当前图片来源：{currentImageSourceLabel}
               </p>
             )}
 
-            {!hasLockedImage && imageMode === "external" ? (
+            {showExternalInput ? (
               <label className="space-y-2 text-sm font-black text-slate-700">
                 外部图片链接
                 <input
@@ -337,7 +340,7 @@ export function AdminAdsManagement({
               </label>
             ) : null}
 
-            {!hasLockedImage && imageMode === "upload" ? (
+            {showUploadInput ? (
               <label className="space-y-2 text-sm font-black text-slate-700">
                 直接上传
                 <input
@@ -353,6 +356,10 @@ export function AdminAdsManagement({
 
             {uploadMessage ? (
               <p className="text-sm font-black text-blue-700">{uploadMessage}</p>
+            ) : null}
+
+            {hasPersistedImage && trimmedImageUrl ? (
+              <ImageUrlDetails label={imageSourceLock === "uploaded" ? "图片公开地址" : "外部图片链接"} url={trimmedImageUrl} />
             ) : null}
 
             {previewUrl ? (
@@ -532,6 +539,37 @@ function ExternalFields({ ad }: { ad: AdminAdRow | null }) {
       <p className="md:col-start-2 text-xs font-semibold text-slate-500">
         可填写 /jobs 这类站内链接；外部域名会自动补全为 https://。
       </p>
+    </div>
+  );
+}
+
+function ImageUrlDetails({ label, url }: { label: string; url: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copyUrl() {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <div className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <span className="text-sm font-black text-slate-700">{label}</span>
+        <div className="flex flex-wrap gap-2">
+          <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex h-9 items-center rounded-xl border border-slate-200 px-3 text-xs font-black text-blue-700 hover:bg-blue-50">
+            打开图片
+          </a>
+          <button type="button" onClick={copyUrl} className="h-9 rounded-xl border border-slate-200 px-3 text-xs font-black text-slate-700 hover:bg-slate-50">
+            {copied ? "已复制" : "复制链接"}
+          </button>
+        </div>
+      </div>
+      <p className="break-all rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold leading-5 text-slate-600">{url}</p>
     </div>
   );
 }

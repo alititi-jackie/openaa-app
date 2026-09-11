@@ -635,6 +635,9 @@ function NewsPostEditor({
               : "上传文件支持 JPG、PNG、WebP，最大 5MB；也可以填写 https://img.openaa.com/ 图片地址。"}
         </p>
         {coverMessage ? <p className="text-sm font-black text-blue-700">{coverMessage}</p> : null}
+        {hasPersistedCover && values.coverImageUrl.trim() ? (
+          <ImageUrlDetails label={coverSource === "storage" ? "封面公开地址" : "外部图片链接"} url={values.coverImageUrl.trim()} />
+        ) : null}
         {coverPreviewUrl ? (
           <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -814,6 +817,37 @@ function CheckboxField({ label, name, checked, onChange }: { label: string; name
       <input name={name} type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="h-4 w-4 rounded border-slate-300" />
       <span>{label}</span>
     </label>
+  );
+}
+
+function ImageUrlDetails({ label, url }: { label: string; url: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copyUrl() {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <div className="space-y-2 rounded-2xl border border-slate-200 bg-white p-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <span className="text-sm font-black text-slate-700">{label}</span>
+        <div className="flex flex-wrap gap-2">
+          <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex h-9 items-center rounded-xl border border-slate-200 px-3 text-xs font-black text-blue-700 hover:bg-blue-50">
+            打开图片
+          </a>
+          <button type="button" onClick={copyUrl} className="h-9 rounded-xl border border-slate-200 px-3 text-xs font-black text-slate-700 hover:bg-slate-50">
+            {copied ? "已复制" : "复制链接"}
+          </button>
+        </div>
+      </div>
+      <p className="break-all rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold leading-5 text-slate-600">{url}</p>
+    </div>
   );
 }
 
