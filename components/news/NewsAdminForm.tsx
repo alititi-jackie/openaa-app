@@ -384,7 +384,14 @@ function NewsPostEditor({
   const [fileInputKey, setFileInputKey] = useState(0);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const coverPreviewUrl = filePreviewUrl || (!removedCover ? values.coverImageUrl : "");
-  const hasLockedCover = Boolean(coverSource || filePreviewUrl);
+  const hasPersistedCover = Boolean(!removedCover && !filePreviewUrl && coverSource && post?.coverImageUrl && values.coverImageUrl === post.coverImageUrl);
+  const hasCover = Boolean(coverSource || filePreviewUrl || coverPreviewUrl.trim());
+  const showExternalInput = !hasPersistedCover && coverMode === "external";
+  const showUploadInput = !hasPersistedCover && coverMode === "upload";
+  const hiddenExternalCoverUrl =
+    !removedCover && !showExternalInput && coverSource === "external" && !post?.coverImageAssetId && values.coverImageUrl.trim()
+      ? values.coverImageUrl.trim()
+      : "";
   const currentCoverSourceLabel = coverSource === "storage" || coverMode === "upload" ? "直接上传" : "外部链接";
 
   useEffect(() => {
@@ -408,7 +415,7 @@ function NewsPostEditor({
   }
 
   function selectCoverMode(mode: CoverInputMode) {
-    if (hasLockedCover) {
+    if (hasPersistedCover) {
       setCoverMessage("请先移除当前封面，再切换图片方式。");
       return;
     }
@@ -525,6 +532,12 @@ function NewsPostEditor({
       <input type="hidden" name="id" value={post?.id ?? ""} />
       <input type="hidden" name="cover_image_asset_id" value={removedCover ? "" : post?.coverImageAssetId ?? ""} />
       {removedCover ? <input type="hidden" name="remove_cover_image" value="on" /> : null}
+      {hiddenExternalCoverUrl ? (
+        <>
+          <input type="hidden" name="cover_image_source" value="external" />
+          <input type="hidden" name="cover_image_url" value={hiddenExternalCoverUrl} />
+        </>
+      ) : null}
 
       <div className="grid gap-3 md:grid-cols-2">
         <SelectField label="分类" name="category_id" value={values.categoryId} onChange={(value) => setValue("categoryId", value)} options={categories.flatMap((category) => (category.id ? [{ value: category.id, label: category.name }] : []))} />
@@ -552,14 +565,14 @@ function NewsPostEditor({
             <p className="text-sm font-black text-slate-900">封面图</p>
             <p className="mt-1 text-xs font-semibold text-slate-500">封面可选；外部链接和直接上传只能二选一。</p>
           </div>
-          {hasLockedCover ? (
+          {hasCover ? (
             <button type="button" onClick={clearCover} className="h-10 rounded-2xl border border-red-200 bg-white px-4 text-sm font-black text-red-600 transition hover:bg-red-50">
               移除封面
             </button>
           ) : null}
         </div>
 
-        {!hasLockedCover ? (
+        {!hasPersistedCover ? (
           <div className="inline-flex w-full rounded-2xl border border-slate-200 bg-white p-1 sm:w-auto">
             <button
               type="button"
@@ -584,7 +597,7 @@ function NewsPostEditor({
           <p className="rounded-2xl bg-white px-4 py-3 text-sm font-black text-slate-600">当前封面来源：{currentCoverSourceLabel}</p>
         )}
 
-        {!hasLockedCover && coverMode === "external" ? (
+        {showExternalInput ? (
           <TextField
             label="外部图片链接"
             name="cover_image_url"
@@ -599,7 +612,7 @@ function NewsPostEditor({
           />
         ) : null}
 
-        {!hasLockedCover && coverMode === "upload" ? (
+        {showUploadInput ? (
           <label className="grid gap-1.5 text-sm font-bold text-slate-700">
             <span>直接上传</span>
             <input
