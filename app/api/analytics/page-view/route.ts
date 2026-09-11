@@ -1,8 +1,11 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+import { checkAdminRateLimit, readClientIp } from "@/lib/rateLimit/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const MAX_TEXT_LENGTH = 500;
+const ANALYTICS_IP_PATH_WINDOW_MS = 5 * 60 * 1000;
+const ANALYTICS_IP_PATH_LIMIT = 120;
 
 type PageViewPayload = {
   path?: unknown;
@@ -39,6 +42,11 @@ export async function POST(request: Request) {
   const headerStore = await headers();
   const userAgent = normalizeText(headerStore.get("user-agent"), MAX_TEXT_LENGTH);
   const referrer = normalizeText(payload.referrer, MAX_TEXT_LENGTH) ?? normalizeText(headerStore.get("referer"), MAX_TEXT_LENGTH);
+  const allowed = await allowPageViewRecord(request, path);
+
+  if (!allowed) {
+    return NextResponse.json({ ok: true, skipped: true });
+  }
 
   const { error } = await supabase.from("site_page_views").insert({
     path,
@@ -57,6 +65,24 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ ok: true });
+}
+
+async function allowPageViewRecord(request: Request, path: string) {
+  try {
+    const clientIp = readClientIp(request);
+    const actorId = `${clientIp}:${path}`.slice(0, 500);
+    const result = await checkAdminRateLimit({
+      actorId,
+      action: "analytics_page_view_ip_path",
+      limit: ANALYTICS_IP_PATH_LIMIT,
+      windowMs: ANALYTICS_IP_PATH_WINDOW_MS,
+      metadata: { source: "analytics_page_view" },
+    });
+
+    return result.allowed;
+  } catch {
+    return true;
+  }
 }
 
 function normalizeText(value: unknown, maxLength: number) {

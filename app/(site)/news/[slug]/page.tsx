@@ -4,6 +4,7 @@ import { NewsDetail } from "@/components/news/NewsDetail";
 import { getFavoriteState } from "@/features/favorites/queries";
 import { getNewsBySlug, getNewsDetailContext } from "@/features/news/queries";
 import { NEWS_DEFAULT_DESCRIPTION } from "@/features/news/constants";
+import { safeJsonLd } from "@/lib/seo/jsonLd";
 import { canonicalUrl, siteConfig } from "@/lib/seo/siteConfig";
 
 export const revalidate = 300;
@@ -91,8 +92,8 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(articleJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
       <NewsDetail post={post} previousPost={previousPost} nextPost={nextPost} relatedPosts={relatedPosts} initialIsFavorited={initialIsFavorited} />
     </>
   );

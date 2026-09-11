@@ -100,6 +100,7 @@ function auditAdminActions() {
 function isAllowedServiceRoleFile(file: string) {
   return new Set([
     "lib/supabase/admin.ts",
+    "lib/rateLimit/server.ts",
     "lib/permissions/adminAuditLog.ts",
     "app/api/reports/route.ts",
     "app/api/support/tickets/route.ts",

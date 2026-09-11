@@ -1,5 +1,6 @@
 import "server-only";
 
+import { safeJsonLd } from "@/lib/seo/jsonLd";
 import { canonicalUrl, siteConfig } from "@/lib/seo/siteConfig";
 
 export type DmvStructuredDataPage = "home" | "questions" | "practice" | "mock-test" | "sign-test" | "tickets";
@@ -199,10 +200,6 @@ function buildDmvJsonLd(config: DmvPageStructuredData) {
     "@context": "https://schema.org",
     "@graph": graph,
   };
-}
-
-function safeJsonLd(data: unknown) {
-  return JSON.stringify(data).replace(/</g, "\\u003c");
 }
 
 export function DmvStructuredData({ page }: { page: DmvStructuredDataPage }) {

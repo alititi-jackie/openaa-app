@@ -31,7 +31,8 @@ export function postsJson<T>(result: PostsQueryResult<T>) {
 
 export async function publicPostsResponse(type: PostType, request: Request) {
   const url = new URL(request.url);
-  return postsJson(await getPublicPosts({ type, filters: normalizePublicPostFilters(url.searchParams) }));
+  const limit = url.searchParams.has("limit") ? readLimit(request) : undefined;
+  return postsJson(await getPublicPosts({ type, filters: normalizePublicPostFilters(url.searchParams), limit }));
 }
 
 export async function searchPostsResponse(request: Request) {

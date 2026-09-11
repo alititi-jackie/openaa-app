@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { SitePageViewTracker } from "@/components/analytics/SitePageViewTracker";
 import { BackToTopButton } from "@/components/BackToTopButton";
 import { AppShell } from "@/components/layout/AppShell";
+import { safeJsonLd } from "@/lib/seo/jsonLd";
 import { canonicalUrl, siteConfig } from "@/lib/seo/siteConfig";
 
 export default function SiteLayout({ children }: { children: ReactNode }) {
@@ -34,7 +35,7 @@ export default function SiteLayout({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(siteJsonLd) }} />
       <AppShell>{children}</AppShell>
       <SitePageViewTracker />
       <BackToTopButton />

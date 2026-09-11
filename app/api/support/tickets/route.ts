@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { DEFAULT_SUPPORT_TICKET_SETTINGS, isSupportTicketType, type SupportTicketSettings } from "@/features/support/types";
+import { checkRateLimit, readClientIp } from "@/lib/rateLimit/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -8,6 +9,8 @@ export const dynamic = "force-dynamic";
 
 const allowedSources = new Set(["feedback_page", "news_detail", "post_detail", "profile_notifications"]);
 const allowedTargetTypes = new Set(["", "post", "news", "navigation", "ad", "profile"]);
+const SUPPORT_TICKET_IP_DAILY_LIMIT = 60;
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 type ProfileContact = {
   email: string | null;
@@ -107,6 +110,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "你今天提交的次数已达上限，请明天再试。" }, { status: 429 });
   }
 
+  const ipLimit = await checkSupportTicketIpLimit(supabase, request);
+  if (!ipLimit.allowed) {
+    return NextResponse.json({ error: "当前网络今日提交次数已达上限，请明天再试。" }, { status: 429 });
+  }
+
   const { data, error } = await supabase
     .from("support_tickets")
     .insert({
@@ -144,6 +152,21 @@ export async function POST(request: NextRequest) {
   revalidatePath("/admin/messages");
 
   return NextResponse.json({ success: true, ticket_no: data.ticket_no }, { status: 201 });
+}
+
+async function checkSupportTicketIpLimit(supabase: ReturnType<typeof createSupabaseAdminClient>, request: Request) {
+  try {
+    return await checkRateLimit({
+      supabase,
+      actorId: readClientIp(request),
+      action: "support_ticket_ip",
+      limit: SUPPORT_TICKET_IP_DAILY_LIMIT,
+      windowMs: ONE_DAY_MS,
+      metadata: { source: "support_tickets_api" },
+    });
+  } catch {
+    return { allowed: true, count: 0 };
+  }
 }
 
 async function readProfileContact(supabase: ReturnType<typeof createSupabaseAdminClient>, userId: string) {
