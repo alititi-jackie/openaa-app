@@ -10,6 +10,8 @@ import type { AdminNewsCategoryCounts, AdminNewsPermissions, AdminNewsPost, News
 type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
 type SupabasePublicClient = NonNullable<ReturnType<typeof createSupabasePublicClient>>;
 
+const PUBLIC_NEWS_FETCH_TIMEOUT_MS = 5000;
+
 const newsPostSelect = `
   id,
   category_id,
@@ -40,13 +42,26 @@ function missingConfig<T>(data: T): NewsQueryResult<T> {
   return { state: "missing_config", data };
 }
 
-function errorResult<T>(data: T, error: unknown): NewsQueryResult<T> {
+function createNewsPublicClient() {
+  return createSupabasePublicClient({ timeoutMs: PUBLIC_NEWS_FETCH_TIMEOUT_MS });
+}
+
+function readableErrorMessage(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
-  return { state: "error", data, error: message };
+  const normalized = message.toLowerCase();
+  if (normalized.includes("abort") || normalized.includes("timeout") || normalized.includes("fetch failed") || normalized.includes("network")) {
+    return "请求响应较慢，已展示可用内容，请稍后刷新重试。";
+  }
+
+  return message;
+}
+
+function errorResult<T>(data: T, error: unknown): NewsQueryResult<T> {
+  return { state: "error", data, error: readableErrorMessage(error) };
 }
 
 export async function getNewsCategories(): Promise<NewsQueryResult<NewsCategory[]>> {
-  const supabase = createSupabasePublicClient();
+  const supabase = createNewsPublicClient();
   const fallback = fallbackNewsCategories();
 
   if (!supabase) return missingConfig(fallback);
@@ -67,7 +82,7 @@ export async function getNewsCategories(): Promise<NewsQueryResult<NewsCategory[
 }
 
 export async function getPublishedNewsList(params: NewsListParams = {}, client?: SupabasePublicClient): Promise<NewsQueryResult<NewsPostCard[]>> {
-  const supabase = client ?? createSupabasePublicClient();
+  const supabase = client ?? createNewsPublicClient();
   if (!supabase) return missingConfig([]);
 
   try {
@@ -106,7 +121,7 @@ function normalizeSearchLimit(value?: number) {
 }
 
 export async function searchPublishedNews(params: { q?: string; limit?: number } = {}): Promise<NewsQueryResult<NewsPostCard[]>> {
-  const supabase = createSupabasePublicClient();
+  const supabase = createNewsPublicClient();
   if (!supabase) return missingConfig([]);
 
   const q = sanitizeSearchTerm(params.q ?? "");
@@ -143,7 +158,7 @@ export async function getLatestNews(limit = 4, client?: SupabasePublicClient): P
 }
 
 export async function getNewsBySlug(slug: string): Promise<NewsQueryResult<NewsPostDetail | null>> {
-  const supabase = createSupabasePublicClient();
+  const supabase = createNewsPublicClient();
   if (!supabase) return missingConfig(null);
 
   try {
@@ -164,7 +179,7 @@ export async function getNewsBySlug(slug: string): Promise<NewsQueryResult<NewsP
 }
 
 async function getPublishedNewsCards(params: NewsListParams = {}): Promise<NewsQueryResult<NewsPostCard[]>> {
-  const supabase = createSupabasePublicClient();
+  const supabase = createNewsPublicClient();
   if (!supabase) return missingConfig([]);
 
   try {
