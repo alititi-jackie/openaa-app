@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export const adminNavigationButtonClassName =
   "inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60";
 
 export function AdminLogoutButton() {
+  const router = useRouter();
   const [isPending, setIsPending] = useState(false);
 
   async function handleLogout() {
@@ -22,7 +24,8 @@ export function AdminLogoutButton() {
         }),
       ]);
     } finally {
-      window.location.assign("/");
+      router.replace("/");
+      router.refresh();
     }
   }
 
