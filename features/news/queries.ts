@@ -10,7 +10,7 @@ import type { AdminNewsCategoryCounts, AdminNewsPermissions, AdminNewsPost, News
 type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
 type SupabasePublicClient = NonNullable<ReturnType<typeof createSupabasePublicClient>>;
 
-const PUBLIC_NEWS_FETCH_TIMEOUT_MS = 2500;
+const PUBLIC_NEWS_FETCH_TIMEOUT_MS = 1500;
 
 const newsPostSelect = `
   id,
