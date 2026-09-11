@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 
 import { isSupabaseServerConfigured } from "./server";
 
-const PUBLIC_FETCH_TIMEOUT_MS = 3000;
+const PUBLIC_FETCH_TIMEOUT_MS = 1500;
 
 type SupabasePublicClientOptions = {
   cache?: RequestCache;
