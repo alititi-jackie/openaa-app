@@ -2,6 +2,7 @@ import "server-only";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabasePublicClient } from "@/lib/supabase/public";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { DEFAULT_CITY_SLUG, DEFAULT_POST_LIMIT, POST_TYPE_TO_ROUTE, PUBLIC_POST_TYPES } from "./constants";
 import { applyPublicPostFilters, normalizePublicPostFilters } from "./filters";
 import { housingTypeFromValue } from "./options";
@@ -274,10 +275,10 @@ function relatedDetailPosts(current: PostDetailView, candidates: PostCardView[],
     .slice(0, RELATED_DETAIL_POST_LIMIT);
 }
 
-async function mapSinglePostRecordToCard(record: PostRecord | null | undefined, client: SupabasePublicClient) {
+async function mapSinglePostRecordToCard(record: PostRecord | null | undefined) {
   if (!record) return null;
 
-  const authors = await fetchAuthors([record.author_id], client);
+  const authors = await fetchAuthors([record.author_id]);
   return mapPostRecordToCard(record, authors);
 }
 
@@ -314,34 +315,40 @@ async function getAdjacentPublicPost(
     return null;
   }
 
-  return mapSinglePostRecordToCard(data as unknown as PostRecord | null, client);
+  return mapSinglePostRecordToCard(data as unknown as PostRecord | null);
 }
 
-async function fetchAuthors(authorIds: Array<string | null | undefined>, client?: NonNullable<ReturnType<typeof createSupabasePublicClient>>): Promise<Record<string, AuthorSummary>> {
+async function fetchAuthors(authorIds: Array<string | null | undefined>): Promise<Record<string, AuthorSummary>> {
   const ids = [...new Set(authorIds.filter((id): id is string => Boolean(id)))];
 
   if (ids.length === 0) {
     return {};
   }
 
-  const supabase = client ?? createSupabasePublicClient();
+  try {
+    // Public post queries use the anon client, which cannot read other users' profiles.
+    // Only expose the nickname of authors already associated with the requested posts.
+    const { data, error } = await createSupabaseAdminClient()
+      .from("profiles")
+      .select("id,nickname")
+      .in("id", ids)
+      .abortSignal(AbortSignal.timeout(3000));
 
-  if (!supabase) {
-    return {};
+    if (error) throw error;
+
+    return Object.fromEntries(
+      (data ?? []).map((author) => [
+        author.id,
+        { id: author.id, nickname: author.nickname, avatar_url: null },
+      ]),
+    );
+  } catch (error) {
+    console.error("[posts] failed to read author nicknames", error);
+    return Object.fromEntries(ids.map((id) => [
+      id,
+      { id, nickname: "发布者信息暂不可用", avatar_url: null },
+    ]));
   }
-
-  const { data } = await supabase.from("profiles").select("id,nickname,avatar_url").in("id", ids);
-
-  return Object.fromEntries(
-    ((data ?? []) as AuthorSummary[]).map((author) => [
-      author.id,
-      {
-        id: author.id,
-        nickname: author.nickname,
-        avatar_url: author.avatar_url,
-      },
-    ]),
-  );
 }
 
 function buildPublicPostQuery(
@@ -432,7 +439,7 @@ export async function getPublicPosts(params: PublicPostsParams): Promise<PostsQu
 
   const total = pinnedTotal + normalTotal;
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
-  const authors = await fetchAuthors(records.map((post) => post.author_id), supabase);
+  const authors = await fetchAuthors(records.map((post) => post.author_id));
 
   return {
     state: "ready",
@@ -484,7 +491,7 @@ export async function searchPublicPosts(params: { q?: string; type?: PostType; l
   const filteredRecords = records
     .filter((record) => applyPublicPostFilters([record], record.post_type, { ...normalizePublicPostFilters({ q: keyword }), pageSize: MAX_PUBLIC_FILTER_ROWS }).length > 0)
     .slice(0, normalizeSearchLimit(params.limit));
-  const authors = await fetchAuthors(filteredRecords.map((post) => post.author_id), supabase);
+  const authors = await fetchAuthors(filteredRecords.map((post) => post.author_id));
 
   return { state: "ready", data: filteredRecords.map((record) => mapPostRecordToCard(record, authors)) };
 }
@@ -515,7 +522,7 @@ export async function getPublicPostById(id: string, type: PostType, client?: Sup
   }
 
   const record = data as unknown as PostRecord;
-  const authors = await fetchAuthors([record.author_id], supabase);
+  const authors = await fetchAuthors([record.author_id]);
 
   return { state: "ready", data: mapPostRecordToDetail(record, authors) };
 }
@@ -736,7 +743,7 @@ async function getPublicCardsByOrderedIds(ids: string[]): Promise<PostsQueryResu
   if (error) return queryError("get public cards by ordered ids failed", error, []);
 
   const records = (data ?? []) as unknown as PostRecord[];
-  const authors = await fetchAuthors(records.map((post) => post.author_id), supabase);
+  const authors = await fetchAuthors(records.map((post) => post.author_id));
   const cardsById = new Map(records.map((record) => [record.id, mapPostRecordToCard(record, authors)]));
 
   return { state: "ready", data: ids.flatMap((id) => cardsById.get(id) ?? []) };
