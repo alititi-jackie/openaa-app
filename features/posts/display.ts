@@ -167,7 +167,7 @@ export function relativeTime(value?: string | null) {
 }
 
 export function formatPostAuthorName(author?: { nickname?: string | null } | null) {
-  return author?.nickname?.trim() || "匿名用户";
+  return author?.nickname?.trim() || "用户";
 }
 
 export function formatViewCount(value: number | string | null | undefined, options: { icon?: boolean; unit?: boolean } = {}) {
