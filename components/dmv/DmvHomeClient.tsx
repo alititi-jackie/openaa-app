@@ -200,7 +200,7 @@ const processDetails = [
     notes: ["成功后确认日期时间地点，并安排考试车辆。", "路考需要符合要求的考试车辆，并需有合法驾驶员陪同。"],
     links: [
       { label: "5 小时课程说明", href: "https://dmv.ny.gov/driver-license/the-driver-pre-licensing-course", external: true },
-      { label: "预约路考", href: "https://dmv.ny.gov/driver-license/schedule-and-take-road-test", external: true },
+      { label: "预约路考", href: "https://dmv.ny.gov/driver-license/schedule-and-take-a-road-test", external: true },
     ],
   },
   {
@@ -210,7 +210,7 @@ const processDetails = [
     notes: ["未通过则继续练习再预约。"],
     links: [
       { label: "NY DMV Driver License 首页", href: "https://dmv.ny.gov/driver-license", external: true },
-      { label: "路考页面", href: "https://dmv.ny.gov/driver-license/schedule-and-take-road-test", external: true },
+      { label: "路考页面", href: "https://dmv.ny.gov/driver-license/schedule-and-take-a-road-test", external: true },
     ],
   },
 ];
