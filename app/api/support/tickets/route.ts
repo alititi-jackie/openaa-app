@@ -111,6 +111,9 @@ export async function POST(request: NextRequest) {
   }
 
   const ipLimit = await checkSupportTicketIpLimit(supabase, request);
+  if ("error" in ipLimit && ipLimit.error) {
+    return NextResponse.json({ error: "提交暂时不可用，请稍后再试。" }, { status: 503 });
+  }
   if (!ipLimit.allowed) {
     return NextResponse.json({ error: "当前网络今日提交次数已达上限，请明天再试。" }, { status: 429 });
   }
@@ -165,7 +168,7 @@ async function checkSupportTicketIpLimit(supabase: ReturnType<typeof createSupab
       metadata: { source: "support_tickets_api" },
     });
   } catch {
-    return { allowed: true, count: 0 };
+    return { allowed: false, count: SUPPORT_TICKET_IP_DAILY_LIMIT, error: true };
   }
 }
 

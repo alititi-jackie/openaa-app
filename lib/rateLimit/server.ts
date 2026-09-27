@@ -23,38 +23,20 @@ export async function checkRateLimit({
   metadata = {},
 }: CheckRateLimitInput) {
   if (!actorId || limit < 1 || windowMs < 1000) {
-    return { allowed: true, count: 0 };
+    throw new Error("Invalid rate-limit configuration");
   }
 
   const now = new Date();
   const windowStart = rateLimitWindowStart(now, windowMs);
-  const { data } = await supabase
-    .from("rate_limits")
-    .select("id,count")
-    .eq("actor_id", actorId)
-    .eq("action", action)
-    .eq("window_start", windowStart.toISOString())
-    .maybeSingle();
-
-  const currentCount = typeof data?.count === "number" ? data.count : 0;
-  if (currentCount >= limit) {
-    return { allowed: false, count: currentCount };
-  }
-
-  const nextCount = currentCount + 1;
-  if (data?.id) {
-    await supabase.from("rate_limits").update({ count: nextCount, updated_at: now.toISOString() }).eq("id", data.id);
-  } else {
-    await supabase.from("rate_limits").insert({
-      actor_id: actorId,
-      action,
-      window_start: windowStart.toISOString(),
-      count: nextCount,
-      metadata,
-    });
-  }
-
-  return { allowed: true, count: nextCount };
+  const { data, error } = await supabase.rpc("consume_rate_limit", {
+    p_actor_id: actorId,
+    p_action: action,
+    p_limit: limit,
+    p_window_start: windowStart.toISOString(),
+    p_metadata: metadata,
+  });
+  if (error) throw error;
+  return { allowed: data === true, count: data === true ? 1 : limit };
 }
 
 export async function checkAdminRateLimit(input: Omit<CheckRateLimitInput, "supabase">) {
