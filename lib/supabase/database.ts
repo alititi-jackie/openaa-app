@@ -1,4 +1,6 @@
-﻿export type Json =
+﻿// Generated Supabase schema types. Regenerate from the active project after schema changes.
+// See lib/supabase/README.md. Do not edit table types by hand.
+export type Json =
   | string
   | number
   | boolean

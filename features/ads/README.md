@@ -1,3 +1,3 @@
 # Ads
 
-Ad placements, external image URLs, and click tracking will live here.
+Ad configuration queries and admin actions, placeholder settings, and ad types. The public detail page and management UI live under `app/` and `components/ads/`.

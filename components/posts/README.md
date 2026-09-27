@@ -1,3 +1,3 @@
 # Post Components
 
-Shared post cards, lists, detail layout, action bar, contact reveal, favorite, report, and gallery components will live here.
+Shared post cards, lists, detail and publishing views, contact reveal, image gallery, and admin post management UI. Data mapping, queries, permissions, and server actions live in `features/posts/`.
