@@ -394,7 +394,6 @@ export function DmvHomeClient({ questionCount, guides }: DmvHomeClientProps) {
 
 function ToolCard({ item }: { item: (typeof quickTools)[number] }) {
   const Icon = item.Icon;
-  const scrollTarget = "scrollTarget" in item ? item.scrollTarget : undefined;
   const content = (
     <>
       <span className="flex items-start justify-between gap-2">
@@ -417,18 +416,6 @@ function ToolCard({ item }: { item: (typeof quickTools)[number] }) {
       <a href={item.href} target="_blank" rel="noopener noreferrer" className={className}>
         {content}
       </a>
-    );
-  }
-
-  if (scrollTarget) {
-    return (
-      <button
-        type="button"
-        className={`w-full ${className}`}
-        onClick={() => scrollToSection(scrollTarget)}
-      >
-        {content}
-      </button>
     );
   }
 
