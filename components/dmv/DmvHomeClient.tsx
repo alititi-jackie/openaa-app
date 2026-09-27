@@ -70,7 +70,7 @@ const practiceCards = [
 
 const quickTools = [
   { title: "罚单查询", desc: "交通罚单与处理指引", href: "/dmv/tickets", Icon: AlertTriangle, external: false },
-  { title: "纽约 DMV 笔试练习", desc: "查看题库、练习模式、模拟考试与错题练习", href: "#dmv-practice-section", Icon: BookOpen, external: false, scrollTarget: "dmv-practice-section" },
+  { title: "各州 DMV 笔试练习", desc: "美国各州中文题库、练习与模拟考试", href: "https://dmv.openaa.com/", Icon: BookOpen, external: true },
   { title: "DMV 小工具", desc: "文件检查、6 Points、REAL ID 工具", href: "https://toolku.com/usa/dmv/document-checker.html", Icon: Car, external: true },
   { title: "驾照申请", desc: "Learner Permit 官方入口", href: "https://dmv.ny.gov/driver-license/get-learner-permit", Icon: FileText, external: true },
   { title: "驾照更新", desc: "到期续期与资料要求", href: "https://dmv.ny.gov/driver-license/renew-license", Icon: RefreshCw, external: true },
@@ -238,6 +238,25 @@ export function DmvHomeClient({ questionCount, guides }: DmvHomeClientProps) {
       </section>
 
       <section className="grid gap-3">
+        <a
+          href="https://dmv.openaa.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-2xl border border-blue-100 bg-white p-4 text-left shadow-sm transition active:scale-[0.99]"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-base font-black text-slate-950">美国各州 DMV 中文题库</h3>
+              <p className="mt-1 text-sm leading-6 text-slate-600">选择所在州，进入 DMV 中文笔试题库、练习与模拟考试。</p>
+            </div>
+            <BookOpen size={18} className="shrink-0 text-blue-600" />
+          </div>
+          <span className="mt-3 inline-flex items-center gap-1 rounded-full bg-blue-600 px-3 py-1.5 text-sm font-bold text-white">
+            进入各州题库
+            <ArrowRight size={14} />
+          </span>
+        </a>
+
         <button
           type="button"
           onClick={() => scrollToSection("dmv-quick-tools-section")}
@@ -375,7 +394,6 @@ export function DmvHomeClient({ questionCount, guides }: DmvHomeClientProps) {
 
 function ToolCard({ item }: { item: (typeof quickTools)[number] }) {
   const Icon = item.Icon;
-  const scrollTarget = "scrollTarget" in item ? item.scrollTarget : undefined;
   const content = (
     <>
       <span className="flex items-start justify-between gap-2">
@@ -398,18 +416,6 @@ function ToolCard({ item }: { item: (typeof quickTools)[number] }) {
       <a href={item.href} target="_blank" rel="noopener noreferrer" className={className}>
         {content}
       </a>
-    );
-  }
-
-  if (scrollTarget) {
-    return (
-      <button
-        type="button"
-        className={`w-full ${className}`}
-        onClick={() => scrollToSection(scrollTarget)}
-      >
-        {content}
-      </button>
     );
   }
 
