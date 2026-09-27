@@ -1,28 +1,32 @@
-﻿# OpenAA Architecture
+﻿# OpenAA architecture
 
-`openaa-app` is the canonical OpenAA platform core for `openaa.com`. It owns the OpenAA repository, Supabase schema, Auth, Storage, API, and admin system.
+`openaa-app` is the canonical application for `https://openaa.com`. It uses Next.js App Router, TypeScript, Supabase Auth, Postgres, Storage, and Vercel. The web and PWA share one application; any future mobile wrapper should reuse the same backend.
 
-## Phase 1 Scope
+## Repository map
 
-- Next.js App Router, TypeScript, Tailwind CSS.
-- Mobile-first AppShell with a centered desktop phone-width container.
-- PWA shell, legal pages, static sitemap, robots, and domain-aware SEO config.
-- Placeholder routes only; no business data and no Supabase connection.
+| Path | Responsibility |
+| --- | --- |
+| `app/(site)/` | Public pages, accounts, channels, and metadata. The route group does not appear in URLs. |
+| `app/admin/` | Admin pages and route-level access gates. |
+| `app/api/`, `app/auth/callback/` | HTTP endpoints and Supabase auth callback. |
+| `components/` | Shared UI grouped by site area or business domain. |
+| `features/` | Business queries, actions, mapping, validation, and types. Posts are shared by jobs, housing, marketplace, and services. |
+| `lib/` | Infrastructure: Supabase clients, authorization, configuration, rate limits, SEO, and common validation. |
+| `supabase/migrations/` | Ordered database schema and RLS changes. |
+| `public/` | Images, icons, and PWA service worker. |
+| `tests/` | Unit checks and space for isolated database integration checks. |
+| `tools/archive/` | Historical import data and manually invoked maintenance scripts; excluded from the website runtime. |
 
-## Platform Direction
+Routes use server components for reads, feature actions for writes, and route handlers for HTTP consumers. The public and admin UI share the Supabase schema. Server checks and database policies both enforce authorization; hiding a button is not an authorization rule.
 
-- Web, PWA, and future Android/iOS wrappers share one business system.
-- Supabase Auth, database, Storage, API, admin, permissions, moderation, and content all remain shared.
-- Do not build separate native-only business logic unless a future wrapper requires a small integration bridge.
+## Content and configuration
 
-## Top Quick Links
+The four post channels use `features/posts/` and `components/posts/`. Home, news, navigation, DMV, ads, notifications, accounts, and admin have separate feature and UI modules. Home configuration and top quick links read from Supabase with fallback content for unavailable public data. `app/sitemap.ts`, `app/robots.ts`, and `lib/seo/` own crawl metadata and canonical URLs.
 
-The global header includes a New York city entry and an expandable horizontal quick navigation bar. The current frontend uses `fallbackTopQuickLinks` so the app shell works without Supabase environment variables.
+The privileged client in `lib/supabase/admin.ts` is server-only. Never pass a service role credential to browser code. `lib/supabase/database.ts` contains generated schema types; `lib/supabase/types.ts` contains application-facing types. See `lib/supabase/README.md` for regeneration.
 
-Future admin configuration should use the `top_quick_links` table shape: `id`, `title`, `url`, `open_mode`, `sort_order`, `is_active`, `city_id`, and optional `icon`. Runtime reads should filter `is_active = true`, scope to the default New York city, sort by `sort_order`, and support `open_mode` values of `same` and `new`.
+## Maintenance
 
-Do not import external repository data into OpenAA unless it has a reviewed import plan, explicit provenance, and owner approval.
+Run `npm run lint`, `npm run typecheck`, `npm test`, `npm run audit:admin`, and `npm run build` for a full local check. CI runs the same checks on pull requests and main. Unit tests do not exercise live database policies; verify RLS against an isolated database before changing permissions.
 
-## Out of Phase 1
-
-Payments, chats, orders, points, memberships, native app packaging, unrelated Supabase reuse, user migration from external projects, and service role exposure are not allowed.
+Put schema changes in new numbered migrations. Historical import scripts require explicit parameters and must be reviewed before any database apply. See `tools/archive/README.md`.

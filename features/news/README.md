@@ -1,3 +1,3 @@
 # News
 
-News listing, detail, categories, and admin publishing will live here.
+Public news listing and detail reads, categories, validation, and admin publishing. UI lives in `components/news/`; routes live under `app/`.

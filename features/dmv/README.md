@@ -1,3 +1,3 @@
 # DMV
 
-DMV question loading will use Supabase `dmv_questions`; the audited archive JSON is migration input only.
+Question reads, practice and sign predicates, ticket data, types, and structured data for the DMV channel. Interactive screens live in `components/dmv/`. Database questions use `dmv_questions`; imported archives remain separate from runtime code.

@@ -1,3 +1,3 @@
 # Navigation
 
-Public navigation and user navigation features will live here.
+Public and personal navigation queries, actions, validation, and mapping. UI and admin forms live in `components/navigation/`.

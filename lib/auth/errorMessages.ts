@@ -1,4 +1,4 @@
-import { passwordLengthMessage } from "@/lib/auth/passwordPolicy";
+import { passwordLengthMessage } from "@/lib/auth/password-policy";
 
 const AUTH_ERROR_MESSAGES: Array<[string, string]> = [
   ["invalid login credentials", "邮箱或密码不正确。"],

@@ -1,3 +1,3 @@
 # Admin Components
 
-Admin shell, auth gate, page headers, stat cards, filters, tables, action buttons, and audit panels will live here.
+Admin auth gate, page chrome, cards, filters, dialogs, and common action controls. Business-specific admin components live in their own `components/` directories; authorization and audit logic live in `lib/permissions/`.
