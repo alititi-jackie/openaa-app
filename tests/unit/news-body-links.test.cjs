@@ -13,6 +13,14 @@ test("news body supports labeled links and existing plain URLs", () => {
   ]);
 });
 
+test("news body stops plain URLs before Chinese punctuation and following text", () => {
+  assert.deepEqual(parseNewsBodyLinks("访问 https://dmv.openaa.com/，选择所在州。"), [
+    { text: "访问 " },
+    { text: "https://dmv.openaa.com/", href: "https://dmv.openaa.com/" },
+    { text: "，选择所在州。" },
+  ]);
+});
+
 test("news body does not turn unsafe or invalid links into anchors", () => {
   assert.deepEqual(parseNewsBodyLinks("[打开](javascript:alert(1)) https://invalid/ <script>"), [
     { text: "[打开](javascript:alert(1)) " },

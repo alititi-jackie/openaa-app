@@ -1,7 +1,7 @@
 export type NewsBodyPart = { text: string; href?: string };
 
 // Only web links are supported. Everything else stays as ordinary escaped text.
-const linkPattern = /\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)|https?:\/\/[^\s<>]+/gi;
+const linkPattern = /\[([^\]\n]+)\]\((https?:\/\/[A-Za-z0-9._~:/?#@!$&'(*+,;=%-]+)\)|https?:\/\/[A-Za-z0-9._~:/?#@!$&'()*+,;=%-]+/gi;
 const trailingPunctuation = /[.,!?;:，。！？；：）\])]+$/;
 
 function safeWebUrl(value: string) {
