@@ -2950,6 +2950,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      consume_rate_limit: {
+        Args: { p_actor_id: string; p_action: string; p_limit: number; p_window_start: string; p_metadata?: Json }
+        Returns: boolean
+      }
+      get_site_analytics_summary: {
+        Args: { p_today_start: string; p_seven_day_start: string; p_active_since: string }
+        Returns: Json
+      }
       has_admin_exemption: {
         Args: { p_exemption_key: string }
         Returns: boolean

@@ -6,6 +6,7 @@ import { readReportLimitSettings, type ReportLimitSettings } from "@/features/re
 import { isReportReason } from "@/features/reports/types";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { checkAdminRateLimit, readClientIp } from "@/lib/rateLimit/server";
 
 export const dynamic = "force-dynamic";
 
@@ -67,11 +68,19 @@ export async function POST(request: NextRequest) {
 
   const settings = await readReportLimitSettings(supabase);
   const totalLimit = await checkReportTotalLimit(supabase, settings);
+  if ("error" in totalLimit && totalLimit.error) {
+    return NextResponse.json({ error: "举报提交暂时不可用，请稍后再试。" }, { status: 503 });
+  }
   if (!totalLimit.allowed) {
     return NextResponse.json({ error: "今日举报提交数量已达上限，请明天再试。" }, { status: 429 });
   }
 
-  const rateLimit = await checkReportRateLimit(supabase, request, user?.id ?? visitorId, Boolean(user), settings);
+  let rateLimit: { allowed: boolean };
+  try {
+    rateLimit = await checkReportRateLimit(request, user?.id ?? visitorId, Boolean(user), settings);
+  } catch {
+    return NextResponse.json({ error: "举报提交暂时不可用，请稍后再试。" }, { status: 503 });
+  }
   if (!rateLimit.allowed) {
     return NextResponse.json({ error: "今日提交次数已达上限，请明天再试。" }, { status: 429 });
   }
@@ -144,54 +153,19 @@ async function checkReportTotalLimit(supabase: ReturnType<typeof createSupabaseA
     .gte("created_at", start.toISOString())
     .lt("created_at", end.toISOString());
 
-  if (error) return { allowed: true };
+  if (error) return { allowed: false, error: true };
   return { allowed: (count ?? 0) < settings.totalDailyLimit };
 }
 
-async function checkReportRateLimit(supabase: ReturnType<typeof createSupabaseAdminClient>, request: NextRequest, actorId: string, isUser: boolean, settings: ReportLimitSettings) {
-  const now = new Date();
-  const { start: windowStart } = dayWindow(now);
+async function checkReportRateLimit(request: NextRequest, actorId: string, isUser: boolean, settings: ReportLimitSettings) {
   const action = isUser ? "report_post_user" : "report_post_visitor";
   const actor = isUser ? actorId : `${actorId}:${readClientIp(request)}`;
   const maxCount = isUser ? settings.userDailyLimit : settings.visitorDailyLimit;
   const ipActor = readClientIp(request);
-
-  const [actorLimit, ipLimit] = await Promise.all([
-    readRateLimitRecord(supabase, actor, action, windowStart),
-    readRateLimitRecord(supabase, ipActor, "report_post_ip", windowStart),
-  ]);
-
-  if (actorLimit.currentCount >= maxCount || ipLimit.currentCount >= settings.ipDailyLimit) return { allowed: false };
-
-  await Promise.all([
-    writeRateLimitRecord(supabase, actorLimit.id, actor, action, windowStart, actorLimit.currentCount + 1, now),
-    writeRateLimitRecord(supabase, ipLimit.id, ipActor, "report_post_ip", windowStart, ipLimit.currentCount + 1, now),
-  ]);
-
-  return { allowed: true };
-}
-
-async function readRateLimitRecord(supabase: ReturnType<typeof createSupabaseAdminClient>, actor: string, action: string, windowStart: Date) {
-  const { data } = await supabase
-    .from("rate_limits")
-    .select("id,count")
-    .eq("actor_id", actor)
-    .eq("action", action)
-    .eq("window_start", windowStart.toISOString())
-    .maybeSingle();
-
-  return {
-    id: data?.id ?? null,
-    currentCount: typeof data?.count === "number" ? data.count : 0,
-  };
-}
-
-async function writeRateLimitRecord(supabase: ReturnType<typeof createSupabaseAdminClient>, id: string | null, actor: string, action: string, windowStart: Date, count: number, now: Date) {
-  if (id) {
-    await supabase.from("rate_limits").update({ count, updated_at: now.toISOString() }).eq("id", id);
-  } else {
-    await supabase.from("rate_limits").insert({ actor_id: actor, action, window_start: windowStart.toISOString(), count, metadata: { source: "reports_api" } });
-  }
+  const actorLimit = await checkAdminRateLimit({ actorId: actor, action, limit: maxCount, windowMs: 24 * 60 * 60 * 1000 });
+  if (!actorLimit.allowed) return { allowed: false };
+  const ipLimit = await checkAdminRateLimit({ actorId: ipActor, action: "report_post_ip", limit: settings.ipDailyLimit, windowMs: 24 * 60 * 60 * 1000 });
+  return { allowed: ipLimit.allowed };
 }
 
 function dayWindow(base = new Date()) {
@@ -218,8 +192,4 @@ function isValidUrl(value: string) {
 
 function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
-}
-
-function readClientIp(request: NextRequest) {
-  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";
 }

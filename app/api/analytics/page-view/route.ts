@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { checkAdminRateLimit, readClientIp } from "@/lib/rateLimit/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const MAX_TEXT_LENGTH = 500;
@@ -15,6 +16,10 @@ type PageViewPayload = {
 };
 
 export async function POST(request: Request) {
+  const origin = request.headers.get("origin");
+  if (!origin || origin !== new URL(request.url).origin) {
+    return NextResponse.json({ ok: true, skipped: true });
+  }
   const supabase = await createSupabaseServerClient();
   if (!supabase) return NextResponse.json({ ok: false, message: "missing_config" }, { status: 503 });
 
@@ -41,6 +46,9 @@ export async function POST(request: Request) {
 
   const headerStore = await headers();
   const userAgent = normalizeText(headerStore.get("user-agent"), MAX_TEXT_LENGTH);
+  if (!userAgent || /bot|crawler|spider|headless|lighthouse|preview/i.test(userAgent)) {
+    return NextResponse.json({ ok: true, skipped: true });
+  }
   const referrer = normalizeText(payload.referrer, MAX_TEXT_LENGTH) ?? normalizeText(headerStore.get("referer"), MAX_TEXT_LENGTH);
   const allowed = await allowPageViewRecord(request, path);
 
@@ -48,7 +56,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, skipped: true });
   }
 
-  const { error } = await supabase.from("site_page_views").insert({
+  let adminClient: ReturnType<typeof createSupabaseAdminClient>;
+  try {
+    adminClient = createSupabaseAdminClient();
+  } catch {
+    return NextResponse.json({ ok: false, message: "missing_config" }, { status: 503 });
+  }
+  const { error } = await adminClient.from("site_page_views").insert({
     path,
     title: normalizeText(payload.title, 180),
     user_id: user?.id ?? null,
@@ -79,9 +93,16 @@ async function allowPageViewRecord(request: Request, path: string) {
       metadata: { source: "analytics_page_view" },
     });
 
-    return result.allowed;
+    if (!result.allowed) return false;
+    const globalResult = await checkAdminRateLimit({
+      actorId: clientIp,
+      action: "analytics_page_view_ip_global",
+      limit: 300,
+      windowMs: ANALYTICS_IP_PATH_WINDOW_MS,
+    });
+    return globalResult.allowed;
   } catch {
-    return true;
+    return false;
   }
 }
 
