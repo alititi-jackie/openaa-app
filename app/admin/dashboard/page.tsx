@@ -119,7 +119,7 @@ function SiteAnalyticsCard({ summary }: { summary: SiteAnalyticsSummary }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-black text-slate-950">访问概览</h2>
-          <p className="mt-1 text-sm leading-6 text-slate-600">统计前台页面访问，不包含后台、API 和系统静态资源。</p>
+          <p className="mt-1 text-sm leading-6 text-slate-600">按纽约时间统计；最近 7 天为含今天的 7 个自然日。统计前台页面访问，不包含后台、API 和系统静态资源。</p>
         </div>
         <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">最近 7 天访客 {summary.sevenDayVisitors}</span>
       </div>

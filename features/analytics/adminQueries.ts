@@ -1,9 +1,10 @@
 import "server-only";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { newYorkDayStart } from "./timeZone";
 
 const POPULAR_PAGE_LIMIT = 10;
-const MAX_ANALYTICS_ROWS = 8000;
+const ANALYTICS_PAGE_SIZE = 1000;
 
 export type PopularPageItem = {
   path: string;
@@ -39,60 +40,79 @@ export async function getSiteAnalyticsSummary(): Promise<SiteAnalyticsSummary> {
   if (!supabase) return emptySummary("missing_config", "Supabase 环境变量未配置，暂时无法读取访问统计。");
 
   const now = new Date();
-  const todayStart = startOfDay(now).toISOString();
-  const sevenDaysAgo = daysAgo(now, 7).toISOString();
+  const todayStart = newYorkDayStart(now);
+  const sevenDaysAgo = newYorkDayStart(now, 6);
   const activeSince = new Date(now.getTime() - 5 * 60 * 1000).toISOString();
 
   const [
-    todayViewsResult,
-    todayVisitorsRows,
-    activeVisitorRows,
-    sevenDayVisitorRows,
-    popularPageRows,
+    pageViewsResult,
     todayLoginsResult,
     todayNewUsersResult,
     totalUsersResult,
   ] = await Promise.all([
-    supabase.from("site_page_views").select("id", { count: "exact", head: true }).gte("created_at", todayStart),
-    supabase.from("site_page_views").select("user_id,visitor_id").gte("created_at", todayStart).limit(MAX_ANALYTICS_ROWS),
-    supabase.from("site_page_views").select("user_id,visitor_id").gte("created_at", activeSince).limit(MAX_ANALYTICS_ROWS),
-    supabase.from("site_page_views").select("user_id,visitor_id").gte("created_at", sevenDaysAgo).limit(MAX_ANALYTICS_ROWS),
-    supabase
-      .from("site_page_views")
-      .select("path,title,user_id,visitor_id,created_at")
-      .gte("created_at", sevenDaysAgo)
-      .order("created_at", { ascending: false })
-      .limit(MAX_ANALYTICS_ROWS),
+    getPageViewsSince(supabase, sevenDaysAgo),
     supabase.from("profiles").select("id", { count: "exact", head: true }).gte("last_login_at", todayStart),
     supabase.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", todayStart),
     supabase.from("profiles").select("id", { count: "exact", head: true }),
   ]);
 
   const firstError =
-    todayViewsResult.error ??
-    todayVisitorsRows.error ??
-    activeVisitorRows.error ??
-    sevenDayVisitorRows.error ??
-    popularPageRows.error ??
+    pageViewsResult.error ??
     todayLoginsResult.error ??
     todayNewUsersResult.error ??
     totalUsersResult.error;
 
   if (firstError) {
-    return emptySummary("error", "访问统计读取失败，请确认数据库 migration 已执行。");
+    return emptySummary("error", "访问统计读取失败，请检查数据库连接与统计表权限。");
   }
+
+  const pageViews = pageViewsResult.data;
+  const todayStartMs = Date.parse(todayStart);
+  const activeSinceMs = Date.parse(activeSince);
+  const todayViews = pageViews.filter((row) => Date.parse(row.created_at) >= todayStartMs);
+  const activeViews = pageViews.filter((row) => Date.parse(row.created_at) >= activeSinceMs);
 
   return {
     state: "ready",
-    todayViews: todayViewsResult.count ?? 0,
-    todayVisitors: countDistinctActors(todayVisitorsRows.data ?? []),
-    activeVisitors: countDistinctActors(activeVisitorRows.data ?? []),
-    sevenDayVisitors: countDistinctActors(sevenDayVisitorRows.data ?? []),
+    todayViews: todayViews.length,
+    todayVisitors: countDistinctActors(todayViews),
+    activeVisitors: countDistinctActors(activeViews),
+    sevenDayVisitors: countDistinctActors(pageViews),
     todayLogins: todayLoginsResult.count ?? 0,
     todayNewUsers: todayNewUsersResult.count ?? 0,
     totalUsers: totalUsersResult.count ?? 0,
-    popularPages: buildPopularPages((popularPageRows.data ?? []) as PageViewRow[]),
+    popularPages: buildPopularPages(pageViews),
   };
+}
+
+// Keyset pagination keeps the results stable when new page views arrive during the read.
+async function getPageViewsSince(supabase: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>, since: string) {
+  const rows: (PageViewRow & { id: string })[] = [];
+  let cursor: { created_at: string; id: string } | null = null;
+
+  while (true) {
+    let query = supabase
+      .from("site_page_views")
+      .select("id,path,title,user_id,visitor_id,created_at")
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(ANALYTICS_PAGE_SIZE);
+
+    if (cursor) {
+      query = query.or(`created_at.lt.${cursor.created_at},and(created_at.eq.${cursor.created_at},id.lt.${cursor.id})`);
+    }
+
+    const { data, error } = await query;
+    if (error) return { data: [], error };
+    const batch = data ?? [];
+    rows.push(...batch);
+    if (batch.length < ANALYTICS_PAGE_SIZE) break;
+    const last = batch[batch.length - 1];
+    cursor = { created_at: last.created_at, id: last.id };
+  }
+
+  return { data: rows, error: null };
 }
 
 function emptySummary(state: SiteAnalyticsSummary["state"], error?: string): SiteAnalyticsSummary {
@@ -158,14 +178,4 @@ function normalizePageTitle(title: string | null) {
 
 function shouldHideAnalyticsPath(path: string) {
   return path.startsWith("/admin") || path.startsWith("/api") || path.startsWith("/_next");
-}
-
-function startOfDay(date: Date) {
-  const result = new Date(date);
-  result.setHours(0, 0, 0, 0);
-  return result;
-}
-
-function daysAgo(date: Date, days: number) {
-  return new Date(date.getTime() - days * 24 * 60 * 60 * 1000);
 }
