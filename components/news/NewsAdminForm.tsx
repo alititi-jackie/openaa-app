@@ -558,6 +558,7 @@ function NewsPostEditor({
       <TextareaField label="摘要" name="excerpt" rows={3} value={values.excerpt} onChange={(value) => setValue("excerpt", value)} />
       <TextareaField label="SEO description" name="seo_description" rows={3} value={values.seoDescription} onChange={(value) => setValue("seoDescription", value)} />
       <TextareaField label="正文" name="body" rows={9} value={values.body} onChange={(value) => setValue("body", value)} required />
+      <p className="text-xs text-slate-500">链接写法：直接输入 https://dmv.openaa.com/，或输入 [点击进入 OpenAA DMV](https://dmv.openaa.com/)；发布后均可点击。</p>
 
       <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

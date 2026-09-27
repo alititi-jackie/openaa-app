@@ -4,6 +4,7 @@ import { FavoriteButton } from "@/components/common/FavoriteButton";
 import { PageShareButton } from "@/components/common/PageShareButton";
 import { DetailShareCard } from "@/components/posts/DetailShareCard";
 import { formatNewsDate } from "@/features/news/mappers";
+import { parseNewsBodyLinks } from "@/features/news/bodyLinks";
 import type { NewsPostCard, NewsPostDetail } from "@/features/news/types";
 import { appUrl } from "@/lib/seo/siteConfig";
 import { NewsCover } from "./NewsCover";
@@ -154,7 +155,13 @@ export function NewsDetail({ post, previousPost, nextPost, relatedPosts, initial
 
       <div className="mt-5 space-y-4 text-[15px] leading-7 text-zinc-800">
         {paragraphs.map((paragraph, index) => (
-          <p key={`${post.id}-${index}`}>{paragraph}</p>
+          <p key={`${post.id}-${index}`} className="break-words">
+            {parseNewsBodyLinks(paragraph).map((part, partIndex) => part.href ? (
+              <a key={partIndex} href={part.href} target="_blank" rel="noopener noreferrer" className="break-all text-blue-700 underline underline-offset-2 hover:text-blue-900">
+                {part.text}
+              </a>
+            ) : <span key={partIndex}>{part.text}</span>)}
+          </p>
         ))}
       </div>
 
