@@ -9,7 +9,8 @@ const { normalizeWebsiteUrl } = require("../../lib/validation/url.ts");
 const { validJob } = require("../fixtures/postValues.cjs");
 const { validatePostForm } = require("../../features/posts/validators.ts");
 const { getAdminPostOperationOptions } = require("../../features/posts/adminOperations.ts");
-const { mapPostRecordToCard } = require("../../features/posts/mappers.ts");
+const { mapPostRecordToCard, mapPostRecordToDetail } = require("../../features/posts/mappers.ts");
+const { emptyPostFormValues, formValuesFromDetail } = require("../../features/posts/formMappers.ts");
 
 test("nickname rules accept ordinary names and reject impersonation", () => {
   assert.deepEqual(validateNickname("  Jackie  "), { ok: true, nickname: "Jackie" });
@@ -46,6 +47,7 @@ test("post mapping displays the author's nickname on job cards", () => {
     id: "job-1",
     post_type: "job",
     author_id: "user-1",
+    is_anonymous: false,
     title: "招聘服务员",
     summary: "纽约餐厅招聘",
     body: "详细内容",
@@ -66,6 +68,16 @@ test("post mapping displays the author's nickname on job cards", () => {
   assert.equal(card.authorName, "Jackie");
   assert.equal(card.href, "/jobs/job-1");
   assert.equal(card.description, "纽约餐厅招聘");
+
+  const anonymous = { ...post, is_anonymous: true };
+  const anonymousCard = mapPostRecordToCard(anonymous, authors);
+  const anonymousDetail = mapPostRecordToDetail(anonymous, authors);
+  assert.equal(anonymousCard.authorName, "匿名发布");
+  assert.equal(anonymousCard.listingMetaFields.find((field) => field.key === "author").value, "匿名发布");
+  assert.equal(anonymousDetail.detailMetaFields.find((field) => field.key === "author").value, "匿名发布");
+  assert.equal(anonymousDetail.sourceRecord.author_id, "user-1");
+  assert.equal(emptyPostFormValues("job").isAnonymous, false);
+  assert.equal(formValuesFromDetail(anonymousDetail).isAnonymous, true);
 });
 
 test("published posts offer hide but pending posts offer approve", () => {

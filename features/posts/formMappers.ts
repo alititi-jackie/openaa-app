@@ -92,6 +92,7 @@ export function emptyPostFormValues(postType: PostType, contactDefaults: Publish
     body: "",
     location_area: defaultLocation,
     visibility: "public",
+    isAnonymous: false,
     contact: {
       contact_name: contactDefaults.contact_name ?? "",
       phone: contactDefaults.phone ?? "",
@@ -113,6 +114,7 @@ export function formValuesFromDetail(post: PostDetailView): PostFormValues {
     ...emptyPostFormValues(post.type),
     mode: "edit" as const,
     postId: post.id,
+    isAnonymous: post.sourceRecord?.is_anonymous ?? false,
     title: post.title,
     summary: post.description,
     body: post.body,
