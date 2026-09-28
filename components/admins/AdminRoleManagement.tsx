@@ -9,6 +9,7 @@ import { grantAdminRole } from "@/features/admins/adminActions";
 import { adminExemptionOptions, adminRoleOptions, getAdminRoleLabel, getAdminStatusLabel } from "@/features/admins/adminRoleConfig";
 import type { AdminAuthorizationConfig, AdminCandidate, AdminRoleListItem, AdminsPermissions } from "@/features/admins/adminQueries";
 import type { AdminRoleName } from "@/lib/supabase/types";
+import { accountDisplayName } from "@/lib/displayName";
 
 const DATE_TIME_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
   month: "short",
@@ -82,7 +83,7 @@ export function AdminCandidates({ candidates, permissions, authorizationConfig }
         <article key={candidate.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <h3 className="font-black text-slate-950">{candidate.nickname || candidate.email || "未命名用户"}</h3>
+              <h3 className="font-black text-slate-950">{accountDisplayName(candidate.nickname)}</h3>
               <p className="mt-1 break-all text-sm text-slate-600">{candidate.email || "未绑定邮箱"}</p>
               <p className="mt-1 break-all font-mono text-xs text-slate-400">{candidate.id}</p>
               {candidate.existingAdminRole ? (
@@ -110,7 +111,7 @@ export function AdminRolesList({ admins, permissions, authorizationConfig }: { a
         <article key={admin.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <h3 className="truncate font-black text-slate-950">{getAdminDisplayName(admin.nickname, admin.email)}</h3>
+              <h3 className="truncate font-black text-slate-950">{accountDisplayName(admin.nickname)}</h3>
               <p className="mt-1 break-all text-sm text-slate-600">{admin.email || "未绑定邮箱"}</p>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-black text-blue-700">角色：{formatRoleLabel(admin.role)}</span>
@@ -164,13 +165,6 @@ function SummaryRow({ label, items, emptyLabel }: { label: string; items: string
       </div>
     </div>
   );
-}
-
-function getAdminDisplayName(nickname: string | null, email: string | null) {
-  const name = nickname?.trim();
-  if (name) return name;
-  const emailPrefix = email?.split("@")[0]?.trim();
-  return emailPrefix || "未命名管理员";
 }
 
 function GrantAdminForm({ candidate, permissions, authorizationConfig }: { candidate: AdminCandidate; permissions: AdminsPermissions; authorizationConfig: AdminAuthorizationConfig }) {

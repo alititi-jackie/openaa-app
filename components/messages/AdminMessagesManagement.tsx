@@ -7,6 +7,7 @@ import { contactUserFromMessages, handleMessageReport, markFeedbackViewed, softD
 import type { AdminFeedbackItem, AdminMessageReport, AdminMessagesData, AdminUserSummary, FeedbackStatusTab, MessageTab, ReportStatusTab } from "@/features/messages/adminQueries";
 import { reportReasonOptions } from "@/features/reports/types";
 import { supportTicketTypeOptions } from "@/features/support/types";
+import { accountDisplayName } from "@/lib/displayName";
 
 const reportTabs: Array<{ value: ReportStatusTab; label: string }> = [
   { value: "open", label: "未处理" },
@@ -361,5 +362,5 @@ function reportActionLabel(value: AdminMessageReport["postAction"]) {
 }
 
 function userLabel(user: AdminUserSummary) {
-  return user.nickname || user.email || user.id;
+  return accountDisplayName(user.nickname);
 }

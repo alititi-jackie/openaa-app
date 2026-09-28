@@ -20,6 +20,7 @@ import {
 } from "@/features/admins/adminRoleConfig";
 import type { AdminRoleListItem, AdminsPermissions } from "@/features/admins/adminQueries";
 import type { AdminRoleName } from "@/lib/supabase/types";
+import { accountDisplayName } from "@/lib/displayName";
 
 export function StandaloneAdminAdminManageDialog({ admin, permissions }: { admin: AdminRoleListItem; permissions: AdminsPermissions }) {
   const router = useRouter();
@@ -80,7 +81,7 @@ export function StandaloneAdminAdminManageDialog({ admin, permissions }: { admin
             <div className="flex items-start justify-between gap-3 border-b border-slate-100 p-5">
               <div className="min-w-0">
                 <p className="text-xs font-black uppercase tracking-wide text-blue-600">管理员管理</p>
-                <h2 className="mt-1 truncate text-lg font-black text-slate-950">{admin.nickname || admin.email || "未命名管理员"}</h2>
+                <h2 className="mt-1 truncate text-lg font-black text-slate-950">{accountDisplayName(admin.nickname)}</h2>
                 <p className="mt-1 break-all text-xs font-mono text-slate-400">{admin.userId}</p>
               </div>
               <button type="button" onClick={closeDialog} className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 hover:bg-slate-50" aria-label="关闭">

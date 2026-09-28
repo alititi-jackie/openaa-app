@@ -10,6 +10,7 @@ import { getAdminPermissionLabel } from "@/features/admins/adminRoleConfig";
 import { setAdminUserStatus, updateAdminUserNote, type AdminUserActionState } from "@/features/users/adminActions";
 import type { AdminUserListItem, AdminUsersPermissions } from "@/features/users/adminQueries";
 import type { ProfileStatus } from "@/lib/supabase/types";
+import { accountDisplayName } from "@/lib/displayName";
 
 const initialState: AdminUserActionState = { ok: true, message: "" };
 
@@ -152,7 +153,7 @@ function AdminUserCard({ user, permissions, currentAdminId }: { user: AdminUserL
             {user.isVerifiedUser ? <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">平台认证</span> : null}
             {isCurrentAdmin ? <span className="rounded-full bg-purple-50 px-2.5 py-1 text-xs font-bold text-purple-700">当前管理员</span> : null}
           </div>
-          <h2 className="mt-3 truncate text-base font-black text-slate-950">{user.nickname || user.email || "未命名用户"}</h2>
+          <h2 className="mt-3 truncate text-base font-black text-slate-950">{accountDisplayName(user.nickname)}</h2>
           <p className="mt-1 break-all text-sm text-slate-600">{user.email || "未绑定邮箱"}</p>
           <p className="mt-1 break-all text-xs font-mono text-slate-400">{user.id}</p>
         </div>
