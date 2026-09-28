@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 import { AdminAuthGate } from "@/components/admin/AdminAuthGate";
 import { AdminCurrentAccountCard } from "@/components/admin/AdminCurrentAccountCard";
 import { AdminTopActions } from "@/components/admin/AdminTopActions";
@@ -149,11 +150,14 @@ function SiteAnalyticsCard({ summary }: { summary: SiteAnalyticsSummary }) {
         ))}
       </div>
 
-      <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50 p-3">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="text-sm font-black text-slate-950">热门页面 Top 10</h3>
-          <span className="text-xs font-bold text-slate-500">最近 7 天</span>
-        </div>
+      <details className="group mt-4 rounded-xl border border-slate-100 bg-slate-50 p-3">
+        <summary className="flex min-h-7 cursor-pointer list-none items-center justify-between gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 [&::-webkit-details-marker]:hidden">
+          <span className="text-sm font-black text-slate-950">热门页面 Top 10</span>
+          <span className="flex shrink-0 items-center gap-2 text-xs font-bold text-slate-500">
+            最近 7 天
+            <ChevronDown size={16} aria-hidden="true" className="transition-transform group-open:rotate-180" />
+          </span>
+        </summary>
         {summary.popularPages.length > 0 ? (
           <ol className="mt-3 grid gap-2">
             {summary.popularPages.map((page, index) => (
@@ -174,7 +178,7 @@ function SiteAnalyticsCard({ summary }: { summary: SiteAnalyticsSummary }) {
         ) : (
           <p className="mt-3 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-500">暂无前台访问记录。</p>
         )}
-      </div>
+      </details>
     </section>
   );
 }
