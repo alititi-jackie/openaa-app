@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import type { Profile } from "@/lib/supabase/types";
+import { accountDisplayName } from "@/lib/displayName";
 
 type ProfileUserCenterCardProps = {
   profile: Profile;
@@ -29,7 +30,7 @@ export function ProfileUserCenterCard({
 }: ProfileUserCenterCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [avatarFailed, setAvatarFailed] = useState(false);
-  const username = profile.nickname || profile.email?.split("@")[0] || "用户";
+  const username = accountDisplayName(profile.nickname);
   const filledItems = getFilledProfileItems(profile);
   const avatarUrl = avatarFailed ? "" : profile.avatar_url;
 

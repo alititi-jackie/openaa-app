@@ -3,6 +3,7 @@ import "server-only";
 import { hasAdminModule, hasAdminPermission, isSuperAdmin } from "@/lib/permissions/admin";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { accountDisplayName } from "@/lib/displayName";
 import { getActiveNotificationTemplates } from "@/features/notifications/service";
 import { isPostEffectivelyPinned } from "./accessors";
 import { POST_TYPE_LABELS, POST_TYPE_TO_ROUTE, PUBLIC_POST_TYPES } from "./constants";
@@ -936,7 +937,7 @@ async function fetchAdminPostEvents(adminSupabase: ReturnType<typeof createSupab
 }
 
 function authorLabel(author: { email: string | null; nickname: string | null } | null | undefined, fallback?: string | null) {
-  return author?.nickname?.trim() || author?.email?.trim() || fallback || "未知作者";
+  return author ? accountDisplayName(author.nickname) : fallback || "未知作者";
 }
 
 function relationOne<T>(value: T[] | T | null | undefined): T | null {

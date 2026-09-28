@@ -1,5 +1,6 @@
 import { getAdminRoleLabel, getAdminStatusLabel } from "@/features/admins/adminRoleConfig";
 import type { AdminRoleName } from "@/lib/supabase/types";
+import { accountDisplayName } from "@/lib/displayName";
 
 export function AdminCurrentAccountCard({
   displayName,
@@ -13,7 +14,7 @@ export function AdminCurrentAccountCard({
   isActive: boolean | string | null | undefined;
 }) {
   const normalizedEmail = email?.trim() || "";
-  const resolvedDisplayName = getDisplayName(displayName, normalizedEmail);
+  const resolvedDisplayName = accountDisplayName(displayName);
 
   return (
     <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
@@ -27,11 +28,4 @@ export function AdminCurrentAccountCard({
       </div>
     </section>
   );
-}
-
-function getDisplayName(displayName: string | null | undefined, email: string) {
-  const name = displayName?.trim();
-  if (name) return name;
-  const emailPrefix = email.split("@")[0]?.trim();
-  return emailPrefix || "未命名管理员";
 }
