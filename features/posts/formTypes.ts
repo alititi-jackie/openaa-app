@@ -39,6 +39,7 @@ export type BasePostFormValues = {
   body: string;
   location_area: string;
   visibility: "public" | "private";
+  isAnonymous: boolean;
   contact: ContactInput;
   images: UploadedImageInput[];
 };

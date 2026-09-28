@@ -110,6 +110,7 @@ function normalizeRestoredValues(values: PostFormValues, postType: PostType, mod
     postType,
     mode,
     location_area: values.location_area || EMPTY_LOCATION,
+    isAnonymous: Boolean(values.isAnonymous),
   };
 
   if (postType === "housing" && normalizedValues.housing?.housing_mode) {
@@ -474,6 +475,19 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
         ) : null}
 
         <ContactFields value={values.contact} errors={errors} onChange={(contact) => setValue("contact", contact)} />
+
+        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-800">
+          <input
+            type="checkbox"
+            checked={Boolean(values.isAnonymous)}
+            onChange={(event) => setValue("isAnonymous", event.target.checked)}
+            className="mt-0.5 h-4 w-4 accent-blue-600"
+          />
+          <span>
+            <span className="block font-semibold">匿名发布</span>
+            <span className="mt-1 block text-xs leading-5 text-gray-500">勾选后，其他人看到的发布者用户名显示为“匿名发布”；联系方式及其他内容不变。</span>
+          </span>
+        </label>
 
         <div ref={bottomMessageRef}>
           <SubmitBar

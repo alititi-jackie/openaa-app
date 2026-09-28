@@ -84,6 +84,7 @@ export type PostRecord = {
   id: string;
   post_type: PostType;
   author_id: string | null;
+  is_anonymous: boolean;
   title: string;
   summary: string | null;
   body: string | null;

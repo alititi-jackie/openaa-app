@@ -2020,6 +2020,7 @@ export type Database = {
       posts: {
         Row: {
           author_id: string | null
+          is_anonymous: boolean
           body: string | null
           category: string | null
           city_id: string | null
@@ -2055,6 +2056,7 @@ export type Database = {
         }
         Insert: {
           author_id?: string | null
+          is_anonymous?: boolean
           body?: string | null
           category?: string | null
           city_id?: string | null
@@ -2090,6 +2092,7 @@ export type Database = {
         }
         Update: {
           author_id?: string | null
+          is_anonymous?: boolean
           body?: string | null
           category?: string | null
           city_id?: string | null

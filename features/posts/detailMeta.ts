@@ -36,9 +36,9 @@ function businessPill(key: string, label: string, value: string, tone?: DetailMe
   return value ? { key, group: "business", label, value, tone } : null;
 }
 
-function commonDetailPills(author: AuthorSummary | null | undefined, published: string, viewCount: number): DetailMetaPill[] {
+function commonDetailPills(record: PostRecord, author: AuthorSummary | null | undefined, published: string, viewCount: number): DetailMetaPill[] {
   return [
-    { key: "author", group: "common", label: "发布者", value: formatPostAuthorName(author) },
+    { key: "author", group: "common", label: "发布者", value: record.is_anonymous ? "匿名发布" : formatPostAuthorName(author) },
     { key: "views", group: "common", label: "浏览次数", value: formatViewCount(viewCount) },
     { key: "publishedAt", group: "common", label: "发布时间", value: published },
   ];
@@ -55,7 +55,7 @@ function buildDetailSurfaceMetaPills(record: PostRecord, author?: AuthorSummary 
   const area = formatLocationLabel(getPostArea(record));
   const price = getPostPriceDisplay(record, record.post_type === "job");
   const workType = getPostWorkType(record);
-  const common = commonDetailPills(author, published, viewCount);
+  const common = commonDetailPills(record, author, published, viewCount);
   const image: DetailMetaPill | null = options.showImageIndicator ? { key: "image", group: "common", label: "图片", value: "🖼️" } : null;
 
   if (record.post_type === "job") {

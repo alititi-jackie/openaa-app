@@ -47,6 +47,7 @@ const postSelectFields = `
   id,
   post_type,
   author_id,
+  is_anonymous,
   title,
   summary,
   body,
