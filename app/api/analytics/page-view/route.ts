@@ -1,84 +1,123 @@
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { checkAdminRateLimit, readClientIp } from "@/lib/rateLimit/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  agentDimensions,
+  normalizeAnalyticsPath,
+  normalizeId,
+  referrerHost,
+  siteFromOrigin,
+} from "@/features/analytics/shared";
 
-const MAX_TEXT_LENGTH = 500;
 const ANALYTICS_IP_PATH_WINDOW_MS = 5 * 60 * 1000;
 const ANALYTICS_IP_PATH_LIMIT = 120;
 
-type PageViewPayload = {
-  path?: unknown;
-  title?: unknown;
-  visitor_id?: unknown;
-  referrer?: unknown;
-};
-
-export async function POST(request: Request) {
+function cors(request: Request): Record<string, string> {
   const origin = request.headers.get("origin");
-  if (!origin || origin !== new URL(request.url).origin) {
-    return NextResponse.json({ ok: true, skipped: true });
-  }
-  const supabase = await createSupabaseServerClient();
-  if (!supabase) return NextResponse.json({ ok: false, message: "missing_config" }, { status: 503 });
-
-  let payload: PageViewPayload;
-  try {
-    payload = (await request.json()) as PageViewPayload;
-  } catch {
-    return NextResponse.json({ ok: false, message: "invalid_payload" }, { status: 400 });
-  }
-
-  const path = normalizePath(payload.path);
-  if (!path || shouldSkipPath(path)) {
-    return NextResponse.json({ ok: true, skipped: true });
-  }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const visitorId = user ? null : normalizeText(payload.visitor_id, 120);
-  if (!user && !visitorId) {
-    return NextResponse.json({ ok: false, message: "missing_actor" }, { status: 400 });
-  }
-
-  const headerStore = await headers();
-  const userAgent = normalizeText(headerStore.get("user-agent"), MAX_TEXT_LENGTH);
-  if (!userAgent || /bot|crawler|spider|headless|lighthouse|preview/i.test(userAgent)) {
-    return NextResponse.json({ ok: true, skipped: true });
-  }
-  const referrer = normalizeText(payload.referrer, MAX_TEXT_LENGTH) ?? normalizeText(headerStore.get("referer"), MAX_TEXT_LENGTH);
-  const allowed = await allowPageViewRecord(request, path);
-
-  if (!allowed) {
-    return NextResponse.json({ ok: true, skipped: true });
-  }
-
-  let adminClient: ReturnType<typeof createSupabaseAdminClient>;
-  try {
-    adminClient = createSupabaseAdminClient();
-  } catch {
-    return NextResponse.json({ ok: false, message: "missing_config" }, { status: 503 });
-  }
-  const { error } = await adminClient.from("site_page_views").insert({
-    path,
-    title: normalizeText(payload.title, 180),
-    user_id: user?.id ?? null,
-    visitor_id: visitorId,
-    referrer,
-    user_agent: userAgent,
-    device_type: deviceTypeFromUserAgent(userAgent),
-    metadata: {},
+  return siteFromOrigin(origin)
+    ? {
+        "Access-Control-Allow-Origin": origin!,
+        Vary: "Origin",
+        "Cache-Control": "no-store",
+      }
+    : { Vary: "Origin", "Cache-Control": "no-store" };
+}
+export function OPTIONS(request: Request) {
+  if (!siteFromOrigin(request.headers.get("origin")))
+    return new Response(null, { status: 403 });
+  return new Response(null, {
+    status: 204,
+    headers: {
+      ...cors(request),
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Max-Age": "600",
+    },
   });
-
-  if (error) {
-    console.error("[analytics] page view insert failed", { path, error });
-    return NextResponse.json({ ok: false, message: "insert_failed" }, { status: 500 });
+}
+export async function POST(request: Request) {
+  const reply = (body: object, status = 200) =>
+    NextResponse.json(body, { status, headers: cors(request) });
+  const site = siteFromOrigin(request.headers.get("origin"));
+  if (!site) return reply({ ok: false, message: "invalid_origin" }, 403);
+  // Never collect preview deployments in production analytics.
+  if (process.env.VERCEL_ENV && process.env.VERCEL_ENV !== "production")
+    return reply({ ok: true, skipped: true });
+  let payload: Record<string, unknown>;
+  try {
+    const reader = request.body?.getReader();
+    if (!reader) return reply({ ok: false }, 400);
+    const chunks: Uint8Array[] = [];
+    let size = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > 4096) {
+        await reader.cancel();
+        return reply({ ok: false, message: "too_large" }, 413);
+      }
+      chunks.push(value);
+    }
+    payload = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+    if (!payload || typeof payload !== "object" || Array.isArray(payload))
+      return reply({ ok: false }, 400);
+  } catch {
+    return reply({ ok: false, message: "invalid_payload" }, 400);
   }
-
-  return NextResponse.json({ ok: true });
+  const path = normalizeAnalyticsPath(payload.path);
+  if (!path) return reply({ ok: true, skipped: true });
+  const ua = (request.headers.get("user-agent") ?? "").slice(0, 500);
+  if (!ua || /bot|crawler|spider|headless|lighthouse|preview/i.test(ua))
+    return reply({ ok: true, skipped: true });
+  const visitorId = normalizeId(payload.visitor_id);
+  if (!visitorId) return reply({ ok: false, message: "missing_actor" }, 400);
+  if (!(await allowPageViewRecord(request, `${site}:${path}`)))
+    return reply({ ok: true, skipped: true });
+  try {
+    // Subsites use anonymous, credential-free collection; never accept a client user_id.
+    const supabase =
+      site === "openaa" ? await createSupabaseServerClient() : null;
+    const user = supabase ? (await supabase.auth.getUser()).data.user : null;
+    const admin = createSupabaseAdminClient();
+    const eventId =
+      typeof payload.event_id === "string" &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        payload.event_id,
+      )
+        ? payload.event_id
+        : null;
+    const country =
+      process.env.VERCEL === "1"
+        ? request.headers.get("x-vercel-ip-country")
+        : null;
+    const region = country
+      ? request.headers.get("x-vercel-ip-country-region")
+      : null;
+    const { error } = await admin.from("site_page_views").insert({
+      site,
+      path,
+      title:
+        typeof payload.title === "string" ? payload.title.slice(0, 180) : null,
+      user_id: user?.id ?? null,
+      visitor_id: visitorId,
+      event_id: eventId,
+      referrer: referrerHost(payload.referrer),
+      user_agent: ua,
+      ...agentDimensions(ua),
+      country: country && /^[A-Z]{2}$/.test(country) ? country : null,
+      region: region?.slice(0, 80) ?? null,
+      metadata: {},
+    });
+    if (error && error.code !== "23505") {
+      console.error("[analytics] insert failed", { code: error.code });
+      return reply({ ok: false, message: "insert_failed" }, 500);
+    }
+    return reply({ ok: true });
+  } catch {
+    return reply({ ok: false, message: "missing_config" }, 503);
+  }
 }
 
 async function allowPageViewRecord(request: Request, path: string) {
@@ -104,44 +143,4 @@ async function allowPageViewRecord(request: Request, path: string) {
   } catch {
     return false;
   }
-}
-
-function normalizeText(value: unknown, maxLength: number) {
-  if (typeof value !== "string") return null;
-  const text = value.trim();
-  return text ? text.slice(0, maxLength) : null;
-}
-
-function normalizePath(value: unknown) {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  if (!trimmed.startsWith("/")) return null;
-
-  try {
-    const url = new URL(trimmed, "https://openaa.local");
-    return url.pathname.replace(/\/{2,}/g, "/") || "/";
-  } catch {
-    return null;
-  }
-}
-
-function shouldSkipPath(path: string) {
-  return (
-    path.startsWith("/admin") ||
-    path.startsWith("/api") ||
-    path.startsWith("/_next") ||
-    path.startsWith("/static") ||
-    path === "/favicon.ico" ||
-    path === "/robots.txt" ||
-    path === "/sitemap.xml" ||
-    path === "/manifest.webmanifest"
-  );
-}
-
-function deviceTypeFromUserAgent(userAgent: string | null) {
-  const value = userAgent?.toLowerCase() ?? "";
-  if (!value) return null;
-  if (value.includes("ipad") || value.includes("tablet")) return "tablet";
-  if (value.includes("mobile") || value.includes("iphone") || value.includes("android")) return "mobile";
-  return "desktop";
 }

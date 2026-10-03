@@ -7,6 +7,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|apple-touch-icon.png|icons/|og-default.png|openaa-logo.png).*)",
+    "/((?!_next/static|_next/image|favicon.ico|apple-touch-icon.png|icons/|og-default.png|openaa-logo.png|analytics/|api/analytics/page-view).*)",
   ],
 };
