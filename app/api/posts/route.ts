@@ -4,8 +4,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const type = readPostType(request);
 
-  // Explicit paged-list requests keep q within the normal filter and pagination contract.
-  if (url.searchParams.get("q") && url.searchParams.get("view") !== "list") {
+  if (url.searchParams.get("q")) {
     return searchPostsResponse(request);
   }
 
