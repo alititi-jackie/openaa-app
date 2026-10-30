@@ -11,7 +11,8 @@
     "test": "node --test tests/unit/*.test.cjs",
     "audit:admin": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/audit-admin-backend.ts",
     "import:legacy": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON tools/archive/import-legacy-content.ts",
-    "cleanup:demo-posts": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON tools/archive/cleanup-demo-posts.ts"
+    "cleanup:demo-posts": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON tools/archive/cleanup-demo-posts.ts",
+    "test:permissions": "node tests/integration/account-post-permissions.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
@@ -23,6 +24,7 @@
     "swiper": "^12.2.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.13",
     "@tailwindcss/postcss": "^4.3.0",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.7",

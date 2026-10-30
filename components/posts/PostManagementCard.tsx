@@ -17,7 +17,7 @@ import {
 import type { PostCardView, PostStatus } from "@/features/posts/types";
 import { UserPostManagementActions } from "./UserPostManagementActions";
 
-const editableStatuses = new Set<PostStatus>(["draft", "pending_review", "published", "expired"]);
+const editableStatuses = new Set<PostStatus>(["draft", "pending_review", "published", "hidden", "expired"]);
 
 type PostManagementCardProps = {
   post: PostCardView;

@@ -125,8 +125,8 @@ async function assertCanEdit(supabase: SupabaseServerClient, userId: string, pos
     return { ok: false as const, message: "你只能编辑自己发布的内容。" };
   }
 
-  if (["hidden", "rejected", "deleted"].includes(data.status)) {
-    return { ok: false as const, message: "已隐藏、已拒绝或已删除的内容不能由普通用户编辑。" };
+  if (["rejected", "deleted"].includes(data.status)) {
+    return { ok: false as const, message: "已拒绝或已删除的内容不能由普通用户编辑。" };
   }
 
   return { ok: true as const, post: data as { id: string; author_id: string; status: string; post_type: PostType; published_at: string | null } };
@@ -257,7 +257,7 @@ export async function createPost(values: PostFormValues): Promise<PostFormAction
   const context = await getWriteContext();
   if (!context.ok) return { ok: false, message: context.error };
   if (context.status === "banned") return { ok: false, message: "你的账号当前禁止发布内容。" };
-  if (context.status === "restricted") return { ok: false, message: "你的账号当前受限，暂时不能发布新内容。" };
+  if (context.status !== "active") return { ok: false, message: "你的账号当前受限，暂时不能发布新内容。" };
   if (!context.emailVerified) return { ok: false, message: "请先完成邮箱确认后再发布。请查看注册邮箱中的确认邮件，并点击确认链接完成注册。" };
 
   const limitCheck = await assertDailyPostLimit(context.supabase, context.user.id);
@@ -296,7 +296,7 @@ export async function updatePost(postId: string, values: PostFormValues): Promis
 
   const context = await getWriteContext();
   if (!context.ok) return { ok: false, message: context.error };
-  if (context.status === "banned") return { ok: false, message: "你的账号当前禁止编辑内容。" };
+  if (context.status !== "active") return { ok: false, message: "账号受限或禁用时不能编辑内容。" };
 
   const editCheck = await assertCanEdit(context.supabase, context.user.id, postId);
   if (!editCheck.ok) return { ok: false, message: editCheck.message };
@@ -340,7 +340,7 @@ export async function updatePost(postId: string, values: PostFormValues): Promis
 
   await syncPostImages(context.supabase, context.user.id, values.postType, postId, values.images);
   revalidatePostSurfaces(values.postType, postId);
-  return { ok: true, postId, href: `${postHref(values.postType, postId)}?updated=1` };
+  return { ok: true, postId, href: editCheck.post.status === "published" ? `${postHref(values.postType, postId)}?updated=1` : "/profile/posts" };
 }
 
 export async function manageOwnPostStatus(_previousState: ManagePostActionState, formData: FormData): Promise<ManagePostActionState> {
@@ -522,7 +522,7 @@ async function syncPostImages(supabase: SupabaseServerClient, userId: string, po
 export async function removePostImage(postId: string, imageAssetId: string): Promise<PostFormActionResult> {
   const context = await getWriteContext();
   if (!context.ok) return { ok: false, message: context.error };
-  if (context.status === "banned") return { ok: false, message: "账号禁用时不能编辑内容。" };
+  if (context.status !== "active") return { ok: false, message: "账号受限或禁用时不能编辑内容。" };
 
   const editCheck = await assertCanEdit(context.supabase, context.user.id, postId);
   if (!editCheck.ok) return { ok: false, message: editCheck.message };
@@ -550,7 +550,7 @@ export async function uploadPostImage(postId: string, postType: PostType, file: 
 
   const context = await getWriteContext();
   if (!context.ok) return { ok: false, message: context.error };
-  if (context.status === "banned") return { ok: false, message: "账号禁用时不能编辑内容。" };
+  if (context.status !== "active") return { ok: false, message: "账号受限或禁用时不能编辑内容。" };
 
   const editCheck = await assertCanEdit(context.supabase, context.user.id, postId);
   if (!editCheck.ok) return { ok: false, message: editCheck.message };
