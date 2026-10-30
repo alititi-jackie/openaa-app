@@ -48,7 +48,7 @@ function auditDashboardCoverage() {
     .filter((route) => !ignoredRoutes.has(route))
     .sort();
   const dashboardHrefs = new Set(
-    Array.from(`${dashboard}\n${adminModules}`.matchAll(/href:\s*"([^"]+)"/g))
+    Array.from(`${dashboard}\n${adminModules}`.matchAll(/\bhref\s*(?::|=)\s*"([^"]+)"/g))
       .map((match) => match[1].split("?")[0])
       .filter((href) => href.startsWith("/admin/")),
   );
