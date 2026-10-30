@@ -37,10 +37,13 @@ forge requests. UUID event IDs make duplicate submissions idempotent.
 The SDK only runs on the four production hosts. Vercel preview collectors skip
 writes. Preview deployments therefore do not inflate production traffic.
 
-## Rollout (production not applied in this change)
+## Rollout / environment verification
+
+The migration is present in this repository. Check each target environment and subsite
+before rollout; its presence does not by itself establish deployment status.
 
 1. Review branches in all four repositories and backup the database as usual.
-2. Apply `033_unified_analytics.sql` to the existing database **before** deploying
+2. If not already applied, apply `033_unified_analytics.sql` to the existing database **before** deploying
    new collection code. The migration is additive; previous collector remains compatible.
 3. Deploy OpenAA first; check admin access and the collector/script URL.
 4. Deploy DMV, Tools and Go integrations. No historical subsite visits are backfilled.
@@ -57,8 +60,8 @@ and archived daily aggregates with the owner before deleting history.
 - Collector unit tests cover origin spoofing, path/referrer sanitation, SPA changes,
   history return values, duplicate suppression, blocked storage, hidden tabs and previews.
 - Isolated database test (no production access):
-  `npm install --prefix /tmp/openaa-analytics-test --no-save @electric-sql/pglite`
-  `PGLITE_MODULE=/tmp/openaa-analytics-test/node_modules/@electric-sql/pglite/dist/index.js node tests/integration/analytics-db.mjs`
+  `node tests/integration/analytics-db.mjs` after `npm ci`.
+  PGlite is now a repository dev dependency; no temporary install is required.
   Tests actual migrations, aggregation, RLS, execute/insert grants, UUID dedupe and DST.
 - Live production database schema and signed-in end-to-end behavior require the staged
-  rollout check; this work does not assert production migration execution.
+  rollout check. Unit tests and migration files alone do not establish production status.

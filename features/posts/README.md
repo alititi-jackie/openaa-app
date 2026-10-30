@@ -1,3 +1,24 @@
-# Posts
+# 帖子模块
 
-Shared publishing, listing, detail, engagement, and SEO logic for jobs, housing, marketplace, and services. `queries.ts` and `actions.ts` serve public and author flows; `adminQueries.ts` and `adminActions.ts` implement admin flows. UI lives in `components/posts/` and `components/forms/`.
+招聘、房屋、二手和服务共用此模块。`queries.ts`、`actions.ts`处理公开读取和作者操作；`adminQueries.ts`、`adminActions.ts`处理管理流程；UI位于`components/posts/`和`components/forms/`。
+
+## 状态与编辑规则
+
+| 状态 | 作者操作 |
+| --- | --- |
+| `published` | 正常账号可编辑、下架 |
+| `hidden` | 无论用户自行下架还是管理员下架，正常作者可编辑，再手动恢复显示 |
+| `draft` / `expired` | 按现有表单及状态管理操作编辑或重新发布 |
+| `pending_review` | 可编辑待审核内容，不能自行批准发布 |
+| `rejected` | 普通作者不能直接编辑或重新发布 |
+| `deleted` | 不可普通编辑/复活，恢复使用管理员流程 |
+
+下架帖保存后仍保持下架，并返回`/profile/posts`；不会跳往无法公开查看的详情页，也不会自动发布。目前不强制“必须先修改一次才能恢复显示”。当前正常新帖自动发布，见`shouldReviewPost`；不要在安全修复中擅自改变审核策略。
+
+## 权限边界
+
+服务端确认身份、归属、账号状态与输入；数据库迁移`20261030174640`进一步保护字段和主/子表写入。受限、封禁或待完善账号不能发布、重上架或编辑内容；受限账号保留主帖软删除路径。
+
+作者不能更改帖子归属、类型、管理记录等字段。管理员操作历史在作者修改和重新上架时保留。联系方式、分类详情与图片关联也检查账号和父帖；这些数据库检查不等于已验证真实Storage传输或网页交互。
+
+表单、按钮及Server Action修改后，运行`npm test`、`npm run test:permissions`和对应静态检查。数据库权限测试覆盖管理员下架后编辑重上架的允许路径，以及自解封、身份伪造、越权写入等拒绝路径。

@@ -1,13 +1,41 @@
-# Migrations
+# 数据库迁移
 
-This directory is the production baseline for the OpenAA Supabase project.
+此目录是 OpenAA 的版本化数据库变更记录。当前项目承载生产数据，不能重置或按“数据可丢弃”处理。不要在已有数据库重放 `001`、清库或重新执行全部种子。
 
-Current order:
+## 迁移链
 
-1. `001_baseline_schema.sql`
-2. `002_baseline_rls.sql`
-3. `003_seed_required_settings.sql`
+| 范围 | 主要职责 |
+| --- | --- |
+| `001`—`003` | 历史结构、RLS与初始配置/内容；`003`还含导入内容，不只是配置 |
+| `004`—`024` | 管理权限、导航/广告、通知、删除来源兼容及历史内容修正/导入 |
+| `025`—`033` | 流量记录、置顶、个人目录、原子限流、统计汇总、匿名展示等 |
+| `20261030174640_protect_account_and_post_management.sql` | 保护账号与帖子管理字段；允许下架帖由用户编辑并重新上架 |
 
-The previous test-phase migrations were intentionally removed. Because current
-data is disposable, reset the target Supabase database before applying this
-baseline. Do not run these files against unrelated or retired Supabase projects.
+这不是“所有环境都已执行全部文件”的声明。应用前必须读取目标环境的迁移历史，与仓库逐项比对。增量文件可能修改数据；先读SQL再决定是否适用。
+
+## 已有环境
+
+1. 确认目标项目、备份及恢复办法。
+2. 对照迁移历史，审查尚未应用的SQL，在隔离环境演练。
+3. 只应用必要的增量，避免重复执行种子和历史内容迁移。
+4. 验证结构、RLS、触发器和业务流程；应用代码回滚不会回滚数据库。
+5. 公开结构变化后按 [类型生成说明](../../lib/supabase/README.md) 重新生成类型。
+
+新迁移由 Supabase CLI 的 `migration new` 创建；不要改写已部署文件冒充新的变更。记录目标环境实际应用的版本，确保仓库文件名与迁移历史一致。若环境存在未入库的变更，先处理差异，不能用重放 baseline 解决。
+
+## 全新数据库的已知限制
+
+历史 `001_baseline_schema.sql` 包含前向外键引用：例如 `site_settings` 引用稍后才创建的 `profiles`；还存在其它表的先后依赖。因此不能承诺直接按文件顺序运行即可全新建库。
+
+[权限测试](../../tests/integration/account-post-permissions.mjs) 为隔离实例重排不变的表定义，以便验证实际RLS和触发器；它没有修复原始baseline，也没有证明完整生产初始化链已通过。
+
+全新环境应先修正并评审建库依赖、种子内容与迁移历史方案，在空的隔离数据库验证完整过程后再采用。这个工作与已运行生产库的增量更新分开处理。
+
+## 关键业务约束
+
+- 用户不能自行改账号封禁状态、后台备注、认证标记或信用等级。
+- 邮箱与邮箱确认状态必须符合Auth真实身份。
+- 管理员下架的帖子允许正常作者编辑，保存仍下架，之后手动重新上架；管理记录保留。
+- 下架、待审核、拒绝、删除是不同状态；不能通过清空管理员字段实现状态恢复。
+
+权限变更先运行 `npm run test:permissions`。线上验证如需临时数据，使用授权的隔离环境或会完整回滚的事务，不留下公开测试帖子和账号。
