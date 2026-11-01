@@ -8,11 +8,15 @@ import { getHomeConfig } from "@/features/home/queries";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { isSupabaseServerConfigured } from "@/lib/supabase/server";
 
-export const metadata = buildPageMetadata({
-  title: "OpenAA 纽约华人生活入口",
-  description: "OpenAA 纽约华人生活信息入口，包含招聘、房屋、二手市场、本地服务、新闻、DMV 和常用导航。",
-  path: "/",
-});
+export const metadata = {
+  ...buildPageMetadata({
+    title: "OpenAA 美国华人生活平台",
+    description:
+      "OpenAA 美国华人生活平台，提供华人招聘、租房、二手交易、本地服务、DMV 中文驾考、新闻资讯、实用工具和网站导航。目前重点服务纽约及周边地区，致力于为全美华人提供便捷的中文生活信息服务。",
+    path: "/",
+  }),
+  title: { absolute: "OpenAA 美国华人生活平台" },
+};
 
 export const revalidate = 300;
 
