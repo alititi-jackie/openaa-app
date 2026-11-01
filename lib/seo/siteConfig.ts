@@ -41,9 +41,9 @@ function normalizePrimarySiteUrl(value: string | undefined, fallback: string) {
 
 export const siteConfig = {
   name: "OpenAA",
-  title: "OpenAA 纽约华人生活信息平台",
+  title: "OpenAA 美国华人生活平台",
   description:
-    "OpenAA 是面向纽约华人的移动优先生活信息平台，提供招聘、房屋、二手市场、本地服务、新闻、DMV 练习和导航入口。",
+    "OpenAA 是面向美国华人的中文生活信息平台，提供招聘、房屋、二手交易、本地服务、新闻、DMV 中文练习和实用导航，目前重点服务纽约及周边地区。",
   appBaseUrl: normalizePrimarySiteUrl(process.env.NEXT_PUBLIC_SITE_URL, fallbackSiteUrl),
   primarySeoBaseUrl: normalizePrimarySiteUrl(process.env.NEXT_PUBLIC_PRIMARY_SEO_URL, fallbackPrimarySeoUrl),
   canonicalBaseUrl: normalizePrimarySiteUrl(
