@@ -1,59 +1,52 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getPostViewCount, recordPostView } from "@/features/posts/engagementActions";
+import { getPostViewCount } from "@/features/posts/engagementActions";
 import { formatViewCount } from "@/features/posts/display";
 
-const VIEW_DEDUPE_MS = 30 * 60 * 1000;
-
-type PostViewTrackerProps = {
+// Display only. The global page-view collector is the sole writer.
+export function PostViewTracker({
+  postId,
+  initialViewCount,
+  className,
+}: {
   postId: string;
   initialViewCount: number;
   className?: string;
-};
-
-function recentViewExists(value: string | null) {
-  if (!value) return false;
-  const viewedAt = new Date(value).getTime();
-  return Number.isFinite(viewedAt) && Date.now() - viewedAt < VIEW_DEDUPE_MS;
-}
-
-export function PostViewTracker({ postId, initialViewCount, className }: PostViewTrackerProps) {
-  const [viewCount, setViewCount] = useState(initialViewCount);
-
+}) {
+  const [result, setResult] = useState({ id: postId, count: initialViewCount });
   useEffect(() => {
-    const viewedKey = `openaa:viewed:${postId}`;
-    if (recentViewExists(window.localStorage.getItem(viewedKey))) {
-      getPostViewCount(postId)
-        .then((result) => {
-          if (result.ok && typeof result.viewCount === "number") {
-            setViewCount(result.viewCount);
-          }
-        })
-        .catch(() => undefined);
-      return;
+    let active = true;
+    let sequence = 0;
+    async function refresh() {
+      const current = ++sequence;
+      try {
+        const value = await getPostViewCount(postId);
+        if (
+          active &&
+          current === sequence &&
+          value.ok &&
+          typeof value.viewCount === "number"
+        )
+          setResult({ id: postId, count: value.viewCount });
+      } catch {
+        /* Keep the last known count when offline. */
+      }
     }
-
-    const visitorKey = "openaa:visitor_id";
-    let visitorId = window.localStorage.getItem(visitorKey);
-    if (!visitorId) {
-      visitorId = crypto.randomUUID();
-      window.localStorage.setItem(visitorKey, visitorId);
-    }
-
-    recordPostView(postId, visitorId)
-      .then((result) => {
-        if (result.ok) {
-          window.localStorage.setItem(viewedKey, new Date().toISOString());
-          if (typeof result.viewCount === "number") {
-            setViewCount(result.viewCount);
-          }
-        }
-      })
-      .catch(() => undefined);
+    void refresh();
+    window.addEventListener("openaa:page-view-recorded", refresh);
+    return () => {
+      active = false;
+      window.removeEventListener("openaa:page-view-recorded", refresh);
+    };
   }, [postId]);
-
   if (!className) return null;
-
-  return <span className={className}>{formatViewCount(viewCount, { icon: true, unit: true })}</span>;
+  return (
+    <span className={className}>
+      {formatViewCount(result.id === postId ? result.count : initialViewCount, {
+        icon: true,
+        unit: true,
+      })}
+    </span>
+  );
 }

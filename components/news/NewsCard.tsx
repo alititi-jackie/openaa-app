@@ -1,3 +1,4 @@
+import { NewsViewCount } from "./NewsViewCounts";
 import Link from "next/link";
 import { Pin } from "lucide-react";
 import { formatNewsDate } from "@/features/news/mappers";
@@ -33,10 +34,11 @@ export function NewsCard({ post, featured = false }: { post: NewsPostCard; featu
 function Meta({ post, compact = false }: { post: NewsPostCard; compact?: boolean }) {
   if (compact) {
     return (
-      <span className="block overflow-hidden text-ellipsis whitespace-nowrap text-xs md:flex md:flex-wrap md:items-center md:gap-x-2 md:gap-y-1 md:overflow-visible md:whitespace-normal">
+      <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
         <span className="font-medium text-blue-600">{post.categoryName}</span>
         <span className="px-2 text-slate-300 md:px-0">&middot;</span>
         <span className="font-normal text-slate-400">{formatNewsDate(post.publishedAt)}</span>
+        <NewsViewCount id={post.id} />
         {post.isPinned ? (
           <span className="hidden items-center gap-1 rounded-full border border-amber-100 bg-amber-50 px-2 py-0.5 font-medium text-amber-700 md:inline-flex">
             <Pin size={12} aria-hidden="true" />
@@ -52,6 +54,7 @@ function Meta({ post, compact = false }: { post: NewsPostCard; compact?: boolean
       <span className="font-medium text-blue-600">{post.categoryName}</span>
       <span className="text-slate-300">&middot;</span>
       <span className="font-normal text-slate-400">{formatNewsDate(post.publishedAt)}</span>
+        <NewsViewCount id={post.id} />
       {post.isPinned ? (
         <span className="inline-flex items-center gap-1 rounded-full border border-amber-100 bg-amber-50 px-2 py-0.5 font-medium text-amber-700">
           <Pin size={12} aria-hidden="true" />

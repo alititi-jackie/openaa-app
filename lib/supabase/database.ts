@@ -1258,6 +1258,12 @@ export type Database = {
         }
         Relationships: []
       }
+      news_stats: {
+        Row: { news_id: string; view_count: number }
+        Insert: { news_id: string; view_count?: number }
+        Update: { news_id?: string; view_count?: number }
+        Relationships: [{ foreignKeyName: "news_stats_news_id_fkey"; columns: ["news_id"]; isOneToOne: true; referencedRelation: "news_posts"; referencedColumns: ["id"] }]
+      }
       news_posts: {
         Row: {
           author_id: string | null
@@ -2355,6 +2361,14 @@ export type Database = {
       }
       site_page_views: {
         Row: {
+          site: string
+          event_id: string | null
+          country: string | null
+          region: string | null
+          browser: string | null
+          operating_system: string | null
+          post_id: string | null
+          news_id: string | null
           created_at: string
           device_type: string | null
           id: string
@@ -2367,6 +2381,14 @@ export type Database = {
           visitor_id: string | null
         }
         Insert: {
+          site?: string
+          event_id?: string | null
+          country?: string | null
+          region?: string | null
+          browser?: string | null
+          operating_system?: string | null
+          post_id?: string | null
+          news_id?: string | null
           created_at?: string
           device_type?: string | null
           id?: string
@@ -2379,6 +2401,14 @@ export type Database = {
           visitor_id?: string | null
         }
         Update: {
+          site?: string
+          event_id?: string | null
+          country?: string | null
+          region?: string | null
+          browser?: string | null
+          operating_system?: string | null
+          post_id?: string | null
+          news_id?: string | null
           created_at?: string
           device_type?: string | null
           id?: string
@@ -2391,6 +2421,8 @@ export type Database = {
           visitor_id?: string | null
         }
         Relationships: [
+          { foreignKeyName: "site_page_views_post_id_fkey"; columns: ["post_id"]; isOneToOne: false; referencedRelation: "posts"; referencedColumns: ["id"] },
+          { foreignKeyName: "site_page_views_news_id_fkey"; columns: ["news_id"]; isOneToOne: false; referencedRelation: "news_posts"; referencedColumns: ["id"] },
           {
             foreignKeyName: "site_page_views_user_id_fkey"
             columns: ["user_id"]

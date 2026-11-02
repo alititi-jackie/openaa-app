@@ -87,6 +87,7 @@ export type NewsDetailContext = {
 };
 
 export type AdminNewsPost = NewsPostDetail & {
+  viewCount?: number | null;
   status: NewsStatus;
   categoryId: string | null;
   coverImageAssetId: string | null;
