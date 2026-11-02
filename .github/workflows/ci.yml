@@ -20,6 +20,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run test:permissions
+      - run: npm run test:content-views
       - run: npm audit --omit=dev
       - run: npm run lint
       - run: npm run typecheck

@@ -1,4 +1,5 @@
 import "server-only";
+import { readNewsViewCounts } from "./viewQueries";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabasePublicClient } from "@/lib/supabase/public";
@@ -280,6 +281,7 @@ export async function getAdminNewsData(params: { status?: NewsStatus | "all"; ca
   }
 
   const [categories, posts] = await Promise.all([readAdminCategories(supabase), readAdminPosts(supabase, params)]);
+  const counts = await readNewsViewCounts(posts.data.map(post => post.id), supabase);
   const categoryList = categories.data.length > 0 ? categories.data : categoriesFallback;
   const categoryCounts = await readAdminCategoryCounts(supabase, categoryList);
 
@@ -287,7 +289,7 @@ export async function getAdminNewsData(params: { status?: NewsStatus | "all"; ca
     state: categories.state === "error" || posts.state === "error" || categoryCounts.state === "error" ? ("error" as const) : ("ready" as const),
     permissions,
     categories: categoryList,
-    posts: posts.data,
+    posts: posts.data.map(post => ({ ...post, viewCount: counts[post.id] ?? null })),
     categoryCounts: categoryCounts.data,
     error: categories.error ?? posts.error ?? categoryCounts.error,
   };

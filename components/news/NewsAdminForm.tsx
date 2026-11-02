@@ -295,6 +295,7 @@ function NewsPostCard({
           <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold text-slate-500">
             <span>发布：{formatNewsDate(post.publishedAt)}</span>
             <span>更新：{formatNewsDate(post.updatedAt)}</span>
+            <span title="浏览次数：重复打开、刷新可分别计数，不代表独立访客人数。">浏览：{typeof post.viewCount === "number" ? post.viewCount.toLocaleString("en-US") : "暂不可用"}</span>
           </div>
         </div>
       </div>
@@ -501,6 +502,7 @@ function NewsPostEditor({
       const nextCoverImageUrl = removedCover ? null : values.coverImageUrl || post?.coverImageUrl || null;
       onSaved({
         id: result.id ?? post?.id ?? `temp-${Date.now()}`,
+        viewCount: post ? post.viewCount ?? null : 0,
         title: values.title,
         slug: values.slug,
         href: `/news/${values.slug}`,

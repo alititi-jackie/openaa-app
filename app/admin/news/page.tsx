@@ -1,3 +1,5 @@
+import { NewsViewSettings } from "@/components/news/NewsViewSettings";
+import { readNewsViewSettings } from "@/features/news/viewQueries";
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { AdminActionButton } from "@/components/admin/AdminActionButton";
 import { AdminActionGroup } from "@/components/admin/AdminActionGroup";
@@ -33,7 +35,7 @@ export default function AdminNewsPage() {
           );
         }
 
-        const data = await getAdminNewsData();
+        const [data, viewConfig] = await Promise.all([getAdminNewsData(), readNewsViewSettings()]);
         const canRead = data.permissions.viewNews || data.permissions.createNews || data.permissions.editNews || data.permissions.publishNews || data.permissions.deleteNews;
 
         if (!canRead && !data.permissions.manageNewsCategories) {
@@ -60,6 +62,8 @@ export default function AdminNewsPage() {
             </AdminPageHeader>
 
             {data.state === "error" ? <AdminAlert>新闻后台读取暂时不可用：{data.error ?? "请稍后再试。"}</AdminAlert> : null}
+
+            <NewsViewSettings initial={viewConfig.settings} available={viewConfig.ok} canEdit={data.permissions.publishNews} />
 
             <NewsAdminManager posts={data.posts} categories={data.categories} categoryCounts={data.categoryCounts} permissions={data.permissions} />
           </div>

@@ -53,6 +53,10 @@
           event_id: crypto.randomUUID(),
           referrer: referrer || null,
         }),
+      }).then(function (response) {
+        if (response.ok && window.dispatchEvent && typeof CustomEvent !== "undefined") {
+          window.dispatchEvent(new CustomEvent("openaa:page-view-recorded", { detail: { path: path } }));
+        }
       }).catch(function () {});
     } catch {
       /* Analytics must never interrupt the site. */

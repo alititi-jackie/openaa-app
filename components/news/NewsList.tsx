@@ -1,3 +1,4 @@
+import { NewsViewCounts } from "./NewsViewCounts";
 import { Newspaper } from "lucide-react";
 import { EmptyState } from "@/components/common/EmptyState";
 import type { NewsPostCard } from "@/features/news/types";
@@ -11,18 +12,20 @@ export function NewsList({ posts }: { posts: NewsPostCard[] }) {
   }
 
   return (
-    <div className="space-y-4">
-      <section>
-        <p className="mb-2 text-sm font-black text-slate-800">推荐文章</p>
-        <NewsCard post={featured} featured />
-      </section>
-      {rest.length > 0 ? (
-        <section className="space-y-3">
-          {rest.map((post) => (
-            <NewsCard key={post.id} post={post} />
-          ))}
+    <NewsViewCounts ids={posts.map(post => post.id)} scope="list">
+      <div className="space-y-4">
+        <section>
+          <p className="mb-2 text-sm font-black text-slate-800">推荐文章</p>
+          <NewsCard post={featured} featured />
         </section>
-      ) : null}
-    </div>
+        {rest.length > 0 ? (
+          <section className="space-y-3">
+            {rest.map((post) => (
+              <NewsCard key={post.id} post={post} />
+            ))}
+          </section>
+        ) : null}
+      </div>
+    </NewsViewCounts>
   );
 }

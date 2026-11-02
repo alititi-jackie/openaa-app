@@ -1,3 +1,4 @@
+import { NewsViewCount, NewsViewCounts } from "./NewsViewCounts";
 import Link from "next/link";
 import { DetailBackButton } from "@/components/common/DetailBackButton";
 import { FavoriteButton } from "@/components/common/FavoriteButton";
@@ -147,6 +148,7 @@ export function NewsDetail({ post, previousPost, nextPost, relatedPosts, initial
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-zinc-400">
         <p>发布时间：{formatNewsDate(publishedSource)}</p>
         <p>更新时间：{modifiedSource ? formatNewsDate(modifiedSource) : "暂无更新"}</p>
+        <NewsViewCounts ids={[post.id]} scope="detail"><NewsViewCount id={post.id} /></NewsViewCounts>
       </div>
 
       <div className="mt-4 overflow-hidden rounded-2xl border border-zinc-100">

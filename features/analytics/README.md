@@ -65,3 +65,9 @@ and archived daily aggregates with the owner before deleting history.
   Tests actual migrations, aggregation, RLS, execute/insert grants, UUID dedupe and DST.
 - Live production database schema and signed-in end-to-end behavior require the staged
   rollout check. Unit tests and migration files alone do not establish production status.
+
+## Content PV attribution
+
+The content-view migration adds `post_id` / `news_id` attribution to new accepted main-site events. A BEFORE trigger resolves only currently public detail routes; an AFTER INSERT trigger writes one post view (using the site row ID) or increments news stats. Duplicate `event_id` submissions never run the AFTER trigger. Existing post refresh/favorite/report aggregation keeps using `post_views`, including preserved historical rows. Post attribution is serialized per post; news increments are atomic.
+
+The old post component is display-only. The collector dispatches `openaa:page-view-recorded` after successful collection so visible counters can re-read without another write. Known bot filtering, per-IP rate limits, production-host restrictions and UV calculations remain unchanged.

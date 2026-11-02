@@ -48,3 +48,17 @@ test('previews are excluded and background tabs wait until visible', () => {
   context.document.visibilityState = 'visible'; callbacks.visibilitychange(); flush();
   assert.equal(requests.length, 2);
 });
+
+test('reloads and browser back restores count, focus and same-path updates do not', () => {
+  const { context, callbacks, requests, flush } = browser({ hostname: 'openaa.com' });
+  assert.equal(requests.length, 1);
+  callbacks.visibilitychange(); flush();
+  context.history.replaceState(); flush();
+  assert.equal(requests.length, 1);
+  callbacks.pageshow({ persisted: true }); flush();
+  assert.equal(requests.length, 2);
+  assert.notEqual(requests[0].body.event_id, requests[1].body.event_id);
+  const reloaded = browser({ hostname: 'openaa.com' });
+  assert.equal(reloaded.requests.length, 1);
+  assert.notEqual(requests[0].body.event_id, reloaded.requests[0].body.event_id);
+});

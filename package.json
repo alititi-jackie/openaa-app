@@ -12,7 +12,8 @@
     "audit:admin": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/audit-admin-backend.ts",
     "import:legacy": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON tools/archive/import-legacy-content.ts",
     "cleanup:demo-posts": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON tools/archive/cleanup-demo-posts.ts",
-    "test:permissions": "node tests/integration/account-post-permissions.mjs"
+    "test:permissions": "node tests/integration/account-post-permissions.mjs",
+    "test:content-views": "node tests/integration/content-views-db.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
