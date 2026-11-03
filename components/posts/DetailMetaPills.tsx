@@ -1,5 +1,6 @@
 "use client";
 
+import { usePostViewDisplay } from "./PostViewDisplay";
 import { PostViewTracker } from "./PostViewTracker";
 import { formatPostTime, formatViewCount } from "@/features/posts/display";
 
@@ -58,7 +59,8 @@ function pillClass(item: DetailMetaPill, index: number) {
 }
 
 export function DetailMetaPills({ items, postId, initialViewCount, trackViews = true, oneLine = false, className }: DetailMetaPillsProps) {
-  const visibleItems = items.filter((item) => item.value.trim());
+  const showViews = usePostViewDisplay(trackViews ? "detail" : "list");
+  const visibleItems = items.filter((item) => item.value.trim() && (!isViewsPill(item) || showViews));
   const indexedItems = visibleItems.map((item, index) => ({ item, index }));
   const groupedItems = indexedItems.filter(({ item }) => item.group);
   const hasGroups = groupedItems.length > 0;

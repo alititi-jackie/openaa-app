@@ -158,6 +158,7 @@ export function AdminPostsList({ posts, permissions, templates }: { posts: Admin
               <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate-500">
                 <span>发布时间：{formatDate(post.publishedAt ?? post.createdAt)}</span>
                 <span>更新时间：{formatDate(post.updatedAt)}</span>
+                <span title="浏览次数：重复打开、刷新可分别计数，不代表独立访客人数。">浏览：{post.viewCount.toLocaleString("en-US")}</span>
                 {post.isPinned ? <span>置顶到期：{post.pinnedUntil ? formatDateTime(post.pinnedUntil) : "长期"}</span> : null}
               </div>
               {post.lastAdminAction ? <p className="mt-3 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-slate-600">管理员处理：{adminActionLabel(post.lastAdminAction, post.lastAdminActionTemplateKey, post.lastAdminActionReason)}</p> : null}

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { PostViewDisplayProvider } from "@/components/posts/PostViewDisplay";
 import { BottomNav } from "./BottomNav";
 import { Header } from "./Header";
 import { MobileContainer } from "./MobileContainer";
@@ -20,7 +21,7 @@ export async function AppShell({ children }: AppShellProps) {
     <div className="min-h-dvh bg-slate-200 text-slate-950">
       <MobileContainer>
         <Header quickLinks={topQuickLinks} />
-        <main className="min-h-[calc(100dvh-8rem)] px-4 pb-28 pt-4">{children}</main>
+        <main className="min-h-[calc(100dvh-8rem)] px-4 pb-28 pt-4"><PostViewDisplayProvider>{children}</PostViewDisplayProvider></main>
         <SafeAreaSpacer />
         <BottomNav />
         <ServiceWorkerRegister />

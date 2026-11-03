@@ -112,6 +112,7 @@ await db.query(
   "insert into site_page_views(site,path,title,visitor_id,user_agent) values('openaa','/news/test-news','Different article','old','Mozilla')",
 );
 await db.exec(await read("20261102030639_unified_content_views.sql"));
+await db.exec(await read("20261103041334_post_view_display.sql"));
 const value = async (sql, args = []) =>
   Object.values((await db.query(sql, args)).rows[0])[0];
 const postCount = (id) =>
@@ -273,6 +274,34 @@ for (const [detail, list] of [
   await as(publisher);
 }
 await db.exec("reset role");
+// Shared post switches: independent from news and from the collector.
+const postSetting = async () => (await db.query("select value from site_settings where key='post_view_display'")).rows[0].value;
+assert.deepEqual(await postSetting(), { detail: true, list: true });
+await db.exec("set role anon");
+assert.deepEqual(await postSetting(), { detail: true, list: true }, "public can read display settings");
+await assert.rejects(db.query("update site_settings set value='{}' where key='post_view_display'"));
+await as(owner);
+assert.equal((await db.query("update site_settings set value='{}' where key='post_view_display' returning key")).rows.length, 0);
+await as(publisher);
+assert.equal((await db.query("update site_settings set value='{}' where key='post_view_display' returning key")).rows.length, 0, "news module alone cannot edit post switches");
+await db.exec("reset role");
+await db.query("insert into admin_user_modules(user_id,module_key) values($1,'user-posts')", [publisher]);
+const newsSettingBefore = await value("select value from site_settings where key='news_view_display'");
+for (const [detail, list] of [[false,false],[true,false],[false,true],[true,true]]) {
+  await as(publisher);
+  assert.equal((await db.query("update site_settings set value=$1 where key='post_view_display' returning key", [JSON.stringify({detail,list})])).rows.length, 1);
+  assert.deepEqual(await postSetting(), {detail,list});
+  await db.exec("reset role");
+  for (const [path,id] of Object.entries(posts)) {
+    const before = await postCount(id);
+    await event('/'+path+'/'+id);
+    assert.equal(await postCount(id), before+1, "post counts continue for every switch state");
+  }
+}
+await as(publisher);
+await assert.rejects(db.query("update site_settings set is_public=false where key='post_view_display'"), "moderator cannot hide setting from public");
+await db.exec("reset role");
+assert.deepEqual(await value("select value from site_settings where key='news_view_display'"), newsSettingBefore);
 await db.query("delete from posts where id=$1", [posts.jobs]);
 assert.equal(
   await value("select count(*)::int from post_stats where post_id=$1", [
