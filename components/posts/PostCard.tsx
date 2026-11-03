@@ -1,8 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Eye, Heart } from "lucide-react";
+import { Heart } from "lucide-react";
 import { HOUSING_AMOUNT_TIME_META_LABEL } from "@/features/posts/detailMeta";
-import { formatViewCount } from "@/features/posts/display";
+import { PostListViewCount } from "./PostViewDisplay";
 import type { PostType } from "@/features/posts/types";
 import type { DetailMetaPill } from "./DetailMetaPills";
 import { PostDisplayBody } from "./PostDisplayBody";
@@ -87,10 +87,7 @@ export function PostCard({ post, compact = false, variant = "default" }: { post:
           <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-slate-500">
             {post.location ? <span>{post.location}</span> : null}
             {post.authorName ? <span>{post.authorName}</span> : null}
-            <span className="inline-flex items-center gap-1">
-              <Eye size={13} aria-hidden="true" />
-              {formatViewCount(post.viewCount)}
-            </span>
+            <PostListViewCount count={post.viewCount} />
             <span className="inline-flex items-center gap-1">
               <Heart size={13} aria-hidden="true" />
               {post.favoriteCount ?? 0}

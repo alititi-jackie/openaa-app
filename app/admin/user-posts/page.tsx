@@ -1,3 +1,5 @@
+import { PostViewSettings } from "@/components/posts/PostViewSettings";
+import { readPostViewSettings } from "@/features/posts/viewQueries";
 import { FileText } from "lucide-react";
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { AdminAlert } from "@/components/admin/AdminAlert";
@@ -54,7 +56,7 @@ export default function AdminUserPostsPage({ searchParams }: AdminUserPostsPageP
         });
         const canRead = data.permissions.viewPosts || data.permissions.moderatePosts;
         const templates = data.permissions.moderatePosts ? await getAdminPostNotificationTemplates() : [];
-        const dailyPostLimit = await getDailyPostLimitData();
+        const [dailyPostLimit, viewDisplay] = await Promise.all([getDailyPostLimitData(), readPostViewSettings()]);
 
         if (!canRead) {
           return (
@@ -79,6 +81,8 @@ export default function AdminUserPostsPage({ searchParams }: AdminUserPostsPageP
 
             {dailyPostLimit.state === "error" ? <AdminAlert>每日发布上限读取暂时不可用：{dailyPostLimit.error ?? "请稍后再试。"}</AdminAlert> : null}
             <DailyPostLimitPanel dailyPostLimit={dailyPostLimit.dailyPostLimit} canManage={data.permissions.moderatePosts} />
+
+            <PostViewSettings initial={viewDisplay.settings} available={viewDisplay.ok} canEdit={data.permissions.moderatePosts} />
 
             <AdminFilterBar title="筛选用户发布信息" description="按类型、状态、标题、内容或作者快速筛选。">
               {params?.author ? <p className="mb-3 rounded-xl bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700">正在按作者筛选：{params.author}</p> : null}
