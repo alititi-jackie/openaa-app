@@ -14,7 +14,9 @@ type SubmitBarProps = {
 export function SubmitBar({ cancelHref, submitting, mode, error, submitLabel, onSaveDraft }: SubmitBarProps) {
   return (
     <div className="space-y-3">
-      {error ? <div className="rounded-xl border border-red-100 bg-red-50 p-3 text-sm leading-5 text-red-600">{error}</div> : null}
+      <div role="status" aria-live="polite" aria-atomic="true">
+        {error ? <div className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm leading-5 text-red-600">{error}</div> : null}
+      </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <button
           type="submit"
