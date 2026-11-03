@@ -9,7 +9,7 @@ export function NewsCard({ post, featured = false }: { post: NewsPostCard; featu
   if (featured) {
     return (
       <Link href={post.href} className="block overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
-        <NewsCover src={post.coverImageUrl} alt={post.title} className="h-48 w-full" sizes="(max-width: 560px) 100vw, 560px" priority />
+        <NewsCover src={post.coverImageUrl} alt={post.title} className="h-48 w-full sm:h-[250px] md:h-[380px]" sizes="(min-width: 1280px) 1006px, (min-width: 1024px) 926px, (min-width: 768px) 726px, (min-width: 560px) 526px, calc(100vw - 34px)" priority />
         <span className="block p-4">
           <Meta post={post} />
           <span className="mt-1 block line-clamp-2 text-lg font-bold leading-snug text-slate-950">{post.title}</span>
