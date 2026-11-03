@@ -126,7 +126,13 @@ function normalizeRestoredValues(values: PostFormValues, postType: PostType, mod
 export function PostForm({ mode, postType, initialValues, showProfileCompletionHint = false }: PostFormProps) {
   const router = useRouter();
   const [values, setValues] = useState<PostFormValues>({ ...initialValues, mode, postType });
-  const [errors, setErrors] = useState<PostFormErrors>({});
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [serverFieldErrors, setServerFieldErrors] = useState<PostFormErrors>({});
+  const [numberErrors, setNumberErrors] = useState<PostFormErrors>({});
+  const errors: PostFormErrors = hasSubmitted ? { ...serverFieldErrors, ...validatePostForm(values).errors, ...numberErrors } : {};
+  const errorCount = Object.keys(errors).length;
+  const [feedbackRequest, setFeedbackRequest] = useState(0);
+  const formRef = useRef<HTMLFormElement | null>(null);
   const [message, setMessage] = useState<string>();
   const [hasDraft, setHasDraft] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -144,15 +150,27 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
   }, [mode, storageKey]);
 
   useEffect(() => {
-    if (message) {
-      bottomMessageRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  }, [message]);
+    if (!feedbackRequest) return;
+    const firstError = formRef.current?.querySelector<HTMLElement>('[data-field-error="true"]');
+    const target = firstError ?? bottomMessageRef.current;
+    if (!target) return;
+    // Focus a container on touch devices so locating a missing field does not
+    // open the keyboard or the native select picker unexpectedly.
+    const control = firstError?.querySelector<HTMLElement>('input:not([type="file"]):not(:disabled), select:not(:disabled), textarea:not(:disabled)');
+    const focusTarget = window.matchMedia("(pointer: fine)").matches ? control ?? target : target;
+    focusTarget.focus({ preventScroll: true });
+    const headerHeight = document.querySelector("header")?.getBoundingClientRect().height ?? 80;
+    target.style.scrollMarginTop = `${headerHeight + 16}px`;
+    target.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: firstError ? "start" : "center" });
+  }, [feedbackRequest]);
 
   const setValue = <K extends keyof PostFormValues>(key: K, value: PostFormValues[K]) => setValues((current) => ({ ...current, [key]: value }));
   const setJob = (patch: Partial<JobFields>) => setValues((current) => ({ ...current, job: { ...current.job!, ...patch } }));
   const setHousing = (patch: Partial<HousingFields>) => setValues((current) => ({ ...current, housing: { ...current.housing!, ...patch } }));
-  const setMarketplace = (patch: Partial<MarketplaceFields>) => setValues((current) => ({ ...current, marketplace: { ...current.marketplace!, ...patch } }));
+  const setMarketplace = (patch: Partial<MarketplaceFields>) => {
+    if (patch.marketplace_mode) setNumberErrors({});
+    setValues((current) => ({ ...current, marketplace: { ...current.marketplace!, ...patch } }));
+  };
   const setService = (patch: Partial<ServiceFields>) => setValues((current) => ({ ...current, service: { ...current.service!, ...patch } }));
 
   function restoreDraft() {
@@ -191,37 +209,58 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage(undefined);
-    const validation = validatePostForm(values);
-    setErrors(validation.errors);
-    if (!validation.valid) {
-      setMessage(mode === "edit" ? "表单内容未填写完善，请检查后再保存。" : "表单内容未填写完善，请检查后再发布。");
+    if (isPending) return;
+    setHasSubmitted(true);
+    setServerFieldErrors({});
+    const nativeNumberErrors = readNumberInputErrors(event.currentTarget);
+    setNumberErrors(nativeNumberErrors);
+    const validationErrors = { ...validatePostForm(values).errors, ...nativeNumberErrors };
+    if (Object.keys(validationErrors).length) {
+      setFeedbackRequest((request) => request + 1);
       return;
     }
 
     startTransition(async () => {
-      const submitValues = withoutFiles(values) as PostFormValues;
-      const result = mode === "create" ? await createPost(submitValues) : await updatePost(values.postId ?? "", submitValues);
-      if (!result.ok) {
-        setErrors(result.fieldErrors ?? {});
-        setMessage(result.message);
-        return;
-      }
-
       try {
-        await uploadPendingImages(result.postId);
-      } catch (error) {
-        setMessage(error instanceof Error ? `内容已保存，但图片上传失败：${error.message}` : "内容已保存，但图片上传失败。");
-        return;
-      }
+        const submitValues = withoutFiles(values) as PostFormValues;
+        const result = mode === "create" ? await createPost(submitValues) : await updatePost(values.postId ?? "", submitValues);
+        if (!result.ok) {
+          setServerFieldErrors(result.fieldErrors ?? {});
+          setMessage(result.message);
+          setFeedbackRequest((request) => request + 1);
+          return;
+        }
 
-      window.localStorage.removeItem(storageKey);
-      router.push(result.href);
+        try {
+          await uploadPendingImages(result.postId);
+        } catch (error) {
+          setMessage(error instanceof Error ? `内容已保存，但图片上传失败：${error.message}` : "内容已保存，但图片上传失败。");
+          setFeedbackRequest((request) => request + 1);
+          return;
+        }
+
+        window.localStorage.removeItem(storageKey);
+        router.push(result.href);
+      } catch {
+        setMessage(mode === "edit" ? "保存失败，请检查网络连接后重试，已填写的内容仍保留在本页。" : "发布失败，请检查网络连接后重试，已填写的内容仍保留在本页。");
+        setFeedbackRequest((request) => request + 1);
+      }
     });
   }
 
   return (
     <FormShell title={titleFor(postType, mode)} description={descriptionFor(postType)}>
-      <form className="space-y-4 rounded-2xl bg-white p-4 shadow-sm sm:p-6" onSubmit={onSubmit}>
+      <form
+        ref={formRef}
+        noValidate
+        className="space-y-4 rounded-2xl bg-white p-4 shadow-sm sm:p-6"
+        onSubmit={onSubmit}
+        onChange={(event) => {
+          setMessage(undefined);
+          setServerFieldErrors({});
+          setNumberErrors(readNumberInputErrors(event.currentTarget));
+        }}
+      >
         <DraftRestoreBanner visible={hasDraft} onRestore={restoreDraft} onClear={clearDraft} />
 
         {postType === "job" ? (
@@ -229,6 +268,8 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
             <ModeSwitch
               label="发布类型"
               locked={typeSwitchLocked}
+              fieldKey="job_mode"
+              error={errors.job_mode}
               options={JOB_MODE_OPTIONS}
               value={values.job?.job_mode ?? "hiring"}
               onChange={(next) => setJob({ job_mode: next as JobFields["job_mode"], company_name: next === "seeking" ? "" : values.job?.company_name ?? "" })}
@@ -251,7 +292,7 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <FormField label="工作类型" required error={errors.job_type}>
+              <FormField label="工作类型" required fieldKey="job_type" error={errors.job_type}>
                 <SelectInput value={values.job?.job_type ?? ""} onChange={(event) => setJob({ job_type: event.target.value })} required>
                   <option value="" disabled>
                     请选择工作类型
@@ -259,7 +300,7 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
                   {JOB_TYPE_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                 </SelectInput>
               </FormField>
-              <FormField label="职位分类" required error={errors.job_category}>
+              <FormField label="职位分类" required fieldKey="job_category" error={errors.job_category}>
                 <SelectInput value={values.job?.job_category} onChange={(event) => setJob({ job_category: event.target.value })} required>
                   <option value="" disabled>
                     请选择职位分类
@@ -269,7 +310,7 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
               </FormField>
             </div>
 
-            <FormField label="工作地点" required error={errors.work_area}>
+            <FormField label="工作地点" required fieldKey="work_area" error={errors.work_area}>
               <LocationSelect
                 value={values.job?.work_area || values.location_area}
                 onChange={(next) => {
@@ -280,7 +321,7 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
             </FormField>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <FormField label="薪资（USD）">
+              <FormField label="薪资（USD）" fieldKey="salary_min" error={errors.salary_min}>
                 <TextInput value={values.job?.salary_min} onChange={(event) => setJob({ salary_min: event.target.value, salary_max: event.target.value })} type="number" min="0" placeholder="不填则显示：薪资电议" />
               </FormField>
               <FormField label="薪资单位">
@@ -309,7 +350,7 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
 
         {postType === "housing" ? (
           <>
-            <FormField label="发布类型" required error={errors.housing_mode}>
+            <FormField label="发布类型" required fieldKey="housing_mode" error={errors.housing_mode}>
               <SelectInput
                 value={values.housing?.housing_mode ?? ""}
                 onChange={(event) => setHousing({ housing_mode: event.target.value as HousingFields["housing_mode"] })}
@@ -329,7 +370,7 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
               {typeSwitchLocked ? <p className="mt-2 text-xs text-gray-400">编辑模式下不支持切换类型。</p> : null}
             </FormField>
 
-            <FormField label="标题" required error={errors.title}>
+            <FormField label="标题" required fieldKey="title" error={errors.title}>
               <TextInput
                 value={values.title}
                 onChange={(event) => setValue("title", event.target.value)}
@@ -340,10 +381,10 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
             </FormField>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <FormField label="地区" required error={errors.location_area}>
+              <FormField label="地区" required fieldKey="location_area" error={errors.location_area}>
                 <LocationSelect value={values.location_area} onChange={(next) => setValue("location_area", next)} />
               </FormField>
-              <FormField label="金额（USD）">
+              <FormField label="金额（USD）" fieldKey="price" error={errors.price}>
                 <TextInput
                   value={values.housing?.price}
                   onChange={(event) => setHousing({ price: event.target.value })}
@@ -355,7 +396,7 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <FormField label="房型" error={errors.room_type}>
+              <FormField label="房型" fieldKey="room_type" error={errors.room_type}>
                 <TextInput value={values.housing?.room_type} onChange={(event) => setHousing({ room_type: event.target.value })} placeholder="例：一室一厅 / 主卧 / 次卧（可不填）" />
               </FormField>
               <FormField label="时间">
@@ -374,12 +415,14 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
             <ModeSwitch
               label="发布类型"
               locked={typeSwitchLocked}
+              fieldKey="marketplace_mode"
+              error={errors.marketplace_mode}
               options={MARKETPLACE_MODE_OPTIONS}
               value={values.marketplace?.marketplace_mode ?? "selling"}
               onChange={(next) => setMarketplace({ marketplace_mode: next as MarketplaceFields["marketplace_mode"] })}
             />
 
-            <FormField label="所在地区" required error={errors.trade_area}>
+            <FormField label="所在地区" required fieldKey="trade_area" error={errors.trade_area}>
               <LocationSelect
                 value={values.marketplace?.trade_area || values.location_area}
                 onChange={(next) => {
@@ -389,7 +432,7 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
               />
             </FormField>
 
-            <FormField label="商品分类" required error={errors.category}>
+            <FormField label="商品分类" required fieldKey="category" error={errors.category}>
               <SelectInput value={values.marketplace?.category} onChange={(event) => setMarketplace({ category: event.target.value })} required>
                 <option value="" disabled>
                   请选择商品分类
@@ -400,11 +443,11 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
 
             {values.marketplace?.marketplace_mode === "selling" ? (
               <>
-                <FormField label="商品标题" required error={errors.title}>
+                <FormField label="商品标题" required fieldKey="title" error={errors.title}>
                   <TextInput value={values.title} onChange={(event) => setValue("title", event.target.value)} placeholder="例：iPad Pro 11 寸" maxLength={80} />
                 </FormField>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <FormField label="价格（USD）">
+                  <FormField label="价格（USD）" fieldKey="price" error={errors.price}>
                     <TextInput value={values.marketplace?.price} onChange={(event) => setMarketplace({ price: event.target.value })} type="number" min="0" step="0.01" placeholder="0.00" />
                   </FormField>
                   <FormField label="成色">
@@ -427,11 +470,11 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
 
         {postType === "service" ? (
           <>
-            <FormField label="服务标题" required error={errors.title}>
+            <FormField label="服务标题" required fieldKey="title" error={errors.title}>
               <TextInput value={values.title} onChange={(event) => setValue("title", event.target.value)} placeholder="例：专业水电维修，上门服务" maxLength={80} />
             </FormField>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <FormField label="服务分类" required error={errors.service_category}>
+              <FormField label="服务分类" required fieldKey="service_category" error={errors.service_category}>
                 <SelectInput value={values.service?.service_category ?? ""} onChange={(event) => setService({ service_category: event.target.value })} required>
                   <option value="" disabled>
                     请选择你的服务分类
@@ -439,7 +482,7 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
                   {SERVICE_CATEGORY_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                 </SelectInput>
               </FormField>
-              <FormField label="服务地区" required error={errors.service_area}>
+              <FormField label="服务地区" required fieldKey="service_area" error={errors.service_area}>
                 <LocationSelect
                   value={values.service?.service_area || values.location_area}
                   onChange={(next) => {
@@ -455,6 +498,7 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
         <FormField
           label={postType === "job" ? (values.job?.job_mode === "seeking" ? "信息内容 / 个人简介" : "信息内容 / 职位描述") : postType === "service" ? "服务介绍" : "信息内容"}
           required
+          fieldKey="body"
           error={errors.body}
         >
           <TextArea value={values.body} onChange={(event) => setValue("body", event.target.value)} rows={postType === "job" || postType === "housing" ? 7 : 5} placeholder={bodyPlaceholder(values)} />
@@ -489,12 +533,12 @@ export function PostForm({ mode, postType, initialValues, showProfileCompletionH
           </span>
         </label>
 
-        <div ref={bottomMessageRef}>
+        <div ref={bottomMessageRef} tabIndex={-1} className="outline-none">
           <SubmitBar
             cancelHref={cancelHref}
             submitting={isPending}
             mode={mode}
-            error={message}
+            error={errorCount ? `还有 ${errorCount} 项需要完善，请按提示补充。` : message}
             submitLabel={submitLabelFor(values, mode)}
             onSaveDraft={mode === "create" ? saveDraft : undefined}
           />
@@ -510,7 +554,11 @@ function ModeSwitch({
   options,
   locked,
   onChange,
+  fieldKey,
+  error,
 }: {
+  fieldKey: string;
+  error?: string;
   label: string;
   value: string;
   options: ReadonlyArray<{ value: string; label: string }>;
@@ -518,10 +566,19 @@ function ModeSwitch({
   onChange: (value: string) => void;
 }) {
   return (
-    <div>
+    <div role="group" aria-label={label} data-field={fieldKey} data-field-error={error ? "true" : undefined} tabIndex={-1} className="outline-none">
       <label className="mb-2 block text-sm font-medium text-gray-700">{label}</label>
       <HorizontalPillTabs tabs={options} activeValue={value} ariaLabel={label} disabled={locked} onChange={onChange} />
       {locked ? <p className="mt-2 text-xs text-gray-400">编辑模式下不支持切换类型。</p> : null}
+      {error ? <p className="mt-1 text-xs text-red-600">{error}</p> : null}
     </div>
   );
+}
+
+function readNumberInputErrors(form: HTMLFormElement): PostFormErrors {
+  const errors: PostFormErrors = {};
+  for (const input of form.querySelectorAll<HTMLInputElement>('input[type="number"]')) {
+    if (input.name && input.validity.badInput) errors[input.name] = "请输入有效的数字。";
+  }
+  return errors;
 }

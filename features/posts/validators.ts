@@ -34,6 +34,20 @@ function validateWechat(wechat: string) {
   return undefined;
 }
 
+// Match the existing number controls: salary/housing use whole dollars;
+// secondhand sale prices allow cents. Empty optional amounts remain valid.
+function validateAmount(value: string | undefined, label: string, allowCents = false) {
+  if (!value?.trim()) return undefined;
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return `请输入有效的${label}。`;
+  if (amount < 0) return `${label}不能小于 0。`;
+  const scaled = amount * (allowCents ? 100 : 1);
+  if (Math.abs(scaled - Math.round(scaled)) > 0.00000001) {
+    return allowCents ? `${label}最多保留两位小数。` : `${label}请填写整数。`;
+  }
+  return undefined;
+}
+
 export function shouldReviewPost(values: PostFormValues) {
   void values;
   return false;
@@ -61,6 +75,8 @@ export function validatePostForm(values: PostFormValues) {
   }
 
   if (values.postType === "job") {
+    const salaryError = validateAmount(values.job?.salary_min, "薪资");
+    if (salaryError) errors.salary_min = salaryError;
     if (!isOptionValue(JOB_MODE_OPTIONS, values.job?.job_mode)) errors.job_mode = "请选择招聘/求职类型。";
     if (!isOptionValue(JOB_CATEGORY_OPTIONS, values.job?.job_category)) errors.job_category = "请选择职位分类。";
     if (!isOptionValue(JOB_TYPE_OPTIONS, values.job?.job_type)) errors.job_type = "请选择工作类型。";
@@ -68,12 +84,18 @@ export function validatePostForm(values: PostFormValues) {
   }
 
   if (values.postType === "housing") {
+    const priceError = validateAmount(values.housing?.price, "金额");
+    if (priceError) errors.price = priceError;
     if (!values.title.trim()) errors.title = "请填写标题。";
     if (!housingTypeFromValue(values.housing?.housing_mode)) errors.housing_mode = "请选择房源类型。";
     if (!isOptionValue(LOCATION_OPTIONS, values.location_area)) errors.location_area = "请选择地区。";
   }
 
   if (values.postType === "marketplace") {
+    if (values.marketplace?.marketplace_mode === "selling") {
+      const priceError = validateAmount(values.marketplace.price, "价格", true);
+      if (priceError) errors.price = priceError;
+    }
     if (!isOptionValue(MARKETPLACE_MODE_OPTIONS, values.marketplace?.marketplace_mode)) errors.marketplace_mode = "请选择出售或求购。";
     if (!isOptionValue(LOCATION_OPTIONS, values.marketplace?.trade_area)) errors.trade_area = "请选择所在地区。";
     if (!isOptionValue(MARKETPLACE_CATEGORY_OPTIONS, values.marketplace?.category)) errors.category = "请选择商品分类。";

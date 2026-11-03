@@ -101,7 +101,7 @@ export function ImageUploader({ images, onChange, disabled, maxImages = POST_IMA
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 outline-none" data-field="images" data-field-error={error ? "true" : undefined} tabIndex={-1}>
       <div className="flex items-center justify-between gap-3">
         <label className="block text-sm font-medium text-gray-700">图片（可选，最多 {maxImages} 张）</label>
         <label
