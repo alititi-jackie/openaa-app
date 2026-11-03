@@ -12,9 +12,10 @@ import { DetailImageLightbox, type DetailImage } from "./DetailImageLightbox";
 type DetailImageCarouselProps = {
   images: DetailImage[];
   title: string;
+  onImageError?: () => void;
 };
 
-export function DetailImageCarousel({ images, title }: DetailImageCarouselProps) {
+export function DetailImageCarousel({ images, title, onImageError }: DetailImageCarouselProps) {
   const visibleImages = images.filter((image) => image.url.trim());
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
@@ -46,6 +47,7 @@ export function DetailImageCarousel({ images, title }: DetailImageCarouselProps)
                 className="h-full w-full select-none object-cover"
                 draggable={false}
                 loading={index === 0 ? "eager" : "lazy"}
+                onError={onImageError}
               />
             </button>
           </SwiperSlide>
