@@ -8,7 +8,7 @@ import { formatNewsDate } from "@/features/news/mappers";
 import { parseNewsBodyLinks } from "@/features/news/bodyLinks";
 import type { NewsPostCard, NewsPostDetail } from "@/features/news/types";
 import { appUrl } from "@/lib/seo/siteConfig";
-import { NewsCover } from "./NewsCover";
+import { NewsDetailImage } from "./NewsDetailImage";
 
 type NewsDetailProps = {
   post: NewsPostDetail;
@@ -151,8 +151,8 @@ export function NewsDetail({ post, previousPost, nextPost, relatedPosts, initial
         <NewsViewCounts ids={[post.id]} scope="detail"><NewsViewCount id={post.id} /></NewsViewCounts>
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-2xl border border-zinc-100">
-        <NewsCover src={post.coverImageUrl} alt={post.title} className="h-52 w-full" priority />
+      <div className="mt-4">
+        <NewsDetailImage key={post.coverImageUrl || post.id} src={post.coverImageUrl} title={post.title} />
       </div>
 
       <div className="mt-5 space-y-4 text-[15px] leading-7 text-zinc-800">
