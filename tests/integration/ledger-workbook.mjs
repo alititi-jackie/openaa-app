@@ -12,6 +12,15 @@ const { backupFiles, parseFile } = require("../../features/ledger/files.ts");
 const { matchTemplateRows } = require("../../features/ledger/model.ts");
 async function main() {
   const entry = { kind:"expense", date:"2026-11-23", amount:1, category:"餐饮", method:"cash", note:"" };
+  const [annualFile] = await backupFiles([
+    {...entry,kind:"income",amount:200,date:"2025-01-01"}, {...entry,amount:50,date:"2026-01-02"},
+    {...entry,kind:"remittance",amount:10,cny:72,date:"2026-01-03"}
+  ],false,"summary");
+  const annualBook=new Workbook(); await annualBook.xlsx.load(await annualFile.arrayBuffer());
+  const report=annualBook.worksheets[0];
+  assert.equal(report.getCell("A2").value,"2026");
+  assert.equal(report.getCell("A3").value,"2025");
+  assert.deepEqual(report.getRow(4).values.slice(1),["全部年份合计",200,50,150,10,140,72]);
   const rows = Array.from({length:30005},(_,i)=>({...entry,id:String(i)}));
   const [large] = await backupFiles(rows.slice(0,10005),false,"expense");
   assert.deepEqual((await parseFile(large)).rows.map(r=>r.id), rows.slice(0,10005).map(r=>r.id));

@@ -47,11 +47,12 @@ export type LedgerTotals = {
   abs_cny: number; cash: number; card: number;
 };
 export type Groups = Partial<Record<Kind, LedgerTotals>>;
+export type PeriodGroup = {period:string; count:number; amount:number};
 export async function readPage(owner: string, book: Kind | "summary", period: string, category: string | null,
-  search: string, offset: number, size: number): Promise<{rows: Entry[]; groups: Groups}> {
+  search: string, offset: number, size: number): Promise<{rows: Entry[]; groups: Groups; years:string[]; periods:PeriodGroup[]}> {
   let start: string | null = null, end: string | null = null;
   if (period) {
-    if (!/^\d{4}(-\d{2})?$/.test(period)) return {rows: [], groups: {}};
+    if (!/^\d{4}(-\d{2})?$/.test(period)) return {rows: [], groups: {}, years:[], periods:[]};
     start = period + (period.length === 4 ? "-01-01" : "-01");
     const date = new Date(start + "T12:00:00Z");
     if (period.length === 4) date.setUTCFullYear(date.getUTCFullYear() + 1);

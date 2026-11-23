@@ -1,7 +1,15 @@
 "use client";
+import { StatusToast, useStatusToast } from "@/components/common/StatusToast";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useEffect, useRef, useState } from "react";
-import { matchTemplateRows, fingerprint, money, names, type Kind, type Entry } from "./model";
+import {
+  matchTemplateRows,
+  fingerprint,
+  money,
+  names,
+  type Kind,
+  type Entry,
+} from "./model";
 import { readEntries, readPage, type Groups } from "./store";
 type Candidate = {
   entry: Entry;
@@ -11,14 +19,17 @@ type Candidate = {
   before?: Entry;
 };
 type Book = Kind | "summary";
-const panel = "space-y-3 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 [&_p]:leading-relaxed [&_p]:text-slate-600";
+const panel =
+  "space-y-3 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 [&_p]:leading-relaxed [&_p]:text-slate-600";
 export function Transfer({
   owner,
+  onBusy,
   book,
   period,
   stats,
   done,
 }: {
+  onBusy: (busy: boolean) => void;
   owner: string;
   book: Book;
   period: string;
@@ -27,8 +38,8 @@ export function Transfer({
 }) {
   const [preview, setPreview] = useState<Candidate[] | null>(null),
     [same, setSame] = useState(0),
-    [busy, setBusy] = useState(false),
-    [message, setMessage] = useState("");
+    [busy, setBusy] = useState(false);
+  const [message, setMessage] = useStatusToast();
   const [all, setAll] = useState(false),
     [manual, setManual] = useState(""),
     [included, setIncluded] = useState<Kind[]>([]),
@@ -59,8 +70,16 @@ export function Transfer({
     span = all ? "全部年份" : period || "全部年份";
   useEffect(() => {
     let live = true;
-    readPage(owner, all ? "summary" : book, all ? "" : period, null, "", 0, 0).then(
-      ({groups}) => {
+    readPage(
+      owner,
+      all ? "summary" : book,
+      all ? "" : period,
+      null,
+      "",
+      0,
+      0,
+    ).then(
+      ({ groups }) => {
         if (live)
           setSummary({
             key,
@@ -80,7 +99,7 @@ export function Transfer({
     return () => {
       live = false;
     };
-  }, [owner, all, book, period, key, label, span, stats]);
+  }, [owner, all, book, period, key, label, span, stats, setMessage]);
   useEffect(() => {
     let live = true;
     createSupabaseBrowserClient()
@@ -109,14 +128,27 @@ export function Transfer({
     setPreview(null);
     done();
   }
-  async function commitScope(books: Kind[], revisions: string[], changes: unknown[], clearing: boolean) {
-    const { error } = await createSupabaseBrowserClient().rpc("commit_ledger_scope", {
-      expected_owner: owner, books, seen: revisions, changes, clearing
-    });
+  async function commitScope(
+    books: Kind[],
+    revisions: string[],
+    changes: unknown[],
+    clearing: boolean,
+  ) {
+    const { error } = await createSupabaseBrowserClient().rpc(
+      "commit_ledger_scope",
+      {
+        expected_owner: owner,
+        books,
+        seen: revisions,
+        changes,
+        clearing,
+      },
+    );
     if (error) throw Error(error.message);
   }
   async function run(fn: () => Promise<void>) {
     setBusy(true);
+    onBusy(true);
     setMessage("");
     try {
       await fn();
@@ -124,6 +156,7 @@ export function Transfer({
       setMessage((e as Error).message);
     } finally {
       setBusy(false);
+      onBusy(false);
     }
   }
   async function output(template: boolean, share = false) {
@@ -164,24 +197,47 @@ export function Transfer({
     setMessage("已开始下载");
   }
   function volumeButtons() {
-    return volumes.length > 0 && <div className="space-y-2">
-      <p>共 {volumes.length} 卷，请逐个保存，恢复时逐个合并导入。</p>
-      {volumes.map((file,i) => <div key={file.name} className="grid grid-cols-2 gap-2">
-        <button disabled={busy} onClick={() => run(() => deliver(file,false,label))}>下载第 {i+1} 卷</button>
-        <button disabled={busy} onClick={() => run(() => deliver(file,true,label))}>分享第 {i+1} 卷</button>
-      </div>)}
-    </div>;
+    return (
+      volumes.length > 0 && (
+        <div className="space-y-2">
+          <p>共 {volumes.length} 卷，请逐个保存，恢复时逐个合并导入。</p>
+          {volumes.map((file, i) => (
+            <div key={file.name} className="grid grid-cols-2 gap-2">
+              <button
+                disabled={busy}
+                onClick={() => run(() => deliver(file, false, label))}
+              >
+                下载第 {i + 1} 卷
+              </button>
+              <button
+                disabled={busy}
+                onClick={() => run(() => deliver(file, true, label))}
+              >
+                分享第 {i + 1} 卷
+              </button>
+            </div>
+          ))}
+        </div>
+      )
+    );
   }
   async function inspect(file: File) {
     setPreview(null);
     const { parseFile } = await import("./files");
-    const { rows: incoming, included, blankIds, partial } = await parseFile(file),
+    const {
+        rows: incoming,
+        included,
+        blankIds,
+        partial,
+      } = await parseFile(file),
       old = await readEntries(owner);
     const byId = new Map(old.map((r) => [r.kind + ":" + r.id, r])),
       known = new Set(old.map(fingerprint));
     matchTemplateRows(incoming, old, blankIds);
     setPartial(partial);
-    setSeen(old.filter(r => included.includes(r.kind)).map(r => r.revision!));
+    setSeen(
+      old.filter((r) => included.includes(r.kind)).map((r) => r.revision!),
+    );
     let skipped = 0;
     const next: Candidate[] = [];
     for (const r of incoming) {
@@ -225,7 +281,10 @@ export function Transfer({
         <strong>数据保存说明</strong>
         <p>账目保存在账号中。建议定期选择「全部记录」下载完整 Excel 备份。</p>
       </aside>
-      <fieldset disabled={busy} className="mb-4 flex gap-1 rounded-xl bg-[#e7ecf3] p-1 [&_button]:flex-1 [&_button]:rounded-lg! [&_button]:border-0! [&_button]:text-[#526278] [&_button[aria-pressed=true]]:bg-white! [&_button[aria-pressed=true]]:text-blue-700!">
+      <fieldset
+        disabled={busy}
+        className="mb-4 flex gap-1 rounded-xl bg-[#e7ecf3] p-1 [&_button]:flex-1 [&_button]:rounded-lg! [&_button]:border-0! [&_button]:text-[#526278] [&_button[aria-pressed=true]]:bg-white! [&_button[aria-pressed=true]]:text-blue-700!"
+      >
         {[false, true].map((v) => (
           <button
             key={String(v)}
@@ -279,15 +338,16 @@ export function Transfer({
             : "包含" + label + "的全部年份明细和统计。"}{" "}
         </p>
         <fieldset disabled={busy} className="grid min-w-0 grid-cols-2 gap-2">
-          <button onClick={() => run(() => output(false))}>
-            下载{label}
-          </button>
+          <button onClick={() => run(() => output(false))}>下载{label}</button>
           <button onClick={() => run(() => output(false, true))}>
             分享{label}
           </button>
         </fieldset>
         {volumeButtons()}
-        <p className="text-sm text-slate-600">分享菜单找不到微信？可先下载 Excel，在微信聊天中点「＋」→「文件」，选择已下载的表格发送。</p>
+        <p className="text-sm text-slate-600">
+          分享菜单找不到微信？可先下载
+          Excel，在微信聊天中点「＋」→「文件」，选择已下载的表格发送。
+        </p>
       </section>
       <details className={panel}>
         <summary className="cursor-pointer font-semibold">导入 Excel</summary>
@@ -386,18 +446,23 @@ export function Transfer({
                     )
                   )
                     return;
-                  await commitScope(included, seen, [
-                    ...preview.map(({ entry }) => ({
-                      ...entry,
-                      expected: entry.revision,
-                    })),
-                    ...missing.map((r) => ({
-                      ...r,
-                      expected: r.revision,
-                      remove: true,
-                    })),
-                  ], false);
-                  setEpoch(n => n + 1);
+                  await commitScope(
+                    included,
+                    seen,
+                    [
+                      ...preview.map(({ entry }) => ({
+                        ...entry,
+                        expected: entry.revision,
+                      })),
+                      ...missing.map((r) => ({
+                        ...r,
+                        expected: r.revision,
+                        remove: true,
+                      })),
+                    ],
+                    false,
+                  );
+                  setEpoch((n) => n + 1);
                   setPreview(null);
                   done();
                   setVolumes([]);
@@ -432,13 +497,20 @@ export function Transfer({
           </button>
         )}
       </details>
-      <fieldset aria-label="Excel 记账模板" disabled={busy} className="grid min-w-0 grid-cols-2 gap-2">
+      <fieldset
+        aria-label="Excel 记账模板"
+        disabled={busy}
+        className="grid min-w-0 grid-cols-2 gap-2"
+      >
         <button onClick={() => run(() => output(true))}>下载记账模板</button>
-        <button onClick={() => run(() => output(true, true))}>分享记账模板</button>
+        <button onClick={() => run(() => output(true, true))}>
+          分享记账模板
+        </button>
       </fieldset>
       {scope !== "summary" && (
         <section className="mt-6 border-t border-slate-200 pt-5">
-          <button className="rounded-[9px]! border-[#dbb8bd]! bg-white text-[#992c3a]"
+          <button
+            className="rounded-[9px]! border-[#dbb8bd]! bg-white text-[#992c3a]"
             disabled={busy}
             onClick={() =>
               run(async () =>
@@ -455,46 +527,83 @@ export function Transfer({
             清空{label}
           </button>
           {clearRows && (
-            <dialog ref={dialog} onCancel={(e) => { if (busy) e.preventDefault(); }} onClose={() => setClearRows(null)} aria-labelledby="clear-ledger-title" className="fixed inset-0 m-auto w-[min(92vw,28rem)] space-y-4 rounded-2xl bg-white p-5 text-slate-800 shadow-xl backdrop:bg-black/40">
+            <dialog
+              ref={dialog}
+              onCancel={(e) => {
+                if (busy) e.preventDefault();
+              }}
+              onClose={() => setClearRows(null)}
+              aria-labelledby="clear-ledger-title"
+              className="fixed inset-0 m-auto w-[min(92vw,28rem)] space-y-4 rounded-2xl bg-white p-5 text-slate-800 shadow-xl backdrop:bg-black/40"
+            >
               <h2 id="clear-ledger-title">清空{label}？</h2>
               <p>
                 将删除账号中全部年份的{label}，共 {clearRows.length} 笔。
-                {scope === "all" ? (["expense", "income", "remittance"] as Kind[]).map(k => names[k] + " " + clearRows.filter(r => r.kind === k).length + " 笔").join("、") + "。" : "其他账本保留。"}
+                {scope === "all"
+                  ? (["expense", "income", "remittance"] as Kind[])
+                      .map(
+                        (k) =>
+                          names[k] +
+                          " " +
+                          clearRows.filter((r) => r.kind === k).length +
+                          " 笔",
+                      )
+                      .join("、") + "。"
+                  : "其他账本保留。"}
                 清空后无法撤销。建议先下载 Excel 备份，并确认文件已保存。
               </p>
-              <button type="button" className="border-0! p-0! font-normal! text-blue-700 underline" disabled={busy} onClick={() => run(() => output(false))}>
+              <button
+                type="button"
+                className="border-0! p-0! font-normal! text-blue-700 underline"
+                disabled={busy}
+                onClick={() => run(() => output(false))}
+              >
                 下载备份
               </button>
               {volumeButtons()}
               {message && <p role="status">{message}</p>}
               <div className="grid grid-cols-2 gap-3">
-                <button ref={cancelClear} type="button" disabled={busy} className="min-h-11 border-blue-200! bg-blue-50 text-blue-800 focus-visible:outline-2 focus-visible:outline-blue-600" onClick={() => dialog.current?.close()}>
+                <button
+                  ref={cancelClear}
+                  type="button"
+                  disabled={busy}
+                  className="min-h-11 border-blue-200! bg-blue-50 text-blue-800 focus-visible:outline-2 focus-visible:outline-blue-600"
+                  onClick={() => dialog.current?.close()}
+                >
                   取消
                 </button>
-                <button type="button"
-                className="min-h-11 border-[#dbb8bd]! bg-[#fff5f5] text-[#992c3a]"
-                disabled={busy || !clearRows.length}
-                onClick={() =>
-                  run(async () => {
-                    await commitScope(scope === "all" ? ["expense","income","remittance"] : [scope],
-                      clearRows.map(r => r.revision!), [], true);
-                    setClearRows(null);
-                    setPreview(null);
-                    setEpoch((n) => n + 1);
-                    done();
-                    setVolumes([]);
-                    setMessage("已清空");
-                  })
-                }
-              >
-                确认清空
-              </button>
+                <button
+                  type="button"
+                  className="min-h-11 border-[#dbb8bd]! bg-[#fff5f5] text-[#992c3a]"
+                  disabled={busy || !clearRows.length}
+                  onClick={() =>
+                    run(async () => {
+                      await commitScope(
+                        scope === "all"
+                          ? ["expense", "income", "remittance"]
+                          : [scope],
+                        clearRows.map((r) => r.revision!),
+                        [],
+                        true,
+                      );
+                      setClearRows(null);
+                      setPreview(null);
+                      setEpoch((n) => n + 1);
+                      done();
+                      setVolumes([]);
+                      setMessage("已清空");
+                    })
+                  }
+                >
+                  确认清空
+                </button>
               </div>
             </dialog>
           )}
         </section>
       )}
-      <p role="status">{busy ? "处理中…" : message}</p>
+      {busy && <p role="status">处理中…</p>}
+      {!clearRows && <StatusToast toast={message} />}
     </section>
   );
 }

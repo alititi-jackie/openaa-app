@@ -9,7 +9,7 @@ export default async function Guide({ searchParams }: { searchParams: Promise<{ 
   const {book} = await searchParams;
   return (
     <article className="mx-auto max-w-3xl space-y-4 rounded-2xl bg-white p-4 pb-8">
-      <div className="flex items-center justify-between"><BackButton href={book ? "/profile/ledger?book=" + encodeURIComponent(book) : "/profile/ledger"} label="账本首页" className={detailActionButtonClass} /><PageShareButton path="/profile/ledger" title="OpenAA 生活收支账本" text="登录后打开自己的生活账本" /></div>
+      <div className="flex items-center justify-between"><BackButton href={book ? "/profile/ledger?book=" + encodeURIComponent(book) : "/profile/ledger"} label="账本首页" className={detailActionButtonClass} /><PageShareButton path="/profile/ledger/guide" title="OpenAA 生活收支账本使用说明" text="查看记账、查询、导出和备份的方法" /></div>
       <h1 className="text-2xl font-bold">生活收支账本使用说明</h1>
       {[
         [
@@ -22,7 +22,7 @@ export default async function Guide({ searchParams }: { searchParams: Promise<{ 
         ],
         [
           "查看与搜索",
-          "先选月份、年度或全部，再输入部分备注或金额。例如搜“菜”可找到“买菜”，搜“58”可找到 58.96。查看开支时可左右滑动选择分类，点“全部”恢复。",
+          "先选月份、年度或全部，再输入部分备注或金额。例如搜“菜”可找到“买菜”，搜“58”可找到 58.96。查看开支时可左右滑动选择分类，点“全部”恢复。年度可直接点选；年度明细按月展开，全部明细按年展开。每个账本会分别保留本次查看条件。",
         ],
         [
           "填写 Excel",

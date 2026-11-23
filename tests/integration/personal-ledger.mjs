@@ -17,6 +17,7 @@ await db.exec(
 await db.exec("create table public.user_settings(user_id uuid primary key,settings jsonb not null);grant select,insert,update on public.user_settings to authenticated");
 await db.exec(await readFile(new URL("../../supabase/migrations/202611230002_ledger_preferences_and_imports.sql",import.meta.url),"utf8"));
 await db.exec(await readFile(new URL("../../supabase/migrations/202611230003_ledger_review.sql",import.meta.url),"utf8"));
+await db.exec(await readFile(new URL("../../supabase/migrations/202611230004_ledger_history.sql",import.meta.url),"utf8"));
 const a = crypto.randomUUID(),
   b = crypto.randomUUID();
 await db.query("insert into auth.users values($1),($2)", [a, b]);
@@ -74,6 +75,10 @@ const searchRow = {...row, id:"search-1",note:"周末买菜",amount:58.96};
 await save(a,[searchRow,{...searchRow,id:"search-2"}]);
 assert.equal((await page(0,1,"58")).groups.expense.count,2);
 assert.equal((await page(0,1,"买菜")).groups.expense.amount,117.92);
+const history=await page(0,0,"买菜");
+assert.deepEqual(history.periods,[{period:"2026",count:2,amount:117.92}]);
+assert.ok(history.years.includes("2026"));
+assert.deepEqual(history.rows,[]);
 assert.notEqual((await page(0,1,"买菜")).rows[0].id,(await page(1,1,"买菜")).rows[0].id);
 const seen=(await list()).map(r=>r.revision);
 await save(a,[{...row,id:"after-preview"}]);

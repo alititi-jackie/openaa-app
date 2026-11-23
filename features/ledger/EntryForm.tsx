@@ -9,23 +9,33 @@ import {
   type Entry,
   type Kind,
 } from "./model";
-import { calculate, changeFx, formatFx, fxFields, unusualRate, type FxField } from "./fx";
+import {
+  calculate,
+  changeFx,
+  formatFx,
+  fxFields,
+  unusualRate,
+  type FxField,
+} from "./fx";
 import { writeEntries } from "./store";
 export function EntryForm({
   kind,
   owner,
+  onBusy,
   original,
   done,
   cancel,
   onEdit,
 }: {
   kind: Kind;
+  onBusy: (busy: boolean) => void;
   owner: string;
   original?: Entry;
   done: () => void;
   onEdit: () => void;
   cancel: () => void;
 }) {
+  const [missing, setMissing] = useState({ method: false, category: false });
   const fx = kind === "remittance";
   const [id] = useState(() => original?.id ?? crypto.randomUUID()),
     [busy, setBusy] = useState(false),
@@ -45,19 +55,37 @@ export function EntryForm({
     if (!modal) return false;
     setWarnings(messages);
     modal.returnValue = "";
-    const answer = new Promise<boolean>(resolve => {
-      modal.addEventListener("close", () => resolve(modal.returnValue === "save"), { once: true });
+    const answer = new Promise<boolean>((resolve) => {
+      modal.addEventListener(
+        "close",
+        () => resolve(modal.returnValue === "save"),
+        { once: true },
+      );
     });
     modal.showModal();
     return answer;
   }
   return (
-    <form onChange={onEdit}
+    <form
+      onInvalid={(e) => {
+        const input = e.target;
+        if (!(input instanceof HTMLInputElement)) return;
+        if (input.name === "method" || input.name === "category")
+          setMissing((m) => ({ ...m, [input.name]: true }));
+      }}
+      onChange={(e) => {
+        onEdit();
+        const input = e.target;
+        if (!(input instanceof HTMLInputElement)) return;
+        if (input.name === "method" || input.name === "category")
+          setMissing((m) => ({ ...m, [input.name]: false }));
+      }}
       className="space-y-4"
       onSubmit={async (e) => {
         e.preventDefault();
         if (busy) return;
         setBusy(true);
+        onBusy(true);
         setError("");
         const f = new FormData(e.currentTarget),
           sign = f.get("type") === "subtract" ? -1 : 1;
@@ -73,11 +101,27 @@ export function EntryForm({
             category: f.get("category") as string | null,
             note: String(f.get("note") ?? ""),
           });
+          if (
+            kind === "expense" &&
+            (entry.amount < 1 || entry.amount > 10000) &&
+            !(await confirmTransfer([
+              "开支金额为 $" + entry.amount.toFixed(2) + "，请核对金额。",
+            ]))
+          )
+            return;
           if (fx) {
             const messages = [];
             const amount = Math.abs(entry.amount);
-            if (amount < 20 || amount > 100000) messages.push("汇款金额为 $" + amount.toFixed(2) + "，请核对金额。");
-            if (entry.rate != null && unusualRate(entry.rate)) messages.push("当前汇率为 " + entry.rate.toFixed(3) + "，可能有误。确认按此汇率保存吗？");
+            if (amount < 20 || amount > 100000)
+              messages.push(
+                "汇款金额为 $" + amount.toFixed(2) + "，请核对金额。",
+              );
+            if (entry.rate != null && unusualRate(entry.rate))
+              messages.push(
+                "当前汇率为 " +
+                  entry.rate.toFixed(3) +
+                  "，可能有误。确认按此汇率保存吗？",
+              );
             if (messages.length && !(await confirmTransfer(messages))) return;
           }
           await writeEntries(owner, [
@@ -88,6 +132,7 @@ export function EntryForm({
           setError((e as Error).message);
         } finally {
           setBusy(false);
+          onBusy(false);
         }
       }}
     >
@@ -119,7 +164,13 @@ export function EntryForm({
       )}
       {(fx ? fxFields : (["amount"] as const)).map((k) => (
         <label key={k} className="block">
-          {{ amount: "美元金额", rate: "汇率（1 美元兑换人民币）", cny: "人民币金额（CNY）" }[k]}
+          {
+            {
+              amount: "美元金额",
+              rate: "汇率（1 美元兑换人民币）",
+              cny: "人民币金额（CNY）",
+            }[k]
+          }
           <TextInput
             required
             type="number"
@@ -134,29 +185,51 @@ export function EntryForm({
               if (!raw || !(Number(raw) > 0)) return;
               const rounded = formatFx(Number(raw), k);
               const next = { ...fields, [k]: rounded };
-              setFields(k !== target && Number(rounded) !== Number(raw) ? calculate(next, target) : next);
+              setFields(
+                k !== target && Number(rounded) !== Number(raw)
+                  ? calculate(next, target)
+                  : next,
+              );
             }}
             value={fields[k]}
             onChange={(e) => {
               if (!fx) return setFields({ ...fields, [k]: e.target.value });
-              const next = changeFx(fields, k, e.target.value, target, previous.current);
+              const next = changeFx(
+                fields,
+                k,
+                e.target.value,
+                target,
+                previous.current,
+              );
               previous.current = k;
               setTypingRate(k === "rate");
               setTarget(next.target);
               setFields(next.values);
             }}
           />
-          {k === "rate" && <small id="ledger-rate-warning" aria-live="polite" className="text-amber-800">{!typingRate && unusualRate(Number(fields.rate)) ? "⚠ 汇率可能有误，请核对。" : ""}</small>}
+          {k === "rate" && (
+            <small
+              id="ledger-rate-warning"
+              aria-live="polite"
+              className="text-amber-800"
+            >
+              {!typingRate && unusualRate(Number(fields.rate))
+                ? "⚠ 汇率可能有误，请核对。"
+                : ""}
+            </small>
+          )}
         </label>
       ))}
       {fx ? (
         <fieldset>
           <legend>计算哪一项</legend>
-          {([
-            ["amount", "美元"],
-            ["rate", "汇率"],
-            ["cny", "人民币"],
-          ] as const).map(([v, l]) => (
+          {(
+            [
+              ["amount", "美元"],
+              ["rate", "汇率"],
+              ["cny", "人民币"],
+            ] as const
+          ).map(([v, l]) => (
             <button
               type="button"
               key={v}
@@ -190,6 +263,11 @@ export function EntryForm({
               {l}
             </label>
           ))}
+          {missing.method && (
+            <small role="alert" className="text-red-700">
+              请选择{kind === "income" ? "收款方式" : "支付方式"}
+            </small>
+          )}
         </fieldset>
       )}
       {kind === "expense" && (
@@ -214,11 +292,18 @@ export function EntryForm({
               </label>
             ))}
           </div>
+          {missing.category && (
+            <small role="alert" className="text-red-700">
+              请选择开支分类
+            </small>
+          )}
         </fieldset>
       )}
       <label className="block">
         备注（选填）
-        <TextInput
+        <textarea
+          rows={2}
+          className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"
           name="note"
           maxLength={10000}
           defaultValue={original?.note}
@@ -228,12 +313,24 @@ export function EntryForm({
         取消
       </button>{" "}
       <button disabled={busy}>{busy ? "保存中…" : "保存"}</button>
-      <dialog ref={dialog} aria-labelledby="review-transfer" className="fixed inset-0 m-auto w-[min(92vw,28rem)] space-y-4 rounded-2xl bg-white p-5 shadow-xl backdrop:bg-black/40">
-        <h2 id="review-transfer">请核对汇款记录</h2>
+      <dialog
+        ref={dialog}
+        aria-labelledby="review-transfer"
+        className="fixed inset-0 m-auto w-[min(92vw,28rem)] space-y-4 rounded-2xl bg-white p-5 shadow-xl backdrop:bg-black/40"
+      >
+        <h2 id="review-transfer">请核对{fx ? "汇款" : "开支"}记录</h2>
         <p className="whitespace-pre-line">{warnings.join("\n")}</p>
         <div className="flex gap-3">
-          <button type="button" autoFocus onClick={() => dialog.current?.close("revise")}>返回修改</button>
-          <button type="button" onClick={() => dialog.current?.close("save")}>确认保存</button>
+          <button
+            type="button"
+            autoFocus
+            onClick={() => dialog.current?.close("revise")}
+          >
+            返回修改
+          </button>
+          <button type="button" onClick={() => dialog.current?.close("save")}>
+            确认保存
+          </button>
         </div>
       </dialog>
       <p role="alert">{error}</p>

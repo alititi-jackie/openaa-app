@@ -36,7 +36,30 @@ export async function workbook(
 ) {
   const book = new Workbook();
   if (part) book.addWorksheet("分卷说明").addRow(["分卷备份，请逐个合并导入。此文件的统计仅包含本卷。"]);
-  if (!template && (scope === "all" || scope === "summary")) {
+  if (scope === "summary" && !template) {
+    const sheet = book.addWorksheet("收支汇总");
+    sheet.addRow(["年度","收入","生活开支","扣除开支后剩余","净汇出美元","汇款后结余","汇款折合人民币"]);
+    const groups = new Map<string, number[]>();
+    const total = [0,0,0,0];
+    for (const entry of rows) {
+      const year = entry.date.slice(0,4);
+      const sums = groups.get(year) ?? [0,0,0,0];
+      const i = kinds.indexOf(entry.kind);
+      const cents = Math.round(entry.amount*100);
+      sums[i]+=cents; total[i]+=cents;
+      const cny = Math.round((entry.cny ?? 0)*100);
+      sums[3]+=cny; total[3]+=cny;
+      groups.set(year,sums);
+    }
+    groups.set("全部年份合计",total);
+    for (const [year,[expense,income,remit,cny]] of [...groups].sort(([a],[b])=>a==="全部年份合计" ? 1 : b==="全部年份合计" ? -1 : b.localeCompare(a))) {
+      const line = sheet.addRow([year,income/100,expense/100,(income-expense)/100,remit/100,(income-expense-remit)/100,cny/100]);
+      paint(line.getCell(2),"income"); paint(line.getCell(3),"expense");
+      for(const col of [4,5,6,7]) paint(line.getCell(col),"net");
+    }
+    sheet.columns.forEach(col=>{col.width=20;});
+  }
+  if (!template && scope === "all") {
     const summary = book.addWorksheet("收支汇总");
     summary.addRow(["账本", "笔数", "美元合计", "人民币合计"]);
     const totals = kinds.map((k) => {

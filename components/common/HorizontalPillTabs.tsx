@@ -11,6 +11,7 @@ export type HorizontalPillTab = {
 };
 
 type HorizontalPillTabsProps = {
+  underline?: boolean;
   tabs: readonly HorizontalPillTab[];
   activeValue: string;
   ariaLabel: string;
@@ -21,7 +22,15 @@ type HorizontalPillTabsProps = {
 
 const SCROLL_DISTANCE = 200;
 
-export function HorizontalPillTabs({ tabs, activeValue, ariaLabel, className, disabled = false, onChange }: HorizontalPillTabsProps) {
+export function HorizontalPillTabs({
+  underline,
+  tabs,
+  activeValue,
+  ariaLabel,
+  className,
+  disabled = false,
+  onChange,
+}: HorizontalPillTabsProps) {
   const allTab = tabs.find((tab) => tab.value === "all") ?? tabs[0];
   const restTabs = tabs.filter((tab) => tab !== allTab);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -33,7 +42,9 @@ export function HorizontalPillTabs({ tabs, activeValue, ariaLabel, className, di
     if (!element) return;
     const maxScrollLeft = element.scrollWidth - element.clientWidth;
     setCanScrollLeft(element.scrollLeft > 4);
-    setCanScrollRight(maxScrollLeft > 4 && element.scrollLeft < maxScrollLeft - 4);
+    setCanScrollRight(
+      maxScrollLeft > 4 && element.scrollLeft < maxScrollLeft - 4,
+    );
   }, []);
 
   useEffect(() => {
@@ -52,6 +63,26 @@ export function HorizontalPillTabs({ tabs, activeValue, ariaLabel, className, di
     };
   }, [tabs, updateScrollState]);
 
+  if (underline)
+    return (
+      <nav
+        aria-label={ariaLabel}
+        className={cn("grid grid-flow-col auto-cols-fr bg-white", className)}
+      >
+        {tabs.map((tab) => (
+          <button
+            type="button"
+            key={tab.value}
+            aria-current={activeValue === tab.value ? "page" : undefined}
+            disabled={disabled}
+            onClick={() => onChange?.(tab.value)}
+            className="min-h-11 rounded-none! border-0! border-b-2! border-transparent! text-slate-600 aria-[current=page]:border-blue-600! aria-[current=page]:text-blue-700"
+          >
+            {tab.label}
+          </button>
+        ))}
+      </nav>
+    );
   if (!allTab) return null;
 
   function scrollBy(left: number) {
@@ -61,7 +92,12 @@ export function HorizontalPillTabs({ tabs, activeValue, ariaLabel, className, di
   return (
     <nav aria-label={ariaLabel} className={cn("max-w-full", className)}>
       <div className="flex max-w-full items-center gap-2">
-        <Pill tab={allTab} active={activeValue === allTab.value} disabled={disabled} onChange={onChange} />
+        <Pill
+          tab={allTab}
+          active={activeValue === allTab.value}
+          disabled={disabled}
+          onChange={onChange}
+        />
 
         {restTabs.length > 0 ? (
           <div className="min-w-0 flex-1">
@@ -89,7 +125,13 @@ export function HorizontalPillTabs({ tabs, activeValue, ariaLabel, className, di
               >
                 <div className="flex flex-nowrap items-center gap-2">
                   {restTabs.map((tab) => (
-                    <Pill key={tab.value} tab={tab} active={activeValue === tab.value} disabled={disabled} onChange={onChange} />
+                    <Pill
+                      key={tab.value}
+                      tab={tab}
+                      active={activeValue === tab.value}
+                      disabled={disabled}
+                      onChange={onChange}
+                    />
                   ))}
                 </div>
               </div>
@@ -111,22 +153,44 @@ export function HorizontalPillTabs({ tabs, activeValue, ariaLabel, className, di
   );
 }
 
-function Pill({ tab, active, disabled, onChange }: { tab: HorizontalPillTab; active: boolean; disabled?: boolean; onChange?: (value: string) => void }) {
+function Pill({
+  tab,
+  active,
+  disabled,
+  onChange,
+}: {
+  tab: HorizontalPillTab;
+  active: boolean;
+  disabled?: boolean;
+  onChange?: (value: string) => void;
+}) {
   const className = cn(
     "inline-flex min-h-8 flex-shrink-0 items-center rounded-full border px-3 py-1.5 text-sm font-medium leading-none transition",
-    active ? "border-[#1976d2] bg-[#1976d2] text-white" : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50",
+    active
+      ? "border-[#1976d2] bg-[#1976d2] text-white"
+      : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50",
   );
 
   if (tab.href) {
     return (
-      <Link href={tab.href} aria-current={active ? "page" : undefined} className={className}>
+      <Link
+        href={tab.href}
+        aria-current={active ? "page" : undefined}
+        className={className}
+      >
         {tab.label}
       </Link>
     );
   }
 
   return (
-    <button type="button" onClick={() => onChange?.(tab.value)} disabled={disabled} aria-pressed={active} className={className}>
+    <button
+      type="button"
+      onClick={() => onChange?.(tab.value)}
+      disabled={disabled}
+      aria-pressed={active}
+      className={className}
+    >
       {tab.label}
     </button>
   );
