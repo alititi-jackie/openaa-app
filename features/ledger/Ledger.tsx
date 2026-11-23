@@ -453,9 +453,6 @@ export function Ledger({
                   </p>
                 </div>
               </aside>
-              <p className="text-sm text-zinc-500">
-                账目保存在你的 OpenAA 账号中，换设备登录也能查看。{" "}
-              </p>
               <Desktop />
               <div className="grid grid-cols-4 gap-1 rounded-xl bg-slate-100 p-1">
                 {Object.entries(modes).map(([m, l]) => (
@@ -496,7 +493,14 @@ export function Ledger({
         </>
       )}
       {message && <p role="status">{message}</p>}
-      {page === "home" && <Link className="block text-sm text-blue-700 underline" href={"/profile/ledger/guide?book=" + book}>使用说明</Link>}
+      {page === "home" && (
+        <p className="text-sm text-zinc-500">
+          账目保存在你的 OpenAA 账号中，换设备登录也能查看。{" "}
+          <Link className="text-blue-700 underline" href={"/profile/ledger/guide?book=" + book}>
+            使用说明
+          </Link>
+        </p>
+      )}
     </div>
     </>
   );

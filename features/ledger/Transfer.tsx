@@ -37,9 +37,12 @@ export function Transfer({
     [incoming, setIncoming] = useState<Entry[]>([]),
     [clearRows, setClearRows] = useState<Entry[] | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
+  const cancelClear = useRef<HTMLButtonElement>(null);
   useEffect(() => {
-    if (clearRows && !dialog.current?.open) dialog.current?.showModal();
-  }, [clearRows]);
+    if (!clearRows || busy || !dialog.current || dialog.current.open) return;
+    dialog.current.showModal();
+    cancelClear.current?.focus({ preventScroll: true });
+  }, [clearRows, busy]);
   const [summary, setSummary] = useState<{
       key: string;
       text: string;
@@ -425,15 +428,16 @@ export function Transfer({
                 {scope === "all" ? (["expense", "income", "remittance"] as Kind[]).map(k => names[k] + " " + clearRows.filter(r => r.kind === k).length + " 笔").join("、") + "。" : "其他账本保留。"}
                 清空后无法撤销。建议先下载 Excel 备份，并确认文件已保存。
               </p>
-              <button disabled={busy} onClick={() => run(() => output(false))}>
-                先下载 Excel
+              <button type="button" className="border-0! p-0! font-normal! text-blue-700 underline" disabled={busy} onClick={() => run(() => output(false))}>
+                下载 Excel 备份
               </button>
-              <p role="status">{message}</p>
-              <button autoFocus disabled={busy} onClick={() => setClearRows(null)}>
-                取消
-              </button>
-              <button
-                className="ml-2 rounded-[9px]! border-[#9b2937]! bg-[#9b2937] text-white"
+              {message && <p role="status">{message}</p>}
+              <div className="grid grid-cols-2 gap-3">
+                <button ref={cancelClear} type="button" disabled={busy} className="min-h-11 border-blue-200! bg-blue-50 text-blue-800 focus-visible:outline-2 focus-visible:outline-blue-600" onClick={() => dialog.current?.close()}>
+                  取消
+                </button>
+                <button type="button"
+                className="min-h-11 border-[#dbb8bd]! bg-[#fff5f5] text-[#992c3a]"
                 disabled={busy || !clearRows.length}
                 onClick={() =>
                   run(async () => {
@@ -453,8 +457,9 @@ export function Transfer({
                   })
                 }
               >
-                确认清空{label}
+                确认清空
               </button>
+              </div>
             </dialog>
           )}
         </section>
