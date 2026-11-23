@@ -1,9 +1,9 @@
+import { ProfileSection } from "@/components/profile/ProfileSection";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import {
   Briefcase,
-  ChevronDown,
   Home,
   PlusSquare,
   ShoppingBag,
@@ -94,17 +94,14 @@ export default async function ProfilePage() {
         </section>
 
         <section className="overflow-hidden rounded-2xl bg-white shadow-[0_2px_14px_rgba(0,0,0,0.06)] ring-1 ring-black/5">
+          <ProfileSection title="🧰 我的小工具" description="账本 / 地址电话本 / 导航">
+            <MenuRow href="/profile/ledger" title="📒 生活收支账本" description={user ? "记录开支、收入和汇款，换设备也能查看" : "登录后可记账，换设备也能查看"} />
           <MenuRow href="/profile/directory" title="📍 我的地址电话本" description="仅我自己可查看，保存常用地址，点击打开地图" />
           <MenuRow href="/navigation/my" title="🧭 我的导航" description="仅我自己可查看，添加和整理自己的常用网站" />
 
-          <details className="group border-b border-zinc-100 open:m-2 open:overflow-hidden open:rounded-2xl open:border open:border-[#1976d2] open:bg-white">
-            <summary className="m-2 flex cursor-pointer list-none items-center justify-between rounded-2xl border border-blue-100 bg-blue-50/70 p-4 transition hover:bg-blue-50 group-open:m-0 group-open:rounded-none group-open:border-0 group-open:bg-white group-open:hover:bg-zinc-50">
-              <span className="flex items-center gap-2">
-                <span className="font-medium text-zinc-900">🚀 我要发布</span>
-                <span className="text-[11px] text-zinc-400">招聘 / 房屋 / 二手 / 服务</span>
-              </span>
-              <ChevronDown size={18} className="text-zinc-400" aria-hidden="true" />
-            </summary>
+          </ProfileSection>
+
+          <ProfileSection title="🚀 我要发布" description="招聘 / 房屋 / 二手 / 服务">
             <div className="border-t border-zinc-100 px-4 pb-4 pt-2">
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 <PublishCard href="/jobs/publish" title="发布招聘" subtitle="去发布职位" icon={<Briefcase size={18} className="text-blue-600" />} tone="blue" />
@@ -113,7 +110,7 @@ export default async function ProfilePage() {
                 <PublishCard href="/services/publish" title="发布服务" subtitle="去发布服务" icon={<span className="text-base leading-none">🛠️</span>} tone="cyan" />
               </div>
             </div>
-          </details>
+          </ProfileSection>
 
           <div className="grid grid-cols-2 border-b border-zinc-100">
             <MenuTile href="/profile/posts?type=jobs" label="💼 我的招聘" className="border-r border-zinc-100" />
