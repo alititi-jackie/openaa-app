@@ -707,9 +707,12 @@ export function Ledger({
                   </div>
                 </aside>
                 <Desktop />
-                <p className="text-sm text-zinc-500">
-                  切换版本只改变显示内容，其他账目仍会保留。
-                </p>
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold">选择适合你的账本模式</h3>
+                  <p className="text-sm text-zinc-500">
+                    如果只需记录某一类账目，可以选择对应版本，界面更简洁。所有版本共用同一份数据，随时可以切换。
+                  </p>
+                </div>
                 <div className="grid grid-cols-4 gap-1 rounded-xl bg-slate-100 p-1">
                   {Object.entries(modes).map(([m, l]) => (
                     <button
