@@ -87,3 +87,19 @@ export function totalColor(role: "expense" | "income" | "net", value: number) {
   if (role === "income") return "#1976D2";
   return value < 0 ? "#B42318" : value > 0 ? "#1976D2" : "#000000";
 }
+
+export function matchTemplateRows(incoming: Entry[], old: Entry[], blankIds: Set<string>) {
+    const explicit = new Set(incoming.filter(r => !blankIds.has(r.id)).map(r => r.kind + ":" + r.id));
+    const available = new Map<string, Entry[]>();
+    for (const r of old) {
+      if (explicit.has(r.kind + ":" + r.id)) continue;
+      const key = fingerprint(r);
+      const bucket = available.get(key);
+      if (bucket) bucket.push(r); else available.set(key, [r]);
+    }
+    for (const row of incoming) {
+      if (!blankIds.has(row.id)) continue;
+      const match = available.get(fingerprint(row))?.pop();
+      if (match) row.id = match.id;
+    }
+}

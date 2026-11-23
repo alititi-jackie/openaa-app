@@ -32,8 +32,10 @@ export async function workbook(
   rows: Entry[],
   template: boolean,
   scope: Kind | "summary" | "all" = "all",
+  part?: number,
 ) {
   const book = new Workbook();
+  if (part) book.addWorksheet("分卷说明").addRow(["分卷备份，请逐个合并导入。此文件的统计仅包含本卷。"]);
   if (!template && (scope === "all" || scope === "summary")) {
     const summary = book.addWorksheet("收支汇总");
     summary.addRow(["账本", "笔数", "美元合计", "人民币合计"]);
@@ -135,12 +137,15 @@ export async function workbook(
         }
       }
     }
-    const sheet = book.addWorksheet(names[k] + "明细", {
+    const records = rows.filter(row => row.kind === k);
+    for (let offset = 0; offset < Math.max(1,records.length); offset += 10000) {
+    const suffix = offset ? "-" + (1 + offset / 10000) : "";
+    const sheet = book.addWorksheet(names[k] + "明细" + suffix, {
       views: [{ state: "frozen", ySplit: 1 }],
     });
     sheet.addRow(header);
     sheet.getRow(1).font = { bold: true, color: { argb: "FF1976D2" } };
-    for (const r of rows.filter((row) => row.kind === k))
+    for (const r of records.slice(offset, offset + 10000))
       sheet.addRow([
         r.date,
         Math.abs(r.amount),
@@ -185,6 +190,7 @@ export async function workbook(
       });
     }
   }
+  }
   const data = await book.xlsx.writeBuffer();
   return new File(
     [new Uint8Array(data as ArrayBuffer)],
@@ -197,7 +203,7 @@ export async function workbook(
             ? "收支总览"
             : names[scope] + "记录") +
       "-" +
-      today() +
+      today() + (part ? "-分卷" + part : "") +
       ".xlsx",
     {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -242,23 +248,8 @@ function unpack(
     note: String(raw.note ?? ""),
   });
 }
-export async function parseFile(file: File) {
-  if (file.size > 16 * 1024 * 1024) throw Error("文件超过 16 MB");
-  const bytes = await file.arrayBuffer();
-  const hash = Array.from(
-    new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)),
-    (b) => b.toString(16).padStart(2, "0"),
-  ).join("");
-  const rows: Entry[] = [];
-  const included: Kind[] = [];
-  const add = (k: Kind, r: Record<string, unknown>, i: number) => {
-    try {
-      rows.push(unpack(k, r, "file-" + hash + "-" + k + "-" + i));
-    } catch (e) {
-      throw Error(names[k] + "明细第 " + i + " 行：" + (e as Error).message);
-    }
-  };
-  if (/\.xlsx$/i.test(file.name)) {
+function checkArchive(bytes: ArrayBuffer) {
+    if (bytes.byteLength > 16 * 1024 * 1024) throw Error("文件超过 16 MB");
     const view = new DataView(bytes);
     let end = bytes.byteLength - 22;
     while (
@@ -283,19 +274,62 @@ export async function parseFile(file: File) {
         view.getUint16(cursor + 30, true) +
         view.getUint16(cursor + 32, true);
     }
+}
+
+// Bound each downloadable volume by the same limits used when restoring it.
+export async function backupFiles(rows: Entry[], template: boolean, scope: Kind | "summary" | "all") {
+  const files: File[] = [];
+  async function emit(batch: Entry[], split: boolean) {
+    if (batch.length <= 30000 || scope === "summary") {
+      const file = await workbook(batch, template, scope, split ? files.length + 1 : undefined);
+      if (scope === "summary" || template) { files.push(file); return; }
+      try {
+        checkArchive(await file.arrayBuffer());
+        files.push(file);
+        return;
+      } catch (error) {
+        if (batch.length < 2) throw error;
+      }
+    }
+    const middle = Math.ceil(batch.length / 2);
+    await emit(batch.slice(0, middle), true);
+    await emit(batch.slice(middle), true);
+  }
+  await emit(rows, false);
+  return files;
+}
+export async function parseFile(file: File) {
+  if (file.size > 16 * 1024 * 1024) throw Error("文件超过 16 MB");
+  const bytes = await file.arrayBuffer();
+  let partial = false;
+  const blankIds = new Set<string>();
+  const rows: Entry[] = [];
+  const included: Kind[] = [];
+  const add = (k: Kind, r: Record<string, unknown>, i: number) => {
+    try {
+      const entry = unpack(k, r, crypto.randomUUID());
+      if (!r.id) blankIds.add(entry.id);
+      rows.push(entry);
+    } catch (e) {
+      throw Error(names[k] + "明细第 " + i + " 行：" + (e as Error).message);
+    }
+  };
+  if (/\.xlsx$/i.test(file.name)) {
+    checkArchive(bytes);
     const book = new Workbook();
     await book.xlsx.load(bytes);
+    partial = !!book.getWorksheet("分卷说明");
     let found = false;
     for (const k of kinds) {
-      const sheet = book.getWorksheet(names[k] + "明细");
-      if (!sheet) continue;
+      const detailName = new RegExp("^" + names[k] + "明细(?:-[1-9][0-9]*)?$");
+      for (const sheet of book.worksheets.filter(sheet => detailName.test(sheet.name))) {
       found = true;
       included.push(k);
       const columns = new Map<string, number>();
       sheet.getRow(1).eachCell((c, i) => columns.set(c.text.trim(), i));
       if (!columns.has("日期") || !columns.has("美元"))
         throw Error(sheet.name + "缺少日期或美元列");
-      if (sheet.actualRowCount > 10002) throw Error(sheet.name + "超过一万笔");
+
       sheet.eachRow((row, i) => {
         if (i === 1) return;
         const value = (name: string) => {
@@ -314,6 +348,13 @@ export async function parseFile(file: File) {
           )
         )
           return;
+        const direction = String(value("汇款类型") ?? "").trim();
+        if (k === "remittance" && direction !== "汇出" && direction !== "冲正") {
+          throw Error(sheet.name + "第 " + i + " 行：汇款类型请选择「汇出」或「冲正」");
+        }
+        if (k === "remittance" && (num(value("美元")) < 0 || Number(value("人民币")) < 0)) {
+          throw Error(sheet.name + "第 " + i + " 行：金额请填正数，并用汇款类型指定方向");
+        }
         add(
           k,
           {
@@ -321,7 +362,7 @@ export async function parseFile(file: File) {
             amount: value("美元"),
             method: value("收付方式"),
             category: value("分类"),
-            type: value("汇款类型") === "冲正" ? "subtract" : "add",
+            type: direction === "冲正" ? "subtract" : "add",
             rate: value("汇率"),
             cny: value("人民币"),
             note: value("备注"),
@@ -332,6 +373,7 @@ export async function parseFile(file: File) {
         );
       });
     }
+    }
     if (!found)
       throw Error(
         "文件没有账本明细表。收支总览仅供查看，请导入含明细的账号版 Excel",
@@ -339,5 +381,5 @@ export async function parseFile(file: File) {
   } else throw Error("请选择账号版 Excel（.xlsx）文件");
   const ids = new Set(rows.map((r) => r.kind + ":" + r.id));
   if (ids.size !== rows.length) throw Error("文件内含重复记录编号，请核对");
-  return { rows, included };
+  return { rows, included, blankIds, partial };
 }

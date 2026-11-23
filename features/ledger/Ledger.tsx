@@ -17,12 +17,12 @@ import { EntryForm } from "./EntryForm";
 import { Desktop } from "./Desktop";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Transfer } from "./Transfer";
-import { readEntries, writeEntries } from "./store";
+import { readPage, writeEntries, type Groups } from "./store";
 import {
   categories,
   totalColor,
   kinds,
-  matches,
+
   money,
   names,
   today,
@@ -41,13 +41,10 @@ const categoryTabs = ["all", ...categories].map((v) => ({
   value: v,
   label: v === "all" ? "全部" : v,
 }));
-const sum = (rows: Entry[], field: "amount" | "cny" = "amount") =>
-  rows.reduce((n, r) => n + Math.round((r[field] ?? 0) * 100), 0) / 100;
-function stats(rows: Entry[], book: Book) {
+function stats(groups: Groups, book: Book) {
+  const g = (book === "summary" ? undefined : groups[book]) ?? {amount:0,cny:0,count:0,cash:0,card:0,abs_usd:0,abs_cny:0};
   if (book === "summary") {
-    const [expense, income, remit] = kinds.map((k) =>
-      sum(rows.filter((r) => r.kind === k)),
-    );
+    const [expense, income, remit] = kinds.map(k => groups[k]?.amount ?? 0);
     return [
       [
         "收入",
@@ -76,40 +73,40 @@ function stats(rows: Entry[], book: Book) {
       ],
       [
         "折合人民币",
-        "¥" + money(sum(rows, "cny")),
-        totalColor("net", Math.round(sum(rows, "cny") * 100) / 100),
+        "¥" + money(groups.remittance?.cny ?? 0),
+        totalColor("net", groups.remittance?.cny ?? 0),
       ],
     ];
   }
   if (book === "remittance") {
-    const usd = rows.reduce((n, r) => n + Math.abs(r.amount), 0);
+    const usd = g.abs_usd;
     return [
       [
         "净汇出美元",
-        "$" + money(sum(rows)),
-        totalColor("net", Math.round(sum(rows) * 100) / 100),
+        "$" + money(g.amount),
+        totalColor("net", Math.round(g.amount * 100) / 100),
       ],
       [
         "折合人民币",
-        "¥" + money(sum(rows, "cny")),
-        totalColor("net", Math.round(sum(rows, "cny") * 100) / 100),
+        "¥" + money(groups.remittance?.cny ?? 0),
+        totalColor("net", groups.remittance?.cny ?? 0),
       ],
       [
         "平均汇率",
         usd
-          ? (rows.reduce((n, r) => n + Math.abs(r.cny ?? 0), 0) / usd).toFixed(
+          ? (g.abs_cny / usd).toFixed(
               3,
             )
           : "—",
       ],
-      ["笔数", rows.length],
+      ["笔数", g.count],
     ];
   }
   return [
-    [names[book] + "总额", "$" + money(sum(rows)), totalColor(book, sum(rows))],
-    ["现金", "$" + money(sum(rows.filter((r) => r.method === "cash")))],
-    ["银行卡", "$" + money(sum(rows.filter((r) => r.method === "card")))],
-    ["笔数", rows.length],
+    [names[book] + "总额", "$" + money(g.amount), totalColor(book, g.amount)],
+    ["现金", "$" + money(g.cash)],
+    ["银行卡", "$" + money(g.card)],
+    ["笔数", g.count],
   ];
 }
 export function Ledger({
@@ -138,6 +135,8 @@ export function Ledger({
   const [data, setData] = useState<{
       key: string;
       rows: Entry[];
+      groups: Groups;
+      loaded: number;
       error?: string;
     }>(),
     [message, setMessage] = useState("");
@@ -149,28 +148,28 @@ export function Ledger({
         : period === "year"
           ? year
           : "";
-  const key = [owner, book, prefix, page, refresh].join("|");
+  const search = page === "view" ? q : "";
+  const category = page === "view" && book === "expense" && cat !== "all" ? cat : null;
+  const key = JSON.stringify([owner, book, prefix, page, refresh, search, category]);
+  const offset = page === "home" || data?.key !== key ? 0 : data.rows.length;
+  const wanted = page === "home" ? 3 : limit;
+  const loaded = data?.key === key ? data.loaded : 0;
   useEffect(() => {
-    if (page === "form" || page === "transfer") return;
+    if (page === "form" || page === "transfer" || loaded >= wanted) return;
     let live = true;
-    readEntries(owner, prefix, book === "summary" ? undefined : book).then(
-      (rows) => {
-        if (live) setData({ key, rows });
-      },
-      () => {
-        if (live) setData({ key, rows: [], error: "读取失败，请重试" });
-      },
-    );
-    return () => {
-      live = false;
-    };
-  }, [owner, prefix, book, page, key]);
-  const rows = data?.key === key ? data.rows : [],
-    filtered = rows.filter(
-      (r) =>
-        (book !== "expense" || cat === "all" || r.category === cat) &&
-        matches(r, q),
-    );
+    const timer = setTimeout(() => {
+      readPage(owner, book, prefix, category, search, offset, Math.min(30, wanted - loaded)).then(
+        result => {
+          if (live) setData(previous => ({
+            key, groups: result.groups, loaded: result.rows.length < 30 ? wanted : loaded + result.rows.length,
+            rows: offset && previous?.key === key ? [...previous.rows, ...result.rows] : result.rows
+          }));
+        },
+        () => { if (live) setData({key, rows: [], groups: {}, loaded: wanted, error: "读取失败，请重试"}); }
+      );
+    }, search ? 160 : 0);
+    return () => { live = false; clearTimeout(timer); };
+  }, [owner, book, prefix, category, search, offset, wanted, loaded, page, key]);
   const [dirty, setDirty] = useState(false);
   function leaveForm(destination: string) {
     if (!dirty || window.confirm("放弃这笔未保存的记录？")) open(destination);
@@ -190,7 +189,7 @@ export function Ledger({
     setBook(v);
     open("home");
   }
-  const shown = page === "home" ? rows : filtered;
+  const shown = data?.key === key ? data.rows : [];
   function entries(list: Entry[]) {
     return list.map((r) => (
       <article className="border-t py-3" key={r.kind + r.id}>
@@ -396,7 +395,7 @@ export function Ledger({
           ) : (
             <>
               <dl className="grid grid-cols-2 gap-2">
-                {stats(shown, book).map(([label, value, color]) => (
+                {stats(data.groups, book).map(([label, value, color]) => (
                   <div className="rounded-xl bg-blue-50 p-3" key={label}>
                     <dt className="text-sm">{label}</dt>
                     <dd
@@ -417,7 +416,7 @@ export function Ledger({
                       await navigator.clipboard.writeText(
                         [
                           bookNames[book] + " " + (prefix || "全部年份"),
-                          ...stats(shown, book).map(
+                          ...stats(data.groups, book).map(
                             ([label, value]) => label + " " + value,
                           ),
                         ].join("\n"),
@@ -436,8 +435,8 @@ export function Ledger({
               )}
               {entries(shown.slice(0, page === "home" ? 3 : limit))}
               {!shown.length && <p>暂无记录</p>}
-              {page === "view" && shown.length > limit && (
-                <button onClick={() => setLimit(limit + 30)}>显示更多</button>
+              {page === "view" && shown.length < Object.values(data.groups).reduce((n,g) => n + g.count, 0) && (
+                <button disabled={loaded < wanted} onClick={() => setLimit(shown.length + 30)}>显示更多</button>
               )}
             </>
           )}

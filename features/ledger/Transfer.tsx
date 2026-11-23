@@ -1,8 +1,8 @@
 "use client";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useEffect, useRef, useState } from "react";
-import { fingerprint, money, names, type Kind, type Entry } from "./model";
-import { readEntries, writeEntries } from "./store";
+import { matchTemplateRows, fingerprint, money, names, type Kind, type Entry } from "./model";
+import { readEntries, readPage, type Groups } from "./store";
 type Candidate = {
   entry: Entry;
   label: string;
@@ -22,7 +22,7 @@ export function Transfer({
   owner: string;
   book: Book;
   period: string;
-  stats: (rows: Entry[], book: Book) => (string | number)[][];
+  stats: (groups: Groups, book: Book) => (string | number)[][];
   done: () => void;
 }) {
   const [preview, setPreview] = useState<Candidate[] | null>(null),
@@ -36,6 +36,9 @@ export function Transfer({
     [undo, setUndo] = useState<string | null>(null),
     [incoming, setIncoming] = useState<Entry[]>([]),
     [clearRows, setClearRows] = useState<Entry[] | null>(null);
+  const [partial, setPartial] = useState(false);
+  const [volumes, setVolumes] = useState<File[]>([]);
+  const [seen, setSeen] = useState<string[]>([]);
   const dialog = useRef<HTMLDialogElement>(null);
   const cancelClear = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -56,19 +59,15 @@ export function Transfer({
     span = all ? "全部年份" : period || "全部年份";
   useEffect(() => {
     let live = true;
-    readEntries(
-      owner,
-      all ? "" : period,
-      !all && book !== "summary" ? book : undefined,
-    ).then(
-      (rows) => {
+    readPage(owner, all ? "summary" : book, all ? "" : period, null, "", 0, 0).then(
+      ({groups}) => {
         if (live)
           setSummary({
             key,
-            empty: !rows.length,
+            empty: !Object.keys(groups).length,
             text: [
               span + label + "汇总",
-              ...stats(rows, all ? "summary" : book).map(
+              ...stats(groups, all ? "summary" : book).map(
                 ([k, v]) => k + "　" + v,
               ),
             ].join("\n"),
@@ -105,9 +104,16 @@ export function Transfer({
       { expected_owner: owner, changes, undo_token: token },
     );
     if (error) throw Error(error.message);
+    setVolumes([]);
     setEpoch((n) => n + 1);
     setPreview(null);
     done();
+  }
+  async function commitScope(books: Kind[], revisions: string[], changes: unknown[], clearing: boolean) {
+    const { error } = await createSupabaseBrowserClient().rpc("commit_ledger_scope", {
+      expected_owner: owner, books, seen: revisions, changes, clearing
+    });
+    if (error) throw Error(error.message);
   }
   async function run(fn: () => Promise<void>) {
     setBusy(true);
@@ -121,8 +127,8 @@ export function Transfer({
     }
   }
   async function output(template: boolean, share = false) {
-    const { workbook } = await import("./files");
-    const file = await workbook(
+    const { backupFiles } = await import("./files");
+    const files = await backupFiles(
       template
         ? []
         : await readEntries(
@@ -133,9 +139,17 @@ export function Transfer({
       template,
       template ? "all" : scope,
     );
+    setVolumes(files.length > 1 ? files : []);
+    if (files.length > 1) {
+      setMessage("备份已分卷，请逐个保存，恢复时逐个合并导入。");
+      return;
+    }
+    await deliver(files[0], share, template ? "Excel 记账模板" : label);
+  }
+  async function deliver(file: File, share: boolean, title: string) {
     if (share && navigator.canShare?.({ files: [file] })) {
       try {
-        await navigator.share({ title: template ? "Excel 记账模板" : label, files: [file] });
+        await navigator.share({ title, files: [file] });
         return;
       } catch (e) {
         if ((e as Error).name === "AbortError") return;
@@ -149,13 +163,25 @@ export function Transfer({
     setTimeout(() => URL.revokeObjectURL(url), 30000);
     setMessage("已开始下载");
   }
+  function volumeButtons() {
+    return volumes.length > 0 && <div className="space-y-2">
+      <p>共 {volumes.length} 卷，请逐个保存，恢复时逐个合并导入。</p>
+      {volumes.map((file,i) => <div key={file.name} className="grid grid-cols-2 gap-2">
+        <button disabled={busy} onClick={() => run(() => deliver(file,false,label))}>下载第 {i+1} 卷</button>
+        <button disabled={busy} onClick={() => run(() => deliver(file,true,label))}>分享第 {i+1} 卷</button>
+      </div>)}
+    </div>;
+  }
   async function inspect(file: File) {
     setPreview(null);
     const { parseFile } = await import("./files");
-    const { rows: incoming, included } = await parseFile(file),
+    const { rows: incoming, included, blankIds, partial } = await parseFile(file),
       old = await readEntries(owner);
     const byId = new Map(old.map((r) => [r.kind + ":" + r.id, r])),
       known = new Set(old.map(fingerprint));
+    matchTemplateRows(incoming, old, blankIds);
+    setPartial(partial);
+    setSeen(old.filter(r => included.includes(r.kind)).map(r => r.revision!));
     let skipped = 0;
     const next: Candidate[] = [];
     for (const r of incoming) {
@@ -165,7 +191,7 @@ export function Transfer({
         skipped++;
         continue;
       }
-      const match = !current && known.has(key);
+      const match = !current && !blankIds.has(r.id) && known.has(key);
       next.push({
         entry: { ...r, revision: current?.revision },
         before: current,
@@ -206,6 +232,7 @@ export function Transfer({
             aria-pressed={v === all}
             onClick={() => {
               setAll(v);
+              setVolumes([]);
               setManual("");
               setClearRows(null);
             }}
@@ -259,6 +286,7 @@ export function Transfer({
             分享{label}
           </button>
         </fieldset>
+        {volumeButtons()}
         <p className="text-sm text-slate-600">分享菜单找不到微信？可先下载 Excel，在微信聊天中点「＋」→「文件」，选择已下载的表格发送。</p>
       </section>
       <details className={panel}>
@@ -344,7 +372,7 @@ export function Transfer({
               确认导入选中的记录
             </button>{" "}
             <button
-              disabled={busy}
+              disabled={busy || partial}
               onClick={() =>
                 run(async () => {
                   const title = included.map((k) => names[k]).join("、");
@@ -358,7 +386,7 @@ export function Transfer({
                     )
                   )
                     return;
-                  await apply([
+                  await commitScope(included, seen, [
                     ...preview.map(({ entry }) => ({
                       ...entry,
                       expected: entry.revision,
@@ -368,12 +396,16 @@ export function Transfer({
                       expected: r.revision,
                       remove: true,
                     })),
-                  ]);
+                  ], false);
+                  setEpoch(n => n + 1);
+                  setPreview(null);
+                  done();
+                  setVolumes([]);
                   setMessage("已覆盖导入");
                 })
               }
             >
-              覆盖文件包含的账本
+              {partial ? "分卷备份请使用合并导入" : "覆盖文件包含的账本"}
             </button>
             <button disabled={busy} onClick={() => setPreview(null)}>
               取消
@@ -433,6 +465,7 @@ export function Transfer({
               <button type="button" className="border-0! p-0! font-normal! text-blue-700 underline" disabled={busy} onClick={() => run(() => output(false))}>
                 下载备份
               </button>
+              {volumeButtons()}
               {message && <p role="status">{message}</p>}
               <div className="grid grid-cols-2 gap-3">
                 <button ref={cancelClear} type="button" disabled={busy} className="min-h-11 border-blue-200! bg-blue-50 text-blue-800 focus-visible:outline-2 focus-visible:outline-blue-600" onClick={() => dialog.current?.close()}>
@@ -443,18 +476,13 @@ export function Transfer({
                 disabled={busy || !clearRows.length}
                 onClick={() =>
                   run(async () => {
-                    await writeEntries(
-                      owner,
-                      clearRows.map((r) => ({
-                        ...r,
-                        expected: r.revision,
-                        remove: true,
-                      })),
-                    );
+                    await commitScope(scope === "all" ? ["expense","income","remittance"] : [scope],
+                      clearRows.map(r => r.revision!), [], true);
                     setClearRows(null);
                     setPreview(null);
                     setEpoch((n) => n + 1);
                     done();
+                    setVolumes([]);
                     setMessage("已清空");
                   })
                 }

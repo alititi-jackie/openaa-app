@@ -20,6 +20,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run test:permissions
+      - run: node tests/integration/personal-ledger.mjs
+      - run: node tests/integration/ledger-workbook.mjs
       - run: npm run test:content-views
       - run: npm audit --omit=dev
       - run: npm run lint
