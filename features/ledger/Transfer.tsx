@@ -251,12 +251,12 @@ export function Transfer({
             ? "全部年份的收支总览，仅供查看。"
             : "包含" + label + "的全部年份明细和统计。"}{" "}
         </p>
-        <fieldset disabled={busy} className="flex flex-wrap gap-2">
+        <fieldset disabled={busy} className="grid min-w-0 grid-cols-2 gap-2">
           <button onClick={() => run(() => output(false))}>
-            下载{label} Excel
+            下载{label}
           </button>
           <button onClick={() => run(() => output(false, true))}>
-            分享{label} Excel
+            分享{label}
           </button>
         </fieldset>
         <p className="text-sm text-slate-600">分享菜单找不到微信？可先下载 Excel，在微信聊天中点「＋」→「文件」，选择已下载的表格发送。</p>
@@ -400,9 +400,9 @@ export function Transfer({
           </button>
         )}
       </details>
-      <fieldset aria-label="Excel 记账模板" disabled={busy} className="flex flex-wrap gap-2">
-        <button onClick={() => run(() => output(true))}>下载 Excel 记账模板</button>
-        <button onClick={() => run(() => output(true, true))}>分享 Excel 记账模板</button>
+      <fieldset aria-label="Excel 记账模板" disabled={busy} className="grid min-w-0 grid-cols-2 gap-2">
+        <button onClick={() => run(() => output(true))}>下载记账模板</button>
+        <button onClick={() => run(() => output(true, true))}>分享记账模板</button>
       </fieldset>
       {scope !== "summary" && (
         <section className="mt-6 border-t border-slate-200 pt-5">
@@ -431,7 +431,7 @@ export function Transfer({
                 清空后无法撤销。建议先下载 Excel 备份，并确认文件已保存。
               </p>
               <button type="button" className="border-0! p-0! font-normal! text-blue-700 underline" disabled={busy} onClick={() => run(() => output(false))}>
-                下载 Excel 备份
+                下载备份
               </button>
               {message && <p role="status">{message}</p>}
               <div className="grid grid-cols-2 gap-3">
