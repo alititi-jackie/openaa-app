@@ -57,6 +57,19 @@ export function Transfer({
     dialog.current.showModal();
     cancelClear.current?.focus({ preventScroll: true });
   }, [clearRows, busy]);
+  const [ask, setAsk] = useState<{
+    title: string;
+    body: string;
+    confirmLabel: string;
+    action: () => Promise<void>;
+  } | null>(null);
+  const askDialog = useRef<HTMLDialogElement>(null);
+  const askCancel = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!ask || busy || !askDialog.current || askDialog.current.open) return;
+    askDialog.current.showModal();
+    askCancel.current?.focus({ preventScroll: true });
+  }, [ask, busy]);
   const [summary, setSummary] = useState<{
       key: string;
       text: string;
@@ -433,42 +446,40 @@ export function Transfer({
             </button>{" "}
             <button
               disabled={busy || partial}
-              onClick={() =>
-                run(async () => {
-                  const title = included.map((k) => names[k]).join("、");
-                  if (
-                    !confirm(
-                      "覆盖全部年份的" +
-                        title +
-                        "？将移除文件中缺少的 " +
-                        missing.length +
-                        " 笔，空明细表也会清空对应账本。",
-                    )
-                  )
-                    return;
-                  await commitScope(
-                    included,
-                    seen,
-                    [
-                      ...preview.map(({ entry }) => ({
-                        ...entry,
-                        expected: entry.revision,
-                      })),
-                      ...missing.map((r) => ({
-                        ...r,
-                        expected: r.revision,
-                        remove: true,
-                      })),
-                    ],
-                    false,
-                  );
-                  setEpoch((n) => n + 1);
-                  setPreview(null);
-                  done();
-                  setVolumes([]);
-                  setMessage("已覆盖导入");
-                })
-              }
+              onClick={() => {
+                const title = included.map((k) => names[k]).join("、");
+                setAsk({
+                  title: "覆盖全部年份的" + title + "？",
+                  body:
+                    "将移除文件中缺少的 " +
+                    missing.length +
+                    " 笔，空明细表也会清空对应账本。",
+                  confirmLabel: "确认覆盖",
+                  action: async () => {
+                    await commitScope(
+                      included,
+                      seen,
+                      [
+                        ...preview.map(({ entry }) => ({
+                          ...entry,
+                          expected: entry.revision,
+                        })),
+                        ...missing.map((r) => ({
+                          ...r,
+                          expected: r.revision,
+                          remove: true,
+                        })),
+                      ],
+                      false,
+                    );
+                    setEpoch((n) => n + 1);
+                    setPreview(null);
+                    done();
+                    setVolumes([]);
+                    setMessage("已覆盖导入");
+                  },
+                });
+              }}
             >
               {partial ? "分卷备份请使用合并导入" : "覆盖文件包含的账本"}
             </button>
@@ -481,15 +492,14 @@ export function Transfer({
           <button
             disabled={busy}
             onClick={() =>
-              run(async () => {
-                if (
-                  confirm(
-                    "撤销上次导入？后续修改过的记录发生冲突时将停止恢复。",
-                  )
-                ) {
+              setAsk({
+                title: "撤销上次导入？",
+                body: "后续修改过的记录发生冲突时将停止恢复。",
+                confirmLabel: "确认撤销",
+                action: async () => {
                   await apply([], undo);
                   setMessage("已撤销上次导入");
-                }
+                },
               })
             }
           >
@@ -601,6 +611,43 @@ export function Transfer({
             </dialog>
           )}
         </section>
+      )}
+      {ask && (
+        <dialog
+          ref={askDialog}
+          onCancel={(e) => {
+            if (busy) e.preventDefault();
+          }}
+          onClose={() => setAsk(null)}
+          aria-labelledby="transfer-ask-title"
+          className="fixed inset-0 m-auto w-[min(92vw,28rem)] space-y-4 rounded-2xl bg-white p-5 text-slate-800 shadow-xl backdrop:bg-black/40"
+        >
+          <h2 id="transfer-ask-title">{ask.title}</h2>
+          <p>{ask.body}</p>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              ref={askCancel}
+              type="button"
+              disabled={busy}
+              className="min-h-11 border-blue-200! bg-blue-50 text-blue-800 focus-visible:outline-2 focus-visible:outline-blue-600"
+              onClick={() => askDialog.current?.close()}
+            >
+              取消
+            </button>
+            <button
+              type="button"
+              className="min-h-11 border-[#dbb8bd]! bg-[#fff5f5] text-[#992c3a]"
+              disabled={busy}
+              onClick={() => {
+                const current = ask;
+                setAsk(null);
+                if (current) void run(current.action);
+              }}
+            >
+              {ask.confirmLabel}
+            </button>
+          </div>
+        </dialog>
       )}
       {busy && <p role="status">处理中…</p>}
       {!clearRows && <StatusToast toast={message} />}

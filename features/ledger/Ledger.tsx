@@ -267,9 +267,44 @@ export function Ledger({
     grouped,
   ]);
   const [dirty, setDirty] = useState(false);
+  const [ask, setAsk] = useState<{
+    title: string;
+    body: string;
+    confirmLabel: string;
+    action: () => Promise<void>;
+  } | null>(null);
+  const [asking, setAsking] = useState(false);
+  const askDialog = useRef<HTMLDialogElement>(null);
+  const askCancel = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!ask || asking || !askDialog.current || askDialog.current.open) return;
+    askDialog.current.showModal();
+    askCancel.current?.focus({ preventScroll: true });
+  }, [ask, asking]);
+  async function runAsk() {
+    if (!ask) return;
+    setAsking(true);
+    try {
+      await ask.action();
+      setAsk(null);
+    } catch (e) {
+      setMessage((e as Error).message);
+    } finally {
+      setAsking(false);
+    }
+  }
+  function confirmLeave(action: () => void) {
+    setAsk({
+      title: "放弃这笔未保存的记录？",
+      body: "这笔记录还没有保存，离开后填写的内容会丢失。",
+      confirmLabel: "放弃并离开",
+      action: async () => action(),
+    });
+  }
   function leaveForm(destination: string) {
     if (working) return;
-    if (!dirty || window.confirm("放弃这笔未保存的记录？")) open(destination);
+    if (!dirty) return open(destination);
+    confirmLeave(() => open(destination));
   }
   function open(next: string) {
     setMessage("");
@@ -281,9 +316,14 @@ export function Ledger({
     window.scrollTo(0, 0);
   }
   function switchBook(v: Book) {
-    if (dirty && !window.confirm("放弃这笔未保存的记录？")) return;
-    setBook(v);
-    open("home");
+    if (!dirty) {
+      setBook(v);
+      return open("home");
+    }
+    confirmLeave(() => {
+      setBook(v);
+      open("home");
+    });
   }
   const shown = data?.key === key ? data.rows : [];
   function entries(list: Entry[]) {
@@ -321,18 +361,36 @@ export function Ledger({
               编辑
             </button>{" "}
             <button
-              onClick={async () => {
-                if (!confirm("确认删除这笔记录？")) return;
-                try {
-                  await writeEntries(owner, [
-                    { ...r, expected: r.revision, remove: true },
-                  ]);
-                  setRefresh((v) => v + 1);
-                  setMessage("已删除");
-                } catch (e) {
-                  setMessage((e as Error).message);
-                }
-              }}
+              onClick={() =>
+                setAsk({
+                  title: "删除这笔记录？",
+                  body:
+                    r.date +
+                    " · " +
+                    (r.category ??
+                      (r.kind === "income"
+                        ? r.method === "cash"
+                          ? "现金收入"
+                          : "银行卡收入"
+                        : r.amount < 0
+                          ? "汇款冲正"
+                          : "汇出")) +
+                    " $" +
+                    money(r.amount) +
+                    (r.kind === "remittance"
+                      ? " · ¥" + money(r.cny ?? 0)
+                      : "") +
+                    (r.note ? " · " + r.note : ""),
+                  confirmLabel: "确认删除",
+                  action: async () => {
+                    await writeEntries(owner, [
+                      { ...r, expected: r.revision, remove: true },
+                    ]);
+                    setRefresh((v) => v + 1);
+                    setMessage("已删除");
+                  },
+                })
+              }
             >
               删除
             </button>
@@ -541,7 +599,10 @@ export function Ledger({
               </button>
             ) : (
               <>
-                {(shown.length > 0 || grouped || book === "summary") && (
+                {(shown.length > 0 ||
+                  grouped ||
+                  book === "summary" ||
+                  page === "view") && (
                   <dl className="grid grid-cols-2 gap-2">
                     {stats(data.groups, book).map(([label, value, color]) => (
                       <div className="rounded-xl bg-blue-50 p-3" key={label}>
@@ -686,6 +747,40 @@ export function Ledger({
               </>
             )}
           </>
+        )}
+        {ask && (
+          <dialog
+            ref={askDialog}
+            onCancel={(e) => {
+              if (asking) e.preventDefault();
+            }}
+            onClose={() => setAsk(null)}
+            aria-labelledby="ledger-ask-title"
+            className="fixed inset-0 m-auto w-[min(92vw,28rem)] space-y-4 rounded-2xl bg-white p-5 text-slate-800 shadow-xl backdrop:bg-black/40"
+          >
+            <h2 id="ledger-ask-title">{ask.title}</h2>
+            <p>{ask.body}</p>
+            {message && <p role="status">{message}</p>}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                ref={askCancel}
+                type="button"
+                disabled={asking}
+                className="min-h-11 border-blue-200! bg-blue-50 text-blue-800 focus-visible:outline-2 focus-visible:outline-blue-600"
+                onClick={() => askDialog.current?.close()}
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                className="min-h-11 border-[#dbb8bd]! bg-[#fff5f5] text-[#992c3a]"
+                disabled={asking}
+                onClick={() => void runAsk()}
+              >
+                {ask.confirmLabel}
+              </button>
+            </div>
+          </dialog>
         )}
         <StatusToast toast={message} />
         {page === "home" && (
