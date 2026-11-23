@@ -135,7 +135,7 @@ export function Transfer({
     );
     if (share && navigator.canShare?.({ files: [file] })) {
       try {
-        await navigator.share({ files: [file] });
+        await navigator.share({ title: label, files: [file] });
         return;
       } catch (e) {
         if ((e as Error).name === "AbortError") return;
@@ -259,6 +259,7 @@ export function Transfer({
             分享{label} Excel
           </button>
         </fieldset>
+        <p className="text-sm text-slate-600">分享菜单找不到微信？可先下载 Excel，在微信聊天中点「＋」→「文件」，选择已下载的表格发送。</p>
       </section>
       <details className={panel}>
         <summary className="cursor-pointer font-semibold">导入 Excel</summary>
