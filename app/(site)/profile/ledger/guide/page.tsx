@@ -1,12 +1,15 @@
 import { BackButton } from "@/components/common/BackButton";
+import { PageShareButton } from "@/components/common/PageShareButton";
+import { detailActionButtonClass } from "@/components/common/detailActionStyles";
 export const metadata = {
   title: "生活收支账本使用说明",
   robots: { index: false, follow: false },
 };
-export default function Guide() {
+export default async function Guide({ searchParams }: { searchParams: Promise<{ book?: string }> }) {
+  const {book} = await searchParams;
   return (
     <article className="mx-auto max-w-3xl space-y-4 rounded-2xl bg-white p-4 pb-8">
-      <BackButton href="/profile/ledger" label="返回账本" />
+      <div className="flex items-center justify-between"><BackButton href={book ? "/profile/ledger?book=" + encodeURIComponent(book) : "/profile/ledger"} label="账本首页" className={detailActionButtonClass} /><PageShareButton path="/profile/ledger" title="OpenAA 生活收支账本" text="登录后打开自己的生活账本" /></div>
       <h1 className="text-2xl font-bold">生活收支账本使用说明</h1>
       {[
         [

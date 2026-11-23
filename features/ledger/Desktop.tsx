@@ -16,8 +16,9 @@ export function Desktop() {
     return () => window.removeEventListener("beforeinstallprompt", capture);
   }, []);
   return (
-    <div>
-      <button
+    <div className="text-sm text-zinc-500">
+      把账本添加到桌面，下次点图标就能直接打开，记账更方便。{" "}
+      <button className="border-0! p-0! font-normal! text-blue-700 underline"
         onClick={async () => {
           if (!event) {
             setHelp(!help);

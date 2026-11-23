@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 type BackButtonProps = {
+  onBack?: () => void;
   href?: string;
   fallbackHref?: string;
   label?: string;
@@ -14,7 +15,7 @@ type BackButtonProps = {
 export const backButtonClassName =
   "inline-flex min-h-10 items-center justify-center gap-1 rounded-full border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50";
 
-export function BackButton({ href, fallbackHref = "/", label = "返回", className = backButtonClassName }: BackButtonProps) {
+export function BackButton({ onBack, href, fallbackHref = "/", label = "返回", className = backButtonClassName }: BackButtonProps) {
   const router = useRouter();
 
   if (href) {
@@ -30,7 +31,8 @@ export function BackButton({ href, fallbackHref = "/", label = "返回", classNa
     <button
       type="button"
       onClick={() => {
-        if (window.history.length > 1) router.back();
+        if (onBack) onBack();
+        else if (window.history.length > 1) router.back();
         else router.push(fallbackHref);
       }}
       className={className}

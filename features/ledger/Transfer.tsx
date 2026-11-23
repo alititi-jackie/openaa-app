@@ -1,6 +1,6 @@
 "use client";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { fingerprint, money, names, type Kind, type Entry } from "./model";
 import { readEntries, writeEntries } from "./store";
 type Candidate = {
@@ -36,6 +36,10 @@ export function Transfer({
     [undo, setUndo] = useState<string | null>(null),
     [incoming, setIncoming] = useState<Entry[]>([]),
     [clearRows, setClearRows] = useState<Entry[] | null>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    if (clearRows && !dialog.current?.open) dialog.current?.showModal();
+  }, [clearRows]);
   const [summary, setSummary] = useState<{
       key: string;
       text: string;
@@ -392,9 +396,12 @@ export function Transfer({
           </button>
         )}
       </details>
+      <button disabled={busy} onClick={() => run(() => output(true))}>
+        下载 Excel 记账模板
+      </button>
       {scope !== "summary" && (
-        <section className={panel}>
-          <button
+        <section className="mt-6 border-t border-slate-200 pt-5">
+          <button className="rounded-[9px]! border-[#dbb8bd]! bg-white text-[#992c3a]"
             disabled={busy}
             onClick={() =>
               run(async () =>
@@ -411,18 +418,22 @@ export function Transfer({
             清空{label}
           </button>
           {clearRows && (
-            <div>
+            <dialog ref={dialog} onCancel={(e) => { if (busy) e.preventDefault(); }} onClose={() => setClearRows(null)} aria-labelledby="clear-ledger-title" className="fixed inset-0 m-auto w-[min(92vw,28rem)] space-y-4 rounded-2xl bg-white p-5 text-slate-800 shadow-xl backdrop:bg-black/40">
+              <h2 id="clear-ledger-title">清空{label}？</h2>
               <p>
-                清空全部年份的{label}，共 {clearRows.length} 笔？请先下载
-                Excel。
+                将删除账号中全部年份的{label}，共 {clearRows.length} 笔。
+                {scope === "all" ? (["expense", "income", "remittance"] as Kind[]).map(k => names[k] + " " + clearRows.filter(r => r.kind === k).length + " 笔").join("、") + "。" : "其他账本保留。"}
+                清空后无法撤销。建议先下载 Excel 备份，并确认文件已保存。
               </p>
               <button disabled={busy} onClick={() => run(() => output(false))}>
                 先下载 Excel
               </button>
-              <button disabled={busy} onClick={() => setClearRows(null)}>
+              <p role="status">{message}</p>
+              <button autoFocus disabled={busy} onClick={() => setClearRows(null)}>
                 取消
               </button>
               <button
+                className="ml-2 rounded-[9px]! border-[#9b2937]! bg-[#9b2937] text-white"
                 disabled={busy || !clearRows.length}
                 onClick={() =>
                   run(async () => {
@@ -442,15 +453,12 @@ export function Transfer({
                   })
                 }
               >
-                确认清空
+                确认清空{label}
               </button>
-            </div>
+            </dialog>
           )}
         </section>
       )}
-      <button disabled={busy} onClick={() => run(() => output(true))}>
-        下载 Excel 记账模板
-      </button>
       <p role="status">{busy ? "处理中…" : message}</p>
     </section>
   );

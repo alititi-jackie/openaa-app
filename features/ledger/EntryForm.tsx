@@ -16,11 +16,13 @@ export function EntryForm({
   original,
   done,
   cancel,
+  onEdit,
 }: {
   kind: Kind;
   owner: string;
   original?: Entry;
   done: () => void;
+  onEdit: () => void;
   cancel: () => void;
 }) {
   const fx = kind === "remittance";
@@ -47,7 +49,7 @@ export function EntryForm({
     };
   }
   return (
-    <form
+    <form onChange={onEdit}
       className="space-y-4"
       onSubmit={async (e) => {
         e.preventDefault();

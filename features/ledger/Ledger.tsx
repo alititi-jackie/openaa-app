@@ -1,4 +1,7 @@
 "use client";
+import { PageShareButton } from "@/components/common/PageShareButton";
+import { detailActionButtonClass } from "@/components/common/detailActionStyles";
+import { BackButton } from "@/components/common/BackButton";
 import Link from "next/link";
 import {
   ShieldCheck,
@@ -112,14 +115,16 @@ function stats(rows: Entry[], book: Book) {
 export function Ledger({
   owner,
   initialMode,
+  requestedBook,
 }: {
+  requestedBook?: string;
   owner: string;
   initialMode: keyof typeof modes;
 }) {
   const [savingMode, setSavingMode] = useState(false);
   const [mode, setMode] = useState<keyof typeof modes>(initialMode),
     [book, setBook] = useState<Book>(
-      initialMode === "full" ? "expense" : initialMode,
+      initialMode === "full" ? (requestedBook && Object.hasOwn(bookNames, requestedBook) ? requestedBook as Book : "expense") : initialMode,
     ),
     [page, setPage] = useState("home"),
     [original, setOriginal] = useState<Entry>();
@@ -166,8 +171,13 @@ export function Ledger({
         (book !== "expense" || cat === "all" || r.category === cat) &&
         matches(r, q),
     );
+  const [dirty, setDirty] = useState(false);
+  function leaveForm(destination: string) {
+    if (!dirty || window.confirm("放弃这笔未保存的记录？")) open(destination);
+  }
   function open(next: string) {
     setMessage("");
+    setDirty(false);
     setPage(next);
     setOriginal(undefined);
     setLimit(30);
@@ -229,6 +239,11 @@ export function Ledger({
     ));
   }
   return (
+    <>
+    <div className="flex items-center justify-between">
+      <BackButton href={page === "home" ? "/profile" : undefined} onBack={() => leaveForm("home")} label={page === "home" ? "我的" : "账本首页"} className={detailActionButtonClass} />
+      <PageShareButton path="/profile/ledger" title="OpenAA 生活收支账本" text="登录后打开自己的生活账本" />
+    </div>
     <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm [&_button:not([role])]:cursor-pointer [&_button]:rounded-xl [&_button]:border [&_button]:border-blue-100 [&_button]:px-3 [&_button]:py-2 [&_button]:text-sm [&_button]:font-semibold [&_button[aria-pressed=true]]:bg-blue-600 [&_button[aria-pressed=true]]:text-white [&_h2]:text-lg [&_h2]:font-bold">
       <h1 className="text-2xl font-bold">生活收支账本</h1>
       {mode === "full" && page === "home" && (
@@ -242,15 +257,13 @@ export function Ledger({
           onChange={(v) => switchBook(v as Book)}
         />
       )}
-      {page !== "home" && page !== "form" && (
-        <button onClick={() => open("home")}>‹ 返回账本</button>
-      )}
       {page === "form" && book !== "summary" ? (
         <EntryForm
           owner={owner}
           kind={book}
           original={original}
-          cancel={() => open(original ? "view" : "home")}
+          onEdit={() => setDirty(true)}
+          cancel={() => leaveForm(original ? "view" : "home")}
           done={() => {
             open(original ? "view" : "home");
             setRefresh((v) => v + 1);
@@ -373,7 +386,6 @@ export function Ledger({
               )}
             </div>
           )}
-          {page === "home" && <Desktop />}
           <h2>{page === "home" ? "本月数据" : "筛选结果"}</h2>
           {data?.key !== key ? (
             <p>读取中…</p>
@@ -443,13 +455,8 @@ export function Ledger({
               </aside>
               <p className="text-sm text-zinc-500">
                 账目保存在你的 OpenAA 账号中，换设备登录也能查看。{" "}
-                <Link
-                  className="text-blue-700 underline"
-                  href="/profile/ledger/guide"
-                >
-                  使用说明
-                </Link>
               </p>
+              <Desktop />
               <div className="grid grid-cols-4 gap-1 rounded-xl bg-slate-100 p-1">
                 {Object.entries(modes).map(([m, l]) => (
                   <button
@@ -488,7 +495,9 @@ export function Ledger({
           )}
         </>
       )}
-      <p role="status">{message}</p>
+      {message && <p role="status">{message}</p>}
+      {page === "home" && <Link className="block text-sm text-blue-700 underline" href={"/profile/ledger/guide?book=" + book}>使用说明</Link>}
     </div>
+    </>
   );
 }
