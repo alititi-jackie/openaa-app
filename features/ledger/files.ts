@@ -28,9 +28,13 @@ function paint(cell: Cell, role: Parameters<typeof totalColor>[0]) {
       color: { argb: "FF" + totalColor(role, cell.value).slice(1) },
     };
 }
-export async function workbook(rows: Entry[], template: boolean) {
+export async function workbook(
+  rows: Entry[],
+  template: boolean,
+  scope: Kind | "summary" | "all" = "all",
+) {
   const book = new Workbook();
-  if (!template) {
+  if (!template && (scope === "all" || scope === "summary")) {
     const summary = book.addWorksheet("收支汇总");
     summary.addRow(["账本", "笔数", "美元合计", "人民币合计"]);
     const totals = kinds.map((k) => {
@@ -89,7 +93,48 @@ export async function workbook(rows: Entry[], template: boolean) {
     ]);
     paint(balance.getCell(3), "net");
   }
-  for (const k of kinds) {
+  for (const k of kinds.filter((k) => scope === "all" || k === scope)) {
+    if (!template) {
+      for (const [suffix, size] of [
+        ["汇总", 0],
+        ["月度汇总", 7],
+        ["年度汇总", 4],
+      ] as const) {
+        const groups = new Map<string, number[]>();
+        const report = book.addWorksheet(names[k] + suffix);
+        report.addRow([
+          "期间",
+          "笔数",
+          "美元合计",
+          ...(k === "remittance"
+            ? ["人民币合计", "平均汇率"]
+            : ["现金", "银行卡"]),
+        ]);
+        for (const r of rows.filter((r) => r.kind === k)) {
+          const key = size ? r.date.slice(0, size) : "全部年份";
+          const v = groups.get(key) ?? [0, 0, 0, 0, 0];
+          v[0]++;
+          v[1] += Math.round(r.amount * 100);
+          if (k === "remittance") {
+            v[2] += Math.round((r.cny ?? 0) * 100);
+            v[3] += Math.abs(r.cny ?? 0);
+            v[4] += Math.abs(r.amount);
+          } else v[r.method === "cash" ? 2 : 3] += Math.round(r.amount * 100);
+          groups.set(key, v);
+        }
+        for (const [key, v] of [...groups].sort().reverse()) {
+          const line = report.addRow([
+            key,
+            v[0],
+            v[1] / 100,
+            v[2] / 100,
+            k === "remittance" ? (v[4] ? v[3] / v[4] : 0) : v[3] / 100,
+          ]);
+          paint(line.getCell(3), k === "remittance" ? "net" : k);
+          if (k === "remittance") paint(line.getCell(4), "net");
+        }
+      }
+    }
     const sheet = book.addWorksheet(names[k] + "明细", {
       views: [{ state: "frozen", ySplit: 1 }],
     });
@@ -143,7 +188,17 @@ export async function workbook(rows: Entry[], template: boolean) {
   const data = await book.xlsx.writeBuffer();
   return new File(
     [new Uint8Array(data as ArrayBuffer)],
-    "OpenAA-" + (template ? "记账模板" : "完整账本") + "-" + today() + ".xlsx",
+    "OpenAA-" +
+      (template
+        ? "记账模板"
+        : scope === "all"
+          ? "完整账本"
+          : scope === "summary"
+            ? "收支总览"
+            : names[scope] + "记录") +
+      "-" +
+      today() +
+      ".xlsx",
     {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     },
@@ -195,6 +250,7 @@ export async function parseFile(file: File) {
     (b) => b.toString(16).padStart(2, "0"),
   ).join("");
   const rows: Entry[] = [];
+  const included: Kind[] = [];
   const add = (k: Kind, r: Record<string, unknown>, i: number) => {
     try {
       rows.push(unpack(k, r, "file-" + hash + "-" + k + "-" + i));
@@ -234,6 +290,7 @@ export async function parseFile(file: File) {
       const sheet = book.getWorksheet(names[k] + "明细");
       if (!sheet) continue;
       found = true;
+      included.push(k);
       const columns = new Map<string, number>();
       sheet.getRow(1).eachCell((c, i) => columns.set(c.text.trim(), i));
       if (!columns.has("日期") || !columns.has("美元"))
@@ -275,39 +332,12 @@ export async function parseFile(file: File) {
         );
       });
     }
-    if (!found) throw Error("找不到开支、收入或汇款明细表");
-  } else {
-    const d = JSON.parse(new TextDecoder().decode(bytes));
-    let books: Partial<Record<Kind, unknown>>;
-    if (d.app === "OpenAA Life Ledger" && d.version === 1 && d.kind === "all")
-      books = d.books;
-    else {
-      const k =
-        d.app === "OpenAA Life Ledger" && d.version === 1
-          ? d.kind
-          : d.app === "OpenAA Expense Records"
-            ? "expense"
-            : d.app === "OpenAA USD RMB Rate Records"
-              ? "remittance"
-              : Array.isArray(d) && d.length
-                ? d[0]?.usd != null
-                  ? "remittance"
-                  : "expense"
-                : null;
-      if (!kinds.includes(k)) throw Error("无法识别备份");
-      books = { [k]: d.records ?? d };
-    }
-    for (const [k, list] of Object.entries(books)) {
-      if (
-        !kinds.includes(k as Kind) ||
-        !Array.isArray(list) ||
-        list.length > 10000
-      )
-        throw Error("备份记录格式无效");
-      list.forEach((r, i) => add(k as Kind, r, i + 1));
-    }
-  }
+    if (!found)
+      throw Error(
+        "文件没有账本明细表。收支总览仅供查看，请导入含明细的账号版 Excel",
+      );
+  } else throw Error("请选择账号版 Excel（.xlsx）文件");
   const ids = new Set(rows.map((r) => r.kind + ":" + r.id));
   if (ids.size !== rows.length) throw Error("文件内含重复记录编号，请核对");
-  return rows;
+  return { rows, included };
 }

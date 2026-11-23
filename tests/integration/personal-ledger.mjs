@@ -14,6 +14,8 @@ await db.exec(
     "utf8",
   ),
 );
+await db.exec("create table public.user_settings(user_id uuid primary key,settings jsonb not null);grant select,insert,update on public.user_settings to authenticated");
+await db.exec(await readFile(new URL("../../supabase/migrations/202611230002_ledger_preferences_and_imports.sql",import.meta.url),"utf8"));
 const a = crypto.randomUUID(),
   b = crypto.randomUUID();
 await db.query("insert into auth.users values($1),($2)", [a, b]);
@@ -54,6 +56,19 @@ await assert.rejects(
 );
 assert.equal((await list()).length, 1);
 assert.equal(Number((await list())[0].amount), 60);
+const apply=(changes,token=null)=>db.query("select public.apply_ledger_import($1,$2,$3)",[a,JSON.stringify(changes),token]);
+const mode=async(value,initialize)=>(await db.query("select public.ledger_display_mode($1,$2,$3) as mode",[a,value,initialize])).rows[0].mode;
+assert.equal(await mode("income",true),"income");
+assert.equal(await mode("full",true),"income");
+assert.equal(await mode("expense",false),"expense");
+const token=async()=>(await db.query("select token from public.ledger_import_undo")).rows[0].token;
+await apply([{...row,id:"new"}]);await apply([],await token());assert.equal((await list()).length,1);
+const current=(await list())[0];
+await apply([{...current,expected:current.revision,remove:true}]);assert.equal((await list()).length,0);
+await apply([],await token());assert.equal((await list()).length,1);
+await apply([{...row,id:"new"}]);const imported=(await list()).find(r=>r.id==="new");
+await save(a,[{...imported,amount:5,expected:imported.revision}]);await assert.rejects(apply([],await token()));
+await login(b);await assert.rejects(mode("expense",false));await assert.rejects(apply([row]));
 await db.exec("reset role;set role anon");
 await assert.rejects(list());
 await assert.rejects(save(a, [row]));

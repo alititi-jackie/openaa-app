@@ -11,6 +11,8 @@ import { useEffect, useState } from "react";
 import { HorizontalPillTabs } from "@/components/common/HorizontalPillTabs";
 import { TextInput } from "@/components/forms/TextInput";
 import { EntryForm } from "./EntryForm";
+import { Desktop } from "./Desktop";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Transfer } from "./Transfer";
 import { readEntries, writeEntries } from "./store";
 import {
@@ -114,6 +116,7 @@ export function Ledger({
   owner: string;
   initialMode: keyof typeof modes;
 }) {
+  const [savingMode, setSavingMode] = useState(false);
   const [mode, setMode] = useState<keyof typeof modes>(initialMode),
     [book, setBook] = useState<Book>(
       initialMode === "full" ? "expense" : initialMode,
@@ -255,7 +258,13 @@ export function Ledger({
           }}
         />
       ) : page === "transfer" ? (
-        <Transfer owner={owner} done={() => setRefresh((v) => v + 1)} />
+        <Transfer
+          book={book}
+          period={prefix}
+          stats={stats}
+          owner={owner}
+          done={() => setRefresh((v) => v + 1)}
+        />
       ) : (
         <>
           <h2>
@@ -364,6 +373,7 @@ export function Ledger({
               )}
             </div>
           )}
+          {page === "home" && <Desktop />}
           <h2>{page === "home" ? "本月数据" : "筛选结果"}</h2>
           {data?.key !== key ? (
             <p>读取中…</p>
@@ -446,16 +456,28 @@ export function Ledger({
                     className="min-w-0 rounded-lg! border-transparent! px-0! text-slate-500 aria-pressed:border-slate-200! aria-pressed:bg-white! aria-pressed:text-slate-700!"
                     aria-pressed={mode === m}
                     key={m}
-                    onClick={() => {
+                    disabled={savingMode}
+                    onClick={async () => {
                       const v = m as keyof typeof modes;
-                      setMode(v);
-                      switchBook(v === "full" ? "expense" : v);
-                      document.cookie =
-                        "ledger-mode-" +
-                        owner +
-                        "=" +
-                        v +
-                        "; Path=/profile/ledger; Max-Age=31536000; SameSite=Lax; Secure";
+                      setSavingMode(true);
+                      try {
+                        const { error } =
+                          await createSupabaseBrowserClient().rpc(
+                            "ledger_display_mode",
+                            {
+                              expected_owner: owner,
+                              requested: v,
+                              initialize: false,
+                            },
+                          );
+                        if (error) throw error;
+                        setMode(v);
+                        switchBook(v === "full" ? "expense" : v);
+                      } catch {
+                        setMessage("版本保存失败，请重试");
+                      } finally {
+                        setSavingMode(false);
+                      }
                     }}
                   >
                     {l}
