@@ -135,7 +135,7 @@ export function Transfer({
     );
     if (share && navigator.canShare?.({ files: [file] })) {
       try {
-        await navigator.share({ title: label, files: [file] });
+        await navigator.share({ title: template ? "Excel 记账模板" : label, files: [file] });
         return;
       } catch (e) {
         if ((e as Error).name === "AbortError") return;
@@ -400,9 +400,10 @@ export function Transfer({
           </button>
         )}
       </details>
-      <button disabled={busy} onClick={() => run(() => output(true))}>
-        下载 Excel 记账模板
-      </button>
+      <fieldset aria-label="Excel 记账模板" disabled={busy} className="flex flex-wrap gap-2">
+        <button onClick={() => run(() => output(true))}>下载 Excel 记账模板</button>
+        <button onClick={() => run(() => output(true, true))}>分享 Excel 记账模板</button>
+      </fieldset>
       {scope !== "summary" && (
         <section className="mt-6 border-t border-slate-200 pt-5">
           <button className="rounded-[9px]! border-[#dbb8bd]! bg-white text-[#992c3a]"
