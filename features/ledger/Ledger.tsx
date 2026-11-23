@@ -1,5 +1,12 @@
 "use client";
-import { Plus, CalendarDays, Share2, ChevronRight } from "lucide-react";
+import Link from "next/link";
+import {
+  ShieldCheck,
+  Plus,
+  CalendarDays,
+  Share2,
+  ChevronRight,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { HorizontalPillTabs } from "@/components/common/HorizontalPillTabs";
 import { TextInput } from "@/components/forms/TextInput";
@@ -8,6 +15,7 @@ import { Transfer } from "./Transfer";
 import { readEntries, writeEntries } from "./store";
 import {
   categories,
+  totalColor,
   kinds,
   matches,
   money,
@@ -36,19 +44,51 @@ function stats(rows: Entry[], book: Book) {
       sum(rows.filter((r) => r.kind === k)),
     );
     return [
-      ["收入", "$" + money(income)],
-      ["开支", "$" + money(expense)],
-      ["收支结余", "$" + money(income - expense)],
-      ["净汇出美元", "$" + money(remit)],
-      ["汇款后结余", "$" + money(income - expense - remit)],
-      ["折合人民币", "¥" + money(sum(rows, "cny"))],
+      [
+        "收入",
+        "$" + money(income),
+        totalColor("income", Math.round(income * 100) / 100),
+      ],
+      [
+        "开支",
+        "$" + money(expense),
+        totalColor("expense", Math.round(expense * 100) / 100),
+      ],
+      [
+        "收支结余",
+        "$" + money(income - expense),
+        totalColor("net", Math.round((income - expense) * 100) / 100),
+      ],
+      [
+        "净汇出美元",
+        "$" + money(remit),
+        totalColor("net", Math.round(remit * 100) / 100),
+      ],
+      [
+        "汇款后结余",
+        "$" + money(income - expense - remit),
+        totalColor("net", Math.round((income - expense - remit) * 100) / 100),
+      ],
+      [
+        "折合人民币",
+        "¥" + money(sum(rows, "cny")),
+        totalColor("net", Math.round(sum(rows, "cny") * 100) / 100),
+      ],
     ];
   }
   if (book === "remittance") {
     const usd = rows.reduce((n, r) => n + Math.abs(r.amount), 0);
     return [
-      ["净汇出美元", "$" + money(sum(rows))],
-      ["折合人民币", "¥" + money(sum(rows, "cny"))],
+      [
+        "净汇出美元",
+        "$" + money(sum(rows)),
+        totalColor("net", Math.round(sum(rows) * 100) / 100),
+      ],
+      [
+        "折合人民币",
+        "¥" + money(sum(rows, "cny")),
+        totalColor("net", Math.round(sum(rows, "cny") * 100) / 100),
+      ],
       [
         "平均汇率",
         usd
@@ -61,7 +101,7 @@ function stats(rows: Entry[], book: Book) {
     ];
   }
   return [
-    [names[book] + "总额", "$" + money(sum(rows))],
+    [names[book] + "总额", "$" + money(sum(rows)), totalColor(book, sum(rows))],
     ["现金", "$" + money(sum(rows.filter((r) => r.method === "cash")))],
     ["银行卡", "$" + money(sum(rows.filter((r) => r.method === "card")))],
     ["笔数", rows.length],
@@ -334,10 +374,17 @@ export function Ledger({
           ) : (
             <>
               <dl className="grid grid-cols-2 gap-2">
-                {stats(shown, book).map(([label, value]) => (
+                {stats(shown, book).map(([label, value, color]) => (
                   <div className="rounded-xl bg-blue-50 p-3" key={label}>
                     <dt className="text-sm">{label}</dt>
-                    <dd className="font-bold">{value}</dd>
+                    <dd
+                      className="font-bold"
+                      style={{
+                        color: typeof color === "string" ? color : undefined,
+                      }}
+                    >
+                      {value}
+                    </dd>
                   </div>
                 ))}
               </dl>
@@ -374,12 +421,29 @@ export function Ledger({
           )}
           {page === "home" && (
             <>
+              <aside className="flex gap-3 rounded-2xl border border-amber-200 bg-linear-to-br from-amber-50 to-orange-50 p-4 text-sm text-amber-950">
+                <ShieldCheck className="shrink-0" size={20} />
+                <div>
+                  <strong>数据安全说明</strong>
+                  <p>
+                    因误操作或系统故障等原因，账目仍有丢失的可能。建议每月导出一次完整
+                    Excel 账本，并在批量导入或修改前另存一份。
+                  </p>
+                </div>
+              </aside>
               <p className="text-sm text-zinc-500">
-                账目保存在你的 OpenAA 账号中，换设备登录也能查看。
+                账目保存在你的 OpenAA 账号中，换设备登录也能查看。{" "}
+                <Link
+                  className="text-blue-700 underline"
+                  href="/profile/ledger/guide"
+                >
+                  使用说明
+                </Link>
               </p>
-              <div>
+              <div className="grid grid-cols-4 gap-1 rounded-xl bg-slate-100 p-1">
                 {Object.entries(modes).map(([m, l]) => (
                   <button
+                    className="min-w-0 rounded-lg! border-transparent! px-0! text-slate-500 aria-pressed:border-slate-200! aria-pressed:bg-white! aria-pressed:text-slate-700!"
                     aria-pressed={mode === m}
                     key={m}
                     onClick={() => {

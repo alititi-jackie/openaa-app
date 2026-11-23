@@ -1,6 +1,7 @@
-import { Workbook } from "exceljs";
+import { Workbook, type Cell } from "exceljs";
 import {
   categories,
+  totalColor,
   kinds,
   names,
   validate,
@@ -20,6 +21,13 @@ const header = [
   "记录编号",
   "版本",
 ];
+function paint(cell: Cell, role: Parameters<typeof totalColor>[0]) {
+  if (typeof cell.value === "number")
+    cell.font = {
+      bold: true,
+      color: { argb: "FF" + totalColor(role, cell.value).slice(1) },
+    };
+}
 export async function workbook(rows: Entry[], template: boolean) {
   const book = new Workbook();
   if (!template) {
@@ -29,7 +37,7 @@ export async function workbook(rows: Entry[], template: boolean) {
       const list = rows.filter((r) => r.kind === k);
       const sum =
         list.reduce((n, r) => n + Math.round(r.amount * 100), 0) / 100;
-      summary.addRow([
+      const line = summary.addRow([
         names[k],
         list.length,
         sum,
@@ -37,6 +45,8 @@ export async function workbook(rows: Entry[], template: boolean) {
           ? list.reduce((n, r) => n + Math.round((r.cny ?? 0) * 100), 0) / 100
           : null,
       ]);
+      paint(line.getCell(3), k === "remittance" ? "net" : k);
+      if (k === "remittance") paint(line.getCell(4), "net");
       return sum;
     });
     for (const [title, length] of [
@@ -58,16 +68,26 @@ export async function workbook(rows: Entry[], template: boolean) {
       sheet.addRow(["期间", "收入", "开支", "净汇出美元", "汇款后结余"]);
       for (const [period, sums] of [...periods].sort(([a], [b]) =>
         b.localeCompare(a),
-      ))
-        sheet.addRow([
+      )) {
+        const line = sheet.addRow([
           period,
           sums.income / 100,
           sums.expense / 100,
           sums.remittance / 100,
           (sums.income - sums.expense - sums.remittance) / 100,
         ]);
+        paint(line.getCell(2), "income");
+        paint(line.getCell(3), "expense");
+        paint(line.getCell(4), "net");
+        paint(line.getCell(5), "net");
+      }
     }
-    summary.addRow(["汇款后结余", null, totals[1] - totals[0] - totals[2]]);
+    const balance = summary.addRow([
+      "汇款后结余",
+      null,
+      Math.round((totals[1] - totals[0] - totals[2]) * 100) / 100,
+    ]);
+    paint(balance.getCell(3), "net");
   }
   for (const k of kinds) {
     const sheet = book.addWorksheet(names[k] + "明细", {

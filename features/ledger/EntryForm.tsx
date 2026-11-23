@@ -83,11 +83,12 @@ export function EntryForm({
         {original ? "编辑" : "记一笔"}
         {names[kind]}
       </h2>
-      <label>
+      <label className="block min-w-0 max-w-full">
         日期
         <TextInput
           required
           type="date"
+          className="block min-w-0 max-w-full box-border appearance-none text-left [&::-webkit-date-and-time-value]:text-left"
           name="date"
           defaultValue={original?.date ?? today()}
         />

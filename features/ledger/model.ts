@@ -81,3 +81,9 @@ export function validate(r: Entry) {
     throw Error("请选择收付方式及开支分类，并核对金额");
   return r;
 }
+
+export function totalColor(role: "expense" | "income" | "net", value: number) {
+  if (role === "expense") return "#B42318";
+  if (role === "income") return "#1976D2";
+  return value < 0 ? "#B42318" : value > 0 ? "#1976D2" : "#000000";
+}

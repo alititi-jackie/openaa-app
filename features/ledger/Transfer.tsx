@@ -82,9 +82,6 @@ export function Transfer({ owner, done }: { owner: string; done: () => void }) {
     <section className="space-y-3">
       <h2>导入／导出</h2>
       <fieldset disabled={busy} className="flex flex-wrap gap-2">
-        <button onClick={() => run(() => output(true))}>
-          下载 Excel 记账模板
-        </button>
         <button onClick={() => run(() => output(false))}>
           导出完整账本（Excel）
         </button>
@@ -165,6 +162,9 @@ export function Transfer({ owner, done }: { owner: string; done: () => void }) {
           </button>
         </div>
       )}
+      <button disabled={busy} onClick={() => run(() => output(true))}>
+        下载 Excel 记账模板
+      </button>
       <p role="status">{busy ? "处理中…" : message}</p>
     </section>
   );
