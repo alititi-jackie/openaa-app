@@ -366,10 +366,6 @@ export function Transfer({
           </button>
         </fieldset>
         {volumeButtons()}
-        <p className="text-sm text-slate-600">
-          分享菜单找不到微信？可先下载
-          Excel，在微信聊天中点「＋」→「文件」，选择已下载的表格发送。
-        </p>
       </section>
       <section className={panel}>
         <h2>Excel 记账模板</h2>
