@@ -357,7 +357,7 @@ export function Transfer({
         <p>
           {scope === "summary"
             ? "全部年份的收支总览，仅供查看。"
-            : "包含" + label + "的全部年份明细和统计。"}{" "}
+            : "包含本账本全部年份的汇总、逐笔明细、月度汇总和年度汇总。"}{" "}
         </p>
         <fieldset disabled={busy} className="grid min-w-0 grid-cols-2 gap-2">
           <button onClick={() => run(() => output(false))}>下载{label}</button>
