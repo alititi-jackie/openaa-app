@@ -557,15 +557,18 @@ export function Transfer({
             className="rounded-[9px]! border-[#dbb8bd]! bg-white text-[#992c3a]"
             disabled={busy}
             onClick={() =>
-              run(async () =>
-                setClearRows(
-                  await readEntries(
-                    owner,
-                    "",
-                    scope === "all" ? undefined : scope,
-                  ),
-                ),
-              )
+              run(async () => {
+                const rows = await readEntries(
+                  owner,
+                  "",
+                  scope === "all" ? undefined : scope,
+                );
+                if (!rows.length) {
+                  setMessage("暂无" + label + "，无需清空");
+                  return;
+                }
+                setClearRows(rows);
+              })
             }
           >
             清空{label}
