@@ -35,6 +35,24 @@ export async function workbook(
   part?: number,
 ) {
   const book = new Workbook();
+  if (template) {
+    const guide = book.addWorksheet("填写说明");
+    guide.addRow(["填写说明"]).getCell(1).font = { bold: true, size: 14 };
+    for (const line of [
+      "这份模板用来在 Excel 里记账，填好后回 OpenAA 账本的「导出／分享 → 导入 Excel」选这个文件导入。",
+      "日期：按 2026-11-23 这样写（年-月-日），一行一笔，从每张表的第二行开始填。",
+      "美元：只填正数数字，不要带 $ 符号。",
+      "收付方式：只能填「现金」或「银行卡」，单元格有下拉可直接选。",
+      "分类（仅开支表）：购物、餐饮、交通、房屋、账单、其它，下拉里选。",
+      "汇款表：「汇款类型」必填「汇出」或「冲正」；美元和人民币都填正数，方向由汇款类型决定；汇率按实际填，如 7.200；人民币留空的话，会按美元 × 汇率自动算。",
+      "备注：可填可不填。",
+      "「记录编号」和「版本」两列是系统用的：不要填、不要删，新记的账留空就行，导入时系统自动处理。",
+      "不要改工作表的名字，也不要改第一行表头，否则会导入失败。",
+      "开支、收入、汇款分别填进对应的明细表；用不到的表可以空着。",
+    ])
+      guide.addRow([line]);
+    guide.getColumn(1).width = 110;
+  }
   if (part) book.addWorksheet("分卷说明").addRow(["分卷备份，请逐个合并导入。此文件的统计仅包含本卷。"]);
   if (scope === "summary" && !template) {
     const sheet = book.addWorksheet("收支汇总");
