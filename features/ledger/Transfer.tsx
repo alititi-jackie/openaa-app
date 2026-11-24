@@ -383,13 +383,14 @@ export function Transfer({
         </fieldset>
       </section>
       <details className={panel}>
-        <summary className="cursor-pointer font-semibold">导入 Excel</summary>
+        <summary className="cursor-pointer text-lg font-bold">导入 Excel</summary>
         <fieldset disabled={busy}>
-          <label>
-            选择账号版 Excel 明细文件
+          <label className="block">
+            <span className="font-semibold">选择账号版 Excel 明细文件</span>
             <input
               type="file"
               accept=".xlsx"
+              className="mt-1.5 block min-h-11 w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-2.5 file:py-1 file:text-sm file:font-medium"
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 e.target.value = "";
