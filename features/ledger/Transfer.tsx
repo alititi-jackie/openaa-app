@@ -365,6 +365,23 @@ export function Transfer({
           Excel，在微信聊天中点「＋」→「文件」，选择已下载的表格发送。
         </p>
       </section>
+      <section className={panel}>
+        <h2>Excel 记账模板</h2>
+        <p>
+          空白模板，第一张表是填写说明。在 Excel
+          里填好后，回到这里展开「导入 Excel」，选择填好的文件即可导入。
+        </p>
+        <fieldset
+          aria-label="Excel 记账模板"
+          disabled={busy}
+          className="grid min-w-0 grid-cols-2 gap-2"
+        >
+          <button onClick={() => run(() => output(true))}>下载记账模板</button>
+          <button onClick={() => run(() => output(true, true))}>
+            分享记账模板
+          </button>
+        </fieldset>
+      </section>
       <details className={panel}>
         <summary className="cursor-pointer font-semibold">导入 Excel</summary>
         <fieldset disabled={busy}>
@@ -533,16 +550,6 @@ export function Transfer({
           </div>
         )}
       </details>
-      <fieldset
-        aria-label="Excel 记账模板"
-        disabled={busy}
-        className="grid min-w-0 grid-cols-2 gap-2"
-      >
-        <button onClick={() => run(() => output(true))}>下载记账模板</button>
-        <button onClick={() => run(() => output(true, true))}>
-          分享记账模板
-        </button>
-      </fieldset>
       {scope !== "summary" && (
         <section className="mt-6 border-t border-slate-200 pt-5">
           <button
