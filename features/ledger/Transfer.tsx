@@ -52,8 +52,12 @@ export function Transfer({
   const [seen, setSeen] = useState<string[]>([]);
   const dialog = useRef<HTMLDialogElement>(null);
   const cancelClear = useRef<HTMLButtonElement>(null);
-  const [clearHint, setClearHint] = useState<string | null>(null);
-  const clearHintTimer = useRef<number | undefined>(undefined);
+  const [notice, setNotice] = useState<string | null>(null);
+  const noticeDialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    if (!notice || !noticeDialog.current || noticeDialog.current.open) return;
+    noticeDialog.current.showModal();
+  }, [notice]);
   useEffect(() => {
     if (!clearRows || busy || !dialog.current || dialog.current.open) return;
     dialog.current.showModal();
@@ -566,24 +570,15 @@ export function Transfer({
                   scope === "all" ? undefined : scope,
                 );
                 if (!rows.length) {
-                  setClearHint("暂无" + label + "，无需清空");
-                  window.clearTimeout(clearHintTimer.current);
-                  clearHintTimer.current = window.setTimeout(
-                    () => setClearHint(null),
-                    3000,
-                  );
+                  setNotice("暂无" + label);
                   return;
                 }
-                setClearHint(null);
                 setClearRows(rows);
               })
             }
           >
             清空{label}
           </button>
-          {clearHint && (
-            <p className="mt-2 text-sm text-slate-500">{clearHint}</p>
-          )}
           {clearRows && (
             <dialog
               ref={dialog}
@@ -659,6 +654,24 @@ export function Transfer({
             </dialog>
           )}
         </section>
+      )}
+      {notice && (
+        <dialog
+          ref={noticeDialog}
+          onClose={() => setNotice(null)}
+          aria-labelledby="transfer-notice-title"
+          className="fixed inset-0 m-auto w-[min(92vw,28rem)] space-y-4 rounded-2xl bg-white p-5 text-slate-800 shadow-xl backdrop:bg-black/40"
+        >
+          <h2 id="transfer-notice-title">{notice}</h2>
+          <p>当前没有任何记录，无需清空。</p>
+          <button
+            type="button"
+            className="min-h-11 w-full border-blue-200! bg-blue-50 text-blue-800 focus-visible:outline-2 focus-visible:outline-blue-600"
+            onClick={() => noticeDialog.current?.close()}
+          >
+            知道了
+          </button>
+        </dialog>
       )}
       {ask && (
         <dialog
