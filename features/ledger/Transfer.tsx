@@ -52,6 +52,8 @@ export function Transfer({
   const [seen, setSeen] = useState<string[]>([]);
   const dialog = useRef<HTMLDialogElement>(null);
   const cancelClear = useRef<HTMLButtonElement>(null);
+  const [clearHint, setClearHint] = useState<string | null>(null);
+  const clearHintTimer = useRef<number | undefined>(undefined);
   useEffect(() => {
     if (!clearRows || busy || !dialog.current || dialog.current.open) return;
     dialog.current.showModal();
@@ -564,15 +566,24 @@ export function Transfer({
                   scope === "all" ? undefined : scope,
                 );
                 if (!rows.length) {
-                  setMessage("暂无" + label + "，无需清空");
+                  setClearHint("暂无" + label + "，无需清空");
+                  window.clearTimeout(clearHintTimer.current);
+                  clearHintTimer.current = window.setTimeout(
+                    () => setClearHint(null),
+                    3000,
+                  );
                   return;
                 }
+                setClearHint(null);
                 setClearRows(rows);
               })
             }
           >
             清空{label}
           </button>
+          {clearHint && (
+            <p className="mt-2 text-sm text-slate-500">{clearHint}</p>
+          )}
           {clearRows && (
             <dialog
               ref={dialog}
