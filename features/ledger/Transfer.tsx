@@ -44,7 +44,7 @@ export function Transfer({
     [manual, setManual] = useState(""),
     [included, setIncluded] = useState<Kind[]>([]),
     [missing, setMissing] = useState<Entry[]>([]),
-    [undo, setUndo] = useState<string | null>(null),
+    [undoMap, setUndoMap] = useState<Partial<Record<Kind, string>>>({}),
     [incoming, setIncoming] = useState<Entry[]>([]),
     [clearRows, setClearRows] = useState<Entry[] | null>(null);
   const [partial, setPartial] = useState(false);
@@ -116,12 +116,15 @@ export function Transfer({
   useEffect(() => {
     let live = true;
     createSupabaseBrowserClient()
-      .from("ledger_import_undo")
-      .select("token")
+      .from("ledger_book_undo")
+      .select("kind, token")
       .eq("owner_id", owner)
-      .maybeSingle()
       .then(({ data }) => {
-        if (live) setUndo(data?.token ?? null);
+        if (!live) return;
+        const map: Partial<Record<Kind, string>> = {};
+        for (const row of (data ?? []) as { kind: Kind; token: string }[])
+          map[row.kind] = row.token;
+        setUndoMap(map);
       });
     return () => {
       live = false;
@@ -488,23 +491,46 @@ export function Transfer({
             </button>
           </div>
         )}
-        {undo && (
-          <button
-            disabled={busy}
-            onClick={() =>
-              setAsk({
-                title: "撤销上次导入？",
-                body: "后续修改过的记录发生冲突时将停止恢复。",
-                confirmLabel: "确认撤销",
-                action: async () => {
-                  await apply([], undo);
-                  setMessage("已撤销上次导入");
-                },
-              })
-            }
-          >
-            撤销上次导入
-          </button>
+        {(["expense", "income", "remittance"] as Kind[]).some(
+          (k) => undoMap[k],
+        ) && (
+          <div className="flex flex-wrap gap-2">
+            {(["expense", "income", "remittance"] as Kind[])
+              .filter((k) => undoMap[k])
+              .map((k) => (
+                <button
+                  key={k}
+                  disabled={busy}
+                  onClick={() =>
+                    setAsk({
+                      title: "恢复" + names[k] + "导入前的记录？",
+                      body:
+                        "将把" +
+                        names[k] +
+                        "账本恢复到上次导入前的状态，其他账本不受影响。导入后修改过的记录发生冲突时将停止恢复。",
+                      confirmLabel: "确认恢复",
+                      action: async () => {
+                        const { error } =
+                          await createSupabaseBrowserClient().rpc(
+                            "restore_ledger_book",
+                            {
+                              expected_owner: owner,
+                              book: k,
+                              undo_token: undoMap[k],
+                            },
+                          );
+                        if (error) throw Error(error.message);
+                        setEpoch((n) => n + 1);
+                        done();
+                        setMessage("已恢复" + names[k] + "导入前的记录");
+                      },
+                    })
+                  }
+                >
+                  恢复{names[k]}导入前的记录
+                </button>
+              ))}
+          </div>
         )}
       </details>
       <fieldset
