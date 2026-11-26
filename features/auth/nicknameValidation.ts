@@ -1,4 +1,5 @@
 const minNicknameLength = 4;
+export const nicknameLengthHint = "至少 2 个汉字，或 4 个英文字母或数字，支持混合输入。";
 export const unavailableNicknameMessage = "该用户名无法使用，请换一个用户名。";
 
 const reservedNicknameKeywords = [
@@ -46,8 +47,10 @@ export function isReservedNickname(value: string) {
 export function validateNickname(value: string, options: NicknameValidationOptions = {}) {
   const nickname = normalizeNickname(value);
 
-  if (nickname.length < minNicknameLength) {
-    return { ok: false as const, message: "昵称至少需要 4 个字符" };
+  const nicknameLength = nickname.replace(/[\p{Unified_Ideograph}〇]/gu, "aa").length;
+
+  if (nicknameLength < minNicknameLength) {
+    return { ok: false as const, message: `用户名长度不足。${nicknameLengthHint}` };
   }
 
   if (isReservedNickname(nickname) && !options.allowReservedNicknames) {

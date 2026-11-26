@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Save, Upload } from "lucide-react";
 import { LocationSelect } from "@/components/forms/LocationSelect";
 import { ProfileCompletionHint } from "@/components/forms/ProfileCompletionHint";
 import { validateNicknameForSave } from "@/features/auth/actions";
-import { unavailableNicknameMessage, validateNickname } from "@/features/auth/nicknameValidation";
+import { nicknameLengthHint, unavailableNicknameMessage, validateNickname } from "@/features/auth/nicknameValidation";
 import { profileNeedsPublishDefaultsTip } from "@/features/posts/formMappers";
 import { featureFlags } from "@/lib/config/featureFlags";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -51,6 +51,7 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [showNicknameError, setShowNicknameError] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState(initialProfile.avatar_url ?? "");
   const [profile, setProfile] = useState({
@@ -77,9 +78,10 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
     business_website: initialBusinessProfile?.website_url ?? "",
     business_address_text: initialBusinessProfile?.service_area ?? "",
   });
-  const liveNicknameResult = profile.nickname.trim()
-    ? validateNickname(profile.nickname, { allowReservedNicknames: canUseReservedNickname })
-    : null;
+  const nicknameResult = validateNickname(profile.nickname, { allowReservedNicknames: canUseReservedNickname });
+  const nicknameError = !nicknameResult.ok && (showNicknameError || nicknameResult.message === unavailableNicknameMessage)
+    ? nicknameResult.message
+    : undefined;
   const showProfileCompletionHint = profileNeedsPublishDefaultsTip({
     default_publish_contact_name: profile.default_publish_contact_name,
     phone: profile.phone,
@@ -110,15 +112,12 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
     event.preventDefault();
     setMessage("");
     setIsSaved(false);
-    setIsSubmitting(true);
-    const nicknameResult = validateNickname(profile.nickname, { allowReservedNicknames: canUseReservedNickname });
-
     if (!nicknameResult.ok) {
-      setMessage(nicknameResult.message);
-      setIsSubmitting(false);
+      setShowNicknameError(true);
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const serverNicknameResult = await validateNicknameForSave(profile.nickname, { allowCurrentAdminReservedNickname: true });
 
@@ -234,7 +233,9 @@ export function ProfileEditForm({ userId, initialProfile, initialBusinessProfile
             label="用户名"
             value={profile.nickname}
             onChange={(value) => updateProfileField("nickname", value)}
-            error={liveNicknameResult?.ok === false && liveNicknameResult.message === unavailableNicknameMessage ? unavailableNicknameMessage : undefined}
+            onBlur={() => setShowNicknameError(true)}
+            hint={nicknameLengthHint}
+            error={nicknameError}
           />
           <Field label="手机" value={profile.phone} onChange={(value) => updateProfileField("phone", value)} />
           <Field label="微信" value={profile.wechat_id} onChange={(value) => updateProfileField("wechat_id", value)} />
@@ -356,13 +357,18 @@ function Field({
   label,
   value,
   onChange,
+  onBlur,
+  hint,
   error,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
+  hint?: string;
   error?: string;
 }) {
+  const messageId = useId();
   return (
     <label className="block">
       <span className="text-sm font-bold text-slate-800">{label}</span>
@@ -370,9 +376,16 @@ function Field({
         type="text"
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        onBlur={onBlur}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error || hint ? messageId : undefined}
         className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
       />
-      {error ? <p className="mt-2 text-sm font-bold text-red-600">{error}</p> : null}
+      {error || hint ? (
+        <p id={messageId} className={`mt-2 text-sm ${error ? "font-bold text-red-600" : "text-slate-600"}`}>
+          {error ?? hint}
+        </p>
+      ) : null}
     </label>
   );
 }

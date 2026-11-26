@@ -5,7 +5,7 @@ import Link from "next/link";
 import { UserPlus } from "lucide-react";
 import { AuthCard, AuthLink } from "@/components/auth/AuthCard";
 import { registerWithPassword } from "@/features/auth/actions";
-import { unavailableNicknameMessage, validateNickname } from "@/features/auth/nicknameValidation";
+import { nicknameLengthHint, unavailableNicknameMessage, validateNickname } from "@/features/auth/nicknameValidation";
 import { accountCreatedConfirmationMessage } from "@/lib/auth/confirmationEmail";
 import { MIN_PASSWORD_LENGTH, validatePasswordPolicy } from "@/lib/auth/password-policy";
 import { featureFlags } from "@/lib/config/featureFlags";
@@ -28,6 +28,7 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [nickname, setNickname] = useState("");
+  const [showNicknameError, setShowNicknameError] = useState(false);
   const [accepted, setAccepted] = useState(initialAccepted);
   const [message, setMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
@@ -37,7 +38,10 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
   const consentHref = `/legal/consent?returnTo=/register&agreed=${accepted ? "1" : "0"}&next=${encodeURIComponent(authReturnTo)}`;
   const loginHref = `/login?returnTo=${encodeURIComponent(authReturnTo)}`;
   const forgotPasswordHref = "/forgot-password";
-  const liveNicknameResult = nickname.trim() ? validateNickname(nickname) : null;
+  const nicknameResult = validateNickname(nickname);
+  const nicknameError = !nicknameResult.ok && (showNicknameError || nicknameResult.message === unavailableNicknameMessage)
+    ? nicknameResult.message
+    : undefined;
 
   async function handleRegister(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -45,10 +49,8 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
     setIsSuccess(false);
     setIsAlreadyRegistered(false);
 
-    const nicknameResult = validateNickname(nickname);
-
     if (!nicknameResult.ok) {
-      setMessage(nicknameResult.message);
+      setShowNicknameError(true);
       return;
     }
 
@@ -124,17 +126,19 @@ export function RegisterForm({ authReturnTo = "/profile", initialAccepted = fals
           <span className="text-sm font-bold text-slate-800">用户名</span>
           <input
             type="text"
-            required
-            minLength={4}
+            aria-required="true"
+            aria-invalid={Boolean(nicknameError)}
+            aria-describedby="register-nickname-message"
             placeholder="请输入用户名"
             value={nickname}
             onChange={(event) => setNickname(event.target.value)}
+            onBlur={() => setShowNicknameError(true)}
             disabled={isSuccess}
             className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-base outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-zinc-50"
           />
-          {liveNicknameResult?.ok === false && liveNicknameResult.message === unavailableNicknameMessage ? (
-            <p className="mt-2 text-sm font-bold text-red-600">{unavailableNicknameMessage}</p>
-          ) : null}
+          <p id="register-nickname-message" className={`mt-2 text-sm ${nicknameError ? "font-bold text-red-600" : "text-slate-600"}`}>
+            {nicknameError ?? nicknameLengthHint}
+          </p>
         </label>
         <label className="block">
           <span className="text-sm font-bold text-slate-800">邮箱地址</span>
